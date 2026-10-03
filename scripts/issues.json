@@ -1,7 +1,7 @@
 [
  {
-  "title": "Scaffold monorepo (server / client / gis), lint, formatting, CI",
-  "body": "Express server, React client, Python GIS service folders; shared lint/format config; CI running lint + tests on PRs.\n\n**Priority:** P0 · **Size:** S\n\n**Source:** —\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Set up the project skeleton: folders, tooling, local environment and CI",
+  "body": "Create the empty-but-runnable foundation so the three of us can build server, client and GIS service in parallel without stepping on each other.\n\n## What to build / rules\n- Folders: `server/` (Express), `client/` (React: command dashboard + field app), `gis/` (Python GIS service), `db/` (migrations), `docs/`. These names are also used by the PR auto-labeler in `.github/labeler.yml`.\n- TypeScript for server and client (team default), ESLint + Prettier with one shared config, `.editorconfig`, `.nvmrc`/Python version pin.\n- `docker-compose.yml` that starts PostgreSQL with the PostGIS extension locally, plus `.env.example` for every package.\n- Root README section 'Run locally' with the exact commands to start DB, server, client and GIS service.\n- GitHub Actions CI on every PR: install, lint and test for each package that exists.\n\n## Acceptance criteria\n- [ ] A fresh clone can be started by following the README only, with no extra steps\n- [ ] `docker compose up db` gives a Postgres with PostGIS enabled (`SELECT postgis_version();` works)\n- [ ] Each package has a 'hello world' that starts and one passing test\n- [ ] CI runs on a test PR and is green; a PR touching `server/` gets the `area: backend` label automatically\n\n## Out of scope\n- Any product feature code\n- Production deployment (separate decision)\n\n**Priority:** P0 · **Size:** S\n\n**Source:** Project proposal - technologies section\n",
   "labels": [
    "type: chore",
    "area: devops",
@@ -12,8 +12,8 @@
   "size": "S"
  },
  {
-  "title": "Database schema v1 on PostgreSQL + PostGIS",
-  "body": "Missions, polygons, participations, search tasks/assignments, routes, reports, messages, SOS, events. Include state enums for all status models.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log · statuses sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Design and create the PostgreSQL + PostGIS database schema (v1)",
+  "body": "Define every table the MVP needs, with the status enums from the decision log, so server and client work against one agreed data model.\n\n## What to build / rules\n- `missions`: name/ID, missing-person details (name, age, photo, description/clothing, disappearance time), status `Active|Paused|Ended`, end reason `Located|Stopped` + stop reason + note, join code, rally point (point geometry).\n- `lkp_points`: many per mission, geometry + time + `is_current`; old points are kept (they are shown faded).\n- `polygons`: geometry (Polygon, SRID 4326), name, status `Unassigned|Active|Completed`, cached coverage %, soft-delete (`deleted_at`) because routes and reports of deleted polygons must stay in history.\n- `participants` (a phone-identified person inside one mission): name, phone, state `Available|Assigned|ActivityEnded`; the same phone can rejoin later with history preserved.\n- `search_tasks`: participant + polygon + state `Assigned|Searching|Paused|FinishedSearch`, timestamps. A participant has at most one active task.\n- `route_points`: task, point geometry, device time, server receive time, accuracy, battery, connectivity.\n- `reports` (category, text, optional photo, geometry, time, status `New|Handled`, creator), `sightings` (location, time, short text, source `me|eyewitness`).\n- `messages` + `message_deliveries` (level `Normal|Important|Critical`, scope mission/polygon/person, per-recipient `Sent|Read|Acknowledged`).\n- `sos_events` (state `Active|Closed`, opener, location, optional message) and `mission_events` (significant-event timeline).\n- Migration tool of your choice, spatial (GiST) indexes on all geometry columns, a seed script with one realistic demo mission.\n\n## Acceptance criteria\n- [ ] Migrations run on an empty database and can be re-run safely in CI\n- [ ] All status enums match the 'Statuses' sheet in the decision log exactly\n- [ ] ERD committed in `docs/` and reviewed by all three team members\n- [ ] Seed script produces a mission with polygons, searchers, routes and reports\n\n## Depends on\n#1\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log - statuses sheet, Q9, Q12, Q36, Q40, Q69-70\n",
   "labels": [
    "type: feature",
    "area: database",
@@ -24,8 +24,8 @@
   "size": "L"
  },
  {
-  "title": "Express API skeleton: config, validation, error handling",
-  "body": "Env config, request validation, consistent error format, health endpoint, OpenAPI stub.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** —\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Build the Express API foundation: config, validation, errors, tests",
+  "body": "The shared backbone every endpoint will use, so each feature issue only adds routes and logic.\n\n## What to build / rules\n- Environment config validated at startup (fail fast with a clear message), structured request logging.\n- Versioned routes under `/api/v1`, `/health` endpoint, CORS, JSON body limits.\n- Request validation library (e.g. zod) and ONE error format: `{ error: { code, message, details? } }`.\n- Realtime channel decision (WebSocket or Server-Sent Events) wired as a stub, because live monitoring, alerts and messaging all need it.\n- Test setup (e.g. supertest) running against a throwaway Postgres schema; OpenAPI document generated from the routes.\n\n## Acceptance criteria\n- [ ] `GET /api/v1/health` returns 200 with DB connectivity status\n- [ ] An invalid request returns the standard error format with HTTP 400\n- [ ] Tests run locally and in CI against a clean database\n- [ ] A client can open the realtime channel and receive a test event\n\n## Depends on\n#1, #2\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal - technologies section\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -36,8 +36,8 @@
   "size": "M"
  },
  {
-  "title": "Command authentication: basic manager account",
-  "body": "Any Command account is an authorized manager and can create a mission.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q50, Q51\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Command accounts: sign up, log in, protect manager routes",
+  "body": "Managers (coordinators) get a basic account. Anyone with a Command account is an authorized manager who can create missions - there are no organizational roles in the MVP.\n\n## What to build / rules\n- Register, log in, log out, 'me' endpoint; passwords hashed (argon2 or bcrypt); session cookie or JWT with expiry.\n- Auth middleware used by all manager-only endpoints; searcher (field) tokens must NOT be accepted there.\n- Every Command account can create missions and manage the missions it created (single manager per mission in MVP).\n- Login/registration screens in the dashboard (Hebrew, RTL).\n\n## Acceptance criteria\n- [ ] A logged-out request to a manager endpoint returns 401\n- [ ] A field-app token cannot call manager endpoints (403)\n- [ ] After a browser refresh the manager stays logged in until the session expires\n- [ ] Passwords are never logged or returned by any endpoint\n\n## Depends on\n#2, #3\n\n## Out of scope\n- Organization-level permissions and manager approval (see Future issues)\n- Multiple managers per mission\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q50, Q51, Q67\n",
   "labels": [
    "type: feature",
    "area: auth",
@@ -50,8 +50,8 @@
   "size": "M"
  },
  {
-  "title": "Field authentication: phone number + OTP, persisted session",
-  "body": "No anonymous guest. Name + phone identity. Session persists across app restarts.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q48, Q49, Q68\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Searcher sign-in with phone number and SMS code (OTP), persistent session",
+  "body": "Every searcher is identified by name and phone number verified with a one-time code. There is no anonymous guest mode. The session must survive closing and reopening the app.\n\n## What to build / rules\n- Flow: enter name + phone -> server sends OTP -> enter code -> session issued.\n- OTP rules: short expiry, limited attempts, resend cooldown, rate-limit per phone and per IP.\n- Session stored securely on the device (Keychain / Keystore); reopening the app returns the searcher to the state they were in (joined mission, assignment, searching).\n- Development mode with a fixed code so the team can test without sending real SMS.\n- SMS provider is chosen in the open decision issue; code the sender behind an interface so it can be swapped.\n\n## Acceptance criteria\n- [ ] A new searcher can sign in with phone + code and appears with name and phone in the mission roster\n- [ ] Closing and reopening the app keeps the session without asking for a code again\n- [ ] Wrong or expired code is rejected; repeated attempts are throttled\n- [ ] No endpoint accepts an unauthenticated searcher\n\n## Depends on\n#2, #3, #42\n\n## Out of scope\n- Guest / anonymous join (explicitly removed from MVP)\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q48, Q49, Q68\n",
   "labels": [
    "type: feature",
    "area: auth",
@@ -64,8 +64,8 @@
   "size": "L"
  },
  {
-  "title": "Map provider integration: tiles + place/address search",
-  "body": "OpenStreetMap-based tiles and geocoding shared by dashboard and field app.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q2\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Shared map layer: OpenStreetMap tiles, place search and coordinate input",
+  "body": "One reusable map component and geocoding service for the dashboard and the field app, used for LKP, Rally Point, polygons, tracking and reports.\n\n## What to build / rules\n- Map renders OSM-based tiles with pan/zoom, markers, polygons and lines; Hebrew labels display correctly in RTL layout.\n- Search box for addresses and places; separate input that accepts raw coordinates (e.g. `32.0853, 34.7818`).\n- Click-on-map selection returns lat/lng.\n- Provider hidden behind a small interface so tiles/geocoding can be replaced; respect OSM tile-usage policy (do not hammer the public tile server - plan caching or a tile provider).\n\n## Acceptance criteria\n- [ ] Searching for a known place centers the map and offers a pin\n- [ ] Typing valid coordinates places a pin; invalid input shows an inline error\n- [ ] Component is used by the dashboard first and is reusable by the field app\n\n## Depends on\n#1\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q2; Project proposal - GIS provider\n",
   "labels": [
    "type: feature",
    "area: maps",
@@ -78,8 +78,8 @@
   "size": "M"
  },
  {
-  "title": "Create mission form",
-  "body": "Name/ID, missing person details, photo, description/clothing, disappearance time, LKP. Creation makes the mission Active immediately (no draft).\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q1, Q66\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Create a mission: form, validation and automatic activation",
+  "body": "The coordinator opens a new search mission by entering the basic operational information. The mission becomes Active immediately - there is no draft state.\n\n## What to build / rules\n- Fields: mission name/ID, missing person's details, photo, description/clothing, disappearance time, LKP (Last Known Position) and any relevant info.\n- Rally Point is mandatory (selected with the map tools from the LKP/Rally Point issue); the form cannot be submitted without it.\n- On submit: mission is created as `Active`, a join code + QR + link are generated, the manager lands on the live mission screen.\n- Server-side validation mirrors the form; photo upload with size/type limits.\n\n## Acceptance criteria\n- [ ] A manager can create a mission with all fields and sees it Active right away\n- [ ] Submitting without LKP or Rally Point is blocked with a clear message\n- [ ] The created mission shows its join code, QR and share link\n- [ ] A `mission created` event appears in the timeline\n\n## Depends on\n#2, #3, #4, #6, #8\n\n## Out of scope\n- Draft missions\n- Multiple managers\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q1, Q66, Q91\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -91,8 +91,8 @@
   "size": "M"
  },
  {
-  "title": "LKP and Rally Point selection (map click / place search / coordinates)",
-  "body": "Rally Point is mandatory. Older LKPs are kept and faded, current one highlighted. System may suggest, manager decides.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q2, Q58, Q59, Q63, Q91, Q92\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "LKP and Rally Point: set, update, keep history, propagate to the field",
+  "body": "Two critical map points: the Last Known Position (where the person was last seen) and the Rally Point (the gathering place). Both can be set three ways and updated during the mission.\n\n## What to build / rules\n- Set by: clicking the map, searching an address/place, or typing coordinates.\n- LKP history: when the LKP changes, old points are kept, shown faded; the current one is highlighted.\n- The system may SUGGEST turning a sighting into the new LKP; the manager always decides (hook for the Sightings issue).\n- Rally Point is mandatory and editable at any time. Online devices get the change immediately; offline devices get it at next sync. Same for a new LKP.\n- Every change is recorded in the mission timeline.\n\n## Acceptance criteria\n- [ ] Manager can set LKP and Rally Point with all three methods\n- [ ] Changing the LKP keeps the old one (faded) and highlights the new one\n- [ ] A connected field device sees the new Rally Point within seconds; an offline device sees it after reconnecting\n- [ ] Mission cannot exist without a Rally Point\n\n## Depends on\n#2, #6\n\n## Out of scope\n- Automatic LKP calculation (the V1 probability layer builds on this later)\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q2, Q58, Q59, Q63, Q87, Q91, Q92\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -104,8 +104,8 @@
   "size": "M"
  },
  {
-  "title": "Polygon drawing and editing by manager",
-  "body": "Manual polygons, each an independent work unit; overlap allowed; warning when an edit puts searchers outside the new boundary; history kept after delete.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q3, Q4, Q35–Q38\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Search polygons: draw, edit, delete, overlap, immediate use",
+  "body": "The manager divides the search area by drawing polygons by hand. Each polygon is an independent unit of work that searchers are assigned to.\n\n## What to build / rules\n- Draw/edit vertices on the map, name and color each polygon. No hierarchy (no 'search area -> sectors') in MVP.\n- Overlapping polygons are allowed on purpose (operational choice); show overlap clearly.\n- A new polygon is immediately assignable; only people assigned to a polygon get notified about changes to it.\n- Editing: when a saved change would put currently-searching people outside the new boundary, show a warning before saving and notify them after saving.\n- Deleting removes the polygon from the active view but keeps its routes and reports in mission history.\n- Status lives separately from coverage: `Unassigned -> Active -> Completed`, with its own Coverage %.\n\n## Acceptance criteria\n- [ ] Manager can draw, rename, edit and delete polygons and sees them on the map\n- [ ] Overlapping polygons are accepted\n- [ ] Editing a boundary while searchers are inside shows the warning and sends the notification after save\n- [ ] After deleting a polygon its historical routes and reports are still visible in history\n\n## Depends on\n#2, #3, #6\n\n## Out of scope\n- Automatic/AI polygon suggestions\n- Sector hierarchy and Sector Leader role\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q3, Q4, Q12, Q35-Q38\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -118,8 +118,8 @@
   "size": "L"
  },
  {
-  "title": "Join flow: mission code + QR / link, duplicate join, rejoin",
-  "body": "Join allowed while Active; duplicate join returns existing participation; rejoin returns to Available.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q6, Q47, Q69, Q70, Q82, Q83\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Joining a mission: code, QR, link, duplicate join and rejoin",
+  "body": "How a volunteer gets into a mission and what happens in the edge cases.\n\n## What to build / rules\n- Each mission has one join code plus a QR and a link that open the same join flow.\n- After joining the searcher is `Available` in the pool; the manager assigns them - searchers never pick a polygon themselves.\n- Joining is allowed only while the mission is Active (not when Paused or Ended).\n- Joining twice with the same phone returns the existing participation, no duplicate.\n- A searcher who ended their activity can rejoin; history is kept and they return to Available for a new assignment.\n\n## Acceptance criteria\n- [ ] Code, QR and link all lead to the same mission\n- [ ] A second join with the same phone does not create a duplicate participant\n- [ ] Joining a Paused or Ended mission shows a clear message and is blocked\n- [ ] Rejoin after Finish Activity works and keeps previous routes and reports in history\n\n## Depends on\n#2, #3, #5\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q6, Q7, Q47, Q69, Q70, Q82, Q83\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -132,8 +132,8 @@
   "size": "M"
  },
  {
-  "title": "Assign and reassign searchers to polygons",
-  "body": "Manager-only assignment; one active search task per searcher; reassignment ends the old task and requires a manual new Start Search.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q5, Q7, Q28, Q40\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Assigning searchers to polygons: assign, reassign, one task at a time",
+  "body": "The manager sees the pool of available searchers and gives each one a polygon.\n\n## What to build / rules\n- A polygon can have one searcher or several. A searcher has at most ONE active search task.\n- Manager-only action; the searcher is notified of the new assignment.\n- Reassigning: the old task ends, the transit between polygons is NOT counted as searching, and the searcher must press Start Search again manually for the new polygon.\n- Roster view shows for each person: name, phone, status, current polygon.\n\n## Acceptance criteria\n- [ ] Manager can assign an Available searcher to any polygon and the searcher is notified\n- [ ] Trying to give a searcher a second active task is rejected\n- [ ] After reassignment the old task is closed and the new one starts only when the searcher taps Start Search\n- [ ] Assignment changes appear in the timeline\n\n## Depends on\n#9, #10\n\n## Out of scope\n- Self-selection of polygons by searchers\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q5, Q7, Q28, Q40\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -145,8 +145,8 @@
   "size": "M"
  },
  {
-  "title": "Mission state machine: Active / Paused / Ended (Located | Stopped)",
-  "body": "Pause, resume, stop with reason, located with location + time. Safety tracking continues until Finish Activity.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q19, Q20, Q64, Q65, Q96, Q97\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Mission lifecycle: pause, resume, stop, and person-located",
+  "body": "The mission-level state machine and what each transition does to the people in the field.\n\n## What to build / rules\n- States: `Active <-> Paused`, and ended as either `Located` (missing person found) or `Stopped` (search called off).\n- Pause: searchers stop searching and return to the Rally Point; tracking continues until each person presses Finish Activity.\n- Resume: assignments are preserved; every searcher must press Start Search again.\n- End (either way): the search ends but safety tracking continues until Finish Activity.\n- Stop requires a reason chosen from a list plus an optional note. Located records location + time with an optional note, and is only set by the manager after verification.\n- All transitions notify the field and are written to the timeline.\n\n## Acceptance criteria\n- [ ] Each transition is possible only from the allowed states and is enforced on the server\n- [ ] Pausing sends searchers a clear instruction to go to the Rally Point\n- [ ] After Resume nobody is automatically 'Searching' until they tap Start Search\n- [ ] Ended missions keep tracking safety data until each participant finishes activity\n\n## Depends on\n#2, #3, #7\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q18, Q19, Q20, Q64, Q65, Q96, Q97\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -158,8 +158,8 @@
   "size": "M"
  },
  {
-  "title": "Edit mission details and sync relevant changes to field",
-  "body": "Significant change to missing-person info produces an alert in the field app.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q34, Q94\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Edit mission details and push relevant changes to searchers",
+  "body": "The manager can correct or extend the missing-person information during the mission; searchers see it read-only.\n\n## What to build / rules\n- Editable: missing-person details, photo, description/clothing, other relevant info.\n- Changes sync to the field app; offline devices receive them at next connection.\n- A 'significant change' (team to confirm the list in this issue, e.g. clothing, photo, last-seen time, medical condition) also creates an alert in the field app.\n- Searchers can never edit this information.\n\n## Acceptance criteria\n- [ ] Manager edit appears in a connected field app within seconds\n- [ ] A significant change raises an alert; a minor one only updates silently\n- [ ] Edit history appears in the timeline\n\n## Depends on\n#7, #14\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q33, Q34, Q94\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -172,8 +172,8 @@
   "size": "S"
  },
  {
-  "title": "Field app shell: join, Available state, assignment view",
-  "body": "Read-only missing-person info; no other searchers’ locations visible before or during search.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q31–Q33\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Field app foundation: join, waiting state, assignment view",
+  "body": "The searcher's app shell: everything a volunteer sees from joining until they start searching.\n\n## What to build / rules\n- Screens: sign-in (phone/OTP), join (code / QR scan / link), waiting for assignment (Available), assignment view with the polygon on the map, read-only missing-person details, mission-status banner (Paused / Ended).\n- Privacy: before and during search the searcher does NOT see other searchers' locations or routes.\n- Hebrew-first, RTL, large touch targets (used outdoors, possibly with gloves, in bright light).\n- Needs UX design before build (see `needs-design`).\n\n## Acceptance criteria\n- [ ] A new user can go from install to seeing their assigned polygon without help\n- [ ] No screen shows other searchers' positions or routes\n- [ ] Mission Paused / Ended banners appear immediately when the state changes\n- [ ] Layout verified in RTL on small and large phones\n\n## Depends on\n#5, #6, #10\n\n## Out of scope\n- Tracking and reports (separate issues)\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q31-Q33\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -185,8 +185,8 @@
   "size": "L"
  },
  {
-  "title": "Searcher status machine: Start / Pause / Resume / Finish Search",
-  "body": "Finish Search keeps the searcher Assigned to the polygon; only the manager sets Completed.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q8–Q10, Q71, Q100\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Searcher status flow: start, pause, resume, finish search",
+  "body": "The searcher-side state machine that drives tracking and coverage.\n\n## What to build / rules\n- States: `Available -> Assigned -> Searching <-> Paused -> Finished Search`.\n- After assignment the searcher taps Start Search; only then GPS route recording and coverage begin.\n- Finish Search ends only the search task. The person stays Assigned to the same polygon until the manager decides what's next, and the polygon is NOT marked completed - only the manager completes polygons.\n- Personal pause: tracking continues for safety but does not contribute to coverage until resume.\n- Start is blocked until required permissions and offline-map readiness are satisfied.\n- The server validates every transition.\n\n## Acceptance criteria\n- [ ] Invalid transitions are rejected by the server\n- [ ] Finish Search leaves the polygon status unchanged and the searcher still assigned\n- [ ] While personally paused, route points are stored but excluded from coverage\n- [ ] Start Search is disabled with an explanation when permissions or offline maps are missing\n\n## Depends on\n#11, #14, #16, #28\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q8-Q10, Q71, Q85, Q100\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -198,8 +198,8 @@
   "size": "M"
  },
  {
-  "title": "Background GPS tracking and permission flow",
-  "body": "Tracking in background / locked screen. Location, notification and camera permission handling; Start Search blocked until required permissions granted.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q42, Q43, Q73–Q76\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Background GPS tracking and permission flow (iOS + Android)",
+  "body": "Reliable route recording even when the screen is locked or another app is open - the core of safety monitoring and coverage.\n\n## What to build / rules\n- Continuous tracking in background / locked screen; battery-aware sampling (interval is an engineering choice, documented).\n- Permissions: location (required before Start Search), notifications (required), camera (NOT required; asked only when the searcher takes a photo for a report, and reporting without photo must work).\n- Joining and viewing is allowed without permissions; Start Search is blocked until granted, with a clear explanation screen.\n- If GPS is unavailable: the searcher is warned, the manager sees 'GPS unavailable', and time without GPS is not counted as search time.\n- Each route point stores accuracy, battery and connectivity for the manager's live view.\n- Platform background-location limits are researched in the providers decision issue.\n\n## Acceptance criteria\n- [ ] On both iOS and Android, tracking keeps recording for 30+ minutes with screen locked (manual test log attached)\n- [ ] Denied permissions block Start Search but not join/view\n- [ ] Turning GPS off shows the warning to the searcher and 'unavailable' to the manager\n- [ ] Route points reach the server with accuracy and battery fields\n\n## Depends on\n#14, #42\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q42, Q43, Q73-Q76\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -211,8 +211,8 @@
   "size": "L"
  },
  {
-  "title": "Live monitoring dashboard for active searchers",
-  "body": "Position, polygon, status, route, last update, connectivity, battery; lost-contact indication.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q13, Q44, Q45\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Manager live monitoring: map and roster of active searchers",
+  "body": "The coordinator's real-time picture of the field.\n\n## What to build / rules\n- Map markers + side roster showing for each searcher: position, polygon, status, route trail, last-update time, connectivity (Online/Offline), battery.\n- Updates pushed in real time over the realtime channel.\n- If the app is force-closed or silent, the manager keeps seeing the last update time; after the 'lost contact' threshold (open decision) the searcher is marked 'lost contact'.\n- Filter by polygon and status; clicking a marker opens the person's details and call button.\n\n## Acceptance criteria\n- [ ] A moving test phone appears and updates on the dashboard within a few seconds\n- [ ] Last update, connectivity and battery are visible per searcher\n- [ ] A silent device is flagged as lost contact after the configured threshold\n- [ ] Roster remains usable with 50 simulated searchers\n\n## Depends on\n#3, #16, #38\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q13, Q44, Q45\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -224,8 +224,8 @@
   "size": "L"
  },
  {
-  "title": "Polygon boundary-exit alerts",
-  "body": "Alert both searcher and manager. GPS tolerance is an open decision.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q14\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Alert when a searcher leaves their polygon",
+  "body": "Detect and report boundary exits so coverage stays reliable and people stay safe.\n\n## What to build / rules\n- While Searching, if a person's position is outside their assigned polygon, BOTH the searcher and the manager are alerted.\n- Tolerance around the border (to avoid false alarms from GPS noise) is defined in the open decision issue; implement it as a configurable constant.\n- De-bounce: require several consecutive outside fixes; the alert clears automatically when the person returns.\n- Event appears in the manager's feed and timeline.\n\n## Acceptance criteria\n- [ ] Walking out of a test polygon triggers alerts on both screens; walking back clears them\n- [ ] A single noisy GPS point does not trigger an alert\n- [ ] Tolerance value can be changed in one place\n\n## Depends on\n#9, #16, #39, #27\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q14\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -239,8 +239,8 @@
   "size": "M"
  },
  {
-  "title": "Coverage estimate engine",
-  "body": "Cumulative routes merged per polygon; only in-polygon portion counts; automatic only; Completed allowed at any %.\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** MVP Decision Log Q11, Q12, Q39, Q41, Q57, Q72, Q90\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Coverage engine: estimate how much of each polygon was searched",
+  "body": "Automatic estimate of searched area per polygon, combining the routes of everyone who worked in it.\n\n## What to build / rules\n- Cumulative: routes from several searchers and several sessions are merged into one coverage per polygon.\n- A route only contributes to the polygon the person was ASSIGNED to at the time it was recorded; only the part physically inside that polygon counts (the rest is kept in history).\n- Excluded: time while paused, without GPS, or after Finish Search.\n- Coverage % is automatic only - the manager cannot type a percentage. It is shown next to the polygon's status.\n- Parameters (search width/buffer, sampling, GPS-jump filtering) come from the coverage algorithm decision issue.\n- Draw the covered area as a map overlay; update incrementally, not by recomputing everything.\n\n## Acceptance criteria\n- [ ] A scripted test walk of a known path produces the expected coverage within a stated tolerance\n- [ ] Two searchers covering the same ground do not double-count\n- [ ] A route outside the assigned polygon does not increase coverage\n- [ ] Coverage updates on the dashboard within seconds of new points\n\n## Depends on\n#2, #11, #15, #16, #40\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** MVP Decision Log Q11, Q12, Q39, Q41, Q57, Q72, Q90\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -253,8 +253,8 @@
   "size": "XL"
  },
  {
-  "title": "Mark polygon Completed flow",
-  "body": "Confirmation ends tasks of assigned searchers and notifies them; routes and coverage preserved.\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log Q56, Q57\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Manager marks a polygon as Completed",
+  "body": "Closing out a polygon is a manager decision, independent of the coverage percentage.\n\n## What to build / rules\n- Manager can mark a polygon Completed at any coverage %.\n- After confirmation: all search tasks in that polygon end, assigned searchers are notified, and they return to the pool (Available).\n- Routes and coverage are preserved and keep accumulating if more data arrives.\n- Recorded in the timeline.\n\n## Acceptance criteria\n- [ ] Completing a polygon notifies and releases all its searchers\n- [ ] Coverage and routes of a completed polygon remain visible\n- [ ] Completed status is shown on map and roster\n\n## Depends on\n#11, #19\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log Q56, Q57, Q90\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -266,8 +266,8 @@
   "size": "S"
  },
  {
-  "title": "Field reports: categories, text, optional photo, auto GPS",
-  "body": "Five report categories; photo optional; visibility limited to own polygon + own reports.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q15, Q16, Q80, Q88\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Field reports: create a report with category, text, photo and location",
+  "body": "Searchers send findings from the field to the manager.\n\n## What to build / rules\n- Five main report categories (the decision log fixes the number; final category names are set during UX design in this issue).\n- Content: free text, optional photo, GPS location and time attached automatically.\n- Camera permission requested only when attaching a photo; a report without photo must always be possible.\n- Works offline: queued locally and sent on reconnect.\n- A searcher sees only reports from their own polygon plus their own reports - never other polygons.\n\n## Acceptance criteria\n- [ ] A report with text only, and a report with photo, both reach the manager with correct location and time\n- [ ] Creating a report offline delivers it after reconnecting, exactly once\n- [ ] A searcher cannot see reports from polygons they are not assigned to\n\n## Depends on\n#14, #16, #2\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q15, Q16, Q76, Q80\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -279,8 +279,8 @@
   "size": "L"
  },
  {
-  "title": "Report handling UI: map + list, New → Handled, edit/delete",
-  "body": "Manager marks Handled; manager deletes; creator or manager edits; no version history.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q17, Q81, Q88, Q89\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Report handling for managers: map + list, status, edit and delete",
+  "body": "How the coordinator triages the incoming flow of reports.\n\n## What to build / rules\n- Reports shown both on the map and in a list; new ones highlighted and notified.\n- Status flow `New -> Handled`, set by the manager.\n- Edit: manager or the creator can edit; there is no version history.\n- Delete: manager only.\n- Filters by category, polygon, status.\n\n## Acceptance criteria\n- [ ] Manager sees a new report appear live on map and list\n- [ ] Marking Handled updates both views\n- [ ] Only manager can delete; creator can edit own report; non-creator searcher cannot\n\n## Depends on\n#21\n\n## Out of scope\n- Richer workflow (Under Review / Rejected / notes) - see Future\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q17, Q81, Q88, Q89\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -291,8 +291,8 @@
   "size": "M"
  },
  {
-  "title": "Located report as critical alert",
-  "body": "Critical alert to manager; only the manager ends the mission after verification.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q18\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "'Person located' report: critical alert flow",
+  "body": "The most important event in a mission gets its own flow.\n\n## What to build / rules\n- A searcher can submit a Located report with location + time and an optional note.\n- It triggers a CRITICAL alert to the manager (sound/vibration, persistent until acknowledged).\n- The mission does NOT end automatically: only the manager ends it, after verifying (uses the lifecycle issue).\n- Manager can broadcast instructions to the field right from the alert.\n\n## Acceptance criteria\n- [ ] Submitting a Located report raises a critical alert on the manager's dashboard immediately\n- [ ] The mission stays Active until the manager ends it\n- [ ] Alert is recorded in the timeline with who/where/when\n\n## Depends on\n#12, #25, #27, #21\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q18, Q97\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -305,8 +305,8 @@
   "size": "M"
  },
  {
-  "title": "Sightings: manager and searcher can report",
-  "body": "Location + time + short description + source (me / eyewitness); shown on map immediately in MVP.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q60–Q62\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Sightings: record where someone may have seen the missing person",
+  "body": "A sighting is a lightweight lead (different from a field report) that appears on the map and can feed the LKP.\n\n## What to build / rules\n- Both manager and searcher can create a sighting.\n- Fields: location, time, short description, source (`me` / `eyewitness`). Certainty level and photo are NOT in MVP.\n- In MVP a sighting shows on the map immediately (verification step is a Future item).\n- From a sighting the manager can accept the system's suggestion to make it the new LKP.\n\n## Acceptance criteria\n- [ ] Sighting created by a searcher or manager appears on all relevant maps\n- [ ] 'Make this the LKP' works and keeps the previous LKP in history\n- [ ] Sightings are available as input for the V1 probability layer later\n\n## Depends on\n#2, #8, #14\n\n## Out of scope\n- Verification before a sighting becomes operational (Future)\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q59-Q63\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -319,8 +319,8 @@
   "size": "M"
  },
  {
-  "title": "Broadcast messaging with delivery states",
-  "body": "Normal / Important / Critical; Sent → Read (→ Acknowledged for critical); to mission, polygon or individual; queued until delivery; no two-way chat.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q25–Q27, Q77\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Manager broadcast messages with levels and delivery tracking",
+  "body": "One-way announcements from the manager to the field (no chat).\n\n## What to build / rules\n- Recipients: the whole mission, one polygon, or one individual.\n- Levels: Normal / Important / Critical; free text or ready templates.\n- Delivery tracking: Normal = Sent -> Read; Critical = Sent -> Read -> Acknowledged (searcher must tap to confirm). Manager sees per-recipient status.\n- Messages to offline devices are stored and delivered on reconnect, keeping the same states.\n- Field inbox screen; Important/Critical also via push notification.\n\n## Acceptance criteria\n- [ ] A message to a polygon reaches only its searchers\n- [ ] A critical message shows as unacknowledged until each recipient confirms\n- [ ] A message sent while a device is offline arrives after reconnect with correct states\n\n## Depends on\n#3, #14, #27\n\n## Out of scope\n- Two-way chat\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q25-Q27, Q77\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -334,8 +334,8 @@
   "size": "L"
  },
  {
-  "title": "SOS flow and phone dialer",
-  "body": "SOS with identity + location, optional message; delivered to manager and searchers in the same polygon; prominent emergency call option.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q24, Q78, Q79, Q98, Q99\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "SOS button and phone calling",
+  "body": "Emergency escalation from the field.\n\n## What to build / rules\n- Searcher presses SOS: the manager receives their identity + location, with an optional short message.\n- The alert goes to the manager AND all searchers in the same polygon.\n- Closed by the searcher who opened it or by the manager; updates are sent to all recipients. States: `Active -> Closed`.\n- A Call button opens the standard phone dialer for the manager; during SOS the emergency-services number is shown prominently next to it.\n- Manager's number is available during the whole mission.\n\n## Acceptance criteria\n- [ ] Pressing SOS shows an alert with name and location on the manager's dashboard and on same-polygon phones\n- [ ] Closing the SOS sends an update to all recipients\n- [ ] Call buttons open the system dialer with the correct number\n\n## Depends on\n#14, #27, #16\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q24, Q78, Q79, Q98, Q99\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -348,8 +348,8 @@
   "size": "L"
  },
  {
-  "title": "Push notification infrastructure",
-  "body": "Provider selection and integration for iOS/Android.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log TBD list\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Push notifications: device registration and priority delivery",
+  "body": "The delivery infrastructure used by messages, SOS, boundary alerts and the located alert.\n\n## What to build / rules\n- Register device tokens per signed-in user (iOS and Android); remove on sign-out.\n- Server sends with retry; Critical notifications use a high-priority channel so they appear even in silent/background modes where the OS allows.\n- Fallback to in-app realtime channel when the app is open.\n- Provider chosen in the providers decision issue.\n\n## Acceptance criteria\n- [ ] A test push reaches an iOS and an Android device in background\n- [ ] Critical level is visibly different (channel/sound) from Normal\n- [ ] Invalid tokens are cleaned up automatically\n\n## Depends on\n#3, #42\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log TBD sheet - push provider\n",
   "labels": [
    "type: feature",
    "area: notifications",
@@ -363,8 +363,8 @@
   "size": "M"
  },
  {
-  "title": "Offline maps cached automatically after joining; readiness gate",
-  "body": "Start Search blocked until offline readiness.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q22, Q84, Q85\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Offline maps: download automatically after join, block start until ready",
+  "body": "The field app must work without cellular coverage, so the map data for the mission area is downloaded up front.\n\n## What to build / rules\n- Right after joining, the app downloads map tiles for the mission area (area = bounding region around LKP, Rally Point and polygons plus a margin - define the margin in this issue).\n- Progress indicator and retry; storage-use limit and cleanup after mission end.\n- Start Search stays blocked until offline readiness is complete.\n- Check the tile provider's terms allow offline caching.\n\n## Acceptance criteria\n- [ ] Airplane-mode test: map, polygon and rally point are usable after the download completes\n- [ ] Start Search is disabled with a progress message until the download finishes\n- [ ] Downloaded data is removed after the mission ends and the user finishes activity\n\n## Depends on\n#6, #14\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q22, Q84, Q85\n",
   "labels": [
    "type: feature",
    "area: offline",
@@ -376,8 +376,8 @@
   "size": "L"
  },
  {
-  "title": "Offline local storage of GPS + reports, auto sync, conflict rules",
-  "body": "Searcher assignment locked while offline; LKP / Rally Point updates arrive on reconnect.\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** MVP Decision Log Q22, Q86, Q87, Q92\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Offline-first data: store GPS and reports locally, sync automatically",
+  "body": "Searchers keep working with no signal; nothing is lost.\n\n## What to build / rules\n- While offline: GPS route points and reports are stored locally.\n- On reconnect: automatic upload, idempotent (client-generated IDs, so a retry never duplicates), ordered by device time.\n- While a searcher is offline, the manager cannot change their active task or directly-related info (prevents conflicts).\n- LKP and Rally Point changes made meanwhile reach the device at next connection; queued messages follow.\n- Visible sync status in the app (pending count, last sync).\n\n## Acceptance criteria\n- [ ] Recording a 20-minute offline route and reconnecting uploads all points once, in order\n- [ ] Offline report arrives exactly once after reconnect\n- [ ] Manager UI blocks changes to an offline searcher's active task with an explanation\n- [ ] Killing the app mid-offline does not lose stored data\n\n## Depends on\n#15, #16, #21\n\n## Out of scope\n- Device-to-device mesh networking (Future)\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** MVP Decision Log Q22, Q86, Q87, Q92\n",
   "labels": [
    "type: feature",
    "area: offline",
@@ -390,8 +390,8 @@
   "size": "XL"
  },
  {
-  "title": "Command dashboard offline snapshot indicator",
-  "body": "Last snapshot shown with non-live indicator; operational actions disabled.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q93\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Manager dashboard when the manager is offline",
+  "body": "If the coordinator's own connection drops, they must not be misled by stale data.\n\n## What to build / rules\n- Show the last known snapshot with a clear 'Not live' banner and the snapshot time.\n- Disable operational actions (assign, message, create/edit, end mission) while offline.\n- Auto-refresh when the connection returns.\n\n## Acceptance criteria\n- [ ] Going offline shows the banner and disables actions immediately\n- [ ] Reconnecting refreshes data and re-enables actions without a manual reload\n\n## Depends on\n#17\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q93\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -403,8 +403,8 @@
   "size": "S"
  },
  {
-  "title": "Mission history, timeline and field-side history (read-only)",
-  "body": "Ended missions open read-only with polygons, coverage, reports, searchers, routes, assignments and significant events.\n\n**Priority:** P1 · **Size:** L\n\n**Source:** MVP Decision Log Q52–Q54, Q95\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Mission history and timeline (read-only)",
+  "body": "After a mission ends, everything stays viewable for review and learning.\n\n## What to build / rules\n- Ended missions open in read-only mode with: details, polygons, coverage, reports, searchers, routes, times, assignments and events.\n- Timeline contains significant events only (e.g. mission created/paused/resumed/ended, LKP changed, assignments, SOS, located report) - define the exact list in this issue; stored permanently.\n- Searchers can open their own past missions read-only with the mission details and their own activity.\n\n## Acceptance criteria\n- [ ] A finished mission can be opened and replayed on the map (routes + reports)\n- [ ] No edit/delete/assign controls appear in history\n- [ ] A searcher sees their own history but not other searchers' data\n\n## Depends on\n#12, #19, #21\n\n**Priority:** P1 · **Size:** L\n\n**Source:** MVP Decision Log Q52-Q54, Q95\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -417,8 +417,8 @@
   "size": "L"
  },
  {
-  "title": "Finish Activity / End participation",
-  "body": "Both searcher and manager can end participation; recommend Rally Point but allow confirm.\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log Q29, Q30\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Finish Activity: ending a person's participation",
+  "body": "The explicit step that stops safety tracking and closes someone's involvement.\n\n## What to build / rules\n- Both the searcher and the manager can end a participation.\n- The app recommends going to the Rally Point first but lets the searcher confirm without it.\n- After ending: tracking stops, historical data stays, the person can rejoin later as a fresh Available participant.\n- A mission ending does NOT stop tracking until each person finishes their activity.\n\n## Acceptance criteria\n- [ ] Finish Activity from either side stops tracking and records the event\n- [ ] Warning about the Rally Point appears but can be bypassed\n- [ ] Rejoin works afterwards and old data remains in history\n\n## Depends on\n#10, #12, #16\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log Q29, Q30, Q65, Q70, Q83\n",
   "labels": [
    "type: feature",
    "area: mobile-field",
@@ -430,8 +430,8 @@
   "size": "S"
  },
  {
-  "title": "Fixed-threshold coverage alerts",
-  "body": "Constants in MVP; configurable later.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q55\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Coverage alerts with fixed thresholds",
+  "body": "Help the manager notice when a polygon needs a decision.\n\n## What to build / rules\n- Alert rules based on the coverage engine, e.g. 'polygon reached the high-coverage threshold' and 'searchers active but coverage not progressing' (final rule list + numbers to be agreed in this issue).\n- Thresholds are constants in a single config file in MVP; making them configurable per mission is a later feature.\n- Alerts appear in the manager's feed and do not repeat endlessly (once per crossing).\n\n## Acceptance criteria\n- [ ] Reaching a threshold in a test scenario produces exactly one alert\n- [ ] Changing the constants in the config changes behavior without code changes elsewhere\n\n## Depends on\n#19\n\n## Out of scope\n- Per-mission configurable thresholds\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q55\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -443,8 +443,8 @@
   "size": "S"
  },
  {
-  "title": "QA pass against the full decision log + e2e tests",
-  "body": "Trace every MVP decision to a test or manual check; record gaps.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log (all 100)\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Final QA: verify every MVP decision with end-to-end tests",
+  "body": "Prove the product behaves exactly as the decision log says.\n\n## What to build / rules\n- Build a traceability table: each of the 100 decisions -> automated test or documented manual check.\n- End-to-end scenarios: create mission -> join -> assign -> search -> report -> SOS -> pause/resume -> locate -> end -> history.\n- Device matrix (at least one iOS + one Android), Hebrew/RTL checks, offline scenarios, low battery, GPS off.\n- Log defects as issues; record accepted gaps explicitly.\n\n## Acceptance criteria\n- [ ] Traceability table committed to `docs/qa/`\n- [ ] All P0 scenarios pass on both platforms\n- [ ] Open defects are labeled and triaged\n\n## Depends on\n#35\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log - all 100 decisions\n",
   "labels": [
    "type: chore",
    "area: devops",
@@ -457,7 +457,7 @@
  },
  {
   "title": "Demo scenario and final-project documentation",
-  "body": "Realistic seeded mission, demo script, architecture and research write-up.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "body": "Everything needed to present Trace to the course committee.\n\n## What to build / rules\n- Seed a realistic demo mission (people, polygons, routes, reports) usable in a live demo and offline.\n- Demo script (10-minute walk-through) and recorded backup video.\n- Architecture diagram, data model, API overview, research basis (Koester LPB) and limitations.\n- User guides for manager and searcher.\n\n## Acceptance criteria\n- [ ] Demo can be run from a clean environment with one command\n- [ ] Documentation reviewed by all team members\n\n## Depends on\n#34\n\n**Priority:** P1 · **Size:** M\n\n**Source:** Project proposal\n",
   "labels": [
    "type: docs",
    "area: devops",
@@ -469,7 +469,7 @@
  },
  {
   "title": "Decide: low-battery alert threshold",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "body": "Searchers and managers must be alerted when a phone's battery is low and be advised to charge or return - but the log does not set the number.\n\n## What to build / rules\n- Decide the percentage level(s) (e.g. a warning level and a critical level) and who gets each alert.\n- Decide whether to also react to the OS battery-saver mode (it may restrict background GPS).\n- Record the decision + reason in a comment, then save the values in the shared config.\n\n## Acceptance criteria\n- [ ] Decision written in this issue and the config updated\n\n## Depends on\n#17\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q45 + TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -481,8 +481,8 @@
   "size": "S"
  },
  {
-  "title": "Decide: no-GPS duration before escalation",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Decide: how long without GPS before escalating to the manager",
+  "body": "When GPS is unavailable the searcher is warned and the manager sees 'GPS unavailable'; the log leaves the escalation delay open.\n\n## What to build / rules\n- Pick the duration (or tiers) after which the manager receives an escalated alert.\n- Decide how it differs from 'lost contact' and from being offline with GPS still working.\n\n## Acceptance criteria\n- [ ] Duration documented here and in the config\n\n## Depends on\n#16\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q42 + TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -494,8 +494,8 @@
   "size": "S"
  },
  {
-  "title": "Decide: no-update duration before 'lost contact'",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Decide: how long without any update before 'lost contact'",
+  "body": "When the app is force-closed or the phone dies, the manager keeps seeing the last update; after a threshold the searcher becomes 'lost contact'.\n\n## What to build / rules\n- Choose the threshold and how it is shown (marker style, alert or not).\n- Distinguish a searcher known to be offline in a dead zone from a truly silent one if possible.\n\n## Acceptance criteria\n- [ ] Threshold documented and config updated\n\n## Depends on\n#17\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q44 + TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -507,8 +507,8 @@
   "size": "S"
  },
  {
-  "title": "Decide: GPS tolerance around polygon boundary",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Decide: GPS tolerance around polygon borders",
+  "body": "Boundary-exit alerts need a tolerance to avoid false alarms from GPS noise.\n\n## What to build / rules\n- Decide the buffer in meters, whether to use the reported GPS accuracy radius, and how many consecutive fixes are required.\n- Consider open terrain vs dense forest/urban canyons and test on real walks.\n\n## Acceptance criteria\n- [ ] Values documented with the test evidence\n\n## Depends on\n#18\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q14 + TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -520,8 +520,8 @@
   "size": "S"
  },
  {
-  "title": "Decide: coverage algorithm (buffer width, sampling, GPS jumps, route merge)",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P0 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Decide: coverage estimate parameters",
+  "body": "The coverage engine needs concrete numbers and rules to be trustworthy.\n\n## What to build / rules\n- Search width (buffer around the route) per searcher, sampling interval, filtering of GPS jumps (max speed, min accuracy).\n- How overlapping routes merge, and any minimum-dwell rule.\n- Review available literature on sweep width / probability of detection, then document the chosen values with reasons.\n\n## Acceptance criteria\n- [ ] Parameter table with justification committed to `docs/`\n\n## Depends on\n#19\n\n**Priority:** P0 · **Size:** S\n\n**Source:** MVP Decision Log Q41 + TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -534,7 +534,7 @@
  },
  {
   "title": "Decide: data retention and privacy policy",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "body": "The system stores locations, phone numbers and photos of missing people - the team must decide how long and who can see them.\n\n## What to build / rules\n- How long to keep missions, GPS routes, phone numbers and photos; deletion or anonymization after that.\n- Who can access history; what a searcher can see about themselves.\n- Check applicable Israeli privacy-law requirements for this kind of data.\n- Note: the repository is public - never commit real personal data.\n\n## Acceptance criteria\n- [ ] Written policy in `docs/privacy.md` agreed by the team\n\n## Depends on\n#31\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -546,8 +546,8 @@
   "size": "S"
  },
  {
-  "title": "Decide: OTP, push and map providers + iOS/Android background-location limits",
-  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P0 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Decide: SMS (OTP), push and map providers + mobile background-location limits",
+  "body": "Several technical choices block authentication, tracking and notifications.\n\n## What to build / rules\n- Compare SMS providers that work well with Israeli numbers (cost, delivery reliability).\n- Choose push delivery (FCM/APNs) and confirm behavior of critical notifications.\n- Choose tile/geocoding providers that allow offline caching.\n- Document iOS and Android restrictions on background location and how the app will cope.\n- Write the result as a short architecture decision record.\n\n## Acceptance criteria\n- [ ] ADR committed in `docs/adr/` and the dependent issues updated\n\n**Priority:** P0 · **Size:** S\n\n**Source:** MVP Decision Log TBD sheet\n",
   "labels": [
    "type: decision",
    "area: backend",
@@ -559,8 +559,8 @@
   "size": "S"
  },
  {
-  "title": "Research: encode Koester LPB distance percentiles per subject category",
-  "body": "Public percentile tables as base weight function; document behavior trends per category.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal · LPB / ISRID\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Research: encode Koester's Lost Person Behavior distance data",
+  "body": "Turn the published LPB statistics into data the algorithm can use.\n\n## What to build / rules\n- For each subject category in the research (e.g. young child, person with dementia, hiker, person in emotional distress) collect the published distance percentiles between the point last seen and where the person was found.\n- Collect the qualitative behavior trends per category (e.g. dementia: follows roads/paths; young children: attracted to water).\n- Store as a data file with the source cited for every number; map Trace's subject categories to LPB categories.\n- Remember the raw ISRID database is not public - only the published tables are used.\n\n## Acceptance criteria\n- [ ] Data file in `gis/data/` with citation per value\n- [ ] Mapping table Trace category -> LPB category reviewed by the team\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal - LPB basis\n",
   "labels": [
    "type: spike",
    "area: research",
@@ -572,8 +572,8 @@
   "size": "M"
  },
  {
-  "title": "Ingest terrain data: roads, trails, water, elevation into PostGIS",
-  "body": "OSM-based terrain features usable by the model.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Ingest terrain data (roads, trails, water, elevation) into PostGIS",
+  "body": "The model needs real terrain, not just circles around a point.\n\n## What to build / rules\n- Load OpenStreetMap data for the search regions: roads, trails/paths, water bodies, land use; plus an elevation model for slope.\n- Import into indexed PostGIS tables with a repeatable refresh script; handle OSM attribution requirements.\n- Provide query helpers: features and slope within a bounding box.\n\n## Acceptance criteria\n- [ ] Import script runs from scratch and finishes within a documented time\n- [ ] A bounding-box query for a test region returns roads, water and elevation\n\n## Depends on\n#2\n\n**Priority:** P0 · **Size:** L\n\n**Source:** Project proposal - terrain layer\n",
   "labels": [
    "type: feature",
    "area: gis-python",
@@ -585,8 +585,8 @@
   "size": "L"
  },
  {
-  "title": "Python GIS service skeleton + API contract with Express",
-  "body": "Service boundary, request/response contract, deployment.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Python GIS service: skeleton and API contract with the Express server",
+  "body": "A separate Python service computes the probability layer.\n\n## What to build / rules\n- Define the request/response contract: input = mission id, LKP, subject category, elapsed time, sightings; output = probability grid (GeoJSON or raster tiles).\n- Service skeleton (framework of the team's choice), health endpoint, Docker image, authenticated calls from Express only.\n- Long computations run asynchronously with caching of results.\n\n## Acceptance criteria\n- [ ] Express can request a (dummy) probability grid and the dashboard receives it\n- [ ] Contract documented in OpenAPI\n\n## Depends on\n#1, #3\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal - Python GIS service\n",
   "labels": [
    "type: feature",
    "area: gis-python",
@@ -598,8 +598,8 @@
   "size": "M"
  },
  {
-  "title": "Probability model: base weights + terrain distortion",
-  "body": "Behavior-profile-to-terrain weights are engineered parameters, documented and justified in writing.\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Probability model: distance rings + terrain distortion",
+  "body": "The core algorithm of V1.\n\n## What to build / rules\n- Base: turn the category's distance percentiles into a probability-by-distance function around the LKP.\n- Distortion: re-weight by real terrain according to the category's behavior (e.g. boost cells along roads/paths for dementia, near water for young children).\n- All weights are explicit parameters in a versioned config, each with a written justification based on the research - not hidden constants.\n- Normalize so all cell probabilities sum to 1; update the grid when new sightings arrive.\n\n## Acceptance criteria\n- [ ] Unit tests: probabilities sum to 1; known inputs give expected shapes\n- [ ] Parameter document with justification for every weight\n\n## Depends on\n#43, #44, #45\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** Project proposal - LPB basis\n",
   "labels": [
    "type: feature",
    "area: gis-python",
@@ -610,8 +610,8 @@
   "size": "XL"
  },
  {
-  "title": "Heat map layer in dashboard, updated by new sightings",
-  "body": "Replaces the generic search circle.\n\n**Priority:** P1 · **Size:** L\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Heat map layer on the dashboard",
+  "body": "Show the model output to the manager.\n\n## What to build / rules\n- Toggle-able overlay with legend and opacity control; optional contours for top 25/50/75% probability.\n- Refreshes when new sightings arrive; replaces the generic circle from V0.\n- Smooth performance on large areas (tiles or simplified geometry).\n\n## Acceptance criteria\n- [ ] Heat map renders for a test mission and updates after a new sighting\n- [ ] Overlay does not slow down live monitoring\n\n## Depends on\n#46, #24\n\n**Priority:** P1 · **Size:** L\n\n**Source:** Project proposal - probability layer\n",
   "labels": [
    "type: feature",
    "area: web-command",
@@ -622,8 +622,8 @@
   "size": "L"
  },
  {
-  "title": "Validate model on sample cases and tune parameters",
-  "body": "Sanity checks and documented limitations.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Validate the probability model and document its limits",
+  "body": "Make sure the layer is sensible and honestly described.\n\n## What to build / rules\n- Run on sample scenarios and compare outcomes against the expected distance distributions.\n- Sensitivity analysis: how results change with each parameter.\n- Write down limitations clearly (it supports prioritization; it does not replace professional judgment).\n\n## Acceptance criteria\n- [ ] Validation report in `docs/`\n\n## Depends on\n#46\n\n**Priority:** P1 · **Size:** M\n\n**Source:** Project proposal\n",
   "labels": [
    "type: spike",
    "area: research",
@@ -635,8 +635,8 @@
   "size": "M"
  },
  {
-  "title": "Multi-agent search simulation over probability map (optional)",
-  "body": "Only if V0/V1 are on schedule.\n\n**Priority:** P3 · **Size:** XL\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Optional: multi-agent search simulation on the probability map",
+  "body": "Illustrate how coordinated searchers use the map efficiently.\n\n## What to build / rules\n- Simulated agents move over the grid following a coordination strategy; compare a naive strategy with a probability-guided one.\n- Metrics: time to find, area covered; simple visualization.\n- Only start if V0 and V1 are on schedule.\n\n## Acceptance criteria\n- [ ] Simulation runs and shows a measurable comparison\n\n## Depends on\n#47\n\n**Priority:** P3 · **Size:** XL\n\n**Source:** Project proposal - V2\n",
   "labels": [
    "type: feature",
    "area: gis-python",
@@ -647,8 +647,8 @@
   "size": "XL"
  },
  {
-  "title": "Sector leader role and hierarchical permissions",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: Sector Leader role and hierarchical permissions",
+  "body": "Add an intermediate role that manages one sector of the search area, with permissions between manager and searcher.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: Keep a `role` field on participants and avoid hardcoding 'manager = the only person with permissions' so the hierarchy can be added later.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -659,8 +659,8 @@
   "size": "L"
  },
  {
-  "title": "Multiple managers per mission (primary / secondary)",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: multiple managers per mission (primary / secondary)",
+  "body": "Allow several coordinators to run one mission, with a primary manager and secondary managers.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: Store the mission's manager as a relation (not a single column) and record who performed each action in the timeline.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -671,8 +671,8 @@
   "size": "L"
  },
  {
-  "title": "Automatic polygon suggestions and Search Area → Sectors",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: automatic polygon suggestions and Search Area -> Sectors",
+  "body": "Let the system propose how to split an area into polygons, and add a hierarchy of search area -> sectors.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: Keep polygons independent in MVP but leave an optional parent reference; the V1 probability layer can later drive suggestions.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -683,8 +683,8 @@
   "size": "L"
  },
  {
-  "title": "Sighting verification step before it becomes operational",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: verification step for sightings",
+  "body": "A sighting should wait for a manager's review before becoming an operational data point.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: Add a `status` to sightings now (always 'accepted' in MVP) so the review flow is a small change later.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -695,8 +695,8 @@
   "size": "L"
  },
  {
-  "title": "Per-searcher coverage contribution",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: per-searcher coverage contribution",
+  "body": "Show how much each searcher contributed to a polygon's coverage.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: Keep `search_task` linked to every route point (already in the schema) so per-person contribution can be computed later.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -707,8 +707,8 @@
   "size": "L"
  },
  {
-  "title": "Mesh / device-to-device / delay-tolerant networking",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: mesh / device-to-device networking in dead zones",
+  "body": "Let phones relay data to each other where there is no cellular signal.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: MVP uses store-and-forward sync; keep the sync protocol idempotent so a mesh transport can reuse it.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -719,8 +719,8 @@
   "size": "L"
  },
  {
-  "title": "Richer report workflow (Under Review / Rejected / manager notes)",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: richer report workflow",
+  "body": "Extend report statuses beyond New/Handled with Under Review, Rejected and manager notes.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: Model report status as an extensible enum and store manager notes in a separate table when needed.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
@@ -731,8 +731,8 @@
   "size": "L"
  },
  {
-  "title": "Organization-level permissions and manager approval",
-  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "title": "Future: organization-level permissions and manager approval",
+  "body": "Allow organizations to approve which accounts may act as managers.\n\n## What to build / rules\n- Not part of the MVP - recorded here so the idea is not lost.\n- Design hint for the MVP: In MVP every Command account is an authorized manager; keep authorization checks in one place so the policy can change later.\n\n## Acceptance criteria\n- [ ] Before starting: write a short spec, estimate, and decide the target phase\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log - future sheet\n",
   "labels": [
    "type: feature",
    "area: backend",
