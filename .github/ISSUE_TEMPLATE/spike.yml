@@ -1,0 +1,15 @@
+name: Spike / research
+description: Time-boxed investigation
+labels: ["type: spike"]
+body:
+  - type: textarea
+    id: question
+    attributes: {label: Question to answer}
+    validations: {required: true}
+  - type: input
+    id: timebox
+    attributes: {label: Time box, placeholder: "e.g. 1 day"}
+    validations: {required: true}
+  - type: textarea
+    id: out
+    attributes: {label: Expected output, description: Decision, prototype, or write-up.}

@@ -1,0 +1,147 @@
+[
+ {
+  "name": "type: feature",
+  "color": "1D76DB",
+  "description": "New capability"
+ },
+ {
+  "name": "type: bug",
+  "color": "D73A4A",
+  "description": "Something is broken"
+ },
+ {
+  "name": "type: spike",
+  "color": "BFD4F2",
+  "description": "Time-boxed research / investigation"
+ },
+ {
+  "name": "type: chore",
+  "color": "CFD3D7",
+  "description": "Tooling, config, maintenance"
+ },
+ {
+  "name": "type: docs",
+  "color": "0075CA",
+  "description": "Documentation"
+ },
+ {
+  "name": "type: tech-debt",
+  "color": "FBCA04",
+  "description": "Refactor / cleanup"
+ },
+ {
+  "name": "type: decision",
+  "color": "5319E7",
+  "description": "Open decision that blocks work (see TBD list)"
+ },
+ {
+  "name": "area: mobile-field",
+  "color": "0E8A16",
+  "description": "Field (searcher) mobile app"
+ },
+ {
+  "name": "area: web-command",
+  "color": "0E8A16",
+  "description": "Command / manager dashboard"
+ },
+ {
+  "name": "area: backend",
+  "color": "0E8A16",
+  "description": "Express API"
+ },
+ {
+  "name": "area: database",
+  "color": "0E8A16",
+  "description": "PostgreSQL + PostGIS"
+ },
+ {
+  "name": "area: gis-python",
+  "color": "0E8A16",
+  "description": "Python GIS + probability service"
+ },
+ {
+  "name": "area: auth",
+  "color": "0E8A16",
+  "description": "Command accounts, phone + OTP"
+ },
+ {
+  "name": "area: offline",
+  "color": "0E8A16",
+  "description": "Offline-first, sync, cached maps"
+ },
+ {
+  "name": "area: maps",
+  "color": "0E8A16",
+  "description": "Map provider, geocoding, polygons"
+ },
+ {
+  "name": "area: notifications",
+  "color": "0E8A16",
+  "description": "Push, alerts, messaging"
+ },
+ {
+  "name": "area: devops",
+  "color": "0E8A16",
+  "description": "CI/CD, environments, repo"
+ },
+ {
+  "name": "area: design",
+  "color": "0E8A16",
+  "description": "UX / UI design"
+ },
+ {
+  "name": "area: research",
+  "color": "0E8A16",
+  "description": "LPB / Koester research"
+ },
+ {
+  "name": "phase: V0 MVP",
+  "color": "FBCA04",
+  "description": "Search operations management system"
+ },
+ {
+  "name": "phase: V1 LPB",
+  "color": "F9D0C4",
+  "description": "Probability layer based on Lost Person Behavior"
+ },
+ {
+  "name": "phase: V2 Simulation",
+  "color": "C5DEF5",
+  "description": "Optional multi-agent search simulation"
+ },
+ {
+  "name": "phase: Future",
+  "color": "EDEDED",
+  "description": "Documented as future, not in MVP"
+ },
+ {
+  "name": "blocked",
+  "color": "B60205",
+  "description": "Waiting on something external"
+ },
+ {
+  "name": "needs-decision",
+  "color": "D93F0B",
+  "description": "Needs a team decision before work can start"
+ },
+ {
+  "name": "needs-qa",
+  "color": "F9D0C4",
+  "description": "Requires QA pass before Done"
+ },
+ {
+  "name": "needs-design",
+  "color": "D4C5F9",
+  "description": "Needs UX/UI design first"
+ },
+ {
+  "name": "good-first-task",
+  "color": "7057FF",
+  "description": "Small, well-scoped task"
+ },
+ {
+  "name": "breaking",
+  "color": "B60205",
+  "description": "Breaking API / schema change"
+ }
+]

@@ -1,0 +1,14 @@
+name: Open decision
+description: A decision the team must make before work can start
+labels: ["type: decision", "needs-decision"]
+body:
+  - type: textarea
+    id: question
+    attributes: {label: Decision needed}
+    validations: {required: true}
+  - type: textarea
+    id: options
+    attributes: {label: Options and trade-offs}
+  - type: input
+    id: owner
+    attributes: {label: Who decides, placeholder: "@handle"}

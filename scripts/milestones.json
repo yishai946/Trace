@@ -1,0 +1,30 @@
+[
+ {
+  "title": "V0-1 Foundation & Auth",
+  "description": "Repo, DB schema, API skeleton, command + field authentication"
+ },
+ {
+  "title": "V0-2 Mission & Polygons",
+  "description": "Mission creation, LKP/Rally Point, polygons, join, assignment, mission states"
+ },
+ {
+  "title": "V0-3 Field App & Tracking",
+  "description": "Field app, search status machine, GPS tracking, live monitoring, coverage"
+ },
+ {
+  "title": "V0-4 Reports, Messaging & SOS",
+  "description": "Reports, sightings, broadcast messages, SOS, notifications"
+ },
+ {
+  "title": "V0-5 Offline, History & Hardening",
+  "description": "Offline-first, history, QA against decision log, pilot prep"
+ },
+ {
+  "title": "V1 LPB Probability Layer",
+  "description": "Koester-based probability heat map over terrain"
+ },
+ {
+  "title": "V2 Multi-agent Simulation (optional)",
+  "description": "Only if V0/V1 finish on schedule"
+ }
+]

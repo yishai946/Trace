@@ -1,0 +1,21 @@
+name: Bug
+description: Something is broken
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: what
+    attributes: {label: What happened, description: Include expected vs actual behavior.}
+    validations: {required: true}
+  - type: textarea
+    id: steps
+    attributes: {label: Steps to reproduce}
+    validations: {required: true}
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where
+      options: [Command dashboard, Field app (iOS), Field app (Android), API, GIS service, Database]
+    validations: {required: true}
+  - type: textarea
+    id: ctx
+    attributes: {label: Logs / screenshots / device}

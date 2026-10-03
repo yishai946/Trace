@@ -1,0 +1,745 @@
+[
+ {
+  "title": "Scaffold monorepo (server / client / gis), lint, formatting, CI",
+  "body": "Express server, React client, Python GIS service folders; shared lint/format config; CI running lint + tests on PRs.\n\n**Priority:** P0 · **Size:** S\n\n**Source:** —\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: chore",
+   "area: devops",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P0",
+  "size": "S"
+ },
+ {
+  "title": "Database schema v1 on PostgreSQL + PostGIS",
+  "body": "Missions, polygons, participations, search tasks/assignments, routes, reports, messages, SOS, events. Include state enums for all status models.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log · statuses sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: database",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Express API skeleton: config, validation, error handling",
+  "body": "Env config, request validation, consistent error format, health endpoint, OpenAPI stub.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** —\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Command authentication: basic manager account",
+  "body": "Any Command account is an authorized manager and can create a mission.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q50, Q51\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: auth",
+   "area: backend",
+   "area: web-command",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Field authentication: phone number + OTP, persisted session",
+  "body": "No anonymous guest. Name + phone identity. Session persists across app restarts.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q48, Q49, Q68\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: auth",
+   "area: mobile-field",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Map provider integration: tiles + place/address search",
+  "body": "OpenStreetMap-based tiles and geocoding shared by dashboard and field app.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q2\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: maps",
+   "area: web-command",
+   "area: mobile-field",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Create mission form",
+  "body": "Name/ID, missing person details, photo, description/clothing, disappearance time, LKP. Creation makes the mission Active immediately (no draft).\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q1, Q66\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "LKP and Rally Point selection (map click / place search / coordinates)",
+  "body": "Rally Point is mandatory. Older LKPs are kept and faded, current one highlighted. System may suggest, manager decides.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q2, Q58, Q59, Q63, Q91, Q92\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: maps",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Polygon drawing and editing by manager",
+  "body": "Manual polygons, each an independent work unit; overlap allowed; warning when an edit puts searchers outside the new boundary; history kept after delete.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q3, Q4, Q35–Q38\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: maps",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Join flow: mission code + QR / link, duplicate join, rejoin",
+  "body": "Join allowed while Active; duplicate join returns existing participation; rejoin returns to Available.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q6, Q47, Q69, Q70, Q82, Q83\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: mobile-field",
+   "area: web-command",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Assign and reassign searchers to polygons",
+  "body": "Manager-only assignment; one active search task per searcher; reassignment ends the old task and requires a manual new Start Search.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q5, Q7, Q28, Q40\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Mission state machine: Active / Paused / Ended (Located | Stopped)",
+  "body": "Pause, resume, stop with reason, located with location + time. Safety tracking continues until Finish Activity.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q19, Q20, Q64, Q65, Q96, Q97\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: web-command",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Edit mission details and sync relevant changes to field",
+  "body": "Significant change to missing-person info produces an alert in the field app.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q34, Q94\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: backend",
+   "area: mobile-field",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-2 Mission & Polygons",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "Field app shell: join, Available state, assignment view",
+  "body": "Read-only missing-person info; no other searchers’ locations visible before or during search.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q31–Q33\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "phase: V0 MVP",
+   "needs-design"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Searcher status machine: Start / Pause / Resume / Finish Search",
+  "body": "Finish Search keeps the searcher Assigned to the polygon; only the manager sets Completed.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q8–Q10, Q71, Q100\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Background GPS tracking and permission flow",
+  "body": "Tracking in background / locked screen. Location, notification and camera permission handling; Start Search blocked until required permissions granted.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q42, Q43, Q73–Q76\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Live monitoring dashboard for active searchers",
+  "body": "Position, polygon, status, route, last update, connectivity, battery; lost-contact indication.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q13, Q44, Q45\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Polygon boundary-exit alerts",
+  "body": "Alert both searcher and manager. GPS tolerance is an open decision.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q14\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: mobile-field",
+   "area: web-command",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Coverage estimate engine",
+  "body": "Cumulative routes merged per polygon; only in-polygon portion counts; automatic only; Completed allowed at any %.\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** MVP Decision Log Q11, Q12, Q39, Q41, Q57, Q72, Q90\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: database",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P0",
+  "size": "XL"
+ },
+ {
+  "title": "Mark polygon Completed flow",
+  "body": "Confirmation ends tasks of assigned searchers and notifies them; routes and coverage preserved.\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log Q56, Q57\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P1",
+  "size": "S"
+ },
+ {
+  "title": "Field reports: categories, text, optional photo, auto GPS",
+  "body": "Five report categories; photo optional; visibility limited to own polygon + own reports.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q15, Q16, Q80, Q88\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Report handling UI: map + list, New → Handled, edit/delete",
+  "body": "Manager marks Handled; manager deletes; creator or manager edits; no version history.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q17, Q81, Q88, Q89\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Located report as critical alert",
+  "body": "Critical alert to manager; only the manager ends the mission after verification.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** MVP Decision Log Q18\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: notifications",
+   "area: web-command",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Sightings: manager and searcher can report",
+  "body": "Location + time + short description + source (me / eyewitness); shown on map immediately in MVP.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log Q60–Q62\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "area: web-command",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Broadcast messaging with delivery states",
+  "body": "Normal / Important / Critical; Sent → Read (→ Acknowledged for critical); to mission, polygon or individual; queued until delivery; no two-way chat.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q25–Q27, Q77\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: notifications",
+   "area: web-command",
+   "area: mobile-field",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "SOS flow and phone dialer",
+  "body": "SOS with identity + location, optional message; delivered to manager and searchers in the same polygon; prominent emergency call option.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q24, Q78, Q79, Q98, Q99\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "area: notifications",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Push notification infrastructure",
+  "body": "Provider selection and integration for iOS/Android.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** MVP Decision Log TBD list\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: notifications",
+   "area: backend",
+   "area: devops",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-4 Reports, Messaging & SOS",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Offline maps cached automatically after joining; readiness gate",
+  "body": "Start Search blocked until offline readiness.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log Q22, Q84, Q85\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: offline",
+   "area: mobile-field",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Offline local storage of GPS + reports, auto sync, conflict rules",
+  "body": "Searcher assignment locked while offline; LKP / Rally Point updates arrive on reconnect.\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** MVP Decision Log Q22, Q86, Q87, Q92\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: offline",
+   "area: mobile-field",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P0",
+  "size": "XL"
+ },
+ {
+  "title": "Command dashboard offline snapshot indicator",
+  "body": "Last snapshot shown with non-live indicator; operational actions disabled.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q93\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: offline",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "Mission history, timeline and field-side history (read-only)",
+  "body": "Ended missions open read-only with polygons, coverage, reports, searchers, routes, assignments and significant events.\n\n**Priority:** P1 · **Size:** L\n\n**Source:** MVP Decision Log Q52–Q54, Q95\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "area: mobile-field",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P1",
+  "size": "L"
+ },
+ {
+  "title": "Finish Activity / End participation",
+  "body": "Both searcher and manager can end participation; recommend Rally Point but allow confirm.\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log Q29, Q30\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: mobile-field",
+   "area: backend",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P1",
+  "size": "S"
+ },
+ {
+  "title": "Fixed-threshold coverage alerts",
+  "body": "Constants in MVP; configurable later.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log Q55\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "area: web-command",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "QA pass against the full decision log + e2e tests",
+  "body": "Trace every MVP decision to a test or manual check; record gaps.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** MVP Decision Log (all 100)\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: chore",
+   "area: devops",
+   "phase: V0 MVP",
+   "needs-qa"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Demo scenario and final-project documentation",
+  "body": "Realistic seeded mission, demo script, architecture and research write-up.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: docs",
+   "area: devops",
+   "phase: V0 MVP"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Decide: low-battery alert threshold",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "Decide: no-GPS duration before escalation",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "Decide: no-update duration before 'lost contact'",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "Decide: GPS tolerance around polygon boundary",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P2 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P2",
+  "size": "S"
+ },
+ {
+  "title": "Decide: coverage algorithm (buffer width, sampling, GPS jumps, route merge)",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P0 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-3 Field App & Tracking",
+  "priority": "P0",
+  "size": "S"
+ },
+ {
+  "title": "Decide: data retention and privacy policy",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P1 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-5 Offline, History & Hardening",
+  "priority": "P1",
+  "size": "S"
+ },
+ {
+  "title": "Decide: OTP, push and map providers + iOS/Android background-location limits",
+  "body": "Record the decision and rationale in the issue, then close.\n\n**Priority:** P0 · **Size:** S\n\n**Source:** MVP Decision Log · TBD sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: decision",
+   "area: backend",
+   "phase: V0 MVP",
+   "needs-decision"
+  ],
+  "milestone": "V0-1 Foundation & Auth",
+  "priority": "P0",
+  "size": "S"
+ },
+ {
+  "title": "Research: encode Koester LPB distance percentiles per subject category",
+  "body": "Public percentile tables as base weight function; document behavior trends per category.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal · LPB / ISRID\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: spike",
+   "area: research",
+   "area: gis-python",
+   "phase: V1 LPB"
+  ],
+  "milestone": "V1 LPB Probability Layer",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Ingest terrain data: roads, trails, water, elevation into PostGIS",
+  "body": "OSM-based terrain features usable by the model.\n\n**Priority:** P0 · **Size:** L\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: gis-python",
+   "area: database",
+   "phase: V1 LPB"
+  ],
+  "milestone": "V1 LPB Probability Layer",
+  "priority": "P0",
+  "size": "L"
+ },
+ {
+  "title": "Python GIS service skeleton + API contract with Express",
+  "body": "Service boundary, request/response contract, deployment.\n\n**Priority:** P0 · **Size:** M\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: gis-python",
+   "area: backend",
+   "phase: V1 LPB"
+  ],
+  "milestone": "V1 LPB Probability Layer",
+  "priority": "P0",
+  "size": "M"
+ },
+ {
+  "title": "Probability model: base weights + terrain distortion",
+  "body": "Behavior-profile-to-terrain weights are engineered parameters, documented and justified in writing.\n\n**Priority:** P0 · **Size:** XL\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: gis-python",
+   "phase: V1 LPB"
+  ],
+  "milestone": "V1 LPB Probability Layer",
+  "priority": "P0",
+  "size": "XL"
+ },
+ {
+  "title": "Heat map layer in dashboard, updated by new sightings",
+  "body": "Replaces the generic search circle.\n\n**Priority:** P1 · **Size:** L\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: web-command",
+   "phase: V1 LPB"
+  ],
+  "milestone": "V1 LPB Probability Layer",
+  "priority": "P1",
+  "size": "L"
+ },
+ {
+  "title": "Validate model on sample cases and tune parameters",
+  "body": "Sanity checks and documented limitations.\n\n**Priority:** P1 · **Size:** M\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: spike",
+   "area: research",
+   "area: gis-python",
+   "phase: V1 LPB"
+  ],
+  "milestone": "V1 LPB Probability Layer",
+  "priority": "P1",
+  "size": "M"
+ },
+ {
+  "title": "Multi-agent search simulation over probability map (optional)",
+  "body": "Only if V0/V1 are on schedule.\n\n**Priority:** P3 · **Size:** XL\n\n**Source:** Project proposal\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: gis-python",
+   "phase: V2 Simulation"
+  ],
+  "milestone": "V2 Multi-agent Simulation (optional)",
+  "priority": "P3",
+  "size": "XL"
+ },
+ {
+  "title": "Sector leader role and hierarchical permissions",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Multiple managers per mission (primary / secondary)",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Automatic polygon suggestions and Search Area → Sectors",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Sighting verification step before it becomes operational",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Per-searcher coverage contribution",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Mesh / device-to-device / delay-tolerant networking",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Richer report workflow (Under Review / Rejected / manager notes)",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ },
+ {
+  "title": "Organization-level permissions and manager approval",
+  "body": "Documented as future; not part of MVP.\n\n**Priority:** P3 · **Size:** L\n\n**Source:** MVP Decision Log · future sheet\n\n**Done when**\n- [ ] Implemented and demoed\n- [ ] Tests added\n- [ ] Verified against the decision log\n",
+  "labels": [
+   "type: feature",
+   "area: backend",
+   "phase: Future"
+  ],
+  "milestone": null,
+  "priority": "P3",
+  "size": "L"
+ }
+]
