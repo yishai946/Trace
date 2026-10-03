@@ -20,4 +20,6 @@ Search-and-rescue coordination platform for missing-person operations: real-time
 gh auth refresh -s project,repo,workflow
 TRACE_PROJECT_PAT=<pat with project+repo scopes> ./scripts/setup-project.sh
 ```
+Permissions and merge rules: `TRACE_DANIEL=<handle> TRACE_SEGEV=<handle> ./scripts/setup-repo-settings.sh`
+
 `scripts/*.json` hold the label, milestone and issue seed data used to bootstrap this repo.
