@@ -6,7 +6,7 @@ Before completing any code change, run `pnpm format` and `pnpm lint`, fix releva
 
 # Branches
 
-Never commit to `main` or `dev`. Before the first edit of a new feature, fix or change, check the current branch; if it is `main`, `dev` or a branch for different work, create a new branch from an up-to-date `dev` (`git switch dev && git pull && git switch -c <type>/<scope>/<area>/.../<change>`). Name it by the rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#branches), e.g. `fix/command/map/polygons/create`. Pull Requests target `dev`.
+Never commit to `main` or `dev`. Before the first edit of a new feature, fix or change, check the current branch; if it is `main`, `dev` or a branch for different work, create a new branch from an up-to-date `dev` (`git switch dev && git pull && git switch -c <type>/<scope>/<area>/.../<change>`). Name it by the rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#branches), e.g. `fix/command/map/polygons/create`. Pull Requests target `dev`, with a title in commit-convention form; they are squash-merged. Only a release Pull Request from `dev` into `main` uses a merge commit.
 
 # Workspaces
 
