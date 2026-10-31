@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@trace/api", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "command",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@trace/command", "dev"],
+      "port": 5173
+    }
+  ]
+}

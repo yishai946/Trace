@@ -1,0 +1,25 @@
+{
+  "v": 3,
+  "assetGroups": {},
+  "blobs": {},
+  "createdOnFiles": {
+    "at": "2026-10-03T01:14:00Z",
+    "v": 1
+  },
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "groups": [],
+  "lastChange": {
+    "at": "2026-10-30T12:50:00Z",
+    "by": "Yishai",
+    "note": "עדכון לפי ביקורת Hallmark: גבולות שדות, ניגודיות על raised, מצבי active/disabled, בלי נקודות אמצע, אירועים עם אייקון, כריכה חדשה",
+    "via": "Claude"
+  },
+  "layout": "files",
+  "libraries": [],
+  "namespace": "TraceConsole",
+  "sections": {},
+  "title": "Trace Console"
+}

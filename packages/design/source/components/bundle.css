@@ -1,0 +1,149 @@
+/* Hallmark · checked: 2026-10-30 · genre: modern-minimal (inferred)
+ * floor: 0 FAIL · fixed: field borders, :active/:disabled, spacing scale, map labels, status dots, middle dots
+ * built: the project · redesign: polish · v2.0.0 */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap');
+
+/* Trace Console — CSS-only component layer. Every color, radius and length comes from tokens.css. */
+.tc{font-family:var(--font-sans);font-size:13px;line-height:1.45;color:var(--ink);font-variant-numeric:tabular-nums;direction:rtl}
+.tc *,.tc *::before,.tc *::after{box-sizing:border-box}
+.tc button{font:inherit;cursor:pointer}
+.tc a{color:var(--accent)}
+.tc :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+
+/* Floating panel */
+.tc-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-panel);overflow:hidden}
+.tc-panel__section{padding:var(--space-6) var(--space-7);border-bottom:1px solid var(--border-subtle)}
+.tc-panel__section:last-child{border-bottom:0}
+.tc-panel__label{font-size:12px;color:var(--ink-muted);margin-bottom:var(--space-2)}
+
+/* Buttons */
+.tc-btn{height:var(--control-h);padding:0 var(--space-6);border-radius:var(--radius-md);border:1px solid var(--border-strong);background:transparent;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:var(--space-3);white-space:nowrap}
+.tc-btn:hover{background:var(--surface-hover)}
+.tc-btn:active{background:var(--surface-raised);transform:translateY(1px)}
+.tc-btn:disabled,.tc-btn[aria-disabled="true"]{opacity:.45;cursor:not-allowed;transform:none}
+.tc-btn--primary{background:var(--primary);color:var(--on-primary);border-color:transparent;font-weight:600}
+.tc-btn--primary:hover{background:var(--primary);opacity:.92}
+.tc-btn--primary:active{background:var(--primary);opacity:.8}
+.tc-btn--danger{background:var(--danger);color:var(--on-danger);border-color:transparent;font-weight:700}
+.tc-btn--danger:hover{background:var(--danger);opacity:.92}
+.tc-btn--danger:active{background:var(--danger);opacity:.8}
+.tc-btn--danger-ghost{border-color:var(--danger-border);color:var(--danger-ink-soft)}
+.tc-btn--sm{height:var(--control-h-sm);padding:0 var(--space-6)}
+.tc-btn--icon{width:var(--control-h);padding:0;border-color:transparent;color:var(--ink-secondary)}
+.tc-btn--icon[aria-pressed="true"]{background:var(--surface-raised);color:var(--ink)}
+.tc-btn svg{width:16px;height:16px;flex:0 0 auto}
+
+/* Segmented tabs */
+.tc-seg{display:flex;padding:var(--space-2);border-radius:var(--radius-lg);background:var(--surface-sunken)}
+.tc-seg__tab{flex:1;height:var(--segment-h);border:0;border-radius:var(--radius-md);background:transparent;color:var(--ink-secondary)}
+.tc-seg__tab:active{background:var(--surface-hover)}
+.tc-seg__tab[aria-selected="true"],.tc-seg__tab[aria-current="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600}
+
+/* Callsign chip */
+.tc-callsign{min-width:26px;height:20px;padding:0 4px;border-radius:var(--radius-sm);background:var(--chip);color:var(--ink);font-size:11px;font-weight:700;line-height:20px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tc-callsign--sos{background:var(--danger);color:var(--on-danger)}
+.tc-callsign--waiting{background:transparent;border:1px dashed var(--border-strong);color:var(--ink-secondary)}
+.tc-callsign--offline{color:var(--ink-muted)}
+
+/* Unit row */
+.tc-unit{display:flex;align-items:center;gap:var(--space-5);min-height:34px;padding:var(--space-3) var(--space-4);border-radius:var(--radius-md)}
+.tc-unit:hover{background:var(--surface-hover)}
+.tc-unit:active{background:var(--surface-raised)}
+.tc-unit__body{flex:1;min-width:0}
+.tc-unit__status{display:flex;gap:var(--space-4);font-size:11.5px;color:var(--ink-muted)}
+.tc-unit__sub{color:var(--ink-muted)}
+.tc-unit__status--warn{color:var(--warning)}
+.tc-unit__status--danger{color:var(--danger-ink)}
+.tc-unit__meta{font-size:11.5px;color:var(--ink-muted)}
+.tc-unit__meta--warn{color:var(--warning);font-weight:600}
+.tc-unit--sos{background:var(--danger-tint);box-shadow:inset 0 0 0 1px var(--danger-border)}
+.tc-unit--sos .tc-unit__name{font-weight:600}
+.tc-unit--selected{background:var(--surface-raised)}
+.tc-unit--offline .tc-unit__name{color:var(--ink-secondary)}
+
+/* Polygon group header + meter */
+.tc-group{display:flex;align-items:center;gap:var(--space-4);padding:var(--space-5) var(--space-4) var(--space-3);font-size:12px;color:var(--ink-muted)}
+.tc-group__title{color:var(--ink);font-weight:600}
+.tc-meter{flex:1;height:3px;border-radius:2px;background:var(--track);overflow:hidden}
+.tc-meter__fill{height:100%;background:var(--accent)}
+.tc-meter__fill--done{background:var(--ink-muted)}
+
+/* Alert banner */
+.tc-alert{display:flex;align-items:center;gap:var(--space-6);padding:var(--space-5) var(--space-6);background:var(--danger-surface);border:1px solid var(--danger-border);border-radius:var(--radius-xl);box-shadow:var(--shadow-panel);color:var(--ink)}
+.tc-alert__tag{padding:2px 8px;border-radius:var(--radius-sm);background:var(--danger);color:var(--on-danger);font-weight:700;font-size:12px}
+.tc-alert__text{flex:1;min-width:0}
+.tc-alert__detail{display:inline-flex;flex-wrap:wrap;gap:var(--space-2) var(--space-4);margin-inline-start:var(--space-4);color:var(--danger-ink-soft)}
+
+/* App bar + command search */
+.tc-appbar{height:var(--header-h);display:flex;align-items:center;gap:var(--space-5);padding:0 var(--space-4);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-panel)}
+.tc-appbar__brand{display:flex;align-items:center;gap:var(--space-4);font-weight:700;font-size:14px;padding:0 var(--space-3)}
+.tc-appbar__sep{width:1px;height:24px;background:var(--border-strong)}
+.tc-appbar__mission{height:var(--control-h);padding:0 var(--space-5);border:0;border-radius:var(--radius-md);background:var(--surface-hover);color:var(--ink);display:flex;align-items:center;gap:var(--space-4)}
+.tc-appbar__meta{display:flex;gap:var(--space-6);color:var(--ink-muted);white-space:nowrap}
+.tc-appbar__sub{color:var(--ink-muted)}
+.tc-d+.tc-d{margin-inline-start:var(--space-4);color:var(--ink-muted)}
+.tc-appbar__meta b{color:var(--ink);font-weight:600}
+.tc-appbar__actions{display:flex;gap:var(--space-3);margin-inline-start:auto}
+.tc-search{height:var(--control-h);display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-5);border-radius:var(--radius-md);background:var(--surface-sunken);border:1px solid var(--border-field);color:var(--ink-muted)}
+.tc-search input{flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:inherit;outline:none}
+.tc-search input::placeholder{color:var(--ink-muted)}
+.tc-kbd{font-size:11px;color:var(--ink-muted);border:1px solid var(--border-strong);border-radius:var(--radius-sm);padding:var(--space-1) var(--space-3);direction:ltr;font-family:inherit}
+
+/* Status dot: only beside the mission name (live state). Event severity uses .tc-event__i + a word. */
+.tc-dot{width:7px;height:7px;border-radius:50%;flex:0 0 auto;display:inline-block}
+.tc-dot--ok{background:var(--success)}
+
+/* Event list */
+.tc-events{display:flex;flex-direction:column;gap:var(--space-4)}
+.tc-event{display:flex;gap:var(--space-4);align-items:baseline}
+.tc-event__i{width:14px;height:14px;flex:0 0 auto;align-self:center}
+.tc-event__i--warn{color:var(--warning)}.tc-event__i--danger{color:var(--danger-ink)}.tc-event__i--accent{color:var(--accent)}.tc-event__i--ink{color:var(--ink)}
+.tc-event__text{flex:1;min-width:0}
+.tc-event__time{color:var(--ink-muted)}
+
+/* Inspector */
+.tc-inspector__head{display:flex;align-items:center;gap:var(--space-5)}
+.tc-inspector__name{font-size:14px;font-weight:600}
+.tc-inspector__sub{font-size:12px;color:var(--ink-muted)}
+.tc-dl{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-5) var(--space-6)}
+.tc-dl dt{font-size:11.5px;color:var(--ink-muted)}
+.tc-dl dd{margin:0}
+.tc-dl .tc-dl__wide{grid-column:1/-1}
+.tc-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3)}
+.tc-activity{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--space-4)}
+.tc-activity li{display:flex;gap:var(--space-5)}
+.tc-activity time{color:var(--ink-muted);width:38px;flex:0 0 auto}
+.tc-activity__danger{color:var(--danger-ink)}
+
+/* Map toolbar */
+.tc-toolbar{display:inline-flex;align-items:center;gap:var(--space-1);padding:var(--space-2);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xl);box-shadow:var(--shadow-panel)}
+.tc-toolbar__sep{width:1px;height:22px;background:var(--border-strong);margin:0 var(--space-2)}
+
+/* Map symbols (SVG) */
+.tc-map{background:var(--map-ground)}
+.tc-poly--active{fill:var(--accent);fill-opacity:.1;stroke:var(--accent);stroke-width:1.6}
+.tc-poly--active-b{fill:var(--accent);fill-opacity:.07;stroke:var(--accent);stroke-width:1.6}
+.tc-poly--done{fill:var(--ink-muted);fill-opacity:.08;stroke:var(--ink-muted);stroke-width:1.2}
+.tc-poly--open{fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:5 4}
+.tc-route{fill:none;stroke:var(--accent);stroke-width:1.3;stroke-opacity:.45;stroke-linejoin:round}
+.tc-tag{fill:var(--surface);stroke:var(--accent);stroke-opacity:.5}
+.tc-tag--done{stroke:var(--ink-muted)}
+.tc-tag__text{fill:var(--ink);font-family:var(--font-sans);font-size:11px;font-weight:600}
+.tc-sym-unit{fill:var(--accent);stroke:var(--map-halo);stroke-width:2}
+.tc-sym-unit--warn{fill:var(--warning)}
+.tc-sym-unit--offline{fill:none;stroke:var(--ink-muted);stroke-width:1.5;stroke-dasharray:2 2}
+.tc-sym-unit--sos{fill:var(--danger)}
+.tc-sym-ring{fill:var(--danger);fill-opacity:.18;stroke:var(--danger);stroke-width:1.2}
+.tc-sym-label{fill:var(--ink);font-family:var(--font-sans);font-size:11px;font-weight:700}
+.tc-sym-label--warn{fill:var(--warning)}.tc-sym-label--danger{fill:var(--danger)}.tc-sym-label--muted{fill:var(--ink-muted)}
+.tc-sym-lkp{fill:none;stroke:var(--ink);stroke-width:1.5}
+.tc-sym-lkp-flag{fill:var(--ink)}
+.tc-sym-lkp-text{fill:var(--map-halo);font-family:var(--font-sans);font-size:11px;font-weight:700}
+.tc-sym-sighting{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.tc-sym-rally{fill:var(--surface);stroke:var(--success);stroke-width:1.5}
+.tc-sym-rally-flag{fill:var(--success);stroke:var(--success);stroke-width:1;stroke-linejoin:round}
+.tc-sym-report{fill:var(--surface);stroke:var(--ink);stroke-width:1.3}
+.tc-sym-hazard{fill:var(--surface);stroke:var(--warning);stroke-width:1.4;stroke-linejoin:round}
+.tc-sym-lkp-old{fill:none;stroke:var(--ink-faint);stroke-width:1.2}
+.tc-map-text{fill:var(--ink-muted);font-family:var(--font-sans);font-size:11px}
+.tc-map-text--water{fill:var(--water);font-size:11px}

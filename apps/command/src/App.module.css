@@ -1,0 +1,59 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 100%;
+  padding: var(--space-6);
+}
+
+.appbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: var(--header-h);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.brand {
+  padding-inline: var(--space-3);
+  font: var(--text-title);
+  font-weight: 700;
+}
+
+.status {
+  color: var(--ink-muted);
+}
+
+.status[data-state='ok'] {
+  color: var(--success);
+}
+
+.status[data-state='error'] {
+  color: var(--warning);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-inline-start: auto;
+}
+
+.panel {
+  width: var(--panel-start-w);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}

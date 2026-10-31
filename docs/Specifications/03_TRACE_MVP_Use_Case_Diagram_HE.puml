@@ -1,0 +1,41 @@
+@startuml
+right to left direction
+skinparam packageStyle rectangle
+actor "מנהל מסע חיפוש" as Commander
+actor "מחפש שטח" as Searcher
+rectangle "TRACE" {
+  usecase "יצירת וניהול מסע" as UC1
+  usecase "ניהול LKP ותצפיות" as UC2
+  usecase "ניהול פוליגונים ו-Coverage" as UC3
+  usecase "שיבוץ וניהול מחפשים" as UC4
+  usecase "דיווחים, הודעות ו-SOS" as UC5
+  usecase "Pause / Resume / End" as UC6
+  usecase "ניטור, Timeline והיסטוריה" as UC7
+  usecase "כניסה והצטרפות למסע" as UF1
+  usecase "קבלת שיבוץ והתחלת חיפוש" as UF2
+  usecase "מעקב GPS ו-Offline" as UF3
+  usecase "Pause / Finish Search" as UF4
+  usecase "דיווחים ותצפיות" as UF5
+  usecase "הודעות ו-SOS" as UF6
+  usecase "סיום פעילות והיסטוריה" as UF7
+  usecase "Coverage Estimate אוטומטי" as US1
+  usecase "התראות בטיחות וקישוריות" as US2
+}
+Commander --> UC1
+Commander --> UC2
+Commander --> UC3
+Commander --> UC4
+Commander --> UC5
+Commander --> UC6
+Commander --> UC7
+Searcher --> UF1
+Searcher --> UF2
+Searcher --> UF3
+Searcher --> UF4
+Searcher --> UF5
+Searcher --> UF6
+Searcher --> UF7
+UC3 ..> US1 : <<include>>
+UF2 ..> US1 : <<include>>
+UF3 ..> US2 : <<include>>
+@enduml

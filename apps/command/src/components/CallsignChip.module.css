@@ -1,0 +1,28 @@
+.chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 20px;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--chip);
+  color: var(--ink);
+  font: var(--text-callsign);
+}
+
+.sos {
+  background-color: var(--danger);
+  color: var(--on-danger);
+}
+
+.waiting {
+  border: 1px dashed var(--border-strong);
+  background-color: transparent;
+  color: var(--ink-secondary);
+}
+
+.offline {
+  color: var(--ink-muted);
+}
