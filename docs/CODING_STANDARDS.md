@@ -127,13 +127,15 @@ All contributors and coding assistants should preserve existing behavior, follow
 - Every feature, fix or change, by a team member or an AI agent, gets its own branch created from an up-to-date `dev`:
   ```bash
   git switch dev && git pull
-  git switch -c feat/uc-c06-polygon-editor
+  git switch -c fix/command/map/polygons/create
   ```
-- Branch names follow `<type>/<short-description>`:
+- Branch names are a path from the general to the specific: `<type>/<scope>/<area>/.../<change>`.
   - `<type>` is one of the commit types above: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
-  - `<short-description>` is lowercase `kebab-case` English, 2 to 5 words.
-  - When the work implements a use case from the specification, start the description with its ID: `feat/uc-f13-sos-button`, `fix/uc-s03-duplicate-sync`.
-  - Examples: `feat/uc-c02-create-mission`, `fix/battery-level-rounding`, `chore/upgrade-expo`, `docs/branch-workflow`.
+  - `<scope>` is the workspace the change lives in: `command`, `field`, `api`, `design`, `domain`, `schemas`, or `repo` for root-level tooling, CI and docs. A change that spans workspaces uses the main one.
+  - Then one segment per level of the feature area, down to the specific change, e.g. `map/polygons/create`.
+  - Every segment is lowercase English `kebab-case`.
+  - Examples: `fix/command/map/polygons/create`, `feat/field/sos/activate`, `feat/api/missions/pause`, `chore/repo/upgrade-expo`, `docs/repo/branch-workflow`.
+- Git cannot hold a branch that is a prefix of another branch (`fix/command/map` next to `fix/command/map/polygons/create`). Always name the branch down to the specific change, never stop at an area.
 - One branch per feature or fix. Do not mix unrelated work in one branch.
 - Before opening a Pull Request, update the branch from `dev` and run `pnpm check`. Open the Pull Request into `dev`.
 - Releases go from `dev` to `main` through a Pull Request.
