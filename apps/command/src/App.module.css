@@ -1,12 +1,12 @@
 .screen {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-  min-height: 100%;
-  padding: var(--space-6);
+  position: relative;
+  height: 100%;
 }
 
 .appbar {
+  position: absolute;
+  top: var(--space-6);
+  inset-inline: var(--space-6);
   display: flex;
   align-items: center;
   gap: var(--space-5);
@@ -36,24 +36,20 @@
   color: var(--warning);
 }
 
+.search {
+  margin-inline: auto;
+}
+
 .actions {
   display: flex;
   gap: var(--space-3);
-  margin-inline-start: auto;
 }
 
-.panel {
-  width: var(--panel-start-w);
-  padding-block: var(--space-6);
-  padding-inline: var(--space-7);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  background-color: var(--surface);
-  box-shadow: var(--shadow-panel);
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
+.setup {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-7);
+  color: var(--ink-secondary);
 }

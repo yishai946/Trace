@@ -14,10 +14,17 @@
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
     "@trace/domain": "workspace:*",
+    "@trace/geo": "workspace:*",
+    "@trace/map": "workspace:*",
     "@trace/schemas": "workspace:*",
+    "maplibre-contour": "^0.1.1",
+    "maplibre-gl": "^6.16.0",
     "react": "^19.3.1",
     "react-aria-components": "^1.22.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "terra-draw": "^1.39.0",
+    "terra-draw-maplibre-gl-adapter": "^1.5.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.1",

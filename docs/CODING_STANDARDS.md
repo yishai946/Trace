@@ -131,7 +131,7 @@ All contributors and coding assistants should preserve existing behavior, follow
   ```
 - Branch names are a path from the general to the specific: `<type>/<scope>/<area>/.../<change>`.
   - `<type>` is one of the commit types above: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
-  - `<scope>` is the workspace the change lives in: `command`, `field`, `api`, `design`, `domain`, `schemas`, or `repo` for root-level tooling, CI and docs. A change that spans workspaces uses the main one.
+  - `<scope>` is the workspace the change lives in: `command`, `field`, `api`, `design`, `domain`, `schemas`, `geo`, `map`, or `repo` for root-level tooling, CI and docs. A change that spans workspaces uses the main one.
   - Then one segment per level of the feature area, down to the specific change, e.g. `map/polygons/create`.
   - Every segment is lowercase English `kebab-case`.
   - Examples: `fix/command/map/polygons/create`, `feat/field/sos/activate`, `feat/api/missions/pause`, `chore/repo/upgrade-expo`, `docs/repo/branch-workflow`.

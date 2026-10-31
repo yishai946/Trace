@@ -1,0 +1,42 @@
+.tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.tool[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.tool[data-pressed] {
+  transform: translateY(1px);
+}
+
+.tool[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+}
+
+.tool[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tool[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tool svg {
+  width: 16px;
+  height: 16px;
+}
