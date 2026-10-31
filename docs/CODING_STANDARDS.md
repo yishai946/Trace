@@ -121,6 +121,24 @@ All contributors and coding assistants should preserve existing behavior, follow
   - `chore:` tooling, dependency, or maintenance change
 - Write concise, imperative commit descriptions, for example: `fix: validate webhook signature`.
 
+### Branches
+
+- `main` is the released code. `dev` is the integration branch. Nobody commits directly to either.
+- Every feature, fix or change, by a team member or an AI agent, gets its own branch created from an up-to-date `dev`:
+  ```bash
+  git switch dev && git pull
+  git switch -c feat/uc-c06-polygon-editor
+  ```
+- Branch names follow `<type>/<short-description>`:
+  - `<type>` is one of the commit types above: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
+  - `<short-description>` is lowercase `kebab-case` English, 2 to 5 words.
+  - When the work implements a use case from the specification, start the description with its ID: `feat/uc-f13-sos-button`, `fix/uc-s03-duplicate-sync`.
+  - Examples: `feat/uc-c02-create-mission`, `fix/battery-level-rounding`, `chore/upgrade-expo`, `docs/branch-workflow`.
+- One branch per feature or fix. Do not mix unrelated work in one branch.
+- Before opening a Pull Request, update the branch from `dev` and run `pnpm check`. Open the Pull Request into `dev`.
+- Releases go from `dev` to `main` through a Pull Request.
+- Delete the branch after it is merged.
+
 ---
 
 ## 12. Tooling and Enforcement

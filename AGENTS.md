@@ -4,6 +4,10 @@ Before editing, read [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md) and 
 
 Before completing any code change, run `pnpm format` and `pnpm lint`, fix relevant findings, then rerun both commands until they pass. Report checks that cannot run or fail for pre-existing reasons.
 
+# Branches
+
+Never commit to `main` or `dev`. Before the first edit of a new feature, fix or change, check the current branch; if it is `main`, `dev` or a branch for different work, create a new branch from an up-to-date `dev` (`git switch dev && git pull && git switch -c <type>/<short-description>`). Name it by the rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#branches), e.g. `feat/uc-f13-sos-button`. Pull Requests target `dev`.
+
 # Workspaces
 
 pnpm monorepo: deployable apps go in `apps/*` (e.g. `@trace/api`, `@trace/command`, `@trace/field`), shared code goes in `packages/*` (e.g. `@trace/domain` for pure business rules, `@trace/schemas` for request/response validation shared by client and server). Packages never import from apps. Every `tsconfig.json` extends `tsconfig.base.json`.
