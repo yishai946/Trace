@@ -7,7 +7,7 @@ import { fontWeights } from './packages/design/scripts/lint-values.mjs';
 
 // Raw design values that must come from @trace/design instead.
 const RAW_COLOR = String.raw`/#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-mix)\(/`;
-const COLOR_KEYWORDS = '/^(transparent|inherit|currentColor|currentcolor)$/';
+const COLOR_KEYWORDS = '/^(transparent|inherit|currentColor|currentcolor|none)$/';
 const STYLE_KEYS =
   '/^(fontSize|lineHeight|fontFamily|letterSpacing|(border\\w*)?[rR]adius|margin\\w*|padding\\w*|gap|rowGap|columnGap|boxShadow|shadow\\w*|elevation)$/';
 // Font weights have no tokens; only the weights used by the design system's text styles are allowed.

@@ -1,0 +1,78 @@
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--map-ground);
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+.toolbar {
+  position: absolute;
+  bottom: var(--space-6);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.zoom {
+  position: absolute;
+  bottom: var(--space-6);
+  inset-inline-end: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.coords {
+  position: absolute;
+  bottom: var(--space-6);
+  inset-inline-start: var(--space-6);
+  display: flex;
+  gap: var(--space-5);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+
+.itm {
+  color: var(--ink-muted);
+}
+
+.hint {
+  position: absolute;
+  bottom: calc(var(--space-6) + var(--header-h));
+  left: 50%;
+  margin: 0;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-5);
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  white-space: nowrap;
+}
+
+/* MapLibre's attribution control, in Trace Console colors. */
+.root :global(.maplibregl-ctrl-attrib) {
+  background-color: var(--surface);
+  color: var(--ink-muted);
+}
+
+.root :global(.maplibregl-ctrl-attrib a) {
+  color: var(--ink-muted);
+}

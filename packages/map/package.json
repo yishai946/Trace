@@ -1,0 +1,21 @@
+{
+  "name": "@trace/map",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@maplibre/maplibre-gl-style-spec": "^26.5.0",
+    "@trace/design": "workspace:*",
+    "@trace/domain": "workspace:*",
+    "@trace/geo": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16",
+    "vitest": "^5.0.5"
+  }
+}
