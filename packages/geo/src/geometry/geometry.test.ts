@@ -1,6 +1,6 @@
 import type { Polygon } from 'geojson';
 import { describe, expect, it } from 'vitest';
-import { areaSquareMeters, boundsOf, distanceOutsideMeters, findOutside, isInsidePolygon, isSimplePolygon } from '.';
+import { areaSquareMeters, boundsOf, distanceOutsideMeters, findOutside, isInsidePolygon, isValidPolygon } from '.';
 
 describe('geometry', () => {
   // About 1.1 km x 1.1 km near Jerusalem.
@@ -47,8 +47,8 @@ describe('geometry', () => {
     expect(boundsOf(square)).toEqual([35.0, 31.7, 35.01, 31.71]);
   });
 
-  it('detects a boundary that crosses itself', () => {
-    expect(isSimplePolygon(square)).toBe(true);
+  it('rejects a boundary that crosses itself', () => {
+    expect(isValidPolygon(square)).toBe(true);
     const bowtie: Polygon = {
       type: 'Polygon',
       coordinates: [
@@ -61,6 +61,41 @@ describe('geometry', () => {
         ],
       ],
     };
-    expect(isSimplePolygon(bowtie)).toBe(false);
+    expect(isValidPolygon(bowtie)).toBe(false);
+  });
+
+  it('accepts a hole inside the outer ring and rejects one outside it', () => {
+    const outer = square.coordinates[0] ?? [];
+    const hole = [
+      [35.002, 31.702],
+      [35.004, 31.702],
+      [35.004, 31.704],
+      [35.002, 31.702],
+    ];
+    const outside = [
+      [35.02, 31.72],
+      [35.03, 31.72],
+      [35.03, 31.73],
+      [35.02, 31.72],
+    ];
+    expect(isValidPolygon({ type: 'Polygon', coordinates: [outer, hole] })).toBe(true);
+    expect(isValidPolygon({ type: 'Polygon', coordinates: [outer, outside] })).toBe(false);
+  });
+
+  it('rejects a hole inside another hole', () => {
+    const outer = square.coordinates[0] ?? [];
+    const bigHole = [
+      [35.001, 31.701],
+      [35.009, 31.701],
+      [35.009, 31.709],
+      [35.001, 31.701],
+    ];
+    const smallHole = [
+      [35.006, 31.703],
+      [35.007, 31.703],
+      [35.007, 31.704],
+      [35.006, 31.703],
+    ];
+    expect(isValidPolygon({ type: 'Polygon', coordinates: [outer, bigHole, smallHole] })).toBe(false);
   });
 });

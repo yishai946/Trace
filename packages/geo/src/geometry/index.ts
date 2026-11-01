@@ -3,7 +3,7 @@ import turfBbox from '@turf/bbox';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import kinks from '@turf/kinks';
 import pointToPolygonDistance from '@turf/point-to-polygon-distance';
-import type { GeoJSON } from 'geojson';
+import type { GeoJSON, Position } from 'geojson';
 import type { Bounds, LngLat, Polygon } from '../types';
 
 export function isInsidePolygon(point: LngLat, polygon: Polygon): boolean {
@@ -39,7 +39,17 @@ export function boundsOf(geojson: GeoJSON): Bounds {
   return [west, south, east, north] as Bounds;
 }
 
-/** A polygon whose boundary does not cross itself. Drawing already blocks this; the server checks it again. */
-export function isSimplePolygon(polygon: Polygon): boolean {
-  return kinks(polygon).features.length === 0;
+/**
+ * A valid search area: no ring crosses itself or another ring, every hole lies inside the outer ring, and no hole lies
+ * inside another hole. Drawing already blocks crossings; the server checks again before saving.
+ */
+export function isValidPolygon(polygon: Polygon): boolean {
+  if (kinks(polygon).features.length > 0) return false;
+  const [shell, ...holes] = polygon.coordinates;
+  if (!shell) return false;
+  const ringPolygon = (ring: Position[]): Polygon => ({ type: 'Polygon', coordinates: [ring] });
+  // Rings do not cross (checked above), so testing every vertex is enough to know where a ring lies.
+  const within = (ring: Position[], container: Position[]) =>
+    ring.every((point) => booleanPointInPolygon(point, ringPolygon(container)));
+  return holes.every((hole, i) => within(hole, shell) && holes.every((other, j) => i === j || !within(hole, other)));
 }

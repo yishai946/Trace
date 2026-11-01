@@ -1,5 +1,5 @@
 import { canChangePolygons, isActiveInPolygon, isMissionEnded } from '@trace/domain';
-import { boundsOf, findOutside, isSimplePolygon, type LngLat, type Polygon } from '@trace/geo';
+import { boundsOf, findOutside, isValidPolygon, type LngLat, type Polygon } from '@trace/geo';
 import { emptyMissionMapData, type MapProvider } from '@trace/map';
 import {
   HealthResponse,
@@ -287,7 +287,7 @@ function MissionWorkspace({ provider, focus, mission, polygons, participants, th
           <BoundaryEditBar
             letter={selected.letter}
             outside={outside}
-            invalid={!isSimplePolygon(edit.draft)}
+            invalid={!isValidPolygon(edit.draft)}
             busy={busy}
             error={error}
             onCancel={() => {

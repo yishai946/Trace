@@ -91,6 +91,23 @@ describe('polygons', () => {
       expect(errorCode(res)).toBe('INVALID_GEOMETRY');
     });
 
+    it('rejects a hole outside the outer ring', async () => {
+      const outer = AREA.coordinates[0] ?? [];
+      const farHole = [
+        [35.2, 31.9],
+        [35.21, 31.9],
+        [35.21, 31.91],
+        [35.2, 31.9],
+      ];
+      const res = await ctx.app.inject({
+        method: 'POST',
+        url: url(),
+        payload: { geometry: { type: 'Polygon', coordinates: [outer, farHole] } },
+      });
+      expect(res.statusCode).toBe(400);
+      expect(errorCode(res)).toBe('INVALID_GEOMETRY');
+    });
+
     it('rejects an open ring', async () => {
       const open = { type: 'Polygon', coordinates: [AREA.coordinates[0]?.slice(0, 4)] };
       const res = await ctx.app.inject({ method: 'POST', url: url(), payload: { geometry: open } });
