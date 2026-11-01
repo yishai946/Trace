@@ -80,7 +80,7 @@ export function PolygonInspector({
       <div className={styles.section}>
         <dl className={styles.facts}>
           <div>
-            <dt>Coverage (אוטומטי)</dt>
+            <dt>כיסוי שטח האזור</dt>
             <dd>{polygon.coverage === null ? 'טרם חושב' : `${Math.round(polygon.coverage)}%`}</dd>
           </div>
           <div>
@@ -108,7 +108,7 @@ export function PolygonInspector({
                 <Button onPress={() => setConfirmingDelete(false)} isDisabled={busy}>
                   בטל
                 </Button>
-                <Button onPress={onDelete} isDisabled={busy}>
+                <Button variant="danger" onPress={onDelete} isDisabled={busy}>
                   מחק פוליגון
                 </Button>
               </div>
@@ -118,8 +118,12 @@ export function PolygonInspector({
               <Button variant="primary" onPress={onEditBoundary} isDisabled={busy}>
                 ערוך גבול
               </Button>
-              <Button onPress={() => setConfirmingDelete(true)} isDisabled={busy || hasActiveSearchers}>
-                מחק…
+              <Button
+                variant="danger-ghost"
+                onPress={() => setConfirmingDelete(true)}
+                isDisabled={busy || hasActiveSearchers}
+              >
+                מחק
               </Button>
               {hasActiveSearchers && (
                 <p className={styles.hint}>מחיקה חסומה כל עוד יש מחפש פעיל. היסטוריית Routes ודיווחים נשמרת.</p>

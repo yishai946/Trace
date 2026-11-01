@@ -25,14 +25,14 @@ describe('PolygonInspector', () => {
 
   it('blocks deleting while a searcher is assigned (UC-C06)', () => {
     render(<PolygonInspector polygon={polygonA} assigned={[]} canEdit busy={false} error={null} {...handlers()} />);
-    expect(screen.getByRole('button', { name: 'מחק…' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'מחק' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByText(/מחיקה חסומה/)).toBeTruthy();
   });
 
   it('asks for confirmation before deleting', () => {
     const h = handlers();
     render(<PolygonInspector polygon={polygonB} assigned={[]} canEdit busy={false} error={null} {...h} />);
-    fireEvent.click(screen.getByRole('button', { name: 'מחק…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'מחק' }));
     expect(h.onDelete).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'מחק פוליגון' }));
     expect(h.onDelete).toHaveBeenCalledOnce();
