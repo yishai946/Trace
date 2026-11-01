@@ -1,21 +1,27 @@
 import { isJoinCode } from '@trace/domain';
 import { ApiError, Mission, MissionList } from '@trace/schemas';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { createTestApp, resetDb } from '../../testing';
+import { createTestApp, injectAs, resetDb, signInCommander, type TestContext, type TestUser } from '../../testing';
 import { createMission } from './missions.service';
 
 const rallyPoint = { type: 'Point', coordinates: [35.1335, 31.7835] };
 
 describe('missions', () => {
-  let ctx: Awaited<ReturnType<typeof createTestApp>>;
+  let ctx: TestContext;
+  let commander: TestUser;
+  let inject: ReturnType<typeof injectAs>;
 
   beforeAll(async () => {
     ctx = await createTestApp();
   });
-  beforeEach(() => resetDb(ctx.db));
+  beforeEach(async () => {
+    await resetDb(ctx.db);
+    commander = await signInCommander(ctx);
+    inject = injectAs(ctx, commander);
+  });
   afterAll(() => ctx.close());
 
-  const post = (payload: object) => ctx.app.inject({ method: 'POST', url: '/api/missions', payload });
+  const post = (payload: object) => inject({ method: 'POST', url: '/api/missions', payload });
 
   it('creates an active mission with a join code, rally point and LKP', async () => {
     const res = await post({
@@ -44,18 +50,18 @@ describe('missions', () => {
     const first = Mission.parse((await post({ name: 'ראשון', rallyPoint })).json());
     const second = Mission.parse((await post({ name: 'שני', rallyPoint })).json());
 
-    const list = MissionList.parse((await ctx.app.inject({ method: 'GET', url: '/api/missions' })).json());
+    const list = MissionList.parse((await inject({ method: 'GET', url: '/api/missions' })).json());
     expect(list.map((m) => m.id)).toEqual([second.id, first.id]);
     expect(list[1]?.lkp).toBeNull();
 
-    const one = await ctx.app.inject({ method: 'GET', url: `/api/missions/${first.id}` });
+    const one = await inject({ method: 'GET', url: `/api/missions/${first.id}` });
     expect(Mission.parse(one.json()).name).toBe('ראשון');
   });
 
   it('returns 404 for an unknown mission and 400 for a malformed id', async () => {
-    const missing = await ctx.app.inject({ method: 'GET', url: '/api/missions/00000000-0000-4000-8000-000000000000' });
+    const missing = await inject({ method: 'GET', url: '/api/missions/00000000-0000-4000-8000-000000000000' });
     expect(missing.statusCode).toBe(404);
-    const malformed = await ctx.app.inject({ method: 'GET', url: '/api/missions/not-a-uuid' });
+    const malformed = await inject({ method: 'GET', url: '/api/missions/not-a-uuid' });
     expect(malformed.statusCode).toBe(400);
   });
 
@@ -68,6 +74,7 @@ describe('missions', () => {
       name: 'מסע',
       missingPerson: { name: null, age: null, disappearedAt: null, description: null, additionalInfo: null },
       rallyPoint: { type: 'Point' as const, coordinates: [35.13, 31.78] as [number, number] },
+      commanderId: commander.userId,
     };
     const a = await createMission(ctx.db, input, random);
     const b = await createMission(ctx.db, input, random);

@@ -1,6 +1,6 @@
-import { MISSION_STATUSES, PARTICIPATION_STATUSES, POLYGON_STATUSES, TASK_STATUSES } from '@trace/domain';
+import { MISSION_STATUSES, PARTICIPATION_STATUSES, POLYGON_STATUSES, TASK_STATUSES, USER_ROLES } from '@trace/domain';
 import { sql } from 'drizzle-orm';
-import { index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { pointColumn, polygonColumn } from './geometry';
 
 const timestamps = {
@@ -15,9 +15,83 @@ export const missionStatus = pgEnum('mission_status', MISSION_STATUSES);
 export const polygonStatus = pgEnum('polygon_status', POLYGON_STATUSES);
 export const participationStatus = pgEnum('participation_status', PARTICIPATION_STATUSES);
 export const taskStatus = pgEnum('task_status', TASK_STATUSES);
+export const userRole = pgEnum('user_role', USER_ROLES);
+
+/*
+ * Sign-in tables owned by Better Auth (users, sessions, accounts, verifications). Their columns follow its core schema
+ * and the phone-number plugin; `role` is ours. See src/auth.
+ */
+
+/** Anyone who signs in: a commander (email and password) or a searcher (phone and OTP). */
+export const users = pgTable('users', {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  email: text().notNull().unique(),
+  emailVerified: boolean().notNull().default(false),
+  image: text(),
+  role: userRole().notNull().default('searcher'),
+  phoneNumber: text('phone_number').unique(),
+  phoneNumberVerified: boolean(),
+  ...timestamps,
+});
+
+export const sessions = pgTable(
+  'sessions',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    token: text().notNull().unique(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ipAddress: text(),
+    userAgent: text(),
+    ...timestamps,
+  },
+  (t) => [index('sessions_user_idx').on(t.userId)],
+);
+
+/** A way to sign in. Commanders have a `credential` account holding the password hash. */
+export const accounts = pgTable(
+  'accounts',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    accountId: text().notNull(),
+    providerId: text().notNull(),
+    accessToken: text(),
+    refreshToken: text(),
+    idToken: text(),
+    accessTokenExpiresAt: timestamp({ withTimezone: true }),
+    refreshTokenExpiresAt: timestamp({ withTimezone: true }),
+    scope: text(),
+    password: text(),
+    ...timestamps,
+  },
+  (t) => [index('accounts_user_idx').on(t.userId)],
+);
+
+/** Short-lived codes, such as the OTP sent to a searcher's phone. */
+export const verifications = pgTable(
+  'verifications',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    identifier: text().notNull(),
+    value: text().notNull(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (t) => [index('verifications_identifier_idx').on(t.identifier)],
+);
 
 export const missions = pgTable('missions', {
   id: uuid().primaryKey().defaultRandom(),
+  /** The commander who created the mission and the only one who manages it (spec §3). */
+  commanderId: uuid('commander_id')
+    .notNull()
+    .references(() => users.id),
   name: text().notNull(),
   status: missionStatus().notNull().default('active'),
   joinCode: text('join_code').notNull().unique(),
@@ -69,9 +143,13 @@ export const polygons = pgTable(
   ],
 );
 
-/** A field searcher, identified by phone number (UC-F01). */
+/** A field searcher's profile, identified by phone number (UC-F01). One per searcher user. */
 export const searchers = pgTable('searchers', {
   id: uuid().primaryKey().defaultRandom(),
+  userId: uuid('user_id')
+    .notNull()
+    .unique()
+    .references(() => users.id),
   phone: text().notNull().unique(),
   name: text().notNull(),
   createdAt: timestamps.createdAt,

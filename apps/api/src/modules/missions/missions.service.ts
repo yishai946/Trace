@@ -3,12 +3,14 @@ import { PointGeometry, type CreateMissionBody, type Mission } from '@trace/sche
 import type { z } from 'zod';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { randomInt } from 'node:crypto';
+import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { lkpPoints, missions } from '../../db/schema';
+import { lkpPoints, missions, participations } from '../../db/schema';
 import { notFound } from '../../errors';
 
-export type CreateMissionInput = z.output<typeof CreateMissionBody>;
+/** The request body plus the commander who creates the mission and will manage it. */
+export type CreateMissionInput = z.output<typeof CreateMissionBody> & { commanderId: string };
 
 const JOIN_CODE_ATTEMPTS = 5;
 const UNIQUE_VIOLATION = '23505';
@@ -87,8 +89,21 @@ function isJoinCodeConflict(error: unknown): boolean {
   );
 }
 
-export async function listMissions(db: Db): Promise<Mission[]> {
-  const rows = await selectMissions(db).orderBy(desc(missions.createdAt));
+/** A commander's own missions, or the missions a searcher takes part in, newest first. */
+export async function listMissions(db: Db, actor: Actor): Promise<Mission[]> {
+  let mine;
+  if (actor.role === 'commander') {
+    mine = eq(missions.commanderId, actor.userId);
+  } else if (actor.searcherId) {
+    const joined = db
+      .select({ id: participations.missionId })
+      .from(participations)
+      .where(eq(participations.searcherId, actor.searcherId));
+    mine = inArray(missions.id, joined);
+  } else {
+    return [];
+  }
+  const rows = await selectMissions(db).where(mine).orderBy(desc(missions.createdAt));
   const lkps = await currentLkps(
     db,
     rows.map((r) => r.id),
@@ -115,6 +130,7 @@ export async function createMission(
         const [created] = await tx
           .insert(missions)
           .values({
+            commanderId: input.commanderId,
             name: input.name,
             joinCode: generateJoinCode(random),
             missingPersonName: input.missingPerson.name,

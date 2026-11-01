@@ -16,6 +16,8 @@ export class AppError extends Error {
 }
 
 export const notFound = (what: string) => new AppError(404, 'NOT_FOUND', `${what} not found`);
+export const unauthenticated = () => new AppError(401, 'UNAUTHENTICATED', 'Sign in to continue');
+export const forbidden = () => new AppError(403, 'FORBIDDEN', 'You are not allowed to do this');
 
 const body = (code: ErrorCode, message: string, details?: unknown): ApiError => ({
   error: details === undefined ? { code, message } : { code, message, details },

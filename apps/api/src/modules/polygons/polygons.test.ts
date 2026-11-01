@@ -3,7 +3,7 @@ import type { Polygon } from 'geojson';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { missions, polygons } from '../../db/schema';
-import { addParticipant, createTestApp, resetDb } from '../../testing';
+import { addParticipant, createTestApp, injectAs, resetDb, signInCommander, type TestContext } from '../../testing';
 
 const box = (west: number, south: number, east: number, north: number): Polygon => ({
   type: 'Polygon',
@@ -23,7 +23,8 @@ const SMALLER = box(35.122, 31.77, 35.126, 31.774);
 const INSIDE_ONLY_AREA: [number, number] = [35.13, 31.778];
 
 describe('polygons', () => {
-  let ctx: Awaited<ReturnType<typeof createTestApp>>;
+  let ctx: TestContext;
+  let inject: ReturnType<typeof injectAs>;
   let missionId: string;
 
   beforeAll(async () => {
@@ -33,7 +34,8 @@ describe('polygons', () => {
 
   beforeEach(async () => {
     await resetDb(ctx.db);
-    const res = await ctx.app.inject({
+    inject = injectAs(ctx, await signInCommander(ctx));
+    const res = await inject({
       method: 'POST',
       url: '/api/missions',
       payload: { name: 'מסע', rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] } },
@@ -43,12 +45,11 @@ describe('polygons', () => {
 
   const url = (polygonId?: string) => `/api/missions/${missionId}/polygons${polygonId ? `/${polygonId}` : ''}`;
   const create = async (geometry: Polygon = AREA, name?: string) => {
-    const res = await ctx.app.inject({ method: 'POST', url: url(), payload: { geometry, name } });
+    const res = await inject({ method: 'POST', url: url(), payload: { geometry, name } });
     expect(res.statusCode).toBe(201);
     return MissionPolygon.parse(res.json());
   };
-  const patch = (polygonId: string, payload: object) =>
-    ctx.app.inject({ method: 'PATCH', url: url(polygonId), payload });
+  const patch = (polygonId: string, payload: object) => inject({ method: 'PATCH', url: url(polygonId), payload });
   const errorCode = (res: { json: () => unknown }) => ApiError.parse(res.json()).error.code;
 
   describe('create', () => {
@@ -69,7 +70,7 @@ describe('polygons', () => {
 
     it('never reuses the letter of a deleted polygon', async () => {
       const a = await create();
-      await ctx.app.inject({ method: 'DELETE', url: url(a.id) });
+      await inject({ method: 'DELETE', url: url(a.id) });
       expect((await create()).letter).toBe('B');
     });
 
@@ -86,7 +87,7 @@ describe('polygons', () => {
           ],
         ],
       };
-      const res = await ctx.app.inject({ method: 'POST', url: url(), payload: { geometry: bowtie } });
+      const res = await inject({ method: 'POST', url: url(), payload: { geometry: bowtie } });
       expect(res.statusCode).toBe(400);
       expect(errorCode(res)).toBe('INVALID_GEOMETRY');
     });
@@ -99,7 +100,7 @@ describe('polygons', () => {
         [35.21, 31.91],
         [35.2, 31.9],
       ];
-      const res = await ctx.app.inject({
+      const res = await inject({
         method: 'POST',
         url: url(),
         payload: { geometry: { type: 'Polygon', coordinates: [outer, farHole] } },
@@ -110,19 +111,19 @@ describe('polygons', () => {
 
     it('rejects an open ring', async () => {
       const open = { type: 'Polygon', coordinates: [AREA.coordinates[0]?.slice(0, 4)] };
-      const res = await ctx.app.inject({ method: 'POST', url: url(), payload: { geometry: open } });
+      const res = await inject({ method: 'POST', url: url(), payload: { geometry: open } });
       expect(res.statusCode).toBe(400);
     });
 
     it('is blocked unless the mission is active', async () => {
       await ctx.db.update(missions).set({ status: 'paused' }).where(eq(missions.id, missionId));
-      const res = await ctx.app.inject({ method: 'POST', url: url(), payload: { geometry: AREA } });
+      const res = await inject({ method: 'POST', url: url(), payload: { geometry: AREA } });
       expect(res.statusCode).toBe(409);
       expect(errorCode(res)).toBe('MISSION_NOT_ACTIVE');
     });
 
     it('returns 404 for an unknown mission', async () => {
-      const res = await ctx.app.inject({
+      const res = await inject({
         method: 'POST',
         url: '/api/missions/00000000-0000-4000-8000-000000000000/polygons',
         payload: { geometry: AREA },
@@ -138,9 +139,9 @@ describe('polygons', () => {
       const c = await create();
       await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id, position: INSIDE_ONLY_AREA });
       await addParticipant(ctx.db, { missionId, callsign: 9 });
-      await ctx.app.inject({ method: 'DELETE', url: url(c.id) });
+      await inject({ method: 'DELETE', url: url(c.id) });
 
-      const list = MissionPolygonList.parse((await ctx.app.inject({ method: 'GET', url: url() })).json());
+      const list = MissionPolygonList.parse((await inject({ method: 'GET', url: url() })).json());
       expect(list.map((p) => [p.letter, p.activeSearchers])).toEqual([
         ['A', 1],
         ['B', 0],
@@ -196,7 +197,7 @@ describe('polygons', () => {
 
     it('returns 404 for a deleted polygon', async () => {
       const a = await create();
-      await ctx.app.inject({ method: 'DELETE', url: url(a.id) });
+      await inject({ method: 'DELETE', url: url(a.id) });
       expect((await patch(a.id, { name: 'x' })).statusCode).toBe(404);
     });
 
@@ -209,7 +210,7 @@ describe('polygons', () => {
   describe('delete', () => {
     it('removes the polygon from the map but keeps the row for history', async () => {
       const a = await create();
-      const res = await ctx.app.inject({ method: 'DELETE', url: url(a.id) });
+      const res = await inject({ method: 'DELETE', url: url(a.id) });
       expect(res.statusCode).toBe(204);
       const [row] = await ctx.db.select({ deletedAt: polygons.deletedAt }).from(polygons).where(eq(polygons.id, a.id));
       expect(row?.deletedAt).toBeInstanceOf(Date);
@@ -218,7 +219,7 @@ describe('polygons', () => {
     it('is blocked while a searcher is assigned (decision 36)', async () => {
       const a = await create();
       await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });
-      const res = await ctx.app.inject({ method: 'DELETE', url: url(a.id) });
+      const res = await inject({ method: 'DELETE', url: url(a.id) });
       expect(res.statusCode).toBe(409);
       expect(errorCode(res)).toBe('POLYGON_HAS_ACTIVE_SEARCHERS');
     });
@@ -226,7 +227,7 @@ describe('polygons', () => {
     it('is blocked once the mission has ended', async () => {
       const a = await create();
       await ctx.db.update(missions).set({ status: 'ended_stopped' }).where(eq(missions.id, missionId));
-      const res = await ctx.app.inject({ method: 'DELETE', url: url(a.id) });
+      const res = await inject({ method: 'DELETE', url: url(a.id) });
       expect(res.statusCode).toBe(409);
       expect(errorCode(res)).toBe('MISSION_NOT_ACTIVE');
     });

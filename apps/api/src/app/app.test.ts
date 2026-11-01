@@ -1,13 +1,14 @@
 import { ApiError, HealthResponse } from '@trace/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadEnv } from '../env';
-import { createTestApp } from '../testing';
+import { createTestApp, resetDb, signInCommander } from '../testing';
 
 describe('api', () => {
   let ctx: Awaited<ReturnType<typeof createTestApp>>;
 
   beforeAll(async () => {
     ctx = await createTestApp();
+    await resetDb(ctx.db);
   });
 
   afterAll(() => ctx.close());
@@ -38,7 +39,7 @@ describe('api', () => {
     const res = await ctx.app.inject({
       method: 'POST',
       url: '/api/missions',
-      headers: { 'content-type': 'application/json' },
+      headers: { ...(await signInCommander(ctx)).headers, 'content-type': 'application/json' },
       payload: '{not json',
     });
     expect(res.statusCode).toBe(400);
@@ -48,5 +49,8 @@ describe('api', () => {
   it('rejects invalid environment variables at startup', () => {
     expect(() => loadEnv({ PORT: 'not-a-number' })).toThrow(/Invalid environment variables/);
     expect(() => loadEnv({ NODE_ENV: 'production' })).toThrow(/DATABASE_URL is required/);
+    expect(() =>
+      loadEnv({ NODE_ENV: 'production', DATABASE_URL: 'postgres://db/trace', API_URL: 'https://api.test' }),
+    ).toThrow(/AUTH_SECRET is required/);
   });
 });
