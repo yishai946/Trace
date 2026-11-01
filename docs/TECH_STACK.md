@@ -75,16 +75,24 @@
 | עברית ו-RTL  | מובנה ב-MapLibre 6                                                | אין צורך בתוסף RTL                                                                                      |
 | מפתח         | `MAPTILER_API_KEY` ב-`apps/command/.env.local`                    | מפתח לקוח ציבורי; יש להגביל אותו לדומיינים בהגדרות MapTiler                                             |
 
+## אימות והרשאות
+
+- כל נתיב תחת `/api` דורש משתמש מחובר, חוץ מ-`/api/health` ומנתיבי Better Auth תחת `/api/auth`. בלי session מוחזר 401 `UNAUTHENTICATED`.
+- **מנהל** נכנס באימייל וסיסמה (`/api/auth/sign-in/email`) ו-Command שולח את עוגיית ה-session. אין הרשמה עצמית: חשבון מנהל נוצר בפקודה `pnpm --filter @trace/api auth:create-commander --email <אימייל> --name <שם> --password <סיסמה>`. ה-seed יוצר מנהל פיתוח (`commander@trace.local`, הסיסמה ב-`apps/api/src/scripts/seed.ts`).
+- **מחפש** נכנס בטלפון ו-OTP (`/api/auth/phone-number/send-otp`, ואז `/verify`); הכניסה הראשונה יוצרת משתמש בתפקיד `searcher`. Field שולח את ה-token שמוחזר כ-`Authorization: Bearer <token>`. עד שייבחר ספק SMS הקוד נכתב ללוג של השרת, ובפרודקשן שליחה נכשלת.
+- מטריצת ההרשאות (אפיון §7) נאכפת ב-`apps/api/src/auth/auth.access.ts`: מסע שאינו של המשתמש מחזיר 404; מחפש במסע שמבקש פעולת מנהל מקבל 403 `FORBIDDEN`. מחפש רואה את המסעות שהוא משתתף בהם ואת המפה שלהם, אבל לא את מיקומי המחפשים האחרים.
+- בפרודקשן חובה להגדיר `AUTH_SECRET` (לפחות 32 תווים) ו-`API_URL`.
+
 ## פיתוח מקומי
 
 בסיס הנתונים המקומי רץ ב-Docker (`docker-compose.yml`, ‏PostGIS על פורט 5433, כדי לא להתנגש ב-PostgreSQL שמותקן על המחשב). הפריסה לסביבות אחרות בהחלטת איש התשתיות.
 
-| פקודה             | מה היא עושה                                       |
-| ----------------- | ------------------------------------------------- |
-| `pnpm db:up`      | מפעיל את בסיס הנתונים                             |
-| `pnpm db:migrate` | מריץ migrations שעוד לא רצו                       |
-| `pnpm db:seed`    | יוצר מסע לדוגמה (רק כשבסיס הנתונים ריק)           |
-| `pnpm db:reset`   | מוחק את כל הנתונים המקומיים ומריץ migrations מחדש |
+| פקודה             | מה היא עושה                                         |
+| ----------------- | --------------------------------------------------- |
+| `pnpm db:up`      | מפעיל את בסיס הנתונים                               |
+| `pnpm db:migrate` | מריץ migrations שעוד לא רצו                         |
+| `pnpm db:seed`    | יוצר מסע לדוגמה ומנהל פיתוח (רק כשבסיס הנתונים ריק) |
+| `pnpm db:reset`   | מוחק את כל הנתונים המקומיים ומריץ migrations מחדש   |
 
 שינוי בסכמה (`apps/api/src/db/schema.ts`) מלווה תמיד ב-migration: `pnpm --filter @trace/api db:generate`.
 

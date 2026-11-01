@@ -12,7 +12,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "db:seed": "tsx src/scripts/seed.ts",
-    "db:reset": "tsx src/scripts/reset.ts"
+    "db:reset": "tsx src/scripts/reset.ts",
+    "auth:create-commander": "tsx src/scripts/create-commander.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",
@@ -21,6 +22,7 @@
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/schemas": "workspace:*",
+    "better-auth": "1.7.14",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.7",
     "fastify-type-provider-zod": "^7.0.0",

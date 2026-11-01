@@ -9,6 +9,7 @@ import {
 } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
+import { missionAccess } from '../../auth/auth.access';
 import type { Db } from '../../db';
 import { createPolygon, deletePolygon, listPolygons, updatePolygon } from './polygons.service';
 
@@ -20,8 +21,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
         tags: ['polygons'],
         summary: 'List the polygons on the active map',
         params: MissionParams,
-        response: { 200: MissionPolygonList, 400: ApiError, 404: ApiError },
+        response: { 200: MissionPolygonList, 400: ApiError, 401: ApiError, 404: ApiError },
       },
+      preHandler: missionAccess(db, 'member'),
     },
     (request) => listPolygons(db, request.params.missionId),
   );
@@ -34,8 +36,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
         summary: 'Draw a polygon (UC-C06)',
         params: MissionParams,
         body: CreatePolygonBody,
-        response: { 201: MissionPolygon, 400: ApiError, 404: ApiError, 409: ApiError },
+        response: { 201: MissionPolygon, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
       },
+      preHandler: missionAccess(db, 'commander'),
     },
     async (request, reply) => reply.status(201).send(await createPolygon(db, request.params.missionId, request.body)),
   );
@@ -51,8 +54,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
           'searchers outside. Send again with confirmSearchersOutside: true after the commander confirms.',
         params: PolygonParams,
         body: UpdatePolygonBody,
-        response: { 200: MissionPolygon, 400: ApiError, 404: ApiError, 409: ApiError },
+        response: { 200: MissionPolygon, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
       },
+      preHandler: missionAccess(db, 'commander'),
     },
     (request) => updatePolygon(db, request.params.missionId, request.params.polygonId, request.body),
   );
@@ -64,8 +68,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
         tags: ['polygons'],
         summary: 'Delete a polygon from the active map (UC-C06). Its history stays.',
         params: PolygonParams,
-        response: { 204: z.null(), 400: ApiError, 404: ApiError, 409: ApiError },
+        response: { 204: z.null(), 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
       },
+      preHandler: missionAccess(db, 'commander'),
     },
     async (request, reply) => {
       await deletePolygon(db, request.params.missionId, request.params.polygonId);

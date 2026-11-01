@@ -1,10 +1,14 @@
 import type { Polygon } from 'geojson';
+import { createAuth, createCommander } from '../auth';
 import { createDb } from '../db';
-import { missions, participations, polygons, searchers } from '../db/schema';
+import { missions, participations, polygons, searchers, users } from '../db/schema';
 import { loadEnv } from '../env';
 import { createMission } from '../modules/missions/missions.service';
 
 // Development data: a search in the Jerusalem hills, west of Ein Kerem. Run with `pnpm db:seed`.
+
+/** The development commander. Sign in to Command with these; never use them outside a local database. */
+const DEV_COMMANDER = { email: 'commander@trace.local', password: 'trace-dev-password', name: 'מנהל פיתוח' };
 
 const box = (west: number, south: number, east: number, north: number): Polygon => ({
   type: 'Polygon',
@@ -21,6 +25,7 @@ const box = (west: number, south: number, east: number, north: number): Polygon 
 
 const env = loadEnv();
 const { db, close } = createDb(env.DATABASE_URL);
+const auth = createAuth({ env, db, sendOtp: async () => {} });
 
 try {
   const existing = await db.select({ id: missions.id }).from(missions).limit(1);
@@ -29,7 +34,9 @@ try {
     process.exit(0);
   }
 
+  const commanderId = await createCommander(auth, DEV_COMMANDER);
   const mission = await createMission(db, {
+    commanderId,
     name: 'מסע 0412',
     missingPerson: {
       name: 'נועם אברהם',
@@ -71,14 +78,32 @@ try {
     .returning({ id: polygons.id });
   if (!a || !b || !c) throw new Error('Seed polygons were not created');
 
+  const searcherProfiles = [
+    { phone: '+972500000001', name: 'דנה כהן' },
+    { phone: '+972500000002', name: 'יואב לוי' },
+    { phone: '+972500000003', name: 'אלון שגיא' },
+    { phone: '+972500000004', name: 'מיכל פרץ' },
+  ];
+  const searcherUsers = await db
+    .insert(users)
+    .values(
+      searcherProfiles.map(({ phone, name }) => ({
+        name,
+        email: `${phone.slice(1)}@phone.trace.invalid`,
+        phoneNumber: phone,
+        phoneNumberVerified: true,
+      })),
+    )
+    .returning({ id: users.id, phone: users.phoneNumber });
   const people = await db
     .insert(searchers)
-    .values([
-      { phone: '+972500000001', name: 'דנה כהן' },
-      { phone: '+972500000002', name: 'יואב לוי' },
-      { phone: '+972500000003', name: 'אלון שגיא' },
-      { phone: '+972500000004', name: 'מיכל פרץ' },
-    ])
+    .values(
+      searcherProfiles.map(({ phone, name }) => {
+        const user = searcherUsers.find((u) => u.phone === phone);
+        if (!user) throw new Error(`Seed user for ${phone} was not created`);
+        return { userId: user.id, phone, name };
+      }),
+    )
     .returning({ id: searchers.id });
   const [dana, yoav, alon, michal] = people;
   if (!dana || !yoav || !alon || !michal) throw new Error('Seed searchers were not created');
@@ -119,6 +144,7 @@ try {
   ]);
 
   console.info(`Seeded mission "${mission.name}" (join code ${mission.joinCode}).`);
+  console.info(`Sign in to Command as ${DEV_COMMANDER.email} / ${DEV_COMMANDER.password}.`);
 } finally {
   await close();
 }

@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const ERROR_CODES = [
   'VALIDATION_ERROR',
+  'UNAUTHENTICATED',
+  'FORBIDDEN',
   'NOT_FOUND',
   'MISSION_NOT_ACTIVE',
   'INVALID_GEOMETRY',
