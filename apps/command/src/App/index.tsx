@@ -109,11 +109,13 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
 
   const apiStatus = !online
     ? 'אין אינטרנט · פעולות חדשות חסומות'
-    : health.isPending
-      ? 'בודק חיבור…'
-      : health.isError
-        ? 'השרת לא זמין'
-        : null;
+    : signOut.isError
+      ? 'היציאה נכשלה. נסו שוב.'
+      : health.isPending
+        ? 'בודק חיבור…'
+        : health.isError
+          ? 'השרת לא זמין'
+          : null;
 
   return (
     <main className={styles.screen}>
@@ -160,7 +162,10 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
           )}
         </div>
         {apiStatus && (
-          <span className={styles.status} data-state={!online || health.isError ? 'error' : 'pending'}>
+          <span
+            className={styles.status}
+            data-state={!online || signOut.isError || health.isError ? 'error' : 'pending'}
+          >
             {apiStatus}
           </span>
         )}
@@ -169,7 +174,8 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
           <Button onPress={() => setTheme(theme === 'night' ? 'day' : 'night')}>
             {theme === 'night' ? 'ערכת יום' : 'ערכת לילה'}
           </Button>
-          <Button onPress={() => signOut.mutate()} isDisabled={signOut.isPending}>
+          {/* Signing out needs the server to revoke the session cookie, so it waits for a connection. */}
+          <Button onPress={() => signOut.mutate()} isDisabled={!online || signOut.isPending}>
             יציאה
           </Button>
         </div>
@@ -349,6 +355,7 @@ function MissionWorkspace({
             outside={outside}
             invalid={!isValidPolygon(edit.draft)}
             busy={busy}
+            offline={!online}
             error={error}
             onCancel={() => {
               setEdit(null);

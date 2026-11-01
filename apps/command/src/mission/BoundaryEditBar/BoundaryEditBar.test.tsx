@@ -23,4 +23,11 @@ describe('BoundaryEditBar', () => {
     expect(screen.getByRole('button', { name: 'שמור גבול' }).hasAttribute('disabled')).toBe(true);
     expect(screen.getByText(/חותך את עצמו/)).toBeTruthy();
   });
+
+  it('cannot save without a connection, but can still cancel (UC-C01)', () => {
+    render(<BoundaryEditBar {...props} outside={[]} invalid={false} offline />);
+    expect(screen.getByRole('button', { name: 'שמור גבול' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.getByRole('button', { name: 'בטל' }).hasAttribute('disabled')).toBe(false);
+    expect(screen.getByText(/אין חיבור לאינטרנט/)).toBeTruthy();
+  });
 });

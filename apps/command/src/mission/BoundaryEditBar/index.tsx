@@ -15,6 +15,8 @@ interface BoundaryEditBarProps {
   /** The edited boundary crosses itself and cannot be saved. */
   invalid: boolean;
   busy: boolean;
+  /** No connection: saving is blocked until it returns (UC-C01); cancelling still works. */
+  offline?: boolean;
   error: string | null;
   onCancel: () => void;
   onSave: () => void;
@@ -28,14 +30,30 @@ function outsideText(outside: OutsideSearcher[]): string {
 }
 
 /** The bar shown while a polygon boundary is reshaped (Cd07): what the change affects, then cancel or save. */
-export function BoundaryEditBar({ letter, outside, invalid, busy, error, onCancel, onSave }: BoundaryEditBarProps) {
+export function BoundaryEditBar({
+  letter,
+  outside,
+  invalid,
+  busy,
+  offline = false,
+  error,
+  onCancel,
+  onSave,
+}: BoundaryEditBarProps) {
   const warning = outside.length > 0;
   const detail =
-    error ?? (invalid ? 'הגבול חותך את עצמו. הזיזו נקודה כדי לתקן.' : warning ? outsideText(outside) : null);
+    error ??
+    (offline
+      ? 'אין חיבור לאינטרנט. אפשר לשמור את הגבול כשהחיבור יחזור.'
+      : invalid
+        ? 'הגבול חותך את עצמו. הזיזו נקודה כדי לתקן.'
+        : warning
+          ? outsideText(outside)
+          : null);
 
   return (
     <div className={styles.bar} role="status">
-      {(warning || invalid || error) && (
+      {(warning || invalid || offline || error) && (
         <svg
           className={styles.icon}
           aria-hidden="true"
@@ -54,7 +72,7 @@ export function BoundaryEditBar({ letter, outside, invalid, busy, error, onCance
       <Button onPress={onCancel} isDisabled={busy}>
         בטל
       </Button>
-      <Button variant="primary" onPress={onSave} isDisabled={busy || invalid}>
+      <Button variant="primary" onPress={onSave} isDisabled={busy || invalid || offline}>
         שמור גבול
       </Button>
     </div>

@@ -23,12 +23,16 @@ export function useSignIn() {
   });
 }
 
-/** Signs out and drops every cached response, so the next user starts clean. */
+/**
+ * Signs out and drops every cached response, so the next user starts clean. Only after the server revoked the
+ * session: if the request fails, the cookie is still valid and the console stays signed in (a 401 is handled by the
+ * global handler in main.tsx).
+ */
 export function useSignOut() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => apiRequest('/auth/sign-out', { method: 'POST', body: {} }),
-    onSettled: () => signedOut(queryClient),
+    onSuccess: () => signedOut(queryClient),
   });
 }
 
