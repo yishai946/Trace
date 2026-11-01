@@ -1,5 +1,5 @@
 import type { MapProvider } from '@trace/map';
-import { ComboBox, Input, Label, ListBox, ListBoxItem, Popover, useAsyncList } from 'react-aria-components';
+import { Button, ComboBox, Input, Label, ListBox, ListBoxItem, Popover, useAsyncList } from 'react-aria-components';
 import { searchPlaces, type Place } from '../geocoding';
 import styles from './PlaceSearch.module.css';
 
@@ -49,6 +49,21 @@ export function PlaceSearch({ provider, onSelect }: PlaceSearchProps) {
           <path d="m20 20-4-4" />
         </svg>
         <Input className={styles.input} placeholder="חפש מקום, כתובת או נחל…" />
+        {list.filterText && (
+          // slot={null}: a plain button, not the ComboBox's own trigger that opens the list.
+          <Button slot={null} className={styles.clear} aria-label="נקה חיפוש" onPress={() => list.setFilterText('')}>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </Button>
+        )}
       </div>
       <Popover className={styles.popover} placement="bottom start">
         <ListBox<Place>

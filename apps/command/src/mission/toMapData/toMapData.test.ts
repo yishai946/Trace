@@ -25,6 +25,6 @@ describe('toMapData', () => {
 
   it('marks the selected polygon and hides the one being reshaped', () => {
     const data = toMapData({ ...base, selectedPolygonId: polygonA.id, editingPolygonId: polygonB.id });
-    expect(data.polygons.map((p) => [p.letter, p.selected])).toEqual([['A', true]]);
+    expect(data.polygons.map((p) => [p.name, p.selected])).toEqual([['ואדי צפוני', true]]);
   });
 });

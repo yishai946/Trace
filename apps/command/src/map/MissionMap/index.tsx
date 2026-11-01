@@ -47,6 +47,8 @@ interface MissionMapProps {
   editing?: { polygonId: string; geometry: Polygon } | null;
   /** The reshaped boundary after each vertex move. */
   onEditChange?: (geometry: Polygon) => void;
+  /** Tools, zoom buttons and cursor coordinates. Off for the map behind the login and mission list screens. */
+  controls?: boolean;
 }
 
 const DRAW_PREFIX = 'td';
@@ -97,6 +99,7 @@ export function MissionMap({
   onPolygonSelect,
   editing,
   onEditChange,
+  controls = true,
 }: MissionMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -297,26 +300,30 @@ export function MissionMap({
     <div className={styles.root}>
       <div ref={containerRef} className={styles.map} data-tool={tool} aria-label="מפת המסע" role="region" />
 
-      <div className={styles.toolbar}>
-        <MapToolbar
-          tool={tool}
-          onToolChange={setTool}
-          drawingDisabled={!!editingId || !onPolygonDrawn}
-          terrain={terrain}
-          onTerrainChange={setTerrain}
-        />
-      </div>
+      {controls && (
+        <>
+          <div className={styles.toolbar}>
+            <MapToolbar
+              tool={tool}
+              onToolChange={setTool}
+              drawingDisabled={!!editingId || !onPolygonDrawn}
+              terrain={terrain}
+              onTerrainChange={setTerrain}
+            />
+          </div>
 
-      <div className={styles.zoom}>
-        <Button variant="icon" aria-label="התקרב" onPress={() => mapRef.current?.zoomIn()}>
-          +
-        </Button>
-        <Button variant="icon" aria-label="התרחק" onPress={() => mapRef.current?.zoomOut()}>
-          −
-        </Button>
-      </div>
+          <div className={styles.zoom}>
+            <Button variant="icon" aria-label="התקרב" onPress={() => mapRef.current?.zoomIn()}>
+              +
+            </Button>
+            <Button variant="icon" aria-label="התרחק" onPress={() => mapRef.current?.zoomOut()}>
+              −
+            </Button>
+          </div>
+        </>
+      )}
 
-      {cursor && (
+      {controls && cursor && (
         <output className={styles.coords} aria-live="off">
           <span>{formatLatLng(cursor)}</span>
           <span className={styles.itm}>ITM {formatItm(toItm(cursor))}</span>

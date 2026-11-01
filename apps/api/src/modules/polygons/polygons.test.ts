@@ -53,25 +53,19 @@ describe('polygons', () => {
   const errorCode = (res: { json: () => unknown }) => ApiError.parse(res.json()).error.code;
 
   describe('create', () => {
-    it('starts unassigned, with the next letter and no coverage', async () => {
+    it('starts unassigned with no coverage, named "פוליגון N" unless given a name', async () => {
       const a = await create(AREA, 'ואדי צפוני');
       const b = await create(AREA);
-      expect(a).toMatchObject({
-        letter: 'A',
-        name: 'ואדי צפוני',
-        status: 'unassigned',
-        coverage: null,
-        activeSearchers: 0,
-      });
+      expect(a).toMatchObject({ name: 'ואדי צפוני', status: 'unassigned', coverage: null, activeSearchers: 0 });
       expect(a.geometry).toEqual(AREA);
       // Overlapping polygons are allowed (decision 38).
-      expect(b.letter).toBe('B');
+      expect(b.name).toBe('פוליגון 1');
     });
 
-    it('never reuses the letter of a deleted polygon', async () => {
+    it('never reuses the default name of a deleted polygon', async () => {
       const a = await create();
       await inject({ method: 'DELETE', url: url(a.id) });
-      expect((await create()).letter).toBe('B');
+      expect((await create()).name).toBe('פוליגון 2');
     });
 
     it('rejects a boundary that crosses itself', async () => {
@@ -142,19 +136,19 @@ describe('polygons', () => {
       await inject({ method: 'DELETE', url: url(c.id) });
 
       const list = MissionPolygonList.parse((await inject({ method: 'GET', url: url() })).json());
-      expect(list.map((p) => [p.letter, p.activeSearchers])).toEqual([
-        ['A', 1],
-        ['B', 0],
+      expect(list.map((p) => [p.name, p.activeSearchers])).toEqual([
+        ['פוליגון 1', 1],
+        ['פוליגון 2', 0],
       ]);
       expect(list[1]?.id).toBe(b.id);
     });
   });
 
   describe('update', () => {
-    it('renames a polygon and clears the name', async () => {
+    it('renames a polygon and refuses a blank name', async () => {
       const a = await create();
       expect(MissionPolygon.parse((await patch(a.id, { name: 'חורשה' })).json()).name).toBe('חורשה');
-      expect(MissionPolygon.parse((await patch(a.id, { name: '' })).json()).name).toBeNull();
+      expect((await patch(a.id, { name: '  ' })).statusCode).toBe(400);
     });
 
     it('changes the boundary when no assigned searcher ends up outside', async () => {

@@ -4,7 +4,10 @@ import styles from './Button.module.css';
 export type ButtonVariant = 'secondary' | 'primary' | 'danger' | 'danger-ghost' | 'icon';
 
 export interface ButtonProps extends AriaButtonProps {
-  /** Trace Console Button: one `primary` per area; `danger` and `danger-ghost` only inside an SOS AlertBanner. */
+  /**
+   * Trace Console Button: one `primary` per area. `danger` and `danger-ghost` are for SOS and destructive actions
+   * (delete: `danger-ghost` opens the confirmation, `danger` confirms).
+   */
   variant?: ButtonVariant;
   size?: 'md' | 'sm';
 }

@@ -34,7 +34,7 @@ export function toMapData({
       .filter((p) => p.id !== editingPolygonId)
       .map((p) => ({
         id: p.id,
-        letter: p.letter,
+        name: p.name,
         status: p.status,
         coverage: p.coverage,
         geometry: p.geometry,

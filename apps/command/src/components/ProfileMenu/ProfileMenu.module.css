@@ -1,0 +1,196 @@
+.avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background-color: var(--chip);
+  color: var(--ink);
+  font: var(--text-meta);
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.avatar[data-hovered],
+.avatar[data-pressed] {
+  background-color: var(--surface-raised);
+}
+
+.avatar[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.avatar[data-static] {
+  cursor: default;
+}
+
+.popover {
+  width: var(--panel-end-w);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.dialog {
+  outline: none;
+}
+
+.section {
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.who {
+  min-width: 0;
+}
+
+.name {
+  font: var(--text-body-strong);
+}
+
+.meta {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.email {
+  overflow: hidden;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+}
+
+.select[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.option,
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.option svg,
+.item svg,
+.signOut svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+}
+
+.chevron {
+  color: var(--ink-muted);
+}
+
+.listPopover {
+  width: var(--trigger-width);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.list {
+  padding: var(--space-2);
+  outline: none;
+}
+
+.item {
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-sm);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-focused],
+.item[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.item[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Sign-out in the danger ink, as asked by the product owner. Not the filled SOS button. */
+.signOut {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  background-color: transparent;
+  color: var(--danger-ink);
+  cursor: pointer;
+  outline: none;
+}
+
+.signOut[data-hovered] {
+  background-color: var(--danger-tint);
+}
+
+.signOut[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.signOut[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.note {
+  margin-block: var(--space-4) 0;
+  margin-inline: 0;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}

@@ -16,7 +16,6 @@ export const mission: Mission = {
 export const polygonA: MissionPolygon = {
   id: '00000000-0000-4000-8000-0000000000a1',
   missionId: mission.id,
-  letter: 'A',
   name: 'ואדי צפוני',
   status: 'active',
   coverage: null,
@@ -40,8 +39,7 @@ export const polygonA: MissionPolygon = {
 export const polygonB: MissionPolygon = {
   ...polygonA,
   id: '00000000-0000-4000-8000-0000000000b1',
-  letter: 'B',
-  name: null,
+  name: 'פוליגון 2',
   status: 'unassigned',
   activeSearchers: 0,
 };

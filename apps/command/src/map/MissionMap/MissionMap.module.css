@@ -30,10 +30,15 @@
   box-shadow: var(--shadow-panel);
 }
 
+/*
+ * Beside the zoom buttons, not over them. `direction: ltr` (for the numbers) flips logical insets on this element, so
+ * it is placed with a physical `left`: the zoom buttons sit at the inline end, which is the left in Command's RTL.
+ * The offset is the zoom box: one button wide plus its padding and border.
+ */
 .coords {
   position: absolute;
   bottom: var(--space-6);
-  inset-inline-start: var(--space-6);
+  left: calc(var(--space-6) * 2 + var(--control-h) + var(--space-2) * 2 + 2px);
   display: flex;
   gap: var(--space-5);
   padding-block: var(--space-2);
