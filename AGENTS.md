@@ -12,6 +12,8 @@ Never commit to `main` or `dev`. Before the first edit of a new feature, fix or 
 
 pnpm monorepo: deployable apps go in `apps/*` (e.g. `@trace/api`, `@trace/command`, `@trace/field`), shared code goes in `packages/*` (e.g. `@trace/domain` for pure business rules, `@trace/schemas` for request/response validation shared by client and server). Packages never import from apps. Every `tsconfig.json` extends `tsconfig.base.json`.
 
+Files that belong together get their own folder. Any module with more than one file (component, page, hook, service, helper or script, with its styles and tests) gets a folder named after it. The main file is `index` and the rest are named after the module, e.g. `MissionMap/index.tsx` + `MissionMap/MissionMap.module.css`, or `geocoding/index.ts` + `geocoding/geocoding.test.ts`, so imports stay `./MissionMap` or `./geocoding`. A single-file module stays a flat file. Each test file covers one module. Details in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#2-naming-and-file-organization).
+
 The chosen stack and the reasons for it are in [`docs/TECH_STACK.md`](docs/TECH_STACK.md): Fastify + zod (api), React + React Aria Components + CSS Modules (command), Expo + Expo Router with our own React Native components (field). Do not add a framework, UI kit or styling library outside it without asking. `apps/field/AGENTS.md` adds Expo-specific rules.
 
 # Design system

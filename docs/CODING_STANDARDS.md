@@ -23,6 +23,24 @@ All contributors and coding assistants should preserve existing behavior, follow
 - Use `UPPER_SNAKE_CASE` only for true constants such as environment variable names or immutable configuration values.
 - Name React hooks with a `use` prefix and make their purpose clear.
 - Keep related code close together. Do not introduce folders, barrel files, or abstractions until they simplify a real use case.
+- Files that belong together get their own folder. Any module made of more than one file gets a folder named after it: a component, page, hook, service, helper or script, together with its styles, tests and the sub-parts only it uses. The main file is `index` (`index.tsx`, `index.ts`, `index.mjs`), so imports stay `./MissionMap` or `./geocoding`. The other files are named after the module: `MissionMap.module.css`, `MissionMap.test.tsx`, `geocoding.test.ts`. Folders of components and pages use `PascalCase`; other folders use the module's `camelCase` name.
+- A module that is a single file stays a flat file (`ScaleBar.tsx`, `types.ts`). Move it into a folder when it gets a second file, such as its first test.
+- Each test file covers one module and sits in that module's folder. Test data shared by several modules goes in a flat `fixtures.ts` next to them.
+
+  ```text
+  map/
+    MissionMap/
+      index.tsx
+      MissionMap.module.css
+      MissionMap.test.tsx
+    geocoding/
+      index.ts
+      geocoding.test.ts
+    ScaleBar.tsx          // one file, no folder
+  ```
+
+- Run Node scripts by their full path (`node scripts/generate/index.mjs`), since Node does not resolve a folder to its `index`.
+- In Expo Router, files under `apps/field/src/app/` are routes and keep the router's naming; their styles and sub-parts go in `src/components/`.
 
 ---
 

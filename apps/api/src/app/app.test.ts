@@ -1,7 +1,7 @@
 import { HealthResponse } from '@trace/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { buildApp } from './app';
-import { loadEnv } from './env';
+import { buildApp } from '.';
+import { loadEnv } from '../env';
 
 describe('api', () => {
   let app: Awaited<ReturnType<typeof buildApp>>;

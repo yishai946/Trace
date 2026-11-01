@@ -1,7 +1,7 @@
 import type { TerrainOptions } from '@trace/map';
 import { Separator, Toolbar } from 'react-aria-components';
 import styles from './MapToolbar.module.css';
-import { ToolButton } from './ToolButton';
+import { ToolButton } from '../ToolButton';
 
 export type MapTool = 'select' | 'polygon';
 

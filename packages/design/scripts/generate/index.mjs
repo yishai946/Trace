@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const paths = {
   source: join(root, 'source', 'tokens.json'),
   css: join(root, 'src', 'generated', 'tokens.css'),
@@ -65,7 +65,7 @@ export function generate(tokens) {
   const typeStyles = (tokens.type?.groups ?? []).flatMap((g) => g.styles.map((s) => ({ ...s, family: g.family })));
 
   // ---------- CSS ----------
-  const css = [`/* ${tokens.name}: generated from source/tokens.json by scripts/generate.mjs. Do not edit. */`];
+  const css = [`/* ${tokens.name}: generated from source/tokens.json by scripts/generate. Do not edit. */`];
   themeIds.forEach((id, i) => {
     css.push(`${i === 0 ? ':root, ' : ''}[data-theme="${id}"] {`);
     for (const t of colorTokens) {
@@ -88,7 +88,7 @@ export function generate(tokens) {
 
   // ---------- TypeScript ----------
   const ts = [
-    `// ${tokens.name}: generated from source/tokens.json by scripts/generate.mjs. Do not edit.`,
+    `// ${tokens.name}: generated from source/tokens.json by scripts/generate. Do not edit.`,
     '',
     `export const themeIds = ${JSON.stringify(themeIds)} as const;`,
     'export type ThemeId = (typeof themeIds)[number];',

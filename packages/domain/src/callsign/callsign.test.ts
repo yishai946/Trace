@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCallsign } from './callsign';
+import { formatCallsign } from '.';
 
 describe('formatCallsign', () => {
   it('pads single digits with a leading zero', () => {

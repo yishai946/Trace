@@ -5,9 +5,9 @@ import type {
   SourceSpecification,
   StyleSpecification,
 } from '@maplibre/maplibre-gl-style-spec';
-import { emptyMissionMapData, SOURCE, toMissionSources, type MissionMapData } from './data';
-import { iconId } from './icons';
-import type { MapProvider } from './provider';
+import { emptyMissionMapData, SOURCE, toMissionSources, type MissionMapData } from '../data';
+import { iconId } from '../icons';
+import type { MapProvider } from '../provider';
 
 export interface TerrainOptions {
   /** Relief shading from elevation data. */

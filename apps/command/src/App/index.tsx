@@ -3,12 +3,12 @@ import type { MapPolygon } from '@trace/map';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import styles from './App.module.css';
-import { Button } from './components/Button';
-import { MissionMap, type MapFocus } from './map/MissionMap';
-import { PlaceSearch } from './map/PlaceSearch';
-import { getMapProvider } from './map/provider';
-import { SAMPLE_CENTER, sampleMission } from './map/sample-mission';
-import { useTheme } from './theme/theme';
+import { Button } from '../components/Button';
+import { MissionMap, type MapFocus } from '../map/MissionMap';
+import { PlaceSearch } from '../map/PlaceSearch';
+import { getMapProvider } from '../map/provider';
+import { SAMPLE_CENTER, sampleMission } from '../map/sample-mission';
+import { useTheme } from '../theme/theme';
 
 async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch('/api/health');

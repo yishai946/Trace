@@ -9,9 +9,9 @@
     "./components.css": "./source/components/bundle.css"
   },
   "scripts": {
-    "generate": "node scripts/generate.mjs",
+    "generate": "node scripts/generate/index.mjs",
     "record-sync": "node scripts/record-sync.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --test \"scripts/*.test.mjs\""
+    "test": "node --test \"scripts/**/*.test.mjs\""
   }
 }

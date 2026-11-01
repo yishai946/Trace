@@ -1,4 +1,4 @@
-// Trace Console: generated from source/tokens.json by scripts/generate.mjs. Do not edit.
+// Trace Console: generated from source/tokens.json by scripts/generate. Do not edit.
 
 export const themeIds = ["night","day"] as const;
 export type ThemeId = (typeof themeIds)[number];

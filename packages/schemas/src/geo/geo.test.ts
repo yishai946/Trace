@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LngLat, PolygonGeometry } from './geo';
+import { LngLat, PolygonGeometry } from '.';
 
 describe('geo schemas', () => {
   it('rejects positions outside WGS84 ranges', () => {

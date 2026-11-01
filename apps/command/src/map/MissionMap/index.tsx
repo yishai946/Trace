@@ -9,16 +9,16 @@ import {
   type TerrainOptions,
 } from '@trace/map';
 import { Map as MapLibreMap, type GeoJSONSource } from 'maplibre-gl';
-import './maplibre-worker';
+import '../maplibre-worker';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { TerraDraw, TerraDrawPolygonMode, ValidateNotSelfIntersecting, type HexColor } from 'terra-draw';
 import { TerraDrawMapLibreGLAdapter } from 'terra-draw-maplibre-gl-adapter';
-import { Button } from '../components/Button';
-import { preloadMapIcons, registerMapIcons } from './icons';
-import { MapToolbar, type MapTool } from './MapToolbar';
+import { Button } from '../../components/Button';
+import { preloadMapIcons, registerMapIcons } from '../icons';
+import { MapToolbar, type MapTool } from '../MapToolbar';
 import styles from './MissionMap.module.css';
-import { getWebTerrainSources } from './provider';
+import { getWebTerrainSources } from '../provider';
 
 export interface MapFocus {
   center: LngLat;

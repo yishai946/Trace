@@ -1,6 +1,6 @@
 import { maptilerProvider } from '@trace/map';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { searchPlaces } from './geocoding';
+import { searchPlaces } from '.';
 
 const provider = maptilerProvider('test');
 

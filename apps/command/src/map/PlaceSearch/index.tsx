@@ -1,6 +1,6 @@
 import type { MapProvider } from '@trace/map';
 import { ComboBox, Input, Label, ListBox, ListBoxItem, Popover, useAsyncList } from 'react-aria-components';
-import { searchPlaces, type Place } from './geocoding';
+import { searchPlaces, type Place } from '../geocoding';
 import styles from './PlaceSearch.module.css';
 
 interface PlaceSearchProps {

@@ -1,5 +1,5 @@
 import proj4 from 'proj4';
-import type { LngLat } from './types';
+import type { LngLat } from '../types';
 
 /** Israeli Transverse Mercator (Israel 1993 / Israeli TM Grid, EPSG:2039), as published by the EPSG registry. */
 const ITM =

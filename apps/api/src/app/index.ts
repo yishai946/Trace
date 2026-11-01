@@ -9,8 +9,8 @@ import {
   validatorCompiler,
   type ZodTypeProvider,
 } from 'fastify-type-provider-zod';
-import type { Env } from './env';
-import { healthRoutes } from './modules/health/routes';
+import type { Env } from '../env';
+import { healthRoutes } from '../modules/health/routes';
 
 const VERSION = '0.1.0';
 

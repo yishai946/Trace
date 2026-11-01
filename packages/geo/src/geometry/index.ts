@@ -3,7 +3,7 @@ import turfBbox from '@turf/bbox';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import pointToPolygonDistance from '@turf/point-to-polygon-distance';
 import type { GeoJSON } from 'geojson';
-import type { Bounds, LngLat, Polygon } from './types';
+import type { Bounds, LngLat, Polygon } from '../types';
 
 export function isInsidePolygon(point: LngLat, polygon: Polygon): boolean {
   return booleanPointInPolygon(point, polygon);
