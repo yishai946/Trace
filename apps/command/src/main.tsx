@@ -1,13 +1,21 @@
 import '@trace/design/tokens.css';
 import './global.css';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nProvider } from 'react-aria-components';
 import { App } from './App';
+import { isSignedOutError, signedOut } from './auth';
 import { ThemeProvider } from './theme/theme';
 
-const queryClient = new QueryClient();
+// Any request answered 401 means the session ended: go back to the login screen.
+const onError = (error: unknown) => {
+  if (isSignedOutError(error)) signedOut(queryClient);
+};
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError }),
+  mutationCache: new MutationCache({ onError }),
+});
 const root = document.getElementById('root');
 if (!root) throw new Error('Missing #root element');
 

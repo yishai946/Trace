@@ -95,3 +95,21 @@
   color: var(--ink-secondary);
   transform: translateX(-50%);
 }
+
+.user {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+/* Dims the map behind the login (light) and mission list (dense) screens, as in wireframes Cd01 and Cd02. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background-color: var(--map-ground);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.veil[data-veil='dense'] {
+  opacity: 0.82;
+}
