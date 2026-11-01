@@ -173,7 +173,7 @@ All work is tracked in GitHub issues and on the [project board](https://github.c
 - **Milestone**: the delivery phase, `M1` to `M7`, in the order they are built.
 - **Priority** (`P0` must have for a working search, `P1` needed for the MVP, `P2` nice to have) and **Size** (`XS` to `XL`), as board fields.
 - **Status** on the board: **Backlog** (blocked), **Ready** (can start), **In progress**, **In review** (Pull Request open), **Done**.
-- **Relationships**: "Blocked by" links to the issues that must be done first. The `Issue dependencies` workflow keeps the `blocked` label up to date, undoes an assignment to a blocked issue, and fails a Pull Request that closes an issue whose blockers are still open.
+- **Relationships**: "Blocked by" links to the issues that must be done first. The `Issue dependencies` workflow keeps the `blocked` label and the Backlog/Ready columns up to date (at once when a blocker closes or reopens, and every 30 minutes for links added or removed), undoes an assignment to a blocked issue, and fails a Pull Request that closes an issue whose blockers are still open.
 
 Picking the next task:
 
