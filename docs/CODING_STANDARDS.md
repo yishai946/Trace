@@ -165,6 +165,35 @@ All contributors and coding assistants should preserve existing behavior, follow
 - Rebase merging is disabled in the repository.
 - GitHub deletes the head branch automatically when its Pull Request is merged. Delete your local copy too (`git branch -D <branch>`; `-D` is needed because a squashed branch does not look merged to Git). A branch whose Pull Request was closed without merging is deleted by hand.
 
+### Tracking work
+
+All work is tracked in GitHub issues and on the [project board](https://github.com/users/yishai946/projects/6). Each use case (`UC-*`) and shared infrastructure item has one issue. Each issue has:
+
+- **Labels** to filter by: `type:` (use case or infra), `area:` (feature area), `app:` (workspaces it touches) and `blocked`.
+- **Milestone**: the delivery phase, `M1` to `M7`, in the order they are built.
+- **Priority** (`P0` must have for a working search, `P1` needed for the MVP, `P2` nice to have) and **Size** (`XS` to `XL`), as board fields.
+- **Status** on the board: **Backlog** (blocked), **Ready** (can start), **In progress**, **In review** (Pull Request open), **Done**.
+- **Relationships**: "Blocked by" links to the issues that must be done first. The `Issue dependencies` workflow keeps the `blocked` label and the Backlog/Ready columns up to date (at once when a blocker closes or reopens, and every 30 minutes for links added or removed), undoes an assignment to a blocked issue, and fails a Pull Request that closes an issue whose blockers are still open.
+
+Picking the next task:
+
+1. Open the board's **Ready** column: open, unblocked issues. Within it, take the earliest milestone, then the highest priority (the **הבא בתור** view sorts them this way).
+2. Take the top one: assign yourself (`gh issue edit <N> --add-assignee @me`) and move the card to **In progress**. When the `PROJECT_TOKEN` secret is set, the workflow moves it for you.
+3. Read the issue's use case and task list before starting. The issue body is the scope.
+
+Every Pull Request is linked to an issue:
+
+- The Pull Request description names the issue the work started from: `Closes #<N>` when it finishes the issue, `Refs #<N>` when it does part of it. The `Issue dependencies` workflow fails a Pull Request into `dev` that names no issue.
+- No issue for the work yet (a bug found on the way, a refactor, tooling, a docs change): open one first, with labels, milestone, Priority, Size and "Blocked by" set, add it to the board, then link the Pull Request to it. Do not open the Pull Request and create the issue afterwards.
+- One Pull Request serves one issue. Unrelated changes found along the way get their own issue and Pull Request.
+- Release Pull Requests from `dev` into `main` are exempt.
+
+While working and when done:
+
+- Merging a Pull Request with `Closes #<N>` into `dev` closes the issue, moves the card to **Done** and unblocks the issues that waited for it.
+- A Pull Request that does only part of the issue writes `Refs #<N>` and ticks only the checkboxes it implemented in the issue body.
+- Stopping without finishing: unassign yourself and move the card back to **Ready**.
+
 ---
 
 ## 12. Tooling and Enforcement
