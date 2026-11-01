@@ -13,6 +13,8 @@ export interface MapPolygon {
   /** Coverage estimate in percent, or null before any searching. */
   coverage: number | null;
   geometry: Polygon;
+  /** The polygon open in the Inspector. */
+  selected?: boolean;
 }
 
 export interface MapUnit {
@@ -97,6 +99,7 @@ export function toMissionSources(data: MissionMapData): Record<SourceId, Feature
         properties: {
           id: p.id,
           status: p.status,
+          selected: p.selected ?? false,
           label:
             p.status === 'completed'
               ? `${p.letter} הושלם`

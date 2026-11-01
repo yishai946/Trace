@@ -1,0 +1,146 @@
+/* Trace Console Inspector (.tc-panel, .tc-inspector__head, .tc-dl, .tc-actions). */
+.panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.section {
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.letter {
+  display: inline-grid;
+  place-items: center;
+  min-width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  font: var(--text-title);
+  font-weight: 700;
+}
+
+.letter[data-status='completed'] {
+  border-color: var(--ink-muted);
+  color: var(--ink-muted);
+}
+
+.letter[data-status='unassigned'] {
+  border-style: dashed;
+  border-color: var(--ink-secondary);
+  color: var(--ink-secondary);
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font: var(--text-title);
+}
+
+.sub {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.input {
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--ink-muted);
+}
+
+.input[data-focused] {
+  border-color: var(--focus);
+}
+
+.input[data-disabled] {
+  opacity: 0.6;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-6);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.callsigns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-block: var(--space-5) 0;
+  margin-inline: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.actions,
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger-ink);
+  font: var(--text-meta);
+}

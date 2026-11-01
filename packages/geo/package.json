@@ -13,6 +13,7 @@
     "@turf/bbox": "^7.4.0",
     "@turf/boolean-point-in-polygon": "^7.4.0",
     "@turf/helpers": "^7.4.0",
+    "@turf/kinks": "^7.4.0",
     "@turf/point-to-polygon-distance": "^7.4.0",
     "proj4": "^2.22.0"
   },

@@ -34,7 +34,7 @@
 | Framework   | Fastify 5 + `fastify-type-provider-zod`   | כתיבה קרובה ל-Express; בדיקת קלט, טיפוסים ו-OpenAPI מובנים מתוך סכמות zod        |
 | תיעוד API   | `@fastify/swagger`, `@fastify/swagger-ui` | OpenAPI שנוצר מהסכמות ולא מתיישן                                                 |
 | בסיס נתונים | PostgreSQL + PostGIS                      | פוליגונים, יציאה מגבול, Coverage מתוך מסלולים                                    |
-| ORM         | Drizzle                                   | תמיכה טבעית ב-SQL ובטיפוסי PostGIS (Prisma כמעט לא תומך)                         |
+| ORM         | Drizzle, migrations ב-`apps/api/drizzle`  | תמיכה טבעית ב-SQL ובטיפוסי PostGIS (Prisma כמעט לא תומך)                         |
 | זמן אמת     | Socket.IO, room לכל מסע                   | מפה חיה, SOS, הודעות, התחברות מחדש אוטומטית                                      |
 | עבודות רקע  | pg-boss                                   | הסלמות והתראות (UC-S04) על Postgres, בלי Redis                                   |
 | אימות       | Better Auth                               | ספרייה פתוחה בתוך השרת: OTP בטלפון למחפשים, אימייל וסיסמה למנהלים. הנתונים אצלנו |
@@ -74,6 +74,21 @@
 | חיפוש מקומות | MapTiler Geocoding בעברית, מוגבל לגבולות ישראל                    | מסנן המדינה של MapTiler לא מחזיר תוצאות לישראל; תיבת גבולות כן                                          |
 | עברית ו-RTL  | מובנה ב-MapLibre 6                                                | אין צורך בתוסף RTL                                                                                      |
 | מפתח         | `MAPTILER_API_KEY` ב-`apps/command/.env.local`                    | מפתח לקוח ציבורי; יש להגביל אותו לדומיינים בהגדרות MapTiler                                             |
+
+## פיתוח מקומי
+
+בסיס הנתונים המקומי רץ ב-Docker (`docker-compose.yml`, ‏PostGIS על פורט 5433, כדי לא להתנגש ב-PostgreSQL שמותקן על המחשב). הפריסה לסביבות אחרות בהחלטת איש התשתיות.
+
+| פקודה             | מה היא עושה                                       |
+| ----------------- | ------------------------------------------------- |
+| `pnpm db:up`      | מפעיל את בסיס הנתונים                             |
+| `pnpm db:migrate` | מריץ migrations שעוד לא רצו                       |
+| `pnpm db:seed`    | יוצר מסע לדוגמה (רק כשבסיס הנתונים ריק)           |
+| `pnpm db:reset`   | מוחק את כל הנתונים המקומיים ומריץ migrations מחדש |
+
+שינוי בסכמה (`apps/api/src/db/schema.ts`) מלווה תמיד ב-migration: `pnpm --filter @trace/api db:generate`.
+
+בדיקות השרת רצות מול בסיס נתונים אמיתי (`trace_test`, שנוצר מחדש בכל הרצה), ולכן `pnpm test` דורש `pnpm db:up`.
 
 ## החלטות פתוחות
 

@@ -1,6 +1,7 @@
 import turfArea from '@turf/area';
 import turfBbox from '@turf/bbox';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import kinks from '@turf/kinks';
 import pointToPolygonDistance from '@turf/point-to-polygon-distance';
 import type { GeoJSON } from 'geojson';
 import type { Bounds, LngLat, Polygon } from '../types';
@@ -36,4 +37,9 @@ export function areaSquareMeters(polygon: Polygon): number {
 export function boundsOf(geojson: GeoJSON): Bounds {
   const [west, south, east, north] = turfBbox(geojson);
   return [west, south, east, north] as Bounds;
+}
+
+/** A polygon whose boundary does not cross itself. Drawing already blocks this; the server checks it again. */
+export function isSimplePolygon(polygon: Polygon): boolean {
+  return kinks(polygon).features.length === 0;
 }

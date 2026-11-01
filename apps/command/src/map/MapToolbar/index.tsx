@@ -8,6 +8,8 @@ export type MapTool = 'select' | 'polygon';
 interface MapToolbarProps {
   tool: MapTool;
   onToolChange: (tool: MapTool) => void;
+  /** Drawing is off while a boundary is being reshaped, or when the mission cannot take new polygons. */
+  drawingDisabled?: boolean;
   terrain: TerrainOptions;
   onTerrainChange: (terrain: TerrainOptions) => void;
 }
@@ -26,7 +28,7 @@ const icon = (path: string) => (
 );
 
 /** Trace Console MapToolbar: editing tools, then view layers. Floats at the bottom center of the map. */
-export function MapToolbar({ tool, onToolChange, terrain, onTerrainChange }: MapToolbarProps) {
+export function MapToolbar({ tool, onToolChange, drawingDisabled, terrain, onTerrainChange }: MapToolbarProps) {
   const toggle = (key: keyof TerrainOptions) => onTerrainChange({ ...terrain, [key]: !terrain[key] });
 
   return (
@@ -37,6 +39,7 @@ export function MapToolbar({ tool, onToolChange, terrain, onTerrainChange }: Map
       <ToolButton
         aria-label="ציור פוליגון"
         isSelected={tool === 'polygon'}
+        isDisabled={drawingDisabled}
         onChange={(on) => onToolChange(on ? 'polygon' : 'select')}
       >
         {icon('M5 6l7-3 8 5-2 10-11 2-3-8z')}

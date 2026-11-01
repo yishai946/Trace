@@ -1,6 +1,6 @@
 import type { Polygon } from 'geojson';
 import { describe, expect, it } from 'vitest';
-import { areaSquareMeters, boundsOf, distanceOutsideMeters, findOutside, isInsidePolygon } from '.';
+import { areaSquareMeters, boundsOf, distanceOutsideMeters, findOutside, isInsidePolygon, isSimplePolygon } from '.';
 
 describe('geometry', () => {
   // About 1.1 km x 1.1 km near Jerusalem.
@@ -45,5 +45,22 @@ describe('geometry', () => {
     expect(area).toBeGreaterThan(1_000_000);
     expect(area).toBeLessThan(1_200_000);
     expect(boundsOf(square)).toEqual([35.0, 31.7, 35.01, 31.71]);
+  });
+
+  it('detects a boundary that crosses itself', () => {
+    expect(isSimplePolygon(square)).toBe(true);
+    const bowtie: Polygon = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [35.0, 31.7],
+          [35.01, 31.71],
+          [35.01, 31.7],
+          [35.0, 31.71],
+          [35.0, 31.7],
+        ],
+      ],
+    };
+    expect(isSimplePolygon(bowtie)).toBe(false);
   });
 });
