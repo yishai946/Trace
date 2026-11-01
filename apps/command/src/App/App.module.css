@@ -29,17 +29,47 @@
   font-weight: 700;
 }
 
+/* Connection indicator: a dot and one word, always shown. Green pulses softly while connected; red when not. */
 .status {
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--ink-muted);
-  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
   white-space: nowrap;
+  cursor: default;
 }
 
-.status[data-state='error'] {
-  color: var(--warning);
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-muted);
+}
+
+.status[data-state='up'] .statusDot {
+  background-color: var(--success);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.status[data-state='down'] {
+  color: var(--danger-ink);
+}
+
+.status[data-state='down'] .statusDot {
+  background-color: var(--danger);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status[data-state='up'] .statusDot {
+    animation: none;
+  }
 }
 
 .appbar > .search {

@@ -115,13 +115,16 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const participants = useParticipants(mission?.id);
   const [focus, setFocus] = useState<MapFocus | null>(null);
 
-  const apiStatus = !online
-    ? 'אין אינטרנט · פעולות חדשות חסומות'
-    : health.isError
-      ? 'אין חיבור לשרת · פעולות חדשות חסומות'
-      : health.isPending
-        ? 'בודק חיבור…'
-        : null;
+  // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
+  const connection = !connected
+    ? {
+        state: 'down',
+        label: 'לא זמין',
+        detail: online ? 'אין חיבור לשרת. פעולות חדשות חסומות.' : 'אין אינטרנט. פעולות חדשות חסומות.',
+      }
+    : health.isPending
+      ? { state: 'checking', label: 'בודק…', detail: 'בודק חיבור לשרת.' }
+      : { state: 'up', label: 'זמין', detail: 'מחובר לשרת.' };
   const person = mission?.missingPerson.name ?? mission?.name;
 
   return (
@@ -167,11 +170,16 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             />
           )}
         </div>
-        {apiStatus && (
-          <span className={styles.status} data-state={connected ? 'pending' : 'error'} role="status">
-            {apiStatus}
-          </span>
-        )}
+        <span
+          className={styles.status}
+          data-state={connection.state}
+          role="status"
+          title={connection.detail}
+          aria-label={`${connection.label}. ${connection.detail}`}
+        >
+          <span className={styles.statusDot} aria-hidden="true" />
+          {connection.label}
+        </span>
         <ProfileMenu
           user={user}
           canSignOut={connected}
