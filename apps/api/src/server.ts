@@ -1,11 +1,14 @@
 import { buildApp } from './app';
+import { createDb } from './db';
 import { loadEnv } from './env';
 
 const env = loadEnv();
-const app = await buildApp(env);
+const database = createDb(env.DATABASE_URL);
+const app = await buildApp({ env, db: database.db });
 
 const shutdown = async () => {
   await app.close();
+  await database.close();
   process.exit(0);
 };
 process.on('SIGINT', shutdown);

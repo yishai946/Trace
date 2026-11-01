@@ -53,3 +53,45 @@
   padding: var(--space-7);
   color: var(--ink-secondary);
 }
+
+.mission {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  font: var(--text-body-strong);
+}
+
+.meta {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.inspector {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  inset-inline-end: var(--space-6);
+  width: var(--panel-end-w);
+}
+
+.editBar {
+  position: absolute;
+  bottom: calc(var(--space-6) * 2 + var(--header-h));
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notice {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  left: 50%;
+  margin: 0;
+  padding-block: var(--space-4);
+  padding-inline: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+  color: var(--ink-secondary);
+  transform: translateX(-50%);
+}

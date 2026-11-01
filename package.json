@@ -13,7 +13,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . && stylelint \"apps/**/*.{css,scss}\" --allow-empty-input",
-    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "db:up": "docker compose up -d --wait db",
+    "db:migrate": "pnpm --filter @trace/api db:migrate",
+    "db:seed": "pnpm --filter @trace/api db:seed",
+    "db:reset": "pnpm --filter @trace/api db:reset"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

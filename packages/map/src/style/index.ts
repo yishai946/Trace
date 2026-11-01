@@ -313,7 +313,7 @@ function missionLayers(themeId: ThemeId, boldFont: string[]): LayerSpecification
       source: SOURCE.polygons,
       paint: {
         'line-color': ['match', status, 'active', c.accent, 'completed', c.inkMuted, c.ink],
-        'line-width': ['match', status, 'active', 1.6, 1.2],
+        'line-width': ['case', ['get', 'selected'], 2.8, ['match', status, 'active', 1.6, 1.2]],
         'line-dasharray': ['match', status, 'unassigned', ['literal', [5, 4]], ['literal', [1, 0]]],
       },
     },
