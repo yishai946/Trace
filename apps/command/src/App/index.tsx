@@ -9,6 +9,7 @@ import {
   type Mission,
   type MissionPolygon,
   type Participant,
+  type SessionUser,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
@@ -16,6 +17,7 @@ import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
 import { Button } from '../components/Button';
+import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
 import { MissionMap, type MapFocus } from '../map/MissionMap';
 import { PlaceSearch } from '../map/PlaceSearch';
@@ -32,6 +34,8 @@ import { useTheme } from '../theme/theme';
 const provider = getMapProvider();
 /** Where the map opens when there is no mission yet: Jerusalem. */
 const DEFAULT_CENTER: LngLat = [35.2137, 31.7683];
+/** How often the console checks that the server is still reachable. */
+const HEALTH_INTERVAL_MS = 10_000;
 
 interface BoundaryEdit {
   polygonId: string;
@@ -70,7 +74,7 @@ export function App() {
     );
   }
 
-  return <Console provider={provider} userName={session.data.user.name} />;
+  return <Console provider={provider} user={session.data.user} />;
 }
 
 /** The map behind the login and mission list screens, under a veil of the map ground colour. */
@@ -91,15 +95,19 @@ function Backdrop({ provider, themeId, veil }: { provider: MapProvider; themeId:
 }
 
 /** The signed-in console: the mission list, or the live map of the mission the commander opened. */
-function Console({ provider, userName }: { provider: MapProvider; userName: string }) {
-  const { theme, setTheme } = useTheme();
+function Console({ provider, user }: { provider: MapProvider; user: SessionUser }) {
+  const { theme } = useTheme();
   const online = useOnline();
   const signOut = useSignOut();
+  // The server is pinged regularly: navigator.onLine alone misses a lost server or a network with no way out.
   const health = useQuery({
     queryKey: ['health'],
     queryFn: ({ signal }) => apiRequest('/health', { schema: HealthResponse, signal }),
     retry: false,
+    refetchInterval: HEALTH_INTERVAL_MS,
   });
+  /** New operational actions need both a network and a reachable server (UC-C01). */
+  const connected = online && !health.isError;
   const missions = useMissions();
   const [openId, setOpenId] = useState<string | null>(null);
   const mission = missions.data?.find((m) => m.id === openId);
@@ -109,13 +117,12 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
 
   const apiStatus = !online
     ? 'אין אינטרנט · פעולות חדשות חסומות'
-    : signOut.isError
-      ? 'היציאה נכשלה. נסו שוב.'
+    : health.isError
+      ? 'אין חיבור לשרת · פעולות חדשות חסומות'
       : health.isPending
         ? 'בודק חיבור…'
-        : health.isError
-          ? 'השרת לא זמין'
-          : null;
+        : null;
+  const person = mission?.missingPerson.name ?? mission?.name;
 
   return (
     <main className={styles.screen}>
@@ -135,7 +142,7 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
           polygons={polygons.data ?? []}
           participants={participants.data ?? []}
           themeId={theme}
-          online={online}
+          online={connected}
         />
       )}
 
@@ -147,8 +154,7 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
               המסעות שלי
             </Button>
             <span className={styles.mission}>
-              {mission.name}
-              {mission.missingPerson.name && `, ${mission.missingPerson.name}`}
+              <span className={styles.person}>{person}</span>
               <span className={styles.meta}>קוד {mission.joinCode}</span>
             </span>
           </>
@@ -162,23 +168,17 @@ function Console({ provider, userName }: { provider: MapProvider; userName: stri
           )}
         </div>
         {apiStatus && (
-          <span
-            className={styles.status}
-            data-state={!online || signOut.isError || health.isError ? 'error' : 'pending'}
-          >
+          <span className={styles.status} data-state={connected ? 'pending' : 'error'} role="status">
             {apiStatus}
           </span>
         )}
-        <div className={styles.actions}>
-          <span className={styles.user}>{userName}, מנהל מסע</span>
-          <Button onPress={() => setTheme(theme === 'night' ? 'day' : 'night')}>
-            {theme === 'night' ? 'ערכת יום' : 'ערכת לילה'}
-          </Button>
-          {/* Signing out needs the server to revoke the session cookie, so it waits for a connection. */}
-          <Button onPress={() => signOut.mutate()} isDisabled={!online || signOut.isPending}>
-            יציאה
-          </Button>
-        </div>
+        <ProfileMenu
+          user={user}
+          canSignOut={connected}
+          signingOut={signOut.isPending}
+          signOutFailed={signOut.isError}
+          onSignOut={() => signOut.mutate()}
+        />
       </header>
     </main>
   );

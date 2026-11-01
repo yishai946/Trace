@@ -16,9 +16,8 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.footer {
-  padding-block: var(--space-5);
-  padding-inline: var(--space-7);
+.section:last-child {
+  border-bottom: 0;
 }
 
 .brand {

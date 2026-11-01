@@ -70,6 +70,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
+  flex: 0 1 var(--panel-start-w);
+  min-width: 0;
   height: var(--control-h);
   margin-inline-start: auto;
   padding-inline: var(--space-5);
@@ -86,6 +88,8 @@
 }
 
 .search input {
+  flex: 1;
+  width: 100%;
   min-width: 0;
   border: 0;
   background-color: transparent;
@@ -101,7 +105,9 @@
   outline: 2px solid var(--focus);
 }
 
+/* `position: relative` keeps the visually hidden header label inside the scroller, not widening the page. */
 .body {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: auto;
@@ -128,7 +134,16 @@
   border-top: 1px solid var(--border-subtle);
 }
 
-.table tbody tr:hover {
+.table th,
+.table td {
+  white-space: nowrap;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
   background-color: var(--surface-hover);
 }
 

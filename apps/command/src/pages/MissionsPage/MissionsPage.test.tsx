@@ -26,6 +26,14 @@ describe('MissionsPage', () => {
     expect(onOpen).toHaveBeenCalledWith('m2');
   });
 
+  it('opens a mission by clicking anywhere on its row', () => {
+    const onOpen = vi.fn();
+    render(<MissionsPage missions={missions} loadFailed={false} onOpen={onOpen} />);
+
+    fireEvent.click(screen.getByText('מסע 0409'));
+    expect(onOpen).toHaveBeenCalledWith('m3');
+  });
+
   it('filters by status, with a count on each tab', () => {
     render(<MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} />);
 

@@ -55,7 +55,7 @@ export function MissionsPage({ missions, loadFailed, onOpen }: MissionsPageProps
               <circle cx="11" cy="11" r="7" />
               <path d="m20 20-4-4" />
             </svg>
-            <Input placeholder="חפש לפי שם מסע, נעדר או קוד" />
+            <Input placeholder="חיפוש לפי מסע, נעדר או קוד" />
           </SearchField>
         </div>
 
@@ -87,7 +87,8 @@ export function MissionsPage({ missions, loadFailed, onOpen }: MissionsPageProps
                   const status = MISSION_STATUS_LABELS[m.status];
                   const person = [m.missingPerson.name, m.missingPerson.age].filter((v) => v !== null).join(', ');
                   return (
-                    <tr key={m.id}>
+                    // The whole row opens the mission; the "פתח" button is the keyboard and screen reader path.
+                    <tr key={m.id} className={styles.row} onClick={() => onOpen(m.id)}>
                       <td className={styles.name}>{m.name}</td>
                       <td>{person || '—'}</td>
                       <td>

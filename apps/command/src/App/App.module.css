@@ -18,6 +18,11 @@
   box-shadow: var(--shadow-panel);
 }
 
+/* Fixed parts keep their size; the mission name, search and status shrink as the window narrows. */
+.appbar > * {
+  flex-shrink: 0;
+}
+
 .brand {
   padding-inline: var(--space-3);
   font: var(--text-title);
@@ -25,24 +30,23 @@
 }
 
 .status {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
   color: var(--ink-muted);
-}
-
-.status[data-state='ok'] {
-  color: var(--success);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status[data-state='error'] {
   color: var(--warning);
 }
 
-.search {
-  margin-inline: auto;
-}
-
-.actions {
+.appbar > .search {
   display: flex;
-  gap: var(--space-3);
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
 }
 
 .setup {
@@ -54,17 +58,32 @@
   color: var(--ink-secondary);
 }
 
-.mission {
+.appbar > .mission {
   display: flex;
+  flex-shrink: 1;
   align-items: baseline;
   gap: var(--space-4);
+  min-width: 0;
   font: var(--text-body-strong);
+  white-space: nowrap;
+}
+
+.person {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
   color: var(--ink-muted);
   font: var(--text-meta);
   font-variant-numeric: tabular-nums;
+}
+
+/* Narrow windows: the join code gives way to the missing person's name and the search. */
+@media (width < 900px) {
+  .meta {
+    display: none;
+  }
 }
 
 .inspector {
@@ -94,11 +113,6 @@
   box-shadow: var(--shadow-panel);
   color: var(--ink-secondary);
   transform: translateX(-50%);
-}
-
-.user {
-  color: var(--ink-secondary);
-  font: var(--text-meta);
 }
 
 /* Dims the map behind the login (light) and mission list (dense) screens, as in wireframes Cd01 and Cd02. */

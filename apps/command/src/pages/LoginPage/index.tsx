@@ -76,10 +76,6 @@ export function LoginPage() {
           </Button>
         </Form>
       </div>
-
-      <div className={styles.footer}>
-        <span className={styles.meta}>מחפשים בשטח נכנסים ל-TRACE Field עם קוד הצטרפות.</span>
-      </div>
     </main>
   );
 }
