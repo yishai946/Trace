@@ -1,5 +1,5 @@
 import { canChangePolygons, isActiveInPolygon, nextPolygonLetter } from '@trace/domain';
-import { findOutside, isSimplePolygon, type LngLat } from '@trace/geo';
+import { findOutside, isValidPolygon, type LngLat } from '@trace/geo';
 import {
   PointGeometry,
   PolygonGeometry,
@@ -72,10 +72,17 @@ async function findPolygon(tx: Tx, missionId: string, polygonId: string): Promis
   return row;
 }
 
-function assertSimple(geometry: CreatePolygonInput['geometry']) {
-  if (!isSimplePolygon(geometry)) {
-    throw new AppError(400, 'INVALID_GEOMETRY', 'The polygon boundary crosses itself');
-  }
+/**
+ * Rejects geometry that is not a valid search area: crossing rings, holes outside the outer ring, nested holes.
+ * The shared check gives the client's error; PostGIS has the final word on anything it does not cover.
+ */
+async function assertValid(db: Db, geometry: CreatePolygonInput['geometry']) {
+  const invalid = () => new AppError(400, 'INVALID_GEOMETRY', 'The polygon is not a valid search area');
+  if (!isValidPolygon(geometry)) throw invalid();
+  const [row] = await db.execute<{ valid: boolean }>(
+    sql`select ST_IsValid(ST_GeomFromGeoJSON(${JSON.stringify(geometry)})) as valid`,
+  );
+  if (!row?.valid) throw invalid();
 }
 
 /** Searchers assigned to the polygon who would end up outside the new boundary. */
@@ -122,7 +129,7 @@ export async function listPolygons(db: Db, missionId: string): Promise<MissionPo
 
 /** Draws a new polygon (UC-C06). It gets the next free letter and starts unassigned. Overlap is allowed. */
 export async function createPolygon(db: Db, missionId: string, input: CreatePolygonInput): Promise<MissionPolygon> {
-  assertSimple(input.geometry);
+  await assertValid(db, input.geometry);
   return db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     // Deleted polygons keep their letters.
@@ -151,7 +158,7 @@ export async function updatePolygon(
   polygonId: string,
   input: UpdatePolygonInput,
 ): Promise<MissionPolygon> {
-  if (input.geometry) assertSimple(input.geometry);
+  if (input.geometry) await assertValid(db, input.geometry);
   return db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     await findPolygon(tx, missionId, polygonId);
