@@ -37,22 +37,27 @@ export function PolygonInspector({
   onEditBoundary,
   onDelete,
 }: PolygonInspectorProps) {
-  const [name, setName] = useState(polygon.name ?? '');
+  const [name, setName] = useState(polygon.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const hasActiveSearchers = polygon.activeSearchers > 0;
 
+  // A polygon always has a name: a blank field goes back to the current one.
   const saveName = () => {
-    if (name.trim() !== (polygon.name ?? '')) onRename(name);
+    const trimmed = name.trim();
+    if (!trimmed) setName(polygon.name);
+    else if (trimmed !== polygon.name) onRename(trimmed);
   };
 
   return (
-    <section className={styles.panel} aria-label={`פוליגון ${polygon.letter}`}>
+    <section className={styles.panel} aria-label={polygon.name}>
       <div className={`${styles.section} ${styles.head}`}>
-        <span className={styles.letter} data-status={polygon.status}>
-          {polygon.letter}
+        <span className={styles.mark} data-status={polygon.status} aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+            <path d="M5 6l7-3 8 5-2 10-11 2-3-8z" />
+          </svg>
         </span>
         <div className={styles.titles}>
-          <div className={styles.name}>פוליגון {polygon.letter}</div>
+          <div className={styles.name}>{polygon.name}</div>
           <div className={styles.sub}>
             {POLYGON_STATUS_LABEL[polygon.status]}, {assigned.length} מחפשים
           </div>
@@ -103,7 +108,7 @@ export function PolygonInspector({
         <div className={`${styles.section} ${styles.actions}`}>
           {confirmingDelete ? (
             <div role="group" aria-label="אישור מחיקה" className={styles.confirm}>
-              <p className={styles.hint}>למחוק את פוליגון {polygon.letter}? היסטוריית Routes ודיווחים נשמרת.</p>
+              <p className={styles.hint}>למחוק את "{polygon.name}"? היסטוריית Routes ודיווחים נשמרת.</p>
               <div className={styles.row}>
                 <Button onPress={() => setConfirmingDelete(false)} isDisabled={busy}>
                   בטל

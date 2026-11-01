@@ -1,4 +1,4 @@
-import { canChangePolygons, isActiveInPolygon, nextPolygonLetter } from '@trace/domain';
+import { canChangePolygons, isActiveInPolygon, nextPolygonName } from '@trace/domain';
 import { findOutside, isValidPolygon, type LngLat } from '@trace/geo';
 import {
   PointGeometry,
@@ -27,7 +27,6 @@ const activeSearchers = sql<number>`(
 const polygonColumns = {
   id: polygons.id,
   missionId: polygons.missionId,
-  letter: polygons.letter,
   name: polygons.name,
   status: polygons.status,
   geometry: asGeoJson(polygons.geometry),
@@ -127,19 +126,18 @@ export async function listPolygons(db: Db, missionId: string): Promise<MissionPo
   return rows.map(toPolygon);
 }
 
-/** Draws a new polygon (UC-C06). It gets the next free letter and starts unassigned. Overlap is allowed. */
+/** Draws a new polygon (UC-C06). Unnamed, it is called "פוליגון N"; it starts unassigned. Overlap is allowed. */
 export async function createPolygon(db: Db, missionId: string, input: CreatePolygonInput): Promise<MissionPolygon> {
   await assertValid(db, input.geometry);
   return db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
-    // Deleted polygons keep their letters.
-    const used = await tx.select({ letter: polygons.letter }).from(polygons).where(eq(polygons.missionId, missionId));
+    // Deleted polygons count, so a default name is never reused within the mission.
+    const used = await tx.select({ name: polygons.name }).from(polygons).where(eq(polygons.missionId, missionId));
     const [created] = await tx
       .insert(polygons)
       .values({
         missionId,
-        letter: nextPolygonLetter(used.map((p) => p.letter)),
-        name: input.name ?? null,
+        name: input.name ?? nextPolygonName(used.map((p) => p.name)),
         geometry: input.geometry,
       })
       .returning({ id: polygons.id });

@@ -9,7 +9,8 @@ export interface OutsideSearcher {
 }
 
 interface BoundaryEditBarProps {
-  letter: string;
+  /** The polygon's name. */
+  name: string;
   /** Assigned searchers the new boundary leaves outside (UC-C06). */
   outside: OutsideSearcher[];
   /** The edited boundary crosses itself and cannot be saved. */
@@ -31,7 +32,7 @@ function outsideText(outside: OutsideSearcher[]): string {
 
 /** The bar shown while a polygon boundary is reshaped (Cd07): what the change affects, then cancel or save. */
 export function BoundaryEditBar({
-  letter,
+  name,
   outside,
   invalid,
   busy,
@@ -66,7 +67,7 @@ export function BoundaryEditBar({
         </svg>
       )}
       <div className={styles.text}>
-        <div>עריכת גבול פוליגון {letter}</div>
+        <div>עריכת גבול: {name}</div>
         <div className={styles.meta}>{detail ?? 'גררו נקודה להזזה, או נקודת ביניים להוספת נקודה.'}</div>
       </div>
       <Button onPress={onCancel} isDisabled={busy}>

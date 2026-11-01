@@ -2,12 +2,12 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BoundaryEditBar } from '.';
 
-const props = { letter: 'A', busy: false, error: null, onCancel: vi.fn(), onSave: vi.fn() };
+const props = { name: 'ואדי צפוני', busy: false, error: null, onCancel: vi.fn(), onSave: vi.fn() };
 
 describe('BoundaryEditBar', () => {
   it('explains how to edit when nothing is affected', () => {
     render(<BoundaryEditBar {...props} outside={[]} invalid={false} />);
-    expect(screen.getByText('עריכת גבול פוליגון A')).toBeTruthy();
+    expect(screen.getByText('עריכת גבול: ואדי צפוני')).toBeTruthy();
     expect(screen.getByText(/גררו נקודה/)).toBeTruthy();
   });
 

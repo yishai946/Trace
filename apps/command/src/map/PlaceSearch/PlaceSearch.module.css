@@ -48,6 +48,38 @@
   color: var(--ink-muted);
 }
 
+/* Clears the search, at the end of the field (the left, in RTL). */
+.clear {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  margin-inline-end: calc(var(--space-3) * -1);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  outline: none;
+}
+
+.clear[data-hovered] {
+  background-color: var(--surface-hover);
+  color: var(--ink);
+}
+
+.clear[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.clear svg {
+  width: 14px;
+  height: 14px;
+}
+
 .popover {
   width: var(--trigger-width);
   border: 1px solid var(--border);

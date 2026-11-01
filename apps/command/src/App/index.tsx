@@ -359,7 +359,7 @@ function MissionWorkspace({
       {edit && selected && (
         <div className={styles.editBar}>
           <BoundaryEditBar
-            letter={selected.letter}
+            name={selected.name}
             outside={outside}
             invalid={!isValidPolygon(edit.draft)}
             busy={busy}
