@@ -8,6 +8,10 @@ Before completing any code change, run `pnpm format` and `pnpm lint`, fix releva
 
 Never commit to `main` or `dev`. Before the first edit of a new feature, fix or change, check the current branch; if it is `main`, `dev` or a branch for different work, create a new branch from an up-to-date `dev` (`git switch dev && git pull && git switch -c <type>/<scope>/<area>/.../<change>`). Name it by the rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#branches), e.g. `fix/command/map/polygons/create`. Pull Requests target `dev`, with a title in commit-convention form; they are squash-merged. Only a release Pull Request from `dev` into `main` uses a merge commit.
 
+# Tracking work
+
+Work is tracked in GitHub issues and the [project board](https://github.com/users/yishai946/projects/6), not in files in the repository. Before starting a task, find its issue (or the one the user names), check that every issue in its "Blocked by" list is closed, assign it and set its board Status to In progress. Every Pull Request names the issue it started from: `Closes #<N>` when it finishes it, `Refs #<N>` when it does part of it (then tick only what it implemented). If the work has no issue yet, create one first (labels, milestone, board Priority and Size, "Blocked by"), add it to the board, and only then open the Pull Request linked to it. Never open a Pull Request without an issue, except a release from `dev` into `main`. If the user asks what to work on next, list the board (`gh project item-list 6 --owner yishai946 --format json`) and take the unassigned **Ready** item with the earliest milestone, then the highest priority. Full rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#tracking-work).
+
 # Workspaces
 
 pnpm monorepo: deployable apps go in `apps/*` (e.g. `@trace/api`, `@trace/command`, `@trace/field`), shared code goes in `packages/*` (e.g. `@trace/domain` for pure business rules, `@trace/schemas` for request/response validation shared by client and server). Packages never import from apps. Every `tsconfig.json` extends `tsconfig.base.json`.
