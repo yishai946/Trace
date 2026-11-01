@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { bearer, phoneNumber } from 'better-auth/plugins';
 import type { Db } from '../db';
-import { accounts, sessions, users, verifications } from '../db/schema';
+import { accounts, searchers, sessions, users, verifications } from '../db/schema';
 import type { Env } from '../env';
 
 /** Delivers a sign-in code to a searcher's phone. */
@@ -50,6 +50,14 @@ export function createAuth({ env, db, sendOtp }: AuthOptions) {
         sendOTP: (message) => sendOtp(message),
         phoneNumberValidator: (phone) => PHONE_NUMBER.test(phone),
         signUpOnVerification: { getTempEmail: placeholderEmail },
+        // Every phone user gets a searcher profile on their first verified code, named after the phone number until
+        // they enter a name (UC-F01). Later sign-ins keep the existing profile.
+        callbackOnVerification: async ({ phoneNumber: phone, user }) => {
+          await db
+            .insert(searchers)
+            .values({ userId: user.id, phone, name: user.name })
+            .onConflictDoNothing({ target: searchers.userId });
+        },
       }),
       bearer(),
     ],

@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { InjectOptions } from 'fastify';
 import { buildApp } from '../app';
 import { createCommander } from '../auth';
@@ -65,14 +65,8 @@ export async function signInCommander(ctx: TestContext): Promise<TestUser> {
   return { userId, headers: { cookie: cookiesFrom(res.headers['set-cookie']) } };
 }
 
-/**
- * Signs a searcher in with a phone OTP, as Field does, and gives them a searcher profile unless `withProfile` is
- * false. Requests carry the session token as a bearer token.
- */
-export async function signInSearcher(
-  ctx: TestContext,
-  { withProfile = true }: { withProfile?: boolean } = {},
-): Promise<TestUser & { searcherId: string | null }> {
+/** Signs a searcher in with a phone OTP, as Field does. Requests carry the session token as a bearer token. */
+export async function signInSearcher(ctx: TestContext): Promise<TestUser & { searcherId: string }> {
   const phoneNumber = `+97252${String(next()).padStart(7, '0')}`;
   await ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/send-otp', payload: { phoneNumber } });
   const code = ctx.sentCodes.get(phoneNumber);
@@ -85,14 +79,9 @@ export async function signInSearcher(
   const body = res.json<{ token?: string; user?: { id: string } }>();
   if (res.statusCode !== 200 || !body.token || !body.user) throw new Error(`Searcher sign-in failed: ${res.body}`);
 
-  let searcherId: string | null = null;
-  if (withProfile) {
-    const [profile] = await ctx.db
-      .insert(searchers)
-      .values({ userId: body.user.id, phone: phoneNumber, name: 'מחפש' })
-      .returning({ id: searchers.id });
-    searcherId = profile?.id ?? null;
-  }
+  const [profile] = await ctx.db.select({ id: searchers.id }).from(searchers).where(eq(searchers.userId, body.user.id));
+  if (!profile) throw new Error('Sign-in created no searcher profile');
+  const searcherId = profile.id;
   return { userId: body.user.id, searcherId, headers: { authorization: `Bearer ${body.token}` } };
 }
 

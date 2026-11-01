@@ -2,7 +2,7 @@ import { ApiError, Mission, MissionList, MissionPolygon } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import type { Polygon } from 'geojson';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { users } from '../db/schema';
+import { searchers, users } from '../db/schema';
 import {
   addParticipant,
   createTestApp,
@@ -110,6 +110,24 @@ describe('auth', () => {
       expect(user?.role).toBe('searcher');
     });
 
+    it('gives a new searcher a profile on the first verified code, and keeps it on later sign-ins', async () => {
+      const phoneNumber = '+972549876543';
+      const signIn = async () => {
+        await ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/send-otp', payload: { phoneNumber } });
+        const res = await ctx.app.inject({
+          method: 'POST',
+          url: '/api/auth/phone-number/verify',
+          payload: { phoneNumber, code: ctx.sentCodes.get(phoneNumber) },
+        });
+        expect(res.statusCode).toBe(200);
+      };
+      await signIn();
+      await signIn();
+      const profiles = await ctx.db.select().from(searchers).where(eq(searchers.phone, phoneNumber));
+      expect(profiles).toHaveLength(1);
+      expect(profiles[0]?.name).toBe(phoneNumber);
+    });
+
     it('does not send a code to a malformed phone number', async () => {
       const res = await ctx.app.inject({
         method: 'POST',
@@ -196,7 +214,6 @@ describe('auth', () => {
 
     it('read the missions they take part in and their map, without commander actions (spec §7, UC-F04)', async () => {
       const searcher = await signInSearcher(ctx);
-      if (!searcher.searcherId) throw new Error('Searcher has no profile');
       await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: searcher.searcherId });
       await createMissionAs(commander, 'מסע אחר');
       const inject = injectAs(ctx, searcher);
@@ -218,15 +235,11 @@ describe('auth', () => {
       }
     });
 
-    it('get 404 for a mission they are not part of, and see none before they have a profile', async () => {
+    it('get 404 for a mission they are not part of, and see no missions before joining one', async () => {
       const outsider = await signInSearcher(ctx);
-      const res = await injectAs(ctx, outsider)({ method: 'GET', url: `/api/missions/${mission.id}` });
-      expect(res.statusCode).toBe(404);
-
-      const newcomer = await signInSearcher(ctx, { withProfile: false });
-      const inject = injectAs(ctx, newcomer);
-      expect(MissionList.parse((await inject({ method: 'GET', url: '/api/missions' })).json())).toEqual([]);
+      const inject = injectAs(ctx, outsider);
       expect((await inject({ method: 'GET', url: `/api/missions/${mission.id}` })).statusCode).toBe(404);
+      expect(MissionList.parse((await inject({ method: 'GET', url: '/api/missions' })).json())).toEqual([]);
     });
   });
 });
