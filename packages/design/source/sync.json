@@ -1,14 +1,14 @@
 {
   "artifact": "https://claude.ai/artifact/GvJHGBe1kjkFFhRtEESJhY",
   "artifactPathPrefix": "project/",
-  "version": "1793741091-48cb",
-  "syncedAt": "2026-11-03T21:26:15.641Z",
+  "version": "1793742357-a17a",
+  "syncedAt": "2026-11-03T21:47:48.702Z",
   "files": {
-    "README.md": "dd7ad107ef3a771fb723f3ae97846aad7a2c382adda70eab84e125f43c0174c6",
+    "README.md": "563147672f3263814de4b76cb908d87f6e59ad5d0d08a45c2b29fc2483319d13",
     "components/AlertBanner/README.md": "c2dfa4433b54b5bc0c93359a568d32d1c03416de46f32f7fb7cd225a18f09f77",
     "components/AlertBanner/preview.html": "69374daad9254f29439f6a64fa46b0dd4e41a614a8628c8f4349c7c2b0830c46",
-    "components/AppBar/README.md": "0632300bfe02c4c51637b820a81247430c02095d8ce65c18eeb0c12448f93870",
-    "components/AppBar/preview.html": "5918b59988da01c3e6d013bca0c67a84cbc39af2c4eff8885a8f7654a1575803",
+    "components/AppBar/README.md": "3761aea914d2ff7edfdf66fa4d75414d241417b9d0c3f1ecf870b2c5771fa3b2",
+    "components/AppBar/preview.html": "37f100064e52403dcf7f370cd8d8169e4ac89bd0be705f1cbf83fa4b02681e22",
     "components/Button/README.md": "255266fef51e19a1ff31b3e42c1cfede3cca6afa8feb474c3f34e83fba0fdb3d",
     "components/Button/preview.html": "63ac9a6a07a14c8b00c735302b79c8704cadae0f15dd137a7874b09a1be8c416",
     "components/CallsignChip/README.md": "cc0190aebab4e406d83d346580bf519216204b4586da509f797c663d27e28206",
@@ -35,7 +35,7 @@
     "components/TextField/preview.html": "eed5ce333f89bf6b912dfcb36031e436d09ebafbb45b2d329361f0ae0c7c70f3",
     "components/UnitRow/README.md": "395d61c9396ccf2385042b089fb7e28a0035fd9f742147c9e13acbf72a09c599",
     "components/UnitRow/preview.html": "ab5d9b3b8f55a8225b9bc7e6493ffd27cabbd265458d8965dd032e54ad935cee",
-    "components/bundle.css": "73c7394fbade6851ea154514fb45cdbb7f90384a451e9d0348b5418f1724d7a3",
+    "components/bundle.css": "945b44c14806ba6b8bd44ab523036322d5cd695d2490f5ff5843b4fb8d3c3f8d",
     "design-system.json": "5bc7743a7db72711ee26ef59e4deb530c944f083acd809d12a2263b57891b573",
     "tokens.json": "2b616395d19d4b49f443d1263826e11bafed6eff81ef1388b69a4b9ea75eab05"
   }
