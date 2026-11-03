@@ -88,22 +88,22 @@
   color: var(--ink-secondary);
 }
 
+/* Between the brand and the mission selector (Trace Console .tc-appbar__sep). */
+.sep {
+  width: 1px;
+  height: 24px;
+  background-color: var(--border-strong);
+}
+
+/* The selector shrinks with the window; its name is cut with an ellipsis. */
 .appbar > .mission {
   display: flex;
   flex-shrink: 1;
-  align-items: baseline;
-  gap: var(--space-4);
   min-width: 0;
-  font: var(--text-body-strong);
-  white-space: nowrap;
-}
-
-.person {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .meta {
+  white-space: nowrap;
   color: var(--ink-muted);
   font: var(--text-meta);
   font-variant-numeric: tabular-nums;
