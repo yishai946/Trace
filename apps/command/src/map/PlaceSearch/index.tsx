@@ -6,10 +6,21 @@ import styles from './PlaceSearch.module.css';
 interface PlaceSearchProps {
   provider: MapProvider;
   onSelect: (place: Place) => void;
+  /** The accessible name of the field. */
+  label?: string;
+  placeholder?: string;
+  /** Fills its container instead of the app bar's fixed width. */
+  fullWidth?: boolean;
 }
 
-/** Search for a place or address in Israel and move the map there. */
-export function PlaceSearch({ provider, onSelect }: PlaceSearchProps) {
+/** Search for a place or address in Israel and move the map there, or place a point on it. */
+export function PlaceSearch({
+  provider,
+  onSelect,
+  label = 'חיפוש מקום',
+  placeholder = 'חפש מקום, כתובת או נחל…',
+  fullWidth = false,
+}: PlaceSearchProps) {
   const list = useAsyncList<Place>({
     async load({ signal, filterText }) {
       try {
@@ -24,6 +35,7 @@ export function PlaceSearch({ provider, onSelect }: PlaceSearchProps) {
   return (
     <ComboBox
       className={styles.root}
+      data-full-width={fullWidth || undefined}
       items={list.items}
       inputValue={list.filterText}
       onInputChange={list.setFilterText}
@@ -34,7 +46,7 @@ export function PlaceSearch({ provider, onSelect }: PlaceSearchProps) {
         if (place) onSelect(place);
       }}
     >
-      <Label className={styles.label}>חיפוש מקום</Label>
+      <Label className={styles.label}>{label}</Label>
       <div className={styles.field}>
         <svg
           aria-hidden="true"
@@ -48,7 +60,7 @@ export function PlaceSearch({ provider, onSelect }: PlaceSearchProps) {
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-4-4" />
         </svg>
-        <Input className={styles.input} placeholder="חפש מקום, כתובת או נחל…" />
+        <Input className={styles.input} placeholder={placeholder} />
         {list.filterText && (
           // slot={null}: a plain button, not the ComboBox's own trigger that opens the list.
           <Button slot={null} className={styles.clear} aria-label="נקה חיפוש" onPress={() => list.setFilterText('')}>

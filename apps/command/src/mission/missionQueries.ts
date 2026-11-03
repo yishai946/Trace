@@ -1,8 +1,10 @@
 import {
+  Mission,
   MissionList,
   MissionPolygon,
   MissionPolygonList,
   ParticipantList,
+  type CreateMissionBody,
   type CreatePolygonBody,
   type UpdatePolygonBody,
 } from '@trace/schemas';
@@ -19,6 +21,35 @@ export function useMissions() {
   return useQuery({
     queryKey: missionKeys.all,
     queryFn: ({ signal }) => apiRequest('/missions', { schema: MissionList, signal }),
+  });
+}
+
+/**
+ * Creates a mission (UC-C02), then uploads the missing person's photo when there is one. The mission exists even if
+ * the photo fails; `photoFailed` tells the caller to say so.
+ */
+export function useCreateMission() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ body, photo }: { body: CreateMissionBody; photo: File | null }) => {
+      const created = await apiRequest('/missions', { method: 'POST', body, schema: Mission });
+      if (!photo) return { mission: created, photoFailed: false };
+      try {
+        const withPhoto = await apiRequest(`/missions/${created.id}/photo`, {
+          method: 'PUT',
+          body: photo,
+          schema: Mission,
+        });
+        return { mission: withPhoto, photoFailed: false };
+      } catch {
+        return { mission: created, photoFailed: true };
+      }
+    },
+    onSuccess: ({ mission }) => {
+      // The new mission opens at once, before the list is fetched again.
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) => [mission, ...(list ?? [])]);
+      return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    },
   });
 }
 

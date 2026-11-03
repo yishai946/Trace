@@ -15,11 +15,18 @@ export class ApiRequestError extends Error {
 }
 
 interface RequestOptions<S extends z.ZodType> {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** Sent as JSON, or as is with its own type when it is a file. */
   body?: unknown;
   /** Validates the response. Omit for responses without a body. */
   schema?: S;
   signal?: AbortSignal;
+}
+
+function encode(body: unknown): RequestInit {
+  if (body === undefined) return {};
+  if (body instanceof Blob) return { headers: { 'content-type': body.type }, body };
+  return { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
 
 /** Calls the TRACE API through the Vite proxy and validates the response with the shared zod schema. */
@@ -29,12 +36,7 @@ export async function apiRequest<S extends z.ZodType>(
 ): Promise<z.infer<S>> {
   let res: Response;
   try {
-    res = await fetch(`/api${path}`, {
-      method,
-      signal,
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    res = await fetch(`/api${path}`, { method, signal, ...encode(body) });
   } catch (error) {
     if (signal?.aborted) throw error;
     throw new ApiRequestError(0, 'NETWORK_ERROR', 'The server is not reachable');
