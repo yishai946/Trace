@@ -12,7 +12,7 @@ export async function createTestApp() {
   const database = createDb(TEST_DATABASE_URL);
   /** The last sign-in code sent to each phone number. */
   const sentCodes = new Map<string, string>();
-  const { app, auth } = await buildApp({
+  const { app, auth, realtime } = await buildApp({
     env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL }),
     db: database.db,
     sendOtp: async ({ phoneNumber, code }) => {
@@ -22,6 +22,7 @@ export async function createTestApp() {
   return {
     app,
     auth,
+    realtime,
     db: database.db,
     sentCodes,
     close: async () => {

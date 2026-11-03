@@ -11,9 +11,10 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { missionAccess } from '../../auth/auth.access';
 import type { Db } from '../../db';
+import type { Realtime } from '../../realtime';
 import { createPolygon, deletePolygon, listPolygons, updatePolygon } from './polygons.service';
 
-export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db }) => {
+export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   app.get(
     '/missions/:missionId/polygons',
     {
@@ -40,7 +41,12 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    async (request, reply) => reply.status(201).send(await createPolygon(db, request.params.missionId, request.body)),
+    async (request, reply) => {
+      const { missionId } = request.params;
+      const polygon = await createPolygon(db, missionId, request.body);
+      realtime.publish({ type: 'polygon.saved', missionId, polygon });
+      return reply.status(201).send(polygon);
+    },
   );
 
   app.patch(
@@ -58,7 +64,12 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    (request) => updatePolygon(db, request.params.missionId, request.params.polygonId, request.body),
+    async (request) => {
+      const { missionId, polygonId } = request.params;
+      const polygon = await updatePolygon(db, missionId, polygonId, request.body);
+      realtime.publish({ type: 'polygon.saved', missionId, polygon });
+      return polygon;
+    },
   );
 
   app.delete(
@@ -73,7 +84,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
       preHandler: missionAccess(db, 'commander'),
     },
     async (request, reply) => {
-      await deletePolygon(db, request.params.missionId, request.params.polygonId);
+      const { missionId, polygonId } = request.params;
+      await deletePolygon(db, missionId, polygonId);
+      realtime.publish({ type: 'polygon.deleted', missionId, polygonId });
       return reply.status(204).send(null);
     },
   );
