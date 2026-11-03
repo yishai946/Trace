@@ -15,7 +15,7 @@ const optionalText = (max: number) =>
 
 // Request bodies with defaults or transforms have no OpenAPI component id: their input and output differ.
 
-/** Missing-person details from the new-mission screen (UC-C02). The photo comes with file storage. */
+/** Missing-person details from the new-mission screen (UC-C02). The photo is uploaded separately, after creation. */
 export const MissingPersonInput = z.object({
   name: optionalText(120),
   age: z.number().int().min(0).max(130).nullable().default(null),
@@ -31,6 +31,8 @@ export const MissingPerson = z
     disappearedAt: z.iso.datetime({ offset: true }).nullable(),
     description: z.string().nullable(),
     additionalInfo: z.string().nullable(),
+    /** Where the photo is served (`GET /api/missions/:id/photo`), versioned so a replaced photo is fetched again. */
+    photoUrl: z.string().nullable(),
   })
   .meta({ id: 'MissingPerson' });
 
