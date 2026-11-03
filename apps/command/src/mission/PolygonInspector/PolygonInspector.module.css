@@ -23,7 +23,7 @@
   gap: var(--space-5);
 }
 
-.letter {
+.mark {
   display: inline-grid;
   place-items: center;
   min-width: var(--control-h-sm);
@@ -36,12 +36,12 @@
   font-weight: 700;
 }
 
-.letter[data-status='completed'] {
+.mark[data-status='completed'] {
   border-color: var(--ink-muted);
   color: var(--ink-muted);
 }
 
-.letter[data-status='unassigned'] {
+.mark[data-status='unassigned'] {
   border-style: dashed;
   border-color: var(--ink-secondary);
   color: var(--ink-secondary);
@@ -143,4 +143,9 @@
   margin: 0;
   color: var(--danger-ink);
   font: var(--text-meta);
+}
+
+.mark svg {
+  width: 16px;
+  height: 16px;
 }

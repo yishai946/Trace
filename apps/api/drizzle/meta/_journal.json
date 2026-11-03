@@ -22,6 +22,13 @@
       "when": 1793548492686,
       "tag": "0002_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793556435878,
+      "tag": "0003_polygon_names",
+      "breakpoints": true
     }
   ]
 }

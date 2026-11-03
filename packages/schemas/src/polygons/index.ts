@@ -4,19 +4,15 @@ import { PolygonGeometry } from '../geo';
 
 export const PolygonStatus = z.enum(POLYGON_STATUSES).meta({ id: 'PolygonStatus' });
 
-const PolygonName = z
-  .string()
-  .trim()
-  .max(60)
-  .transform((value) => value || null);
+/** A polygon's name, shown on the map and in the Inspector. */
+const PolygonName = z.string().trim().min(1).max(60);
 
 export const MissionPolygon = z
   .object({
     id: z.uuid(),
     missionId: z.uuid(),
-    /** Assigned by the server: A, B, … in creation order, never reused. */
-    letter: z.string(),
-    name: z.string().nullable(),
+    /** Given by the commander, or "פוליגון N" from the server until renamed. */
+    name: z.string(),
     status: PolygonStatus,
     /** Coverage estimate in percent, computed from search routes; null before any searching. Never set by hand. */
     coverage: z.number().min(0).max(100).nullable(),
@@ -31,12 +27,21 @@ export const MissionPolygon = z
 export const MissionPolygonList = z.array(MissionPolygon).meta({ id: 'MissionPolygonList' });
 
 // Request bodies with defaults or transforms have no OpenAPI component id: their input and output differ.
-export const CreatePolygonBody = z.object({ geometry: PolygonGeometry, name: PolygonName.nullable().optional() });
+// A blank name on create means "give it the default name".
+export const CreatePolygonBody = z.object({
+  geometry: PolygonGeometry,
+  name: z
+    .string()
+    .trim()
+    .max(60)
+    .transform((value) => value || undefined)
+    .optional(),
+});
 
 export const UpdatePolygonBody = z
   .object({
     geometry: PolygonGeometry.optional(),
-    name: PolygonName.nullable().optional(),
+    name: PolygonName.optional(),
     /** Saves a boundary that leaves active searchers outside, after the commander saw the warning (UC-C06). */
     confirmSearchersOutside: z.boolean().default(false),
   })

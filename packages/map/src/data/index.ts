@@ -7,8 +7,8 @@ export type UnitState = 'normal' | 'warning' | 'offline' | 'sos';
 
 export interface MapPolygon {
   id: string;
-  /** The polygon's letter, e.g. `A`. */
-  letter: string;
+  /** The polygon's name, e.g. `ואדי צפוני`. */
+  name: string;
   status: PolygonStatus;
   /** Coverage estimate in percent, or null before any searching. */
   coverage: number | null;
@@ -100,12 +100,15 @@ export function toMissionSources(data: MissionMapData): Record<SourceId, Feature
           id: p.id,
           status: p.status,
           selected: p.selected ?? false,
-          label:
+          // Two lines: the name, then the coverage or the state under it.
+          label: [
+            p.name,
             p.status === 'completed'
-              ? `${p.letter} הושלם`
+              ? 'הושלם'
               : p.status === 'unassigned'
-                ? `${p.letter} לא משובץ`
-                : `${p.letter} ${Math.round(p.coverage ?? 0)}%`,
+                ? 'לא משובץ'
+                : `${Math.round(p.coverage ?? 0)}%`,
+          ].join('\n'),
         },
       })),
     ),

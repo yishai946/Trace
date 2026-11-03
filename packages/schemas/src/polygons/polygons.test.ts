@@ -18,8 +18,10 @@ describe('polygon bodies', () => {
     expect(CreatePolygonBody.parse({ geometry })).toEqual({ geometry });
   });
 
-  it('turns a blank name into null', () => {
-    expect(UpdatePolygonBody.parse({ name: '  ' }).name).toBeNull();
+  it('gives a blank name on create to the server default, and refuses a blank rename', () => {
+    expect(CreatePolygonBody.parse({ geometry, name: '  ' }).name).toBeUndefined();
+    expect(UpdatePolygonBody.safeParse({ name: '  ' }).success).toBe(false);
+    expect(UpdatePolygonBody.parse({ name: ' ואדי ' }).name).toBe('ואדי');
   });
 
   it('requires geometry or name in an update', () => {

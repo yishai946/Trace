@@ -1,0 +1,201 @@
+.panel {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  bottom: var(--space-6);
+  inset-inline: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.tabsRoot {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.tabs {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  height: var(--segment-h);
+  padding-inline: var(--space-6);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.tab[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.tab[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.tab[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 0 1 var(--panel-start-w);
+  min-width: 0;
+  height: var(--control-h);
+  margin-inline-start: auto;
+  padding-inline: var(--space-5);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink-muted);
+}
+
+.search svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+.search input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background-color: transparent;
+  color: var(--ink);
+  outline: none;
+}
+
+.search input::placeholder {
+  color: var(--ink-muted);
+}
+
+.search:focus-within {
+  outline: 2px solid var(--focus);
+}
+
+/* `position: relative` keeps the visually hidden header label inside the scroller, not widening the page. */
+.body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-inline: var(--space-4);
+  outline: none;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+  text-align: start;
+}
+
+.table td {
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.table th,
+.table td {
+  white-space: nowrap;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background-color: var(--surface-hover);
+}
+
+.name {
+  font: var(--text-body-strong);
+}
+
+.muted {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.code {
+  font-variant-numeric: tabular-nums;
+  unicode-bidi: isolate;
+}
+
+.action {
+  text-align: end;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-muted);
+}
+
+.dot[data-tone='ok'] {
+  background-color: var(--success);
+}
+
+.dot[data-tone='warn'] {
+  background-color: var(--warning);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-7);
+  color: var(--ink-secondary);
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

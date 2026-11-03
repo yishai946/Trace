@@ -130,17 +130,13 @@ export const polygons = pgTable(
     missionId: uuid('mission_id')
       .notNull()
       .references(() => missions.id, { onDelete: 'cascade' }),
-    letter: text().notNull(),
-    name: text(),
+    name: text().notNull(),
     status: polygonStatus().notNull().default('unassigned'),
     geometry: polygonColumn().notNull(),
     ...timestamps,
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
-  (t) => [
-    uniqueIndex('polygons_mission_letter_idx').on(t.missionId, t.letter),
-    index('polygons_geometry_idx').using('gist', t.geometry),
-  ],
+  (t) => [index('polygons_geometry_idx').using('gist', t.geometry)],
 );
 
 /** A field searcher's profile, identified by phone number (UC-F01). One per searcher user. */

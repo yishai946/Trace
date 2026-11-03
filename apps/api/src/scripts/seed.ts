@@ -54,26 +54,23 @@ try {
     .values([
       {
         missionId: mission.id,
-        letter: 'A',
         name: 'ואדי צפוני',
         status: 'active',
         geometry: box(35.122, 31.77, 35.136, 31.781),
       },
       {
         missionId: mission.id,
-        letter: 'B',
         name: 'חורשת אורנים',
         status: 'active',
         geometry: box(35.138, 31.77, 35.152, 31.781),
       },
       {
         missionId: mission.id,
-        letter: 'C',
         name: 'צפון-מערב',
         status: 'completed',
         geometry: box(35.122, 31.756, 35.136, 31.768),
       },
-      { missionId: mission.id, letter: 'D', name: 'מדרון דרומי', geometry: box(35.138, 31.756, 35.152, 31.768) },
+      { missionId: mission.id, name: 'מדרון דרומי', geometry: box(35.138, 31.756, 35.152, 31.768) },
     ])
     .returning({ id: polygons.id });
   if (!a || !b || !c) throw new Error('Seed polygons were not created');

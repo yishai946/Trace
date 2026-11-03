@@ -5,7 +5,7 @@ export const sampleData: MissionMapData = {
   polygons: [
     {
       id: 'a',
-      letter: 'A',
+      name: 'ואדי צפוני',
       status: 'active',
       coverage: 82.4,
       geometry: {

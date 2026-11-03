@@ -18,31 +18,65 @@
   box-shadow: var(--shadow-panel);
 }
 
+/* Fixed parts keep their size; the mission name, search and status shrink as the window narrows. */
+.appbar > * {
+  flex-shrink: 0;
+}
+
 .brand {
   padding-inline: var(--space-3);
   font: var(--text-title);
   font-weight: 700;
 }
 
+/* Connection indicator: a dot and one word, always shown. Green pulses softly while connected; red when not. */
 .status {
-  color: var(--ink-muted);
-}
-
-.status[data-state='ok'] {
-  color: var(--success);
-}
-
-.status[data-state='error'] {
-  color: var(--warning);
-}
-
-.search {
-  margin-inline: auto;
-}
-
-.actions {
-  display: flex;
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-3);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-muted);
+}
+
+.status[data-state='up'] .statusDot {
+  background-color: var(--success);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.status[data-state='down'] {
+  color: var(--danger-ink);
+}
+
+.status[data-state='down'] .statusDot {
+  background-color: var(--danger);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status[data-state='up'] .statusDot {
+    animation: none;
+  }
+}
+
+.appbar > .search {
+  display: flex;
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
 }
 
 .setup {
@@ -54,17 +88,32 @@
   color: var(--ink-secondary);
 }
 
-.mission {
+.appbar > .mission {
   display: flex;
+  flex-shrink: 1;
   align-items: baseline;
   gap: var(--space-4);
+  min-width: 0;
   font: var(--text-body-strong);
+  white-space: nowrap;
+}
+
+.person {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta {
   color: var(--ink-muted);
   font: var(--text-meta);
   font-variant-numeric: tabular-nums;
+}
+
+/* Narrow windows: the join code gives way to the missing person's name and the search. */
+@media (width < 900px) {
+  .meta {
+    display: none;
+  }
 }
 
 .inspector {
@@ -94,4 +143,17 @@
   box-shadow: var(--shadow-panel);
   color: var(--ink-secondary);
   transform: translateX(-50%);
+}
+
+/* Dims the map behind the login (light) and mission list (dense) screens, as in wireframes Cd01 and Cd02. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background-color: var(--map-ground);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.veil[data-veil='dense'] {
+  opacity: 0.82;
 }
