@@ -17,7 +17,7 @@ import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
-import { Button } from '../components/Button';
+import { MissionSwitcher } from '../components/MissionSwitcher';
 import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
 import { MissionMap, type MapFocus } from '../map/MissionMap';
@@ -32,6 +32,7 @@ import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
 
 const provider = getMapProvider();
@@ -117,9 +118,17 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   /** The join code, QR and link panel; it opens by itself on a mission just created (UC-C02 step 4). */
   const [joinOpen, setJoinOpen] = useState(false);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
+  const openMission = (id: string | null) => {
+    setOpenId(id);
+    setJoinOpen(false);
+    setCreatedNotice(null);
+  };
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
+  const live = useMissionLive(mission?.id);
+  /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
+  const operational = connected && (!mission || live === 'live');
   const [focus, setFocus] = useState<MapFocus | null>(null);
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
@@ -129,10 +138,15 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         label: 'לא זמין',
         detail: online ? 'אין חיבור לשרת. פעולות חדשות חסומות.' : 'אין אינטרנט. פעולות חדשות חסומות.',
       }
-    : health.isPending
+    : health.isPending || (mission && live === 'connecting')
       ? { state: 'checking', label: 'בודק…', detail: 'בודק חיבור לשרת.' }
-      : { state: 'up', label: 'זמין', detail: 'מחובר לשרת.' };
-  const person = mission?.missingPerson.name ?? mission?.name;
+      : mission && live === 'down'
+        ? {
+            state: 'down',
+            label: 'לא זמין',
+            detail: 'העדכונים החיים מהשרת נקטעו. מתחבר מחדש; פעולות חדשות חסומות.',
+          }
+        : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
 
   return (
     <main className={styles.screen}>
@@ -155,11 +169,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           <MissionsPage
             missions={missions.data}
             loadFailed={missions.isError}
-            onOpen={(id) => {
-              setOpenId(id);
-              setJoinOpen(false);
-              setCreatedNotice(null);
-            }}
+            onOpen={openMission}
             onNew={() => setCreating(true)}
             canCreate={connected}
           />
@@ -175,7 +185,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           polygons={polygons.data ?? []}
           participants={participants.data ?? []}
           themeId={theme}
-          online={connected}
+          online={operational}
         />
       )}
 
@@ -195,20 +205,23 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         <span className={styles.brand}>Trace</span>
         {mission && !creating && (
           <>
-            <Button size="sm" onPress={() => setOpenId(null)}>
-              המסעות שלי
-            </Button>
-            <span className={styles.mission}>
-              <span className={styles.person}>{person}</span>
-              <AriaButton
-                className={styles.meta}
-                aria-expanded={joinOpen}
-                aria-label={`קוד הצטרפות ${mission.joinCode}`}
-                onPress={() => setJoinOpen((open) => !open)}
-              >
-                קוד {mission.joinCode}
-              </AriaButton>
-            </span>
+            <span className={styles.sep} aria-hidden="true" />
+            <div className={styles.mission}>
+              <MissionSwitcher
+                mission={mission}
+                missions={missions.data ?? []}
+                onSelect={openMission}
+                onShowAll={() => openMission(null)}
+              />
+            </div>
+            <AriaButton
+              className={styles.meta}
+              aria-expanded={joinOpen}
+              aria-label={`קוד הצטרפות ${mission.joinCode}`}
+              onPress={() => setJoinOpen((open) => !open)}
+            >
+              קוד {mission.joinCode}
+            </AriaButton>
           </>
         )}
         <div className={styles.search}>

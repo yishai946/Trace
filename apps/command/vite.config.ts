@@ -11,7 +11,8 @@ export default defineConfig({
   envPrefix: ['VITE_', 'MAPTILER_'],
   // The MapLibre worker is bundled as an ES module worker (see src/map/maplibre-worker.ts).
   worker: { format: 'es' },
-  server: { port, strictPort: true, proxy: { '/api': apiTarget } },
-  preview: { port, strictPort: true, proxy: { '/api': apiTarget } },
+  // ws: the realtime channel (Socket.IO) upgrades to a WebSocket under /api/realtime.
+  server: { port, strictPort: true, proxy: { '/api': { target: apiTarget, ws: true } } },
+  preview: { port, strictPort: true, proxy: { '/api': { target: apiTarget, ws: true } } },
   test: { environment: 'jsdom', setupFiles: ['./src/test-setup.ts'], css: false },
 });

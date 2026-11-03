@@ -45,21 +45,29 @@ export const authRoutes: FastifyPluginAsync<{ auth: Auth }> = async (app, { auth
   });
 };
 
+/** The actor a set of request headers signs in as, and when their session ends. Null without a valid session. */
+export async function resolveSession(
+  { auth, db }: { auth: Auth; db: Db },
+  headers: Headers,
+): Promise<{ actor: Actor; expiresAt: Date } | null> {
+  const result = await auth.api.getSession({ headers });
+  if (!result) return null;
+  const { id: userId, role } = result.user;
+  const { expiresAt } = result.session;
+  if (role === 'commander') return { actor: { role, userId }, expiresAt };
+  const [profile] = await db.select({ id: searchers.id }).from(searchers).where(eq(searchers.userId, userId));
+  return { actor: { role: 'searcher', userId, searcherId: profile?.id ?? null }, expiresAt };
+}
+
 /**
  * Requires a signed-in user for every route registered on `app` and its children, and sets `request.actor`.
  * Call it on a scope that holds only protected routes; health and /api/auth stay outside it.
  */
-export function requireSignIn(app: FastifyInstance, { auth, db }: { auth: Auth; db: Db }) {
+export function requireSignIn(app: FastifyInstance, options: { auth: Auth; db: Db }) {
   app.decorateRequest('actor', null);
   app.addHook('onRequest', async (request) => {
-    const result = await auth.api.getSession({ headers: fromNodeHeaders(request.headers) });
-    if (!result) throw unauthenticated();
-    const { id: userId, role } = result.user;
-    if (role === 'commander') {
-      request.actor = { role, userId };
-      return;
-    }
-    const [profile] = await db.select({ id: searchers.id }).from(searchers).where(eq(searchers.userId, userId));
-    request.actor = { role: 'searcher', userId, searcherId: profile?.id ?? null };
+    const session = await resolveSession(options, fromNodeHeaders(request.headers));
+    if (!session) throw unauthenticated();
+    request.actor = session.actor;
   });
 }
