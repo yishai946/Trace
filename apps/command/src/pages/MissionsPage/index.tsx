@@ -3,7 +3,7 @@ import type { Mission } from '@trace/schemas';
 import { useMemo, useState } from 'react';
 import { Input, SearchField, Tab, TabList, TabPanel, Tabs, type Key } from 'react-aria-components';
 import styles from './MissionsPage.module.css';
-import { MISSION_STATUS_LABELS, formatOpened } from './missionStatus';
+import { MISSION_STATUS_LABELS, formatOpened } from '../../mission/missionStatus';
 import { Button } from '../../components/Button';
 
 type Filter = 'all' | 'active' | 'paused' | 'ended';

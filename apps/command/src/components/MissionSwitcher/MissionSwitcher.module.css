@@ -1,0 +1,117 @@
+/* Trace Console AppBar mission selector (.tc-appbar__mission) and its menu (.tc-switcher). */
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--surface-hover);
+  color: var(--ink);
+  font: var(--text-body-strong);
+  cursor: pointer;
+  outline: none;
+}
+
+.trigger[data-hovered],
+.trigger[data-pressed] {
+  background-color: var(--surface-raised);
+}
+
+.trigger[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  color: var(--ink-muted);
+}
+
+.dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-muted);
+}
+
+.dot[data-tone='ok'] {
+  background-color: var(--success);
+}
+
+.dot[data-tone='warn'] {
+  background-color: var(--warning);
+}
+
+.popover {
+  width: var(--panel-start-w);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.menu {
+  outline: none;
+}
+
+.section {
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.header {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-4);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--control-h);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-focused],
+.item[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.current {
+  background-color: var(--surface-raised);
+  font-weight: 600;
+}
+
+.item[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.sub {
+  margin-inline-start: auto;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
