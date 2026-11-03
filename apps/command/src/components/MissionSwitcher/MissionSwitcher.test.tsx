@@ -24,18 +24,19 @@ describe('MissionSwitcher', () => {
   it("names the mission by its missing person and lists the commander's missions", () => {
     renderSwitcher();
     expect(screen.getByText('המסעות שלי')).toBeTruthy();
-    expect(screen.getByRole('menuitem', { name: /דנה לוי/ })).toBeTruthy();
+    expect(screen.getByRole('menuitemradio', { name: /דנה לוי/ })).not.toBeChecked();
+    expect(screen.getByRole('menuitemradio', { name: /נועם אברהם/ })).toBeChecked();
   });
 
   it('switches to another mission', () => {
     const { onSelect } = renderSwitcher();
-    fireEvent.click(screen.getByRole('menuitem', { name: /דנה לוי/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /דנה לוי/ }));
     expect(onSelect).toHaveBeenCalledWith(other.id);
   });
 
   it('does nothing when the current mission is chosen', () => {
     const { onSelect } = renderSwitcher();
-    fireEvent.click(screen.getByRole('menuitem', { name: /נועם אברהם/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: /נועם אברהם/ }));
     expect(onSelect).not.toHaveBeenCalled();
   });
 

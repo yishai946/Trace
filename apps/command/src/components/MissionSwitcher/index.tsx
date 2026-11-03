@@ -48,17 +48,13 @@ export function MissionSwitcher({ mission, missions, onSelect, onShowAll }: Miss
       </Button>
       <Popover className={styles.popover} placement="bottom start" offset={8}>
         <Menu className={styles.menu} aria-label="המסעות שלי" onAction={act}>
-          <MenuSection className={styles.section}>
+          {/* Single selection marks the open mission for assistive tech (aria-checked); React Aria drops aria-current. */}
+          <MenuSection className={styles.section} selectionMode="single" selectedKeys={[mission.id]}>
             <Header className={styles.header}>המסעות שלי</Header>
             {missions.map((m) => {
               const s = MISSION_STATUS_LABELS[m.status];
               return (
-                <MenuItem
-                  key={m.id}
-                  id={m.id}
-                  textValue={missionLabel(m)}
-                  className={m.id === mission.id ? `${styles.item} ${styles.current}` : styles.item}
-                >
+                <MenuItem key={m.id} id={m.id} textValue={missionLabel(m)} className={styles.item}>
                   <span className={styles.dot} data-tone={s.tone} aria-hidden="true" />
                   <span className={styles.name}>{missionLabel(m)}</span>
                   <span className={styles.sub}>{s.label}</span>

@@ -100,7 +100,7 @@
   background-color: var(--surface-hover);
 }
 
-.current {
+.item[data-selected] {
   background-color: var(--surface-raised);
   font-weight: 600;
 }
