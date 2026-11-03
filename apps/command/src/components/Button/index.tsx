@@ -1,12 +1,12 @@
 import { Button as AriaButton, type ButtonProps as AriaButtonProps } from 'react-aria-components';
 import styles from './Button.module.css';
 
-export type ButtonVariant = 'secondary' | 'primary' | 'danger' | 'danger-ghost' | 'icon';
+export type ButtonVariant = 'secondary' | 'primary' | 'danger' | 'danger-ghost' | 'danger-outline' | 'icon';
 
 export interface ButtonProps extends AriaButtonProps {
   /**
-   * Trace Console Button: one `primary` per area. `danger` and `danger-ghost` are for SOS and destructive actions
-   * (delete: `danger-ghost` opens the confirmation, `danger` confirms).
+   * Trace Console Button: one `primary` per area. `danger` and `danger-ghost` belong in the SOS AlertBanner;
+   * `danger-outline` is a destructive action elsewhere (delete, sign out), and `danger` confirms a delete.
    */
   variant?: ButtonVariant;
   size?: 'md' | 'sm';

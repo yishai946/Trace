@@ -13,6 +13,7 @@ import {
   type Key,
 } from 'react-aria-components';
 import styles from './ProfileMenu.module.css';
+import { Button } from '../Button';
 import { MonitorIcon, MoonIcon, SignOutIcon, SunIcon } from './icons';
 import { useTheme, type ThemePreference } from '../../theme/theme';
 
@@ -107,10 +108,15 @@ export function ProfileMenu({ user, canSignOut, signingOut, signOutFailed, onSig
           </div>
 
           <div className={styles.section}>
-            <AriaButton className={styles.signOut} onPress={onSignOut} isDisabled={!canSignOut || signingOut}>
+            <Button
+              variant="danger-outline"
+              className={styles.signOut}
+              onPress={onSignOut}
+              isDisabled={!canSignOut || signingOut}
+            >
               <SignOutIcon />
               {signingOut ? 'יוצא…' : 'יציאה'}
-            </AriaButton>
+            </Button>
             {!canSignOut && <p className={styles.note}>אפשר לצאת כשהחיבור יחזור.</p>}
             {signOutFailed && (
               <p className={styles.note} role="alert">

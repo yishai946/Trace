@@ -114,8 +114,7 @@
 }
 
 .option svg,
-.item svg,
-.signOut svg {
+.item svg {
   flex: 0 0 auto;
   width: 16px;
   height: 16px;
@@ -158,34 +157,10 @@
   font-weight: 600;
 }
 
-/* Sign-out in the danger ink, as asked by the product owner. Not the filled SOS button. */
+/* Trace Console Button `danger-outline`, across the panel with the icon at the start (ProfileMenu guidelines). */
 .signOut {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
+  justify-content: flex-start;
   width: 100%;
-  height: var(--control-h);
-  padding-inline: var(--space-5);
-  border: 1px solid var(--danger-border);
-  border-radius: var(--radius-md);
-  background-color: transparent;
-  color: var(--danger-ink);
-  cursor: pointer;
-  outline: none;
-}
-
-.signOut[data-hovered] {
-  background-color: var(--danger-tint);
-}
-
-.signOut[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.signOut[data-disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
 }
 
 .note {

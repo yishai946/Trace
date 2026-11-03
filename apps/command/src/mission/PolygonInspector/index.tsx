@@ -124,7 +124,7 @@ export function PolygonInspector({
                 ערוך גבול
               </Button>
               <Button
-                variant="danger-ghost"
+                variant="danger-outline"
                 onPress={() => setConfirmingDelete(true)}
                 isDisabled={busy || hasActiveSearchers}
               >

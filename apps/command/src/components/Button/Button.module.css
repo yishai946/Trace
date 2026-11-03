@@ -81,6 +81,16 @@
   color: var(--danger-ink-soft);
 }
 
+/* A destructive action outside SOS: delete, sign out. */
+.danger-outline {
+  border-color: var(--danger-border);
+  color: var(--danger-ink);
+}
+
+.danger-outline[data-hovered] {
+  background-color: var(--danger-tint);
+}
+
 .icon {
   width: var(--control-h);
   padding-inline: 0;
