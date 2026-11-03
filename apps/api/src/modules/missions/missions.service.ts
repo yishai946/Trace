@@ -1,4 +1,4 @@
-import { generateJoinCode, type RandomInt } from '@trace/domain';
+import { detectPhotoType, generateJoinCode, type RandomInt } from '@trace/domain';
 import { PointGeometry, type CreateMissionBody, type Mission } from '@trace/schemas';
 import type { z } from 'zod';
 import { desc, eq, inArray } from 'drizzle-orm';
@@ -6,8 +6,8 @@ import { randomInt } from 'node:crypto';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { lkpPoints, missions, participations } from '../../db/schema';
-import { notFound } from '../../errors';
+import { lkpPoints, missionPhotos, missions, participations } from '../../db/schema';
+import { AppError, notFound } from '../../errors';
 
 /** The request body plus the commander who creates the mission and will manage it. */
 export type CreateMissionInput = z.output<typeof CreateMissionBody> & { commanderId: string };
@@ -26,11 +26,13 @@ const missionColumns = {
   description: missions.description,
   additionalInfo: missions.additionalInfo,
   rallyPoint: asGeoJson(missions.rallyPoint),
+  photoUpdatedAt: missionPhotos.updatedAt,
   createdAt: missions.createdAt,
   updatedAt: missions.updatedAt,
 };
 
-const selectMissions = (db: Db) => db.select(missionColumns).from(missions);
+const selectMissions = (db: Db) =>
+  db.select(missionColumns).from(missions).leftJoin(missionPhotos, eq(missionPhotos.missionId, missions.id));
 type MissionRow = Awaited<ReturnType<typeof selectMissions>>[number];
 interface LkpRow {
   missionId: string;
@@ -39,6 +41,9 @@ interface LkpRow {
 }
 
 const iso = (date: Date | null) => (date ? date.toISOString() : null);
+
+/** The photo's address, with its version so a replaced photo is not served from a cache. */
+const photoUrl = (missionId: string, updatedAt: Date) => `/api/missions/${missionId}/photo?v=${updatedAt.getTime()}`;
 
 function toMission(row: MissionRow, lkp: LkpRow | undefined): Mission {
   return {
@@ -52,6 +57,7 @@ function toMission(row: MissionRow, lkp: LkpRow | undefined): Mission {
       disappearedAt: iso(row.disappearedAt),
       description: row.description,
       additionalInfo: row.additionalInfo,
+      photoUrl: row.photoUpdatedAt ? photoUrl(row.id, row.photoUpdatedAt) : null,
     },
     rallyPoint: PointGeometry.parse(JSON.parse(row.rallyPoint)),
     lkp: lkp
@@ -157,4 +163,29 @@ export async function createMission(
       throw error;
     }
   }
+}
+
+export interface MissionPhoto {
+  contentType: string;
+  data: Buffer;
+}
+
+/** Saves or replaces the missing person's photo. The content must really be a JPEG, PNG or WebP image. */
+export async function setMissionPhoto(db: Db, missionId: string, data: Buffer): Promise<Mission> {
+  const contentType = detectPhotoType(data);
+  if (!contentType) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'The photo must be a JPEG, PNG or WebP image');
+  await db
+    .insert(missionPhotos)
+    .values({ missionId, contentType, data })
+    .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, data, updatedAt: new Date() } });
+  return getMission(db, missionId);
+}
+
+export async function getMissionPhoto(db: Db, missionId: string): Promise<MissionPhoto> {
+  const [photo] = await db
+    .select({ contentType: missionPhotos.contentType, data: missionPhotos.data })
+    .from(missionPhotos)
+    .where(eq(missionPhotos.missionId, missionId));
+  if (!photo) throw notFound('Photo');
+  return photo;
 }

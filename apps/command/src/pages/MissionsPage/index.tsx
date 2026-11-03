@@ -20,10 +20,14 @@ export interface MissionsPageProps {
   missions: Mission[] | undefined;
   loadFailed: boolean;
   onOpen: (missionId: string) => void;
+  /** Opens the new-mission screen (UC-C02). */
+  onNew: () => void;
+  /** Without a connection, new missions cannot be created (UC-C01). */
+  canCreate: boolean;
 }
 
 /** The commander's missions (UC-C01 step 3, wireframe Cd02). Opening one shows its live map. */
-export function MissionsPage({ missions, loadFailed, onOpen }: MissionsPageProps) {
+export function MissionsPage({ missions, loadFailed, onOpen, onNew, canCreate }: MissionsPageProps) {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const all = useMemo(() => missions ?? [], [missions]);
@@ -57,6 +61,9 @@ export function MissionsPage({ missions, loadFailed, onOpen }: MissionsPageProps
             </svg>
             <Input placeholder="חיפוש לפי מסע, נעדר או קוד" />
           </SearchField>
+          <Button variant="primary" onPress={onNew} isDisabled={!canCreate}>
+            מסע חדש
+          </Button>
         </div>
 
         <TabPanel id={filter} className={styles.body}>
@@ -64,9 +71,7 @@ export function MissionsPage({ missions, loadFailed, onOpen }: MissionsPageProps
             <p className={styles.empty}>{loadFailed ? 'לא ניתן לטעון מסעות מהשרת.' : 'טוען מסעות…'}</p>
           ) : visible.length === 0 ? (
             <p className={styles.empty}>
-              {all.length === 0
-                ? 'אין לך מסעות עדיין. בסביבת פיתוח: pnpm db:seed יוצר מסע לדוגמה.'
-                : 'אין מסעות שמתאימים לסינון.'}
+              {all.length === 0 ? 'אין לך מסעות עדיין. "מסע חדש" פותח מסע חיפוש.' : 'אין מסעות שמתאימים לסינון.'}
             </p>
           ) : (
             <table className={styles.table}>

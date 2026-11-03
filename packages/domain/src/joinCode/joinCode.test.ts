@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateJoinCode, isJoinCode, type RandomInt } from '.';
+import { generateJoinCode, isJoinCode, joinCodeFromLink, joinLink, type RandomInt } from '.';
 
 const mathRandomInt: RandomInt = (max) => Math.floor(Math.random() * max);
 
@@ -21,5 +21,30 @@ describe('generateJoinCode', () => {
     expect(isJoinCode('K7-4Q2')).toBe(true);
     expect(isJoinCode('K74Q2')).toBe(false);
     expect(isJoinCode('O7-4Q2')).toBe(false);
+  });
+});
+
+describe('joinLink', () => {
+  it('builds the link under the base, with or without a trailing slash', () => {
+    expect(joinLink('https://trace.app', 'K7-4Q2')).toBe('https://trace.app/j/K7-4Q2');
+    expect(joinLink('https://trace.app/', 'K7-4Q2')).toBe('https://trace.app/j/K7-4Q2');
+    expect(joinLink('trace-field://', 'K7-4Q2')).toBe('trace-field://j/K7-4Q2');
+  });
+
+  it('round-trips through joinCodeFromLink', () => {
+    expect(joinCodeFromLink(joinLink('https://trace.app', 'K7-4Q2'))).toBe('K7-4Q2');
+    expect(joinCodeFromLink(joinLink('trace-field://', 'K7-4Q2'))).toBe('K7-4Q2');
+  });
+});
+
+describe('joinCodeFromLink', () => {
+  it('accepts a bare code in any case', () => {
+    expect(joinCodeFromLink(' k7-4q2 ')).toBe('K7-4Q2');
+  });
+
+  it('rejects links that are not join links and malformed codes', () => {
+    expect(joinCodeFromLink('https://trace.app/x/K7-4Q2')).toBeNull();
+    expect(joinCodeFromLink('https://trace.app/j/K7-4Q')).toBeNull();
+    expect(joinCodeFromLink('hello')).toBeNull();
   });
 });

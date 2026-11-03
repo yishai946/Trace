@@ -13,6 +13,7 @@ import {
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
@@ -24,11 +25,13 @@ import { PlaceSearch } from '../map/PlaceSearch';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage } from '../mission/errorMessage';
+import { JoinCodePanel } from '../mission/JoinCodePanel';
 import { useMissions, useParticipants, usePolygonMutations, usePolygons } from '../mission/missionQueries';
 import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
 import { MissionsPage } from '../pages/MissionsPage';
+import { NewMissionPage } from '../pages/NewMissionPage';
 import { useTheme } from '../theme/theme';
 
 const provider = getMapProvider();
@@ -94,7 +97,7 @@ function Backdrop({ provider, themeId, veil }: { provider: MapProvider; themeId:
   );
 }
 
-/** The signed-in console: the mission list, or the live map of the mission the commander opened. */
+/** The signed-in console: the mission list, a new mission, or the live map of the mission the commander opened. */
 function Console({ provider, user }: { provider: MapProvider; user: SessionUser }) {
   const { theme } = useTheme();
   const online = useOnline();
@@ -110,6 +113,10 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const connected = online && !health.isError;
   const missions = useMissions();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  /** The join code, QR and link panel; it opens by itself on a mission just created (UC-C02 step 4). */
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [createdNotice, setCreatedNotice] = useState<string | null>(null);
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
@@ -129,10 +136,33 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
 
   return (
     <main className={styles.screen}>
-      {!mission ? (
+      {creating ? (
+        <NewMissionPage
+          provider={provider}
+          themeId={theme}
+          online={connected}
+          onCancel={() => setCreating(false)}
+          onCreated={(created, photoFailed) => {
+            setCreating(false);
+            setOpenId(created.id);
+            setJoinOpen(true);
+            setCreatedNotice(photoFailed ? 'המסע נוצר, אבל התמונה לא נשמרה. אפשר לנסות שוב מפרטי המסע.' : null);
+          }}
+        />
+      ) : !mission ? (
         <>
           <Backdrop provider={provider} themeId={theme} veil="dense" />
-          <MissionsPage missions={missions.data} loadFailed={missions.isError} onOpen={setOpenId} />
+          <MissionsPage
+            missions={missions.data}
+            loadFailed={missions.isError}
+            onOpen={(id) => {
+              setOpenId(id);
+              setJoinOpen(false);
+              setCreatedNotice(null);
+            }}
+            onNew={() => setCreating(true)}
+            canCreate={connected}
+          />
         </>
       ) : polygons.isPending ? (
         <p className={styles.setup}>טוען מסע…</p>
@@ -149,21 +179,40 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         />
       )}
 
+      {mission && !creating && joinOpen && (
+        <div className={styles.join}>
+          <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />
+        </div>
+      )}
+
+      {mission && !creating && createdNotice && (
+        <p className={styles.notice} role="alert">
+          {createdNotice}
+        </p>
+      )}
+
       <header className={styles.appbar}>
         <span className={styles.brand}>Trace</span>
-        {mission && (
+        {mission && !creating && (
           <>
             <Button size="sm" onPress={() => setOpenId(null)}>
               המסעות שלי
             </Button>
             <span className={styles.mission}>
               <span className={styles.person}>{person}</span>
-              <span className={styles.meta}>קוד {mission.joinCode}</span>
+              <AriaButton
+                className={styles.meta}
+                aria-expanded={joinOpen}
+                aria-label={`קוד הצטרפות ${mission.joinCode}`}
+                onPress={() => setJoinOpen((open) => !open)}
+              >
+                קוד {mission.joinCode}
+              </AriaButton>
             </span>
           </>
         )}
         <div className={styles.search}>
-          {mission && (
+          {mission && !creating && (
             <PlaceSearch
               provider={provider}
               onSelect={(place) => setFocus({ center: place.center, bounds: place.bounds })}
