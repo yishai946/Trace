@@ -29,6 +29,7 @@ import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
 import { MissionsPage } from '../pages/MissionsPage';
+import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
 
 const provider = getMapProvider();
@@ -113,6 +114,9 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
+  const live = useMissionLive(mission?.id);
+  /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
+  const operational = connected && (!mission || live === 'live');
   const [focus, setFocus] = useState<MapFocus | null>(null);
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
@@ -122,9 +126,15 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         label: 'לא זמין',
         detail: online ? 'אין חיבור לשרת. פעולות חדשות חסומות.' : 'אין אינטרנט. פעולות חדשות חסומות.',
       }
-    : health.isPending
+    : health.isPending || (mission && live === 'connecting')
       ? { state: 'checking', label: 'בודק…', detail: 'בודק חיבור לשרת.' }
-      : { state: 'up', label: 'זמין', detail: 'מחובר לשרת.' };
+      : mission && live === 'down'
+        ? {
+            state: 'down',
+            label: 'לא זמין',
+            detail: 'העדכונים החיים מהשרת נקטעו. מתחבר מחדש; פעולות חדשות חסומות.',
+          }
+        : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
 
   return (
     <main className={styles.screen}>
@@ -144,7 +154,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           polygons={polygons.data ?? []}
           participants={participants.data ?? []}
           themeId={theme}
-          online={connected}
+          online={operational}
         />
       )}
 
