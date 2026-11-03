@@ -46,7 +46,7 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
 
 /**
  * Keeps the open mission live over the realtime channel: joins it, applies its events to the cached data, and after a
- * dropped connection joins again and refetches what was missed. Socket.IO reconnects on its own.
+ * dropped connection joins again. Every successful join refetches what was missed before it. Socket.IO reconnects on its own.
  */
 export function useMissionLive(missionId: string | undefined): LiveState {
   const queryClient = useQueryClient();
@@ -58,7 +58,6 @@ export function useMissionLive(missionId: string | undefined): LiveState {
   useEffect(() => {
     if (!missionId) return;
     const set = (live: LiveState) => setState({ missionId, live });
-    let joinedBefore = false;
     // Same origin: the session cookie goes with the handshake, and Vite proxies the path in development.
     const socket: MissionSocket = io({ path: REALTIME_PATH, withCredentials: true });
 
@@ -68,9 +67,8 @@ export function useMissionLive(missionId: string | undefined): LiveState {
           set('down');
           return;
         }
-        // Events sent while the console was away are not replayed: refetch the mission's data after a reconnect.
-        if (joinedBefore) void queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
-        joinedBefore = true;
+        // Events sent before the join (while the first fetch ran, or while disconnected) are not replayed: refetch.
+        void queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
         set('live');
       });
     });

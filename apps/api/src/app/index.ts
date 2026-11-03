@@ -27,10 +27,12 @@ interface AppOptions {
   db: Db;
   /** Sends searchers their sign-in code. Defaults to writing it to the log outside production. */
   sendOtp?: OtpSender;
+  /** How often open realtime connections recheck their session. Tests shorten it. */
+  realtimeRevalidateMs?: number;
 }
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
-export async function buildApp({ env, db, sendOtp }: AppOptions) {
+export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs }: AppOptions) {
   const app = Fastify({ logger: { level: env.LOG_LEVEL } }).withTypeProvider<ZodTypeProvider>();
   const auth = createAuth({
     env,
@@ -47,7 +49,7 @@ export async function buildApp({ env, db, sendOtp }: AppOptions) {
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   registerErrorHandlers(app);
-  const realtime = createRealtime({ app, auth, db, env });
+  const realtime = createRealtime({ app, auth, db, env, revalidateMs: realtimeRevalidateMs });
 
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
   await app.register(swagger, {

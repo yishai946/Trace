@@ -45,17 +45,30 @@ function audienceOf(event: MissionEvent): string[] {
   return [membersRoom(event.missionId)];
 }
 
-/** setTimeout cannot wait longer than about 24.8 days. */
-const MAX_TIMER_MS = 2 ** 31 - 1;
+/** How often an open connection checks that its session is still valid. */
+const REVALIDATE_MS = 30_000;
 
 const UNAUTHENTICATED: ErrorCode = 'UNAUTHENTICATED';
 
 /**
  * Serves the realtime channel on the app's HTTP server (TECH_STACK.md: Socket.IO, a room per mission). A connection
- * needs the same session as REST: Command's cookie, or Field's token in `auth: { token }`. It is closed when the
- * session expires. A client joins a mission only if it may read it, with the same rules as the REST routes.
+ * needs the same session as REST: Command's cookie, or Field's token in `auth: { token }`. The session is checked
+ * again every `revalidateMs`, and the connection is closed once it expired or was revoked (signed out elsewhere).
+ * A client joins a mission only if it may read it, with the same rules as the REST routes.
  */
-export function createRealtime({ app, auth, db, env }: { app: FastifyInstance; auth: Auth; db: Db; env: Env }) {
+export function createRealtime({
+  app,
+  auth,
+  db,
+  env,
+  revalidateMs = REVALIDATE_MS,
+}: {
+  app: FastifyInstance;
+  auth: Auth;
+  db: Db;
+  env: Env;
+  revalidateMs?: number;
+}) {
   const io = new Server<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>(app.server, {
     path: REALTIME_PATH,
     serveClient: false,
@@ -70,11 +83,14 @@ export function createRealtime({ app, auth, db, env }: { app: FastifyInstance; a
       const session = await resolveSession({ auth, db }, headers);
       if (!session) return next(new Error(UNAUTHENTICATED));
       socket.data.actor = session.actor;
-      const timer = setTimeout(
-        () => socket.disconnect(true),
-        Math.min(Math.max(session.expiresAt.getTime() - Date.now(), 0), MAX_TIMER_MS),
-      );
-      socket.on('disconnect', () => clearTimeout(timer));
+      const timer = setInterval(() => {
+        resolveSession({ auth, db }, headers)
+          .then((current) => {
+            if (!current || current.expiresAt.getTime() <= Date.now()) socket.disconnect(true);
+          })
+          .catch((error: unknown) => app.log.error(error, 'Realtime session check failed'));
+      }, revalidateMs);
+      socket.on('disconnect', () => clearInterval(timer));
       next();
     } catch (error) {
       app.log.error(error, 'Realtime sign-in failed');

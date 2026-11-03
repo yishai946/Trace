@@ -117,6 +117,16 @@ describe('realtime', () => {
     await expect(connect(socketFor(forged))).rejects.toThrow('UNAUTHENTICATED');
   });
 
+  it('closes the connection when the user signs out elsewhere', async () => {
+    const commander = await signInCommander(ctx);
+    const socket = socketFor(commander);
+    await connect(socket);
+    const closed = new Promise<string>((resolve) => socket.once('disconnect', resolve));
+    const res = await injectAs(ctx, commander)({ method: 'POST', url: '/api/auth/sign-out', payload: {} });
+    expect(res.statusCode).toBe(200);
+    expect(await closed).toBe('io server disconnect');
+  });
+
   it("does not let a user join another commander's mission, or one a searcher is not part of", async () => {
     const owner = await signInCommander(ctx);
     const other = await signInCommander(ctx);

@@ -107,6 +107,16 @@ describe('useMissionLive', () => {
     expect(result.current.live).toBe('live');
   });
 
+  it('refetches after the first join, for changes made while the first fetch ran', async () => {
+    const { result, fetchPolygons } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await waitFor(() => expect(result.current.polygons).toEqual([first]));
+    serverPolygons = [first, second];
+    await connectAndJoin(socket);
+    await waitFor(() => expect(result.current.polygons).toEqual([first, second]));
+    expect(fetchPolygons).toHaveBeenCalledTimes(2);
+  });
+
   it('shows down when the join is refused', async () => {
     const { result } = setup();
     const socket = sockets[0] as FakeSocket;
@@ -141,6 +151,7 @@ describe('useMissionLive', () => {
     const socket = sockets[0] as FakeSocket;
     await waitFor(() => expect(result.current.polygons).toEqual([first]));
     await connectAndJoin(socket);
+    await waitFor(() => expect(fetchPolygons).toHaveBeenCalledTimes(2));
 
     act(() => socket.fire('disconnect', 'transport close'));
     expect(result.current.live).toBe('down');
@@ -150,7 +161,7 @@ describe('useMissionLive', () => {
     await connectAndJoin(socket);
     expect(result.current.live).toBe('live');
     await waitFor(() => expect(result.current.polygons).toEqual([first, second]));
-    expect(fetchPolygons).toHaveBeenCalledTimes(2);
+    expect(fetchPolygons).toHaveBeenCalledTimes(3);
   });
 
   it('closes the connection when the mission closes', () => {

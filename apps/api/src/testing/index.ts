@@ -15,6 +15,7 @@ export async function createTestApp() {
   const { app, auth, realtime } = await buildApp({
     env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL }),
     db: database.db,
+    realtimeRevalidateMs: 100,
     sendOtp: async ({ phoneNumber, code }) => {
       sentCodes.set(phoneNumber, code);
     },
