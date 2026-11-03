@@ -187,3 +187,23 @@
 .tc-select{width:100%;height:var(--control-h);display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);padding:0 var(--space-5);border:1px solid var(--border-field);border-radius:var(--radius-md);background:var(--surface-sunken);color:var(--ink)}
 .tc-select__value{display:inline-flex;align-items:center;gap:var(--space-4)}
 .tc-select svg,.tc-btn--danger-outline svg{width:16px;height:16px;flex:0 0 auto}
+
+/* More status dots for mission states: paused (warning), ended (muted) */
+.tc-dot--warn{background:var(--warning)}
+.tc-dot--ink{background:var(--ink-muted)}
+
+/* Mission selector: opens from .tc-appbar__mission, the only way to switch missions */
+.tc-switcher{width:var(--panel-start-w)}
+.tc-switcher__item{display:flex;align-items:center;gap:var(--space-4);min-height:var(--control-h);padding:var(--space-3) var(--space-5);border-radius:var(--radius-md);color:var(--ink);text-decoration:none}
+.tc a.tc-switcher__item{color:var(--ink)}
+.tc-switcher__item:hover{background:var(--surface-hover)}
+.tc-switcher__item[aria-current="true"]{background:var(--surface-raised);font-weight:600}
+.tc-switcher__sub{margin-inline-start:auto;font-size:12px;font-weight:400;color:var(--ink-muted)}
+
+/* Scrollbars: slim and quiet with a mouse, hidden on touch screens (content still scrolls) */
+.tc *{scrollbar-width:thin;scrollbar-color:var(--ink-faint) transparent}
+.tc *::-webkit-scrollbar{width:8px;height:8px}
+.tc *::-webkit-scrollbar-track{background:transparent}
+.tc *::-webkit-scrollbar-thumb{background:var(--ink-faint);border-radius:var(--radius-sm)}
+.tc *::-webkit-scrollbar-thumb:hover{background:var(--ink-muted)}
+@media (pointer:coarse){.tc *{scrollbar-width:none}.tc *::-webkit-scrollbar{display:none}}

@@ -16,7 +16,7 @@ import { useMemo, useState } from 'react';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
-import { Button } from '../components/Button';
+import { MissionSwitcher } from '../components/MissionSwitcher';
 import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
 import { MissionMap, type MapFocus } from '../map/MissionMap';
@@ -125,7 +125,6 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
     : health.isPending
       ? { state: 'checking', label: 'בודק…', detail: 'בודק חיבור לשרת.' }
       : { state: 'up', label: 'זמין', detail: 'מחובר לשרת.' };
-  const person = mission?.missingPerson.name ?? mission?.name;
 
   return (
     <main className={styles.screen}>
@@ -153,13 +152,16 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         <span className={styles.brand}>Trace</span>
         {mission && (
           <>
-            <Button size="sm" onPress={() => setOpenId(null)}>
-              המסעות שלי
-            </Button>
-            <span className={styles.mission}>
-              <span className={styles.person}>{person}</span>
-              <span className={styles.meta}>קוד {mission.joinCode}</span>
-            </span>
+            <span className={styles.sep} aria-hidden="true" />
+            <div className={styles.mission}>
+              <MissionSwitcher
+                mission={mission}
+                missions={missions.data ?? []}
+                onSelect={setOpenId}
+                onShowAll={() => setOpenId(null)}
+              />
+            </div>
+            <span className={styles.meta}>קוד {mission.joinCode}</span>
           </>
         )}
         <div className={styles.search}>
