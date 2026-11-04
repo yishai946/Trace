@@ -50,6 +50,7 @@ describe('ProfileMenu', () => {
     fireEvent.click(screen.getByRole('button', { name: /ערכת צבעים/ }));
     fireEvent.click(screen.getByRole('option', { name: 'יום' }));
     expect(document.documentElement.dataset.theme).toBe('day');
+    expect(document.documentElement.style.colorScheme).toBe('light');
     expect(localStorage.getItem('trace.theme')).toBe('day');
   });
 });

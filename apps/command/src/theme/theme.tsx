@@ -56,6 +56,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    // Native controls (the date picker icon, scrollbars) follow color-scheme, not our tokens.
+    document.documentElement.style.colorScheme = theme === 'night' ? 'dark' : 'light';
   }, [theme]);
 
   useEffect(() => {

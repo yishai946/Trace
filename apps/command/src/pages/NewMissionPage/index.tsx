@@ -64,10 +64,10 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
   const mapData = useMemo(
     () => ({
       ...emptyMissionMapData,
-      lkp: form.lkp ? { id: 'lkp', position: form.lkp, time: form.lkpTime } : null,
+      lkp: form.lkp ? { id: 'lkp', position: form.lkp, time: form.lkpObservedAt.slice(11, 16) } : null,
       rally: form.rally,
     }),
-    [form.lkp, form.lkpTime, form.rally],
+    [form.lkp, form.lkpObservedAt, form.rally],
   );
 
   const submit = (e: FormEvent<HTMLFormElement>) => {
@@ -202,13 +202,13 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
         >
           {form.lkp && (
             <TextField
-              label="שעה שבה נראה"
-              type="time"
+              label="תאריך ושעה שבהם נראה"
+              type="datetime-local"
               ltr
-              value={form.lkpTime}
-              onChange={(lkpTime) => update({ lkpTime })}
-              isInvalid={!!errors.lkpTime}
-              errorMessage={errors.lkpTime}
+              value={form.lkpObservedAt}
+              onChange={(lkpObservedAt) => update({ lkpObservedAt })}
+              isInvalid={!!errors.lkpObservedAt}
+              errorMessage={errors.lkpObservedAt}
             />
           )}
         </PointPicker>

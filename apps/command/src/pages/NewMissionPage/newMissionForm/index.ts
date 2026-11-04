@@ -11,8 +11,8 @@ export interface NewMissionForm {
   description: string;
   additionalInfo: string;
   lkp: LngLat | null;
-  /** `HH:mm`: when the missing person was at the LKP. */
-  lkpTime: string;
+  /** `YYYY-MM-DDTHH:mm` from a datetime-local input: when the missing person was at the LKP. */
+  lkpObservedAt: string;
   rally: LngLat | null;
 }
 
@@ -24,16 +24,16 @@ export const emptyForm: NewMissionForm = {
   description: '',
   additionalInfo: '',
   lkp: null,
-  lkpTime: '',
+  lkpObservedAt: '',
   rally: null,
 };
 
-export type FormErrors = Partial<Record<'name' | 'age' | 'lkpTime' | 'rally', string>>;
+export type FormErrors = Partial<Record<'name' | 'age' | 'lkpObservedAt' | 'rally', string>>;
 
 export const MESSAGES = {
   name: 'חסר שם או מזהה למסע.',
   age: 'גיל במספרים שלמים, 0 עד 130.',
-  lkpTime: 'חסרה השעה שבה נראה ב-LKP.',
+  lkpObservedAt: 'חסרים התאריך והשעה שבהם נראה ב-LKP.',
   rally: 'חסרה נקודת כינוס — חובה לפני יצירת המסע.',
 } as const;
 
@@ -45,27 +45,13 @@ export function validate(form: NewMissionForm): FormErrors {
   if (!form.name.trim()) errors.name = MESSAGES.name;
   const age = form.age.trim();
   if (age && !(/^\d+$/.test(age) && Number(age) <= MAX_AGE)) errors.age = MESSAGES.age;
-  if (form.lkp && !form.lkpTime) errors.lkpTime = MESSAGES.lkpTime;
+  if (form.lkp && !form.lkpObservedAt) errors.lkpObservedAt = MESSAGES.lkpObservedAt;
   if (!form.rally) errors.rally = MESSAGES.rally;
   return errors;
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const localDate = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
-/**
- * When the missing person was at the LKP. The screen asks only for the hour: it is on the day they disappeared, or,
- * when that is unknown, the last time that hour came round (today, or yesterday if it is still ahead).
- */
-export function lkpObservedAt(form: Pick<NewMissionForm, 'disappearedAt' | 'lkpTime'>, now: Date): Date {
-  const day = form.disappearedAt ? form.disappearedAt.slice(0, 10) : localDate(now);
-  const observed = new Date(`${day}T${form.lkpTime}`);
-  return !form.disappearedAt && observed > now ? new Date(observed.getTime() - DAY_MS) : observed;
-}
-
 /** The API request for a valid form. Call `validate` first. */
-export function toCreateBody(form: NewMissionForm, now = new Date()): CreateMissionBody {
+export function toCreateBody(form: NewMissionForm): CreateMissionBody {
   if (!form.rally) throw new Error('A mission needs a rally point');
   const text = (value: string) => value.trim() || null;
   return {
@@ -82,7 +68,7 @@ export function toCreateBody(form: NewMissionForm, now = new Date()): CreateMiss
       ? {
           lkp: {
             position: { type: 'Point', coordinates: form.lkp },
-            observedAt: lkpObservedAt(form, now).toISOString(),
+            observedAt: new Date(form.lkpObservedAt).toISOString(),
           },
         }
       : {}),

@@ -1,6 +1,6 @@
 import { CreateMissionBody } from '@trace/schemas';
 import { describe, expect, it } from 'vitest';
-import { emptyForm, formatCoordinate, lkpObservedAt, MESSAGES, parseLatLng, toCreateBody, validate } from '.';
+import { emptyForm, formatCoordinate, MESSAGES, parseLatLng, toCreateBody, validate } from '.';
 
 const rally: [number, number] = [35.1335, 31.7835];
 
@@ -10,11 +10,11 @@ describe('validate', () => {
     expect(validate({ ...emptyForm, name: '0412', rally })).toEqual({});
   });
 
-  it('checks the age and asks for the LKP hour once an LKP is placed', () => {
+  it('checks the age and asks when the person was at the LKP once an LKP is placed', () => {
     const form = { ...emptyForm, name: '0412', rally, age: '7a', lkp: rally };
-    expect(validate(form)).toEqual({ age: MESSAGES.age, lkpTime: MESSAGES.lkpTime });
+    expect(validate(form)).toEqual({ age: MESSAGES.age, lkpObservedAt: MESSAGES.lkpObservedAt });
     expect(validate({ ...form, age: '131' }).age).toBe(MESSAGES.age);
-    expect(validate({ ...form, age: '74', lkpTime: '13:05' })).toEqual({});
+    expect(validate({ ...form, age: '74', lkpObservedAt: '2026-10-03T13:05' })).toEqual({});
   });
 });
 
@@ -36,27 +36,12 @@ describe('toCreateBody', () => {
       name: '0412',
       rally,
       lkp: [35.137, 31.769],
-      lkpTime: '13:05',
+      lkpObservedAt: '2026-10-02T13:05',
       disappearedAt: '2026-10-03T11:20',
     });
     expect(CreateMissionBody.safeParse(body).success).toBe(true);
-    expect(body.lkp?.observedAt).toBe(new Date('2026-10-03T13:05').toISOString());
+    expect(body.lkp?.observedAt).toBe(new Date('2026-10-02T13:05').toISOString());
     expect(body.missingPerson?.disappearedAt).toBe(new Date('2026-10-03T11:20').toISOString());
-  });
-});
-
-describe('lkpObservedAt', () => {
-  const now = new Date('2026-10-03T12:00');
-
-  it('takes the day of the disappearance', () => {
-    expect(lkpObservedAt({ disappearedAt: '2026-10-01T08:00', lkpTime: '13:05' }, now)).toEqual(
-      new Date('2026-10-01T13:05'),
-    );
-  });
-
-  it('otherwise takes the last time the hour came round', () => {
-    expect(lkpObservedAt({ disappearedAt: '', lkpTime: '09:30' }, now)).toEqual(new Date('2026-10-03T09:30'));
-    expect(lkpObservedAt({ disappearedAt: '', lkpTime: '13:05' }, now)).toEqual(new Date('2026-10-02T13:05'));
   });
 });
 
