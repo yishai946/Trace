@@ -16,3 +16,17 @@
   border: 0;
   background-color: var(--border-strong);
 }
+
+/* Phone (wireframe Cm04): a column at the end of the screen, under the top bar. */
+@media (width <= 768px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .separator {
+    width: 22px;
+    height: 1px;
+    margin-block: var(--space-2);
+    margin-inline: 0;
+  }
+}

@@ -17,20 +17,29 @@ import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
+import { Button } from '../components/Button';
+import { ConnectionStatus, type Connection } from '../components/ConnectionStatus';
+import { QrIcon, SearchIcon } from '../components/icons';
 import { MissionSwitcher } from '../components/MissionSwitcher';
+import { PhoneBar } from '../components/PhoneBar';
+import { PhoneTabBar, type PhoneView } from '../components/PhoneTabBar';
 import { ProfileMenu } from '../components/ProfileMenu';
+import { TraceMark } from '../components/TraceMark';
 import { useOnline } from '../hooks/useOnline';
+import { usePhoneLayout } from '../hooks/usePhoneLayout';
 import { MissionMap, type MapFocus } from '../map/MissionMap';
 import { PlaceSearch } from '../map/PlaceSearch';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
+import { MissionSheet, type SheetTab } from '../mission/MissionSheet';
 import { useMissions, useParticipants, usePolygonMutations, usePolygons } from '../mission/missionQueries';
 import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
 import { MissionsPage } from '../pages/MissionsPage';
+import { MorePage } from '../pages/MorePage';
 import { NewMissionPage } from '../pages/NewMissionPage';
 import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
@@ -118,10 +127,17 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   /** The join code, QR and link panel; it opens by itself on a mission just created (UC-C02 step 4). */
   const [joinOpen, setJoinOpen] = useState(false);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
+  const phone = usePhoneLayout();
+  /** The phone's tab bar (Cm04): the board, the sheet on searchers or reports, or "עוד" (Cm16). */
+  const [phoneView, setPhoneView] = useState<PhoneView>('board');
+  const [sheetExpanded, setSheetExpanded] = useState(true);
+  const [placeSearchOpen, setPlaceSearchOpen] = useState(false);
   const openMission = (id: string | null) => {
     setOpenId(id);
     setJoinOpen(false);
     setCreatedNotice(null);
+    setPhoneView('board');
+    setPlaceSearchOpen(false);
   };
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
@@ -132,7 +148,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [focus, setFocus] = useState<MapFocus | null>(null);
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
-  const connection = !connected
+  const connection: Connection = !connected
     ? {
         state: 'down',
         label: 'לא זמין',
@@ -147,6 +163,146 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             detail: 'העדכונים החיים מהשרת נקטעו. מתחבר מחדש; פעולות חדשות חסומות.',
           }
         : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
+
+  const signOutProps = {
+    canSignOut: connected,
+    signingOut: signOut.isPending,
+    signOutFailed: signOut.isError,
+    onSignOut: () => signOut.mutate(),
+  };
+  const workspace = !mission ? null : polygons.isPending ? (
+    <p className={styles.setup}>טוען מסע…</p>
+  ) : (
+    <MissionWorkspace
+      key={mission.id}
+      provider={provider}
+      focus={focus}
+      mission={mission}
+      polygons={polygons.data ?? []}
+      participants={participants.data ?? []}
+      themeId={theme}
+      online={operational}
+    />
+  );
+  const joinPanel = mission && joinOpen && (
+    <div className={styles.join}>
+      <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />
+    </div>
+  );
+  const notice = mission && createdNotice && (
+    <p className={styles.notice} role="alert">
+      {createdNotice}
+    </p>
+  );
+
+  // The phone (Trace Console "Command בטלפון", wireframes Cm*). A new mission keeps the desktop screen for now.
+  if (phone && !creating && !mission) {
+    return (
+      <main className={styles.phone}>
+        <PhoneBar title="המסעות שלי">
+          <ConnectionStatus connection={connection} />
+          <ProfileMenu user={user} presentation="sheet" {...signOutProps} />
+        </PhoneBar>
+        <MissionsPage
+          phone
+          missions={missions.data}
+          loadFailed={missions.isError}
+          onOpen={openMission}
+          onNew={() => setCreating(true)}
+          canCreate={connected}
+        />
+      </main>
+    );
+  }
+
+  if (phone && !creating && mission) {
+    const sheetTab: SheetTab = phoneView === 'searchers' || phoneView === 'reports' ? phoneView : 'alerts';
+    return (
+      <main className={styles.phone}>
+        <div className={styles.stage}>
+          {workspace}
+          {phoneView === 'more' ? (
+            <div className={styles.more}>
+              <PhoneBar title="עוד">
+                <ConnectionStatus connection={connection} />
+              </PhoneBar>
+              <MorePage
+                user={user}
+                onMissionDetails={() => {
+                  setPhoneView('board');
+                  setJoinOpen(true);
+                }}
+                onAllMissions={() => openMission(null)}
+                {...signOutProps}
+              />
+            </div>
+          ) : (
+            <>
+              <MissionSheet
+                tab={sheetTab}
+                onTabChange={(tab) => setPhoneView(tab === 'alerts' ? 'board' : tab)}
+                expanded={sheetExpanded}
+                onExpandedChange={setSheetExpanded}
+                participants={participants.data ?? []}
+                polygons={polygons.data ?? []}
+              />
+              {joinPanel}
+              {notice}
+              {placeSearchOpen && (
+                <div className={styles.phoneSearch}>
+                  <PlaceSearch
+                    provider={provider}
+                    fullWidth
+                    onSelect={(place) => {
+                      setFocus({ center: place.center, bounds: place.bounds });
+                      setPlaceSearchOpen(false);
+                    }}
+                  />
+                </div>
+              )}
+              <header className={styles.appbar}>
+                <span className={styles.brand}>
+                  <TraceMark size={18} />
+                </span>
+                <div className={styles.mission}>
+                  <MissionSwitcher
+                    mission={mission}
+                    missions={missions.data ?? []}
+                    onSelect={openMission}
+                    onShowAll={() => openMission(null)}
+                  />
+                </div>
+                <ConnectionStatus connection={connection} />
+                <Button
+                  variant="icon"
+                  aria-label={`קוד הצטרפות ${mission.joinCode}`}
+                  aria-expanded={joinOpen}
+                  onPress={() => setJoinOpen((open) => !open)}
+                >
+                  <QrIcon />
+                </Button>
+                <Button
+                  variant="icon"
+                  aria-label="חיפוש מקום"
+                  aria-expanded={placeSearchOpen}
+                  onPress={() => setPlaceSearchOpen((open) => !open)}
+                >
+                  <SearchIcon />
+                </Button>
+              </header>
+            </>
+          )}
+        </div>
+        <PhoneTabBar
+          view={phoneView}
+          onChange={(view) => {
+            setPhoneView(view);
+            if (view === 'searchers' || view === 'reports') setSheetExpanded(true);
+          }}
+        />
+      </main>
+    );
+  }
 
   return (
     <main className={styles.screen}>
@@ -174,32 +330,12 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             canCreate={connected}
           />
         </>
-      ) : polygons.isPending ? (
-        <p className={styles.setup}>טוען מסע…</p>
       ) : (
-        <MissionWorkspace
-          key={mission.id}
-          provider={provider}
-          focus={focus}
-          mission={mission}
-          polygons={polygons.data ?? []}
-          participants={participants.data ?? []}
-          themeId={theme}
-          online={operational}
-        />
+        workspace
       )}
 
-      {mission && !creating && joinOpen && (
-        <div className={styles.join}>
-          <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />
-        </div>
-      )}
-
-      {mission && !creating && createdNotice && (
-        <p className={styles.notice} role="alert">
-          {createdNotice}
-        </p>
-      )}
+      {!creating && joinPanel}
+      {!creating && notice}
 
       <header className={styles.appbar}>
         <span className={styles.brand}>Trace</span>
@@ -232,23 +368,8 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             />
           )}
         </div>
-        <span
-          className={styles.status}
-          data-state={connection.state}
-          role="status"
-          title={connection.detail}
-          aria-label={`${connection.label}. ${connection.detail}`}
-        >
-          <span className={styles.statusDot} aria-hidden="true" />
-          {connection.label}
-        </span>
-        <ProfileMenu
-          user={user}
-          canSignOut={connected}
-          signingOut={signOut.isPending}
-          signOutFailed={signOut.isError}
-          onSignOut={() => signOut.mutate()}
-        />
+        <ConnectionStatus connection={connection} />
+        <ProfileMenu user={user} {...signOutProps} />
       </header>
     </main>
   );

@@ -1,0 +1,43 @@
+/* Green pulses softly while connected; red when not. */
+.status {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-muted);
+}
+
+.status[data-state='up'] .dot {
+  background-color: var(--success);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+.status[data-state='down'] {
+  color: var(--danger-ink);
+}
+
+.status[data-state='down'] .dot {
+  background-color: var(--danger);
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status[data-state='up'] .dot {
+    animation: none;
+  }
+}

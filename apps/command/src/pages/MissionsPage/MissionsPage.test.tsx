@@ -69,3 +69,29 @@ describe('MissionsPage', () => {
     expect(screen.getByText('לא ניתן לטעון מסעות מהשרת.')).toBeTruthy();
   });
 });
+
+describe('MissionsPage on the phone', () => {
+  it('shows each mission as a card that opens it', () => {
+    const onOpen = vi.fn();
+    render(<MissionsPage phone missions={missions} loadFailed={false} onOpen={onOpen} {...create} />);
+
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'המסעות שלי' })).toBeNull();
+    const cards = screen.getAllByRole('listitem');
+    expect(cards).toHaveLength(3);
+    expect(cards[2]).toHaveTextContent('הסתיים, אותר');
+    expect(cards[2]).toHaveTextContent('קריאה בלבד');
+    expect(cards[0]).toHaveTextContent('AB-123');
+
+    fireEvent.click(within(cards[1]!).getByRole('button'));
+    expect(onOpen).toHaveBeenCalledWith('m2');
+  });
+
+  it('creates a mission from the button above the list', () => {
+    const onNew = vi.fn();
+    render(<MissionsPage phone missions={missions} loadFailed={false} onOpen={vi.fn()} onNew={onNew} canCreate />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'מסע חדש' }));
+    expect(onNew).toHaveBeenCalledOnce();
+  });
+});

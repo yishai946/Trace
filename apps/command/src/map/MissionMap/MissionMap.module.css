@@ -81,3 +81,32 @@
 .root :global(.maplibregl-ctrl-attrib a) {
   color: var(--ink-muted);
 }
+
+/*
+ * Phone (wireframe Cm04): the tools move to the end of the screen under the top bar, clear of the bottom sheet.
+ * Zoom is a pinch and there is no pointer to read coordinates from, so those controls go.
+ */
+@media (width <= 768px) {
+  .toolbar {
+    top: calc(var(--space-6) * 2 + var(--header-h));
+    bottom: auto;
+    left: auto;
+    inset-inline-end: var(--space-6);
+    transform: none;
+  }
+
+  .zoom,
+  .coords {
+    display: none;
+  }
+
+  .hint {
+    top: calc(var(--space-6) * 2 + var(--header-h));
+    bottom: auto;
+    /* Clear of the tool column, which sits at the inline end: the left in RTL. */
+    right: var(--space-6);
+    left: calc(var(--space-6) * 2 + 44px + var(--space-2) * 2);
+    transform: none;
+    white-space: normal;
+  }
+}

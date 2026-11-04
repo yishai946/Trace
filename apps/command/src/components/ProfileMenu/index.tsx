@@ -1,29 +1,11 @@
 import type { SessionUser } from '@trace/schemas';
-import type { ReactNode } from 'react';
-import {
-  Button as AriaButton,
-  Dialog,
-  DialogTrigger,
-  Label,
-  ListBox,
-  ListBoxItem,
-  Popover,
-  Select,
-  SelectValue,
-  type Key,
-} from 'react-aria-components';
+import { Button as AriaButton, Dialog, DialogTrigger, Modal, ModalOverlay, Popover } from 'react-aria-components';
 import styles from './ProfileMenu.module.css';
 import { Button } from '../Button';
-import { MonitorIcon, MoonIcon, SignOutIcon, SunIcon } from './icons';
-import { useTheme, type ThemePreference } from '../../theme/theme';
+import { SignOutIcon } from '../icons';
+import { ThemeSelect } from '../ThemeSelect';
 
-const ROLE_LABELS: Record<SessionUser['role'], string> = { commander: 'מנהל מסע', searcher: 'מחפש שטח' };
-
-const THEME_OPTIONS: { id: ThemePreference; label: string; icon: ReactNode }[] = [
-  { id: 'day', label: 'יום', icon: <SunIcon /> },
-  { id: 'night', label: 'לילה', icon: <MoonIcon /> },
-  { id: 'system', label: 'לפי המכשיר', icon: <MonitorIcon /> },
-];
+export const ROLE_LABELS: Record<SessionUser['role'], string> = { commander: 'מנהל מסע', searcher: 'מחפש שטח' };
 
 /** Up to two letters from the user's name, for the avatar. */
 export function initials(name: string): string {
@@ -35,8 +17,7 @@ export function initials(name: string): string {
     .join('');
 }
 
-export interface ProfileMenuProps {
-  user: SessionUser;
+export interface SignOutProps {
   /** Signing out needs the server to revoke the session, so it waits for a connection. */
   canSignOut: boolean;
   signingOut: boolean;
@@ -44,88 +25,80 @@ export interface ProfileMenuProps {
   onSignOut: () => void;
 }
 
+export interface ProfileMenuProps extends SignOutProps {
+  user: SessionUser;
+  /** `sheet` opens the panel as a bottom sheet over a veil, as on the phone (Cm17). */
+  presentation?: 'popover' | 'sheet';
+}
+
 /** The avatar at the end of the AppBar. Opens the user's details, the theme choice and sign-out. */
-export function ProfileMenu({ user, canSignOut, signingOut, signOutFailed, onSignOut }: ProfileMenuProps) {
-  const { preference, setPreference } = useTheme();
+export function ProfileMenu({ user, presentation = 'popover', ...signOut }: ProfileMenuProps) {
   const role = ROLE_LABELS[user.role];
+  const panel = (
+    <Dialog className={styles.dialog} aria-label="פרופיל">
+      {presentation === 'sheet' && <div className={styles.grab} aria-hidden="true" />}
+      <div className={styles.section}>
+        <div className={styles.identity}>
+          <span className={styles.avatar} data-static aria-hidden="true">
+            {initials(user.name)}
+          </span>
+          <div className={styles.who}>
+            <div className={styles.name}>{user.name}</div>
+            <div className={styles.meta}>{role}</div>
+            <div className={styles.email} dir="ltr">
+              {user.email}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.section}>
+        <ThemeSelect />
+      </div>
+
+      <div className={styles.section}>
+        <SignOutButton {...signOut} />
+      </div>
+    </Dialog>
+  );
 
   return (
     <DialogTrigger>
       <AriaButton className={styles.avatar} aria-label={`פרופיל: ${user.name}, ${role}`}>
         {initials(user.name)}
       </AriaButton>
-      <Popover className={styles.popover} placement="bottom end" offset={8}>
-        <Dialog className={styles.dialog} aria-label="פרופיל">
-          <div className={styles.section}>
-            <div className={styles.identity}>
-              <span className={styles.avatar} data-static aria-hidden="true">
-                {initials(user.name)}
-              </span>
-              <div className={styles.who}>
-                <div className={styles.name}>{user.name}</div>
-                <div className={styles.meta}>{role}</div>
-                <div className={styles.email} dir="ltr">
-                  {user.email}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.section}>
-            <Select
-              className={styles.theme}
-              selectedKey={preference}
-              onSelectionChange={(key: Key | null) => key && setPreference(key as ThemePreference)}
-            >
-              <Label className={styles.meta}>ערכת צבעים</Label>
-              <AriaButton className={styles.select}>
-                <SelectValue className={styles.option}>
-                  {({ selectedItem }) => {
-                    const option = THEME_OPTIONS.find((o) => o.id === (selectedItem as { id?: Key } | null)?.id);
-                    return option ? (
-                      <>
-                        {option.icon}
-                        {option.label}
-                      </>
-                    ) : null;
-                  }}
-                </SelectValue>
-                <span className={styles.chevron} aria-hidden="true">
-                  ▾
-                </span>
-              </AriaButton>
-              <Popover className={styles.listPopover}>
-                <ListBox className={styles.list} items={THEME_OPTIONS}>
-                  {(option) => (
-                    <ListBoxItem id={option.id} textValue={option.label} className={styles.item}>
-                      {option.icon}
-                      {option.label}
-                    </ListBoxItem>
-                  )}
-                </ListBox>
-              </Popover>
-            </Select>
-          </div>
-
-          <div className={styles.section}>
-            <Button
-              variant="danger-outline"
-              className={styles.signOut}
-              onPress={onSignOut}
-              isDisabled={!canSignOut || signingOut}
-            >
-              <SignOutIcon />
-              {signingOut ? 'יוצא…' : 'יציאה'}
-            </Button>
-            {!canSignOut && <p className={styles.note}>אפשר לצאת כשהחיבור יחזור.</p>}
-            {signOutFailed && (
-              <p className={styles.note} role="alert">
-                היציאה נכשלה. נסו שוב.
-              </p>
-            )}
-          </div>
-        </Dialog>
-      </Popover>
+      {presentation === 'sheet' ? (
+        <ModalOverlay className={styles.veil} isDismissable>
+          <Modal className={styles.sheet}>{panel}</Modal>
+        </ModalOverlay>
+      ) : (
+        <Popover className={styles.popover} placement="bottom end" offset={8}>
+          {panel}
+        </Popover>
+      )}
     </DialogTrigger>
+  );
+}
+
+/** "יציאה": across the panel, disabled with a reason while offline, and an error when it fails. */
+export function SignOutButton({ canSignOut, signingOut, signOutFailed, onSignOut }: SignOutProps) {
+  return (
+    <>
+      <Button
+        variant="danger-outline"
+        className={styles.signOut}
+        onPress={onSignOut}
+        isDisabled={!canSignOut || signingOut}
+      >
+        <SignOutIcon />
+        {signingOut ? 'יוצא…' : 'יציאה'}
+      </Button>
+      {!canSignOut && <p className={styles.note}>אפשר לצאת כשהחיבור יחזור.</p>}
+      {signOutFailed && (
+        <p className={styles.note} role="alert">
+          היציאה נכשלה. נסו שוב.
+        </p>
+      )}
+    </>
   );
 }

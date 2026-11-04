@@ -80,83 +80,6 @@
   white-space: nowrap;
 }
 
-.theme {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.select {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  height: var(--control-h);
-  padding-inline: var(--space-5);
-  border: 1px solid var(--border-field);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-sunken);
-  color: var(--ink);
-  cursor: pointer;
-  outline: none;
-}
-
-.select[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 1px;
-}
-
-.option,
-.item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.option svg,
-.item svg {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-}
-
-.chevron {
-  color: var(--ink-muted);
-}
-
-.listPopover {
-  width: var(--trigger-width);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background-color: var(--surface);
-  box-shadow: var(--shadow-panel);
-}
-
-.list {
-  padding: var(--space-2);
-  outline: none;
-}
-
-.item {
-  height: var(--control-h);
-  padding-inline: var(--space-5);
-  border-radius: var(--radius-sm);
-  color: var(--ink-secondary);
-  cursor: pointer;
-  outline: none;
-}
-
-.item[data-focused],
-.item[data-hovered] {
-  background-color: var(--surface-hover);
-}
-
-.item[data-selected] {
-  background-color: var(--surface-raised);
-  color: var(--ink);
-  font-weight: 600;
-}
-
 /* Trace Console Button `danger-outline`, across the panel with the icon at the start (ProfileMenu guidelines). */
 .signOut {
   justify-content: flex-start;
@@ -168,4 +91,49 @@
   margin-inline: 0;
   color: var(--ink-muted);
   font: var(--text-meta);
+}
+
+/* Phone (Cm17): the same panel as a bottom sheet over a veil of the map ground colour. */
+.veil {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* The veil is a layer of its own so its opacity does not fade the sheet (wireframe Cm17). */
+.veil::before {
+  position: absolute;
+  inset: 0;
+  background-color: var(--map-ground);
+  opacity: 0.6;
+  content: '';
+}
+
+.sheet {
+  position: relative;
+  width: 100%;
+  padding-bottom: var(--space-7);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+  outline: none;
+}
+
+.grab {
+  width: 36px;
+  height: 4px;
+  margin-block: var(--space-4) 0;
+  margin-inline: auto;
+  border-radius: var(--radius-sm);
+  background-color: var(--border-strong);
+}
+
+/* Phone: every touch target is at least 44px (Trace Console "Command בטלפון"; the design system has no token for it). */
+@media (width <= 768px) {
+  .avatar:not([data-static]) {
+    width: 44px;
+    height: 44px;
+  }
 }

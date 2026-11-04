@@ -29,49 +29,6 @@
   font-weight: 700;
 }
 
-/* Connection indicator: a dot and one word, always shown. Green pulses softly while connected; red when not. */
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  color: var(--ink-secondary);
-  font: var(--text-meta);
-  white-space: nowrap;
-  cursor: default;
-}
-
-.statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-sm);
-  background-color: var(--ink-muted);
-}
-
-.status[data-state='up'] .statusDot {
-  background-color: var(--success);
-  animation: pulse 2.4s ease-in-out infinite;
-}
-
-.status[data-state='down'] {
-  color: var(--danger-ink);
-}
-
-.status[data-state='down'] .statusDot {
-  background-color: var(--danger);
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.4;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status[data-state='up'] .statusDot {
-    animation: none;
-  }
-}
-
 .appbar > .search {
   display: flex;
   flex: 1 1 0;
@@ -177,4 +134,74 @@
 
 .veil[data-veil='dense'] {
   opacity: 0.82;
+}
+
+/* Phone (Trace Console "Command בטלפון", wireframes Cm02, Cm04, Cm16): a column with the tab bar at the bottom. */
+.phone {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* The map and everything floating over it; the tab bar sits below. */
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--map-ground);
+}
+
+.phoneSearch {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  inset-inline: var(--space-6);
+}
+
+@media (width <= 768px) {
+  .appbar {
+    gap: var(--space-3);
+    padding-inline: var(--space-3);
+  }
+
+  .appbar > .mission {
+    flex: 1 1 0;
+  }
+
+  .brand {
+    display: flex;
+    padding-inline: var(--space-2);
+  }
+
+  /* Panels over the map take the width of the screen. */
+  .inspector {
+    top: auto;
+    bottom: var(--space-6);
+    inset-inline: var(--space-6);
+    width: auto;
+    max-height: 70%;
+    overflow-y: auto;
+  }
+
+  .join {
+    inset-inline: var(--space-6);
+  }
+
+  .editBar,
+  .notice {
+    left: var(--space-6);
+    right: var(--space-6);
+    transform: none;
+  }
+
+  .editBar {
+    bottom: var(--space-6);
+  }
 }

@@ -60,3 +60,10 @@
   color: var(--ink);
   font: var(--text-meta);
 }
+
+/* Phone: every touch target is at least 44px (Trace Console "Command בטלפון"; the design system has no token for it). */
+@media (width <= 768px) {
+  .input {
+    height: 44px;
+  }
+}

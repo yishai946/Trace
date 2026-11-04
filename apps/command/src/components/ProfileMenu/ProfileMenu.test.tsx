@@ -54,6 +54,16 @@ describe('ProfileMenu', () => {
   });
 });
 
+describe('ProfileMenu as a bottom sheet', () => {
+  it('opens the same details in a modal sheet, as on the phone (Cm17)', () => {
+    renderMenu({ presentation: 'sheet' });
+    const dialog = screen.getByRole('dialog', { name: 'פרופיל' });
+    expect(dialog).toHaveTextContent('yishai@trace.test');
+    expect(screen.getByRole('button', { name: 'יציאה' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /ערכת צבעים/ })).toBeTruthy();
+  });
+});
+
 describe('initials', () => {
   it('takes the first letter of up to two words', () => {
     expect(initials('ישי ביטון')).toBe('יב');

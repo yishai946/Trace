@@ -1,0 +1,94 @@
+/* Wireframe Cm16: list rows on the surface, under section labels. */
+.page {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background-color: var(--surface);
+}
+
+.section {
+  margin: 0;
+  padding-block: var(--space-7) var(--space-3);
+  padding-inline: var(--space-7);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+/* At least 44px: every touch target on the phone (Trace Console "Command בטלפון"; no token for it). */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  min-height: 52px;
+  padding-block: var(--space-3);
+  padding-inline: var(--space-7);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: transparent;
+  color: var(--ink);
+  text-align: start;
+  cursor: pointer;
+  outline: none;
+}
+
+.row[data-static] {
+  cursor: default;
+}
+
+.row[data-large] {
+  min-height: 60px;
+}
+
+.row[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.row[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.row svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+}
+
+.row svg:last-child {
+  color: var(--ink-muted);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  font: var(--text-body-strong);
+}
+
+.meta {
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-h);
+  height: var(--control-h);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background-color: var(--chip);
+  font: var(--text-meta);
+  font-weight: 600;
+}
+
+.signOut {
+  padding: var(--space-7);
+}

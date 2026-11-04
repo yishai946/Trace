@@ -7,7 +7,7 @@ import { TextField } from '../../components/TextField';
 import { useOnline } from '../../hooks/useOnline';
 import { TraceMark } from '../../components/TraceMark';
 
-/** Commander sign-in to TRACE Command (UC-C01, wireframe Cd01). */
+/** Commander sign-in to TRACE Command (UC-C01, wireframes Cd01 and Cm01). */
 export function LoginPage() {
   const signIn = useSignIn();
   const online = useOnline();
@@ -30,7 +30,9 @@ export function LoginPage() {
     <main className={styles.panel} aria-label="כניסת מנהל">
       <div className={styles.section}>
         <div className={styles.brand}>
-          <TraceMark />
+          <span className={styles.mark}>
+            <TraceMark />
+          </span>
           <div>
             <div className={styles.product}>TRACE Command</div>
             <div className={styles.meta}>ניהול מסע חיפוש והצלה</div>

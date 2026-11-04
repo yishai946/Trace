@@ -60,3 +60,57 @@
 .submit {
   width: 100%;
 }
+
+.mark {
+  display: contents;
+}
+
+/* Phone (wireframe Cm01): the brand over the map, the form in a bottom sheet. */
+@media (width <= 768px) {
+  .panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-width: 1px 0 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    transform: none;
+  }
+
+  .section:first-child {
+    position: fixed;
+    top: 0;
+    inset-inline: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 36%;
+    border-bottom: 0;
+  }
+
+  .brand {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: var(--surface);
+    box-shadow: var(--shadow-panel);
+  }
+
+  .mark svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .section:last-child {
+    padding-block: var(--space-7);
+  }
+}
