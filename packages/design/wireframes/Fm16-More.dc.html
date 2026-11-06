@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>עוד · Field</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-lrow{display:flex;align-items:center;gap:var(--space-5);min-height:52px;padding:0 var(--space-7);border-bottom:1px solid var(--border-subtle);color:var(--ink);text-decoration:none}
+.tcx-lrow:hover{background:var(--surface-hover)}
+.tcx-lrow__t{flex:1;min-width:0}
+.tcx-lrow__n{color:var(--ink-muted);font-size:11.5px}
+.tcx-lrow--lg{min-height:60px}
+.tcx-lrow--demo{color:var(--ink-secondary)}
+.tcx-lrow svg.tcx-i:last-child{color:var(--ink-muted)}
+.tcx-lsec{padding:var(--space-7) var(--space-7) var(--space-3);font-size:12px;color:var(--ink-muted)}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><div class="tcx-mbar__title">עוד</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-scroll" style="flex:1;background:var(--surface)">
+<div class="tcx-lsec">המסע שלי</div>
+<a class="tcx-lrow tcx-lrow--lg" href="Fm15-MyMissions.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span class="tcx-lrow__t">המסעות שלי</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+<a class="tcx-lrow tcx-lrow--lg" href="Fm13-FinishActivity.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6"/></svg><span class="tcx-lrow__t">סיום פעילות…</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+<a class="tcx-lrow tcx-lrow--lg" href="Fm01-Login.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></svg><span class="tcx-lrow__t">יציאה מהחשבון</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+<div class="tcx-lsec">הדמיה, אירועים שמגיעים מהמנהל (לא חלק מהמוצר)</div>
+<a class="tcx-lrow tcx-lrow--lg tcx-lrow--demo" href="Fm05-Assigned.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14a6 6 0 0 1 3.5 6"/></svg><span class="tcx-lrow__t">המנהל שיבץ אותך לפוליגון</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+<a class="tcx-lrow tcx-lrow--lg tcx-lrow--demo" href="Fm14-MissionState.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span class="tcx-lrow__t">המנהל השהה את המסע</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+<a class="tcx-lrow tcx-lrow--lg tcx-lrow--demo" href="Fm14-MissionState-Ended.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg><span class="tcx-lrow__t">המנהל סיים את המסע</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+<a class="tcx-lrow tcx-lrow--lg tcx-lrow--demo" href="Fm01-Login.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg><span class="tcx-lrow__t">התחל את ההדגמה מחדש</span><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+</div></div><nav class="tcx-tabbar" aria-label="ניווט ראשי"><a href="Fm06-Searching.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"/></svg>מסע</a><a href="Fm10-PolygonReports.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>דיווחים</a><a href="Fm11-Messages.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>הודעות<span class="tcx-tabbar__n">2</span></a><a href="Fm12-SOS.dc.html" style="color:var(--danger-ink)"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg>SOS</a><a href="Fm16-More.dc.html" aria-current="page"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>עוד</a></nav></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "day"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'day';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

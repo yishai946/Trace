@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F07 השהיה וסיום חיפוש · לילה</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-opt{min-height:56px;display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-5);border-radius:var(--radius-lg);background:var(--surface-sunken);border:2px solid var(--border-field);color:var(--ink);font:inherit;font-size:14px;text-align:start;width:100%}
+.tcx-opt svg{width:18px;height:18px;flex:0 0 auto;color:var(--ink-secondary)}
+.tcx-opt[aria-checked="true"]{background:var(--surface-raised);border-color:var(--accent);font-weight:600}
+.tcx-opt[aria-checked="true"] svg{color:var(--accent)}
+.tcx-opt__sub{display:block;font-size:11.5px;font-weight:400;color:var(--ink-muted)}
+.tcx-segl .tc-seg__tab{height:44px;font-size:14px}
+.tcx-segl .tc-seg__tab[aria-checked="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600}
+.tcx-foot{flex:0 0 auto;padding:var(--space-6);background:var(--surface);border-top:1px solid var(--border)}
+.tcx-scrim{position:absolute;inset:0;background:var(--map-ground);opacity:.62;z-index:6}
+.tcx-minimap{position:relative;height:var(--mm-h,184px);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-strong);background:var(--map-ground)}
+.tcx-stat{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0}
+.tcx-stat b{font-size:15px;font-weight:700}
+.tcx-fbtn{height:48px;min-width:48px}
+.tcx-lbl{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:var(--space-3);display:block}
+.tcx-report{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-5) var(--space-6);border-radius:var(--radius-lg);min-height:68px}
+.tcx-report+.tcx-report{margin-top:var(--space-2)}
+.tcx-report--sel{background:var(--surface-raised)}
+.tcx-report__top{display:flex;align-items:center;gap:var(--space-4)}
+.tcx-report__text{font-size:14px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-hairline{height:1px;background:var(--border-subtle);margin:0}
+.tcx-halo{paint-order:stroke;stroke:var(--map-halo);stroke-width:3px;stroke-linejoin:round}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><img class="tcx-mapimg" src="{{map}}" alt=""><svg class="tcx-mapsvg" viewBox="235 28 330 714" preserveAspectRatio="xMidYMid slice" role="img" aria-label="מפת הפוליגון שלי"><path class="tc-poly--active-b" d="M520 260L600 240L625 350L505 380Z"></path><path class="tc-poly--active" d="M300 200L440 168L520 260L505 380L380 440L285 330Z" style="fill-opacity:.12;stroke-width:2.6"></path><rect class="tc-tag" x="312" y="176" width="66" height="20" rx="4"></rect><text class="tc-tag__text" x="345.0" y="190" text-anchor="middle">A 82%</text><path d="M320 224L470 210L474 234L322 250L326 274L496 260L498 284L318 300L322 324L502 310L504 336L490 346" fill="none" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--ink-muted);stroke-opacity:.2;stroke-width:17"></path><path d="M320 224L470 210L474 234L322 250L326 274L496 260L498 284L318 300L322 324L502 310L504 336L490 346" fill="none" stroke-linejoin="round" stroke-linecap="round" style="stroke:var(--ink-muted);stroke-opacity:.95;stroke-width:2"></path><g transform="translate(400 140)"><circle class="tc-sym-lkp" r="8" style="stroke-width:2"></circle><path class="tc-sym-lkp" d="M0 -13V-5M0 5V13M-13 0H-5M5 0H13" style="stroke-width:2"></path></g><rect class="tc-sym-lkp-flag" x="414" y="130" width="62" height="18" rx="3"></rect><text class="tc-sym-lkp-text" x="445" y="143" text-anchor="middle" style="font-size:10.5px">LKP 13:05</text><g transform="translate(490 346)"><circle r="17" style="fill:var(--ink-muted);fill-opacity:.16;stroke:var(--ink-muted);stroke-width:1"></circle><circle class="tc-sym-unit" r="7" style="stroke-width:2.5;fill:var(--ink-muted)"></circle><path d="M0 -14.5L4.5 -9H-4.5Z" transform="rotate(130)" style="fill:var(--ink-muted)"></path><text class="tc-sym-label tcx-halo" x="-22" y="4" text-anchor="end" style="font-size:11px;direction:ltr">אני</text></g></svg><header class="tc-appbar" style="position:absolute;top:12px;inset-inline:12px;z-index:5;gap:8px"><span class="tc-callsign" style="margin-inline-start:4px">04</span><div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;font-weight:600;white-space:nowrap"><span class="tc-dot tc-dot--warn"></span>מושהה, A</div><div style="display:flex;gap:4px;padding-inline-end:2px"><span class="tcx-badge" style="height:24px;padding:0 6px;gap:3px"><svg class="tcx-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path></svg><span class="tcx-num">±5</span> מ׳</span><span class="tcx-badge" style="height:24px;padding:0 6px;gap:3px">מקוון</span><span class="tcx-badge" style="height:24px;padding:0 6px;gap:3px"><svg class="tcx-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="16" height="9" rx="2"></rect><path d="M21 11v3"></path></svg>63%</span></div></header><section class="tc-panel" aria-label="מצב חיפוש" style="position:absolute;top:68px;inset-inline:12px;z-index:4"><div class="tc-panel__section" style="padding:10px 14px"><div class="tcx-row" style="gap:8px"><svg class="tcx-i" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14"></path></svg><span class="tcx-title">החיפוש מושהה</span><span class="tcx-meta" style="margin-inline-start:auto">מושהה <span class="tcx-num">00:03:12</span></span></div><div style="color:var(--ink-secondary);margin-top:2px">מעקב הבטיחות ממשיך. התנועה לא נספרת לכיסוי.</div></div></section><div class="tcx-sheet" style="position:absolute;inset-inline:0;bottom:0;height:190px;display:flex;flex-direction:column;z-index:4"><div class="tcx-sheet__grab"></div>
+<div style="padding:2px 12px 12px;display:flex;flex-direction:column;gap:8px;flex:1">
+<div class="tcx-meta" style="padding:0 2px">זמן חיפוש <span class="tcx-num">01:24:08</span>, מרחק <span class="tcx-num">3.2</span> ק״מ, כיסוי A <span class="tcx-num">82%</span></div>
+<a class="tcx-lk tc-btn tc-btn--primary tc-btn--lg tc-btn--block" style="font-size:16px;height:52px" href="Fm06-Searching-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"></path></svg>המשך חיפוש</a>
+<button class="tc-btn tc-btn--lg tc-btn--block"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1"></rect></svg>סיימתי חיפוש…</button></div></div><div class="tcx-scrim"></div><div class="tc-panel" role="dialog" aria-modal="true" aria-labelledby="f07t" style="position:absolute;top:290px;inset-inline:12px;z-index:7">
+<div class="tc-panel__section" style="padding:14px"><div id="f07t" class="tcx-title" style="font-size:15px">סיימתי חיפוש?</div>
+<p style="margin:6px 0 0;color:var(--ink-secondary);line-height:1.5">משימת החיפוש תסתיים. תישאר משובץ לפוליגון A עד החלטת המנהל. זה לא סיום פעילות, והפוליגון לא יסומן כהושלם.</p></div>
+<div class="tc-panel__section" style="padding:12px 14px;display:grid;grid-template-columns:1.2fr 1fr;gap:8px"><a class="tcx-lk tc-btn tc-btn--primary tc-btn--lg" href="Fm13-FinishActivity-Night.dc.html">סיים חיפוש</a><a class="tcx-lk tc-btn tc-btn--lg" href="Fm06-Searching-Night.dc.html">ביטול</a></div>
+<div class="tc-panel__section" style="padding:6px 14px"><a class="tcx-lk tc-btn tc-btn--ghost tc-btn--block" style="height:44px;color:var(--ink-secondary)" href="Fm13-FinishActivity-Night.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"></path></svg>לסיום הפעילות כולה: סיום פעילות…</a></div></div></div><nav class="tcx-tabbar" aria-label="ניווט ראשי"><a href="Fm06-Searching-Night.dc.html" aria-current="page"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2"></circle><circle cx="18" cy="6" r="2"></circle><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"></path></svg>מסע</a><a href="Fm10-PolygonReports-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>דיווחים</a><a href="Fm11-Messages-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>הודעות<span class="tcx-tabbar__n">2</span></a><a href="Fm12-SOS-Night.dc.html" style="color:var(--danger-ink)"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16h.01"></path></svg>SOS</a><a href="Fm16-More-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="19" cy="12" r="1.2"></circle></svg>עוד</a></nav></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'night';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

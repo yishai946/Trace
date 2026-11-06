@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>C13 בקרת מסע · מובייל</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-chipbtn{height:26px;padding:0 var(--space-5);border-radius:13px;border:1px solid var(--border);background:transparent;color:var(--ink-secondary);font-size:12px;display:inline-flex;align-items:center;gap:var(--space-2);white-space:nowrap;flex:0 0 auto}
+.tcx-chipbtn[aria-pressed="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600;border-color:var(--border-strong)}
+.tcx-chipbtn--lg{height:44px;padding:0 var(--space-7);border-radius:22px;font-size:13px}
+.tcx-badge--strong{background:var(--primary);color:var(--on-primary)}
+.tcx-seg--lg .tc-seg__tab{height:40px}
+.tcx-scrim{position:absolute;inset:0;background:var(--surface-sunken);opacity:.5;z-index:20}
+.tcx-dialog{position:absolute;z-index:21;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-xl);box-shadow:var(--shadow-panel)}
+.tc a.tcx-item,.tc a.tc-btn{color:var(--ink);text-decoration:none}
+.tc a.tcx-nav__item{color:var(--ink-secondary);text-decoration:none}
+.tc a.tcx-nav__item[aria-current="page"]{color:var(--ink)}
+.tcx-item{display:flex;align-items:center;gap:var(--space-5);padding:var(--space-4) var(--space-5);border-radius:var(--radius-md);color:var(--ink);text-decoration:none;min-height:56px}
+.tcx-item:hover{background:var(--surface-hover)}
+.tcx-item[aria-current="true"]{background:var(--surface-raised)}
+.tcx-glyph{width:28px;height:28px;border-radius:var(--radius-md);background:var(--chip);color:var(--ink-secondary);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tcx-glyph--warn{color:var(--warning)}
+.tcx-glyph--strong{background:var(--primary);color:var(--on-primary)}
+.tcx-ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-fixed{table-layout:fixed}
+.tcx-fixed td,.tcx-fixed th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-quote{padding:var(--space-5) var(--space-6);border-radius:var(--radius-md);background:var(--danger-tint);border:1px solid var(--danger-border);color:var(--ink)}
+.tcx-chiprow{display:flex;gap:var(--space-3);flex-wrap:wrap}
+.tcx-chiprow--scroll{flex-wrap:nowrap;overflow:auto}
+.tcx-actionhint{font-size:11.5px;color:var(--ink-muted)}
+.tcx-list{list-style:none;margin:0;padding:0}
+.tcx-btn-row{display:flex;gap:var(--space-4)}
+.tcx-btn-row>.tc-btn{flex:1}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><a class="tcx-lk tc-btn tc-btn--icon" aria-label="חזרה" style="margin-inline-start:-6px" href="Cm16-More.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a><div class="tcx-mbar__title">בקרת מסע</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-scroll" style="flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:10px">
+<section class="tcx-card" style="background:var(--surface);display:flex;flex-direction:column;gap:6px"><div class="tcx-row" style="gap:6px"><span class="tc-dot tc-dot--ok"></span><b>מצב: פעיל</b><span class="tcx-meta" style="margin-inline-start:auto">24 בשטח, <span class="tcx-num">05:42:10</span></span></div>
+<a class="tcx-meta" style="color:var(--accent)" href="Cm10-Reports.dc.html">דיווח "הנעדר אותר" ממתין לאימות, 02, <span class="tcx-num">16:51</span></a></section>
+<section class="tcx-card" style="background:var(--surface);display:flex;flex-direction:column;gap:10px"><div class="tcx-title">השהיה וחידוש</div><div class="tcx-btn-row"><button class="tc-btn tc-btn--lg">השהה מסע</button><button class="tc-btn tc-btn--lg" disabled style="opacity:.5">חדש מסע</button></div></section>
+<section class="tcx-card" style="background:var(--surface);display:flex;flex-direction:column;gap:10px"><div class="tcx-title">הנעדר אותר</div><div class="tcx-meta">המסע מסתיים רק אחרי אימות המנהל.</div><button class="tc-btn tc-btn--lg tc-btn--primary">הנעדר אותר…</button></section>
+<section class="tcx-card" style="background:var(--surface);display:flex;flex-direction:column;gap:10px"><div class="tcx-title">הפסק מסע</div><div class="tcx-field"><label class="tcx-label" for="msr">סיבה</label><select id="msr" class="tcx-input tcx-input--lg"><option>תנאי מזג אוויר</option></select></div><div class="tcx-field"><label class="tcx-label" for="msn">הערה (אופציונלי)</label><textarea id="msn" class="tcx-input" rows="2"></textarea></div><button class="tc-btn tc-btn--lg tc-btn--danger-ghost">הפסק מסע…</button></section>
+</div></div><nav class="tcx-tabbar" aria-label="ניווט ראשי"><a href="Cm04-Live.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>לוח</a><a href="Cm08-Searchers.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14a6 6 0 0 1 3.5 6"/></svg>מחפשים</a><a href="Cm10-Reports.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>דיווחים<span class="tcx-tabbar__n">3</span></a><a href="Cm11-Messages.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>הודעות</a><a href="Cm16-More.dc.html" aria-current="page"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>עוד</a></nav></div><div class="tcx-scrim"></div>
+<div class="tcx-sheet" role="dialog" aria-modal="true" aria-labelledby="sh-t" style="position:absolute;inset-inline:0;bottom:0;z-index:21;padding-bottom:16px"><div class="tcx-sheet__grab"></div>
+<div style="padding:8px 16px;display:flex;flex-direction:column;gap:12px"><div class="tcx-title" id="sh-t">להפסיק את המסע?</div>
+<div class="tcx-meta">סיבה: תנאי מזג אוויר</div>
+<ul style="margin:0;padding-inline-start:18px;line-height:1.6;color:var(--ink-secondary)"><li>המסע יסתיים כ"הפסקת חיפוש" ויישמר לקריאה בלבד.</li><li>24 מחפשים בשטח יקבלו הודעת סיום.</li><li>המעקב הבטיחותי נמשך עד סיום הפעילות של כל מחפש.</li></ul>
+<div class="tcx-btn-row"><a class="tcx-lk tc-btn tc-btn--lg tc-btn--danger" style="flex:1.4" href="Cm15-EndedMission.dc.html">אשר והפסק מסע</a><a class="tcx-lk tc-btn tc-btn--lg" href="Cm04-Live.dc.html">ביטול</a></div></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'night';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F09 תצפית על הנעדר</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-opt{min-height:56px;display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-5);border-radius:var(--radius-lg);background:var(--surface-sunken);border:2px solid var(--border-field);color:var(--ink);font:inherit;font-size:14px;text-align:start;width:100%}
+.tcx-opt svg{width:18px;height:18px;flex:0 0 auto;color:var(--ink-secondary)}
+.tcx-opt[aria-checked="true"]{background:var(--surface-raised);border-color:var(--accent);font-weight:600}
+.tcx-opt[aria-checked="true"] svg{color:var(--accent)}
+.tcx-opt__sub{display:block;font-size:11.5px;font-weight:400;color:var(--ink-muted)}
+.tcx-segl .tc-seg__tab{height:44px;font-size:14px}
+.tcx-segl .tc-seg__tab[aria-checked="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600}
+.tcx-foot{flex:0 0 auto;padding:var(--space-6);background:var(--surface);border-top:1px solid var(--border)}
+.tcx-scrim{position:absolute;inset:0;background:var(--map-ground);opacity:.62;z-index:6}
+.tcx-minimap{position:relative;height:var(--mm-h,184px);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-strong);background:var(--map-ground)}
+.tcx-stat{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0}
+.tcx-stat b{font-size:15px;font-weight:700}
+.tcx-fbtn{height:48px;min-width:48px}
+.tcx-lbl{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:var(--space-3);display:block}
+.tcx-report{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-5) var(--space-6);border-radius:var(--radius-lg);min-height:68px}
+.tcx-report+.tcx-report{margin-top:var(--space-2)}
+.tcx-report--sel{background:var(--surface-raised)}
+.tcx-report__top{display:flex;align-items:center;gap:var(--space-4)}
+.tcx-report__text{font-size:14px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-hairline{height:1px;background:var(--border-subtle);margin:0}
+.tcx-halo{paint-order:stroke;stroke:var(--map-halo);stroke-width:3px;stroke-linejoin:round}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar" style="gap:6px"><a class="tcx-lk tc-btn tc-btn--ghost tcx-fbtn" style="height:48px;padding:0 10px;margin-inline-start:-6px" href="Fm06-Searching.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>ביטול</a><div class="tcx-mbar__title" style="font-size:16px">תצפית על הנעדר</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-scroll tcx-grow" style="padding:14px 12px 12px;display:flex;flex-direction:column;gap:14px">
+<div><span class="tcx-lbl">מקור</span><div class="tc-seg tcx-segl" role="radiogroup" aria-label="מקור התצפית"><button class="tc-seg__tab" role="radio" aria-checked="true">אני ראיתי</button><button class="tc-seg__tab" role="radio" aria-checked="false">עד ראייה</button></div></div>
+<div><span class="tcx-lbl">מיקום התצפית</span><div class="tc-seg tcx-segl" role="radiogroup" aria-label="מיקום התצפית"><button class="tc-seg__tab" role="radio" aria-checked="true">המיקום שלי</button><button class="tc-seg__tab" role="radio" aria-checked="false">בחירה במפה</button></div>
+<div style="margin-top:8px;--mm-h:236px"><div class="tcx-minimap"><img class="tcx-mapimg" src="{{map}}" alt=""><svg class="tcx-mapsvg" viewBox="285 150 260 164" preserveAspectRatio="xMidYMid slice" role="img" aria-label="מפת מיקום התצפית"><path class="tc-poly--active" d="M300 200L440 168L520 260L505 380L380 440L285 330Z" style="fill-opacity:.12;stroke-width:2.2"></path><g transform="translate(345 215)"><circle class="tc-sym-lkp" r="8" style="stroke-width:2"></circle><path class="tc-sym-lkp" d="M0 -13V-5M0 5V13M-13 0H-5M5 0H13" style="stroke-width:2"></path></g><rect class="tc-sym-lkp-flag" x="359" y="205" width="62" height="18" rx="3"></rect><text class="tc-sym-lkp-text" x="390" y="218" text-anchor="middle" style="font-size:10.5px">LKP 13:05</text><g transform="translate(432 252)"><path d="M0 -17l17 17-17 17-17-17z" style="fill:var(--surface);stroke:var(--ink);stroke-width:2.4"></path><circle r="4" style="fill:var(--ink)"></circle></g><text class="tc-sym-label tcx-halo" x="456" y="257" text-anchor="start" style="font-size:11px;direction:ltr">תצפית</text></svg></div><div class="tcx-meta" style="margin-top:4px"><span class="tcx-num">31.7412, 35.0139</span>, פוליגון A</div></div></div>
+<div class="tcx-field"><label class="tcx-lbl" for="f09t">זמן התצפית</label><div class="tcx-row" style="gap:8px"><input id="f09t" class="tcx-input tcx-input--lg" value="16:58" style="flex:1;font-size:15px;direction:ltr;text-align:end"><button class="tc-btn tc-btn--lg">עכשיו</button></div></div>
+<div class="tcx-field"><label class="tcx-lbl" for="f09d">תיאור קצר</label><textarea id="f09d" class="tcx-input" rows="2" style="font-size:14px;min-height:66px">מעיל חום, הולך לאט צפונה לאורך הנחל</textarea></div></div>
+<div class="tcx-foot"><a class="tcx-lk tc-btn tc-btn--primary tc-btn--lg tc-btn--block" style="font-size:16px;height:52px" href="Fm06-Searching.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-8-8 18-2-8z"></path></svg>שלח תצפית</a>
+<div class="tcx-cap" style="text-align:center;margin-top:6px">התצפית תופיע מיד במפה של המנהל</div></div></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "day"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'day';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

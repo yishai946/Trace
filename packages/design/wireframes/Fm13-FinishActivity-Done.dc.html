@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F13 הפעילות הסתיימה</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-surf{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.tcx-msg{display:block;width:100%;text-align:start;padding:var(--space-6) var(--space-7);background:var(--surface);color:var(--ink);border:1px solid var(--border-strong);border-radius:var(--radius-lg);font:inherit}
+.tcx-msg--crit{border:2px solid var(--ink)}
+.tcx-msg--imp{border:2px solid var(--ink-muted)}
+.tcx-msg__head{display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-4)}
+.tcx-msg__text{display:block;font-size:14px;line-height:1.5}
+.tcx-msg--read .tcx-msg__text{color:var(--ink-secondary)}
+.tcx-msg__foot{display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);font-size:12px;color:var(--ink-muted)}
+.tcx-msg__foot svg{width:14px;height:14px}
+.tcx-badge--ink{background:var(--primary);color:var(--on-primary)}
+.tcx-badge--outline{background:transparent;color:var(--ink);border:1px solid var(--ink-muted)}
+.tcx-badge svg{width:14px;height:14px}
+.tcx-foot{flex:0 0 auto;display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-6) 16px;background:var(--surface);border-top:1px solid var(--border)}
+.tcx-sosring{position:relative;width:248px;height:248px;margin:0 auto;display:flex;align-items:center;justify-content:center}
+.tcx-sosring svg{position:absolute;inset:0;width:100%;height:100%}
+.tc .tcx-sosbtn{width:208px;height:208px;border-radius:50%;border:0;background:var(--danger);color:var(--on-danger);font-size:48px;font-weight:700;letter-spacing:.04em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tc .tcx-sosbtn:hover{background:var(--danger);opacity:.94}
+.tc .tcx-sosbtn small{font-size:13px;font-weight:600;letter-spacing:0}
+.tcx-mini{width:100%;position:relative;overflow:hidden;border-radius:var(--radius-md);border:1px solid var(--border)}
+.tcx-banner .tcx-mini .tcx-mapsvg{width:100%;height:100%;margin:0}
+.tcx-banner .tc-btn svg,.tcx-banner .tcx-ln svg{color:inherit;margin:0}
+.tcx-ln{display:flex;align-items:center;gap:var(--space-4);min-height:44px;padding:0 var(--space-2);border-top:1px solid var(--border-subtle)}
+.tcx-ln:first-child{border-top:0}
+.tcx-ln__k{flex:1;color:var(--ink-muted)}
+.tcx-btnrow{display:flex;gap:var(--space-4)}
+.tcx-btnrow>*{flex:1;min-width:0}
+.tcx-pill{display:flex;align-items:center;gap:var(--space-4);min-height:48px}
+.tcx-ring{fill:none;stroke:var(--danger);stroke-width:3;stroke-opacity:.35}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><div class="tcx-mbar__title">סיום פעילות</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-grow" style="padding:16px;display:flex;flex-direction:column;gap:12px;min-height:0">
+<section class="tcx-surf" style="padding:16px;border:2px solid var(--ink-muted);display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><b class="tcx-title" style="flex:1;font-size:16px">הפעילות הסתיימה</b><span class="tcx-badge">הסתיימה</span></div>
+<div style="color:var(--ink-secondary);font-size:13px;line-height:1.5">ההשתתפות שלך במסע נשמרה בהיסטוריה, וזמינה לצפייה בקריאה בלבד.</div></section>
+<div class="tcx-surf" style="padding:6px 12px"><div class="tcx-ln"><span class="tcx-ln__k">סיבה</span><span>סיימת את הפעילות, <span class="tcx-num">16:58</span></span></div><div class="tcx-ln"><span class="tcx-ln__k">מעקב בטיחות</span><span>נפסק</span></div><div class="tcx-ln"><span class="tcx-ln__k">מסע</span><span>0412, נועם אברהם</span></div></div>
+<div style="flex:1"></div></div>
+<div class="tcx-foot"><a class="tcx-lk tc-btn tc-btn--lg tc-btn--primary tc-btn--block" href="Fm15-MyMissions.dc.html">המסעות שלי</a><a class="tcx-lk tc-btn tc-btn--lg tc-btn--block" href="Fm02-Join.dc.html">הצטרף שוב</a></div></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "day"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'day';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

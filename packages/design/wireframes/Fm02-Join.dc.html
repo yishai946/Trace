@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F02 הצטרפות למסע</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-chip{display:inline-flex;align-items:center;gap:var(--space-3);height:32px;padding:0 var(--space-6);border-radius:var(--radius-md);border:1px solid var(--border-strong);background:transparent;color:var(--ink-secondary);white-space:nowrap;flex:0 0 auto}
+.tcx-chip:hover{background:var(--surface-hover)}
+.tcx-chip[aria-pressed="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600;border-color:transparent}
+.tcx-chip__n{color:var(--ink-muted);font-weight:400;font-size:11.5px}
+.tcx-chip--lg{height:40px}
+.tcx-chips{display:flex;gap:var(--space-4);overflow:auto;scrollbar-width:none}
+.tcx-otp{width:100%;min-width:0;height:60px;border-radius:var(--radius-lg);background:var(--surface-sunken);border:1.5px solid var(--border-field);color:var(--ink);font:inherit;font-size:24px;font-weight:700;text-align:center;direction:ltr;padding:0}
+.tcx-otp--next{border-color:var(--accent);outline:2px solid var(--focus);outline-offset:2px}
+.tcx-scan{position:relative;border-radius:var(--radius-xl);background:var(--surface-sunken);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--space-4);color:var(--ink-secondary);flex:0 0 auto}
+.tcx-scan__c{position:absolute;width:30px;height:30px;border:0 solid var(--ink)}
+.tcx-scan__c--a{top:18px;inset-inline-start:18px;border-block-start-width:3px;border-inline-start-width:3px;border-start-start-radius:8px}
+.tcx-scan__c--b{top:18px;inset-inline-end:18px;border-block-start-width:3px;border-inline-end-width:3px;border-start-end-radius:8px}
+.tcx-scan__c--c{bottom:18px;inset-inline-start:18px;border-block-end-width:3px;border-inline-start-width:3px;border-end-start-radius:8px}
+.tcx-scan__c--d{bottom:18px;inset-inline-end:18px;border-block-end-width:3px;border-inline-end-width:3px;border-end-end-radius:8px}
+.tc .tcx-mrow{display:flex;align-items:center;gap:var(--space-5);min-height:60px;padding:var(--space-4) 0;color:var(--ink);text-decoration:none;border-top:1px solid var(--border-subtle)}
+.tcx-lnk{display:inline-flex;align-items:center;gap:var(--space-2);text-decoration:none}
+.tcx-sec{font-size:12px;color:var(--ink-muted)}
+.tcx-h{font-size:14px;font-weight:600;line-height:20px;margin:0}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><div class="tcx-mbar__title">הצטרפות למסע</div><a class="tcx-lk tc-btn tc-btn--ghost" style="height:44px;margin-inline-end:-6px" href="Fm15-MyMissions.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"></path></svg>המסעות שלי</a></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div style="flex:1;display:flex;flex-direction:column;min-height:0;background:var(--surface);padding:16px"><div class="tcx-scan" style="height:230px"><span class="tcx-scan__c tcx-scan__c--a"></span><span class="tcx-scan__c tcx-scan__c--b"></span><span class="tcx-scan__c tcx-scan__c--c"></span><span class="tcx-scan__c tcx-scan__c--d"></span>
+<svg class="tcx-i" style="width:28px;height:28px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-4v-2M14 18h2"></path></svg><span>כוון את המצלמה אל קוד ה-QR</span></div>
+<div style="display:flex;align-items:center;gap:10px;margin:12px 0 8px"><hr class="tcx-sep" style="flex:1"><span class="tcx-meta">או</span><hr class="tcx-sep" style="flex:1"></div>
+<div class="tcx-field"><label class="tcx-label" for="code" style="font-size:13px">קוד הצטרפות</label>
+<input id="code" class="tcx-input tcx-input--lg" value="K7-4Q2" style="font-size:20px;font-weight:700;letter-spacing:.12em;text-align:center;direction:ltr"></div>
+<div class="tcx-cap" style="margin-top:4px">קישור הצטרפות פותח מסך זה עם הקוד ממולא</div>
+<section class="tcx-card" aria-label="אישור הצטרפות" style="margin-top:14px;border-width:2px;border-color:var(--border-strong)">
+<div class="tcx-sec" style="margin-bottom:8px">אישור הצטרפות</div>
+<div style="display:flex;gap:12px"><div class="tcx-ph" style="width:64px;height:76px;flex:0 0 auto">תמונה</div>
+<div style="min-width:0;flex:1"><div class="tcx-title">מסע <span class="tcx-num">0412</span></div><div style="color:var(--ink-secondary)">נעדר: נועם אברהם, <span class="tcx-num">74</span></div><div class="tcx-meta">נחל הדס, מצפה אורנים</div>
+<div style="margin-top:6px"><span class="tcx-badge tcx-badge--ok"><span class="tc-dot tc-dot--ok"></span>פעיל</span></div></div></div></section>
+<div style="flex:1"></div>
+<a class="tcx-lk tc-btn tc-btn--primary tc-btn--lg tc-btn--block" href="Fm03-Readiness.dc.html">אשר והצטרף</a></div></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "day"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'day';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>
