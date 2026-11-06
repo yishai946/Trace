@@ -1,25 +1,25 @@
 import { themes, type Theme, type ThemeId } from '@trace/design';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
+import { resolveThemeId, usePreferences } from '../state/preferences';
 
 interface ThemeContextValue {
   themeId: ThemeId;
   theme: Theme;
-  setThemeId: (id: ThemeId) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 /**
- * Trace Console theme for React Native. Defaults to the device setting (dark -> night, light -> day);
- * the searcher can switch manually, e.g. to `day` in direct sunlight.
+ * Trace Console theme for React Native. Follows the device (dark is night, light is day) until the searcher picks
+ * "יום" or "לילה", e.g. day in direct sunlight. Every screen and the map read it from here, so a change applies at once.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const scheme = useColorScheme();
-  const [override, setThemeId] = useState<ThemeId | null>(null);
-  const themeId: ThemeId = override ?? (scheme === 'dark' ? 'night' : 'day');
+  const preference = usePreferences((s) => s.themePreference);
+  const themeId = resolveThemeId(preference, scheme);
 
-  return <ThemeContext value={{ themeId, theme: themes[themeId], setThemeId }}>{children}</ThemeContext>;
+  return <ThemeContext value={{ themeId, theme: themes[themeId] }}>{children}</ThemeContext>;
 }
 
 export function useTheme(): ThemeContextValue {
