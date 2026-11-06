@@ -7,6 +7,7 @@ import { NewMissionPage, type NewMissionPageProps } from '.';
 import { mission } from '../../mission/fixtures';
 import { MESSAGES } from './newMissionForm';
 import { PHOTO_ERROR } from './PhotoPicker';
+import { COORDS_ERROR } from './PointPicker';
 
 const CLICKED: LngLat = [35.1335, 31.7835];
 
@@ -85,6 +86,18 @@ describe('NewMissionPage', () => {
     fireEvent.change(lng, { target: { value: '35.0127' } });
     fireEvent.blur(lng);
     expect(createButton()).toBeEnabled();
+  });
+
+  it('refuses out-of-range coordinates and shows the point that is really set', () => {
+    renderPage();
+    placeLkpOnMap();
+    placeRallyOnMap();
+    fireEvent.click(rallySection().getByRole('tab', { name: 'קואורדינטות' }));
+    const lat = rallySection().getByRole('textbox', { name: 'קו רוחב' });
+    fireEvent.change(lat, { target: { value: '231.7' } });
+    fireEvent.blur(lat);
+    expect(rallySection().getByText(COORDS_ERROR)).toBeInTheDocument();
+    expect(lat).toHaveValue(String(CLICKED[1]));
   });
 
   it('only one point follows map clicks at a time', () => {

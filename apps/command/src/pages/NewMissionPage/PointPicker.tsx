@@ -8,6 +8,8 @@ import { PlaceSearch } from '../../map/PlaceSearch';
 import styles from './NewMissionPage.module.css';
 import { formatCoordinate, parseLatLng } from './newMissionForm';
 
+export const COORDS_ERROR = 'קואורדינטות לא תקינות: קו רוחב בין ‎-90 ל-90, קו אורך בין ‎-180 ל-180.';
+
 /** How a point is placed (decisions 2, 91): a click on the map, a place search or typed coordinates. */
 export type PlaceMode = 'map' | 'search' | 'coords';
 
@@ -46,19 +48,33 @@ export function PointPicker({
 }: PointPickerProps) {
   const [lat, setLat] = useState(point ? formatCoordinate(point[1]) : '');
   const [lng, setLng] = useState(point ? formatCoordinate(point[0]) : '');
+  const [typedError, setTypedError] = useState<string | null>(null);
   // A point set on the map or by search replaces what was typed.
   const [shown, setShown] = useState(point);
   if (point !== shown) {
     setShown(point);
+    setTypedError(null);
     if (point && !samePoint(point, parseLatLng(lat, lng))) {
       setLat(formatCoordinate(point[1]));
       setLng(formatCoordinate(point[0]));
     }
   }
 
+  // Typed coordinates apply when both are valid. Invalid ones are refused and the fields go back to the point
+  // that is set, so the screen never shows coordinates other than the ones the mission will get.
   const commitTyped = (nextLat: string, nextLng: string) => {
     const typed = parseLatLng(nextLat, nextLng);
-    if (typed && !samePoint(typed, point)) onChange(typed);
+    if (typed) {
+      setTypedError(null);
+      if (!samePoint(typed, point)) onChange(typed);
+      return;
+    }
+    if (!nextLat.trim() || !nextLng.trim()) return;
+    setTypedError(COORDS_ERROR);
+    if (point) {
+      setLat(formatCoordinate(point[1]));
+      setLng(formatCoordinate(point[0]));
+    }
   };
 
   return (
@@ -119,6 +135,11 @@ export function PointPicker({
               onKeyDown={(e) => e.key === 'Enter' && commitTyped(lat, lng)}
             />
           </div>
+          {typedError && (
+            <p className={styles.fieldError} role="alert">
+              {typedError}
+            </p>
+          )}
         </TabPanel>
       </Tabs>
 
