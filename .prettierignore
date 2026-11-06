@@ -10,3 +10,4 @@ docs/Specifications
 packages/design/source
 packages/design/wireframes
 .expo
+apps/field/tsconfig.json
