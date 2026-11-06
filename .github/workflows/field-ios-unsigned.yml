@@ -1,0 +1,52 @@
+name: Field iOS unsigned IPA
+
+# Builds an unsigned .ipa for Sideloadly (free Apple ID, re-signed every 7 days).
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate the native iOS project
+        working-directory: apps/field
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install pods
+        working-directory: apps/field/ios
+        run: pod install
+
+      - name: Build without signing
+        working-directory: apps/field/ios
+        run: |
+          WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
+          SCHEME="${WORKSPACE%.xcworkspace}"
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" \
+            -configuration Release -sdk iphoneos -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package the .ipa
+        working-directory: apps/field/ios
+        run: |
+          mkdir Payload
+          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -qry TraceField.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TraceField-unsigned-ipa
+          path: apps/field/ios/TraceField.ipa
+          retention-days: 7
