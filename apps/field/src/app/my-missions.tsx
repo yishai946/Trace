@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { Button } from '../components/Button';
 import { Placeholder } from '../components/Placeholder';
 import { Screen } from '../components/Screen';
+import { openScreen } from '../navigation/navigate';
 import { routes } from '../navigation/routes';
 
 /** Fm15: my missions, the current one and the history of ended ones. */
@@ -13,7 +14,7 @@ export default function MyMissionsScreen() {
       footer={
         <>
           <Button label="חזור למסע" variant="primary" size="lg" block onPress={() => router.replace(routes.map)} />
-          <Button label="הצטרף למסע" size="lg" block onPress={() => router.push(routes.join)} />
+          <Button label="הצטרף למסע" size="lg" block onPress={() => openScreen(router, routes.join)} />
         </>
       }
     >

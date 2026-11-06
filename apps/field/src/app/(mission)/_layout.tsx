@@ -15,7 +15,8 @@ export default function MissionLayout() {
     <Tabs style={styles.fill}>
       <TabSlot />
       <TabList
-        accessibilityLabel="ניווט ראשי"
+        role="navigation"
+        aria-label="ניווט ראשי"
         style={[
           styles.bar,
           {

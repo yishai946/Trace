@@ -2,6 +2,8 @@ import { useRouter } from 'expo-router';
 import { Button } from '../components/Button';
 import { Placeholder } from '../components/Placeholder';
 import { Screen } from '../components/Screen';
+import { goBackOr } from '../navigation/navigate';
+import { routes } from '../navigation/routes';
 
 /** Fm08: a new field report, opened over the mission screens. */
 export default function ReportScreen() {
@@ -9,7 +11,7 @@ export default function ReportScreen() {
   return (
     <Screen
       title="דיווח חדש"
-      action={<Button label="ביטול" onPress={() => router.back()} />}
+      leading={<Button label="ביטול" icon="close" onPress={() => goBackOr(router, routes.map)} />}
       footer={<Button label="שלח דיווח" variant="primary" size="lg" block disabled />}
     >
       <Placeholder useCase="UC-F09" />

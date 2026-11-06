@@ -5,7 +5,7 @@ import { Screen } from '../../components/Screen';
 /** Fm12: SOS. Activation (a 3 second long press) belongs to UC-F13; the button stays disabled until then. */
 export default function SosScreen() {
   return (
-    <Screen title="חירום">
+    <Screen title="חירום" tabbed>
       <Button
         label="SOS"
         accessibilityLabel="הפעל SOS, לחיצה ארוכה 3 שניות"

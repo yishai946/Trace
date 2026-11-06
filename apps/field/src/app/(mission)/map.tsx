@@ -5,7 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { MissionMap } from '../../components/MissionMap';
 import { toMissionArea } from '../../mission/missionArea';
+import { apiBaseUrl } from '../../api';
+import { mapStatus } from '../../mission/mapStatus';
 import { useMissionPolygons } from '../../mission/queries';
+import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
@@ -15,17 +18,37 @@ export default function MapScreen() {
   const router = useRouter();
   const { theme } = useTheme();
   const { color } = theme;
+  const signedIn = useSession((s) => !!s.token);
   const missionId = useSession((s) => s.missionId);
   const polygons = useMissionPolygons();
   const area = toMissionArea(polygons.data ?? []);
 
-  const status = !missionId
-    ? { text: 'לא הצטרפת למסע', action: <Button label="הצטרף למסע" onPress={() => router.push(routes.join)} /> }
-    : polygons.isError
-      ? { text: 'לא ניתן לטעון את אזור המסע', action: <Button label="נסה שוב" onPress={() => polygons.refetch()} /> }
-      : polygons.isLoading
-        ? { text: 'טוען את אזור המסע…', action: null }
-        : null;
+  const kind = mapStatus({
+    apiConfigured: !!apiBaseUrl,
+    signedIn,
+    missionId,
+    isError: polygons.isError,
+    isFetching: polygons.isFetching,
+    hasData: !!polygons.data,
+  });
+  const status = kind
+    ? {
+        'no-api': { text: 'כתובת השרת לא מוגדרת: חסר EXPO_PUBLIC_API_URL', action: null },
+        'signed-out': {
+          text: 'לא נכנסת לחשבון',
+          action: <Button label="כניסה" onPress={() => router.replace(routes.login)} />,
+        },
+        'no-mission': {
+          text: 'לא הצטרפת למסע',
+          action: <Button label="הצטרף למסע" onPress={() => openScreen(router, routes.join)} />,
+        },
+        loading: { text: 'טוען את אזור המסע…', action: null },
+        error: {
+          text: 'לא ניתן לטעון את אזור המסע',
+          action: <Button label="נסה שוב" onPress={() => polygons.refetch()} />,
+        },
+      }[kind]
+    : null;
 
   return (
     <View style={styles.fill}>
@@ -56,7 +79,7 @@ export default function MapScreen() {
           size="lg"
           block
           icon="plus"
-          onPress={() => router.push(routes.report)}
+          onPress={() => openScreen(router, routes.report)}
         />
       </View>
     </View>

@@ -1,30 +1,37 @@
 import { size, spacing, typography } from '@trace/design';
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
 
 export interface ScreenProps {
   /** Shown in the top bar and announced as the screen's heading. */
   title: string;
-  /** Next to the title, at the end of the bar (e.g. "המסעות שלי" on the join screen). */
+  /** Before the title, at the start of the bar (e.g. "ביטול" on a new report, Fm08). */
+  leading?: ReactNode;
+  /** After the title, at the end of the bar (e.g. "המסעות שלי" on the join screen, Fm02). */
   action?: ReactNode;
   children: ReactNode;
   /** Pinned under the content, e.g. the screen's main action. */
   footer?: ReactNode;
+  /** A mission screen above the tab bar, which already keeps clear of the home indicator. */
+  tabbed?: boolean;
 }
 
 /**
- * A full Field screen on `surface` with the mobile top bar (wireframe `.tcx-mbar`). Right to left comes from the
- * app: forced RTL on Android and iOS (expo-localization), `dir="rtl"` on the web document.
- * The mission tab bar, when there is one, is drawn by the tabs layout below it.
+ * A full Field screen on `surface` with the mobile top bar (wireframe `.tcx-mbar`), clear of the notch and the home
+ * indicator. Right to left comes from the app: forced RTL on Android and iOS (expo-localization), `dir="rtl"` on
+ * the web document.
  */
-export function Screen({ title, action, children, footer }: ScreenProps) {
+export function Screen({ title, leading, action, children, footer, tabbed = false }: ScreenProps) {
   const { color } = useTheme().theme;
+  const insets = useSafeAreaInsets();
+  const bottom = tabbed ? 0 : insets.bottom;
 
   return (
     <SafeAreaView testID="screen" edges={['top']} style={[styles.screen, { backgroundColor: color.surface }]}>
       <View style={[styles.bar, { borderBottomColor: color.border }]}>
+        {leading}
         <Text
           accessibilityRole="header"
           numberOfLines={1}
@@ -34,8 +41,17 @@ export function Screen({ title, action, children, footer }: ScreenProps) {
         </Text>
         {action}
       </View>
-      <ScrollView contentContainerStyle={styles.content}>{children}</ScrollView>
-      {footer ? <View style={[styles.footer, { borderTopColor: color.border }]}>{footer}</View> : null}
+      <ScrollView contentContainerStyle={[styles.content, !footer && { paddingBottom: spacing.space7 + bottom }]}>
+        {children}
+      </ScrollView>
+      {footer ? (
+        <View
+          testID="screen-footer"
+          style={[styles.footer, { borderTopColor: color.border, paddingBottom: spacing.space6 + bottom }]}
+        >
+          {footer}
+        </View>
+      ) : null}
     </SafeAreaView>
   );
 }
