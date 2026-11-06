@@ -1,0 +1,174 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+/* Same box as TextField: height control-h, border border-field on surface-sunken. */
+.group {
+  display: flex;
+  height: var(--control-h);
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-5) var(--space-2);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.group[data-focus-within] {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.group[data-invalid] {
+  border-color: var(--warning);
+}
+
+.input {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.segment {
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.segment[data-placeholder],
+.segment[data-type='literal'] {
+  color: var(--ink-muted);
+}
+
+.segment[data-focused] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+}
+
+.trigger,
+.navButton {
+  display: inline-flex;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+}
+
+.trigger svg,
+.navButton svg {
+  width: var(--space-7);
+  height: var(--space-7);
+}
+
+.trigger[data-hovered],
+.navButton[data-hovered] {
+  background-color: var(--surface-hover);
+  color: var(--ink);
+}
+
+.trigger[data-focus-visible],
+.navButton[data-focus-visible],
+.cell[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.error {
+  margin: 0;
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font: var(--text-meta);
+}
+
+/* The calendar floats like any panel: surface, border, radius-xl, shadow-panel. */
+.popover {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.dialog {
+  padding: var(--space-6);
+  outline: none;
+}
+
+.calendarHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-block-end: var(--space-4);
+}
+
+.month {
+  flex: 1;
+  margin: 0;
+  color: var(--ink);
+  font: var(--text-body-strong);
+  text-align: center;
+}
+
+.grid {
+  border-collapse: collapse;
+}
+
+.grid th {
+  padding-block-end: var(--space-2);
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.cell {
+  display: flex;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font: var(--text-body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  outline: none;
+}
+
+.cell[data-outside-month] {
+  display: none;
+}
+
+.cell[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+/* Selection is accent, the brand's one colour for "chosen". */
+.cell[data-selected] {
+  background-color: var(--accent);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+
+.cell[data-unavailable],
+.cell[data-disabled] {
+  color: var(--ink-faint);
+  cursor: default;
+}

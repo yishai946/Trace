@@ -6,6 +6,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { Form } from 'react-aria-components';
 import { ApiRequestError } from '../../api';
 import { Button } from '../../components/Button';
+import { DateTimeField } from '../../components/DateTimeField';
 import { TextField } from '../../components/TextField';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { useCreateMission } from '../../mission/missionQueries';
@@ -142,10 +143,8 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
                 errorMessage={errors.age}
               />
             </div>
-            <TextField
+            <DateTimeField
               label="זמן היעלמות"
-              type="datetime-local"
-              ltr
               value={form.disappearedAt}
               onChange={(disappearedAt) => update({ disappearedAt })}
             />
@@ -208,10 +207,8 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
           error={errors.lkp}
         >
           {form.lkp && (
-            <TextField
+            <DateTimeField
               label="תאריך ושעה שבהם נראה"
-              type="datetime-local"
-              ltr
               value={form.lkpObservedAt}
               onChange={(lkpObservedAt) => update({ lkpObservedAt })}
               isInvalid={!!errors.lkpObservedAt}

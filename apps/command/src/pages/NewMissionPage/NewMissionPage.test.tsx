@@ -39,10 +39,12 @@ const createButton = () => screen.getByRole('button', { name: 'צור מסע' })
 
 const lkpSection = () => within(points().getByRole('region', { name: 'LKP, נקודה אחרונה שבה נראה' }));
 
-/** The LKP follows map clicks when the screen opens. */
-function placeLkpOnMap(observedAt = '2026-10-03T13:05') {
+/** The LKP follows map clicks when the screen opens. `withTime` fills its date and time with the current moment. */
+function placeLkpOnMap(withTime = true) {
   fireEvent.click(screen.getByRole('button', { name: 'לחיצה על המפה' }));
-  fireEvent.change(lkpSection().getByLabelText('תאריך ושעה שבהם נראה'), { target: { value: observedAt } });
+  if (!withTime) return;
+  // Arrow up on each empty segment (day, month, year, hour, minute) takes the current value.
+  for (const segment of lkpSection().getAllByRole('spinbutton')) fireEvent.keyDown(segment, { key: 'ArrowUp' });
 }
 
 function placeRallyOnMap() {
@@ -83,7 +85,7 @@ describe('NewMissionPage', () => {
   it('marks missing fields and does not send the form', () => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     renderPage();
-    placeLkpOnMap('');
+    placeLkpOnMap(false);
     placeRallyOnMap();
     fireEvent.click(createButton());
     expect(screen.getByText(MESSAGES.lkpObservedAt)).toBeInTheDocument();
@@ -141,7 +143,7 @@ describe('NewMissionPage', () => {
       rallyPoint: { type: 'Point', coordinates: CLICKED },
       lkp: {
         position: { type: 'Point', coordinates: CLICKED },
-        observedAt: new Date('2026-10-03T13:05').toISOString(),
+        observedAt: expect.stringMatching(/^\d{4}-\d\d-\d\dT/) as string,
       },
     });
   });
