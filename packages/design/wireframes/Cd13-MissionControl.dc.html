@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>C13 בקרת מסע · דסקטופ</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-chipbtn{height:26px;padding:0 var(--space-5);border-radius:13px;border:1px solid var(--border);background:transparent;color:var(--ink-secondary);font-size:12px;display:inline-flex;align-items:center;gap:var(--space-2);white-space:nowrap;flex:0 0 auto}
+.tcx-chipbtn[aria-pressed="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600;border-color:var(--border-strong)}
+.tcx-chipbtn--lg{height:44px;padding:0 var(--space-7);border-radius:22px;font-size:13px}
+.tcx-badge--strong{background:var(--primary);color:var(--on-primary)}
+.tcx-seg--lg .tc-seg__tab{height:40px}
+.tcx-scrim{position:absolute;inset:0;background:var(--surface-sunken);opacity:.5;z-index:20}
+.tcx-dialog{position:absolute;z-index:21;background:var(--surface);border:1px solid var(--border-strong);border-radius:var(--radius-xl);box-shadow:var(--shadow-panel)}
+.tc a.tcx-item,.tc a.tc-btn{color:var(--ink);text-decoration:none}
+.tc a.tcx-nav__item{color:var(--ink-secondary);text-decoration:none}
+.tc a.tcx-nav__item[aria-current="page"]{color:var(--ink)}
+.tcx-item{display:flex;align-items:center;gap:var(--space-5);padding:var(--space-4) var(--space-5);border-radius:var(--radius-md);color:var(--ink);text-decoration:none;min-height:56px}
+.tcx-item:hover{background:var(--surface-hover)}
+.tcx-item[aria-current="true"]{background:var(--surface-raised)}
+.tcx-glyph{width:28px;height:28px;border-radius:var(--radius-md);background:var(--chip);color:var(--ink-secondary);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tcx-glyph--warn{color:var(--warning)}
+.tcx-glyph--strong{background:var(--primary);color:var(--on-primary)}
+.tcx-ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-fixed{table-layout:fixed}
+.tcx-fixed td,.tcx-fixed th{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-quote{padding:var(--space-5) var(--space-6);border-radius:var(--radius-md);background:var(--danger-tint);border:1px solid var(--danger-border);color:var(--ink)}
+.tcx-chiprow{display:flex;gap:var(--space-3);flex-wrap:wrap}
+.tcx-chiprow--scroll{flex-wrap:nowrap;overflow:auto}
+.tcx-actionhint{font-size:11.5px;color:var(--ink-muted)}
+.tcx-list{list-style:none;margin:0;padding:0}
+.tcx-btn-row{display:flex;gap:var(--space-4)}
+.tcx-btn-row>.tc-btn{flex:1}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 1440px; height: 900px">
+<header class="tc-appbar" style="position:absolute;top:12px;inset-inline:12px;z-index:5"><div class="tc-appbar__brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor"></circle></svg>Trace</div><span class="tc-appbar__sep"></span><a class="tcx-lk tc-appbar__mission" href="Cd17-MissionSwitch.dc.html"><span class="tc-dot tc-dot--ok"></span>נועם אברהם, 74<svg class="tcx-i" style="width:10px;height:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></a><span class="tc-appbar__meta">פעיל <b class="tcx-num">05:42:10</b>, קוד <b class="tcx-num">K7-4Q2</b></span><label class="tc-search" style="width:320px;margin:0 auto"><svg class="tcx-i" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input aria-label="חיפוש ופקודות" placeholder="חפש מחפש, פוליגון או פעולה…"><kbd class="tc-kbd">Ctrl K</kbd></label><div class="tc-appbar__actions" style=""></div><span class="tc-status tc-status--up" role="status" title="מחובר לשרת."><span class="tc-status__dot" aria-hidden="true"></span>זמין</span><a class="tcx-lk tcx-avatar tcx-avatar--btn" href="Cd16-Profile.dc.html" aria-label="פרופיל: ישי, מנהל מסע" style="margin-inline-start:4px">יש</a></header><div style="position:absolute;top:72px;bottom:12px;inset-inline:12px;display:flex;gap:12px;min-height:0"><nav class="tc-panel tcx-nav" aria-label="ניווט מסע" style="width:200px;flex:0 0 auto;align-self:flex-start"><div class="tcx-nav__label">מסע 0412</div><a class="tcx-nav__item" href="Cd04-Live.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M9 3v18"></path></svg>לוח מבצעי</a><a class="tcx-nav__item" href="Cd08-Searchers.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14a6 6 0 0 1 3.5 6"></path></svg>מחפשים<span class="tcx-nav__count">24</span></a><a class="tcx-nav__item" href="Cd07-Polygons.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 6l7-3 8 5-2 10-11 2-3-8z"></path></svg>פוליגונים<span class="tcx-nav__count">4</span></a><a class="tcx-nav__item" href="Cd06-LKP.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>LKP וכינוס</a><a class="tcx-nav__item" href="Cd10-Reports.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>דיווחים<span class="tcx-nav__count">3</span></a><a class="tcx-nav__item" href="Cd11-Messages.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>הודעות</a><a class="tcx-nav__item" href="Cd12-SOS.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16h.01"></path></svg>SOS<span class="tcx-nav__count tcx-nav__count--danger">1</span></a><a class="tcx-nav__item" href="Cd14-Timeline.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18"></path><circle cx="12" cy="7" r="2"></circle><circle cx="12" cy="16" r="2"></circle></svg>ציר זמן</a><a class="tcx-nav__item" href="Cd05-MissionDetails.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5h.01"></path></svg>פרטי מסע</a><a class="tcx-nav__item" aria-current="page" href="Cd13-MissionControl.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>בקרת מסע</a></nav><main class="tcx-grow" style="display:flex;flex-direction:column;gap:12px;min-height:0"><section class="tc-panel" aria-label="מצב המסע" style="flex:0 0 auto"><div class="tc-panel__section tcx-row" style="gap:20px"><span class="tcx-row" style="gap:6px"><span class="tc-dot tc-dot--ok"></span><b>מצב: פעיל</b></span><span class="tcx-meta">24 מחפשים בשטח</span><span class="tcx-meta">פעיל <span class="tcx-num">05:42:10</span></span><span class="tcx-meta">התחיל <span class="tcx-num">11:16</span></span></div>
+<div class="tc-panel__section" style="display:flex;align-items:center;gap:12px"><span class="tcx-glyph tcx-glyph--strong"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6"></path></svg></span><div class="tcx-grow"><b>דיווח "הנעדר אותר" ממתין לאימות</b><div class="tcx-meta"><span class="tc-callsign">02</span> שחר מור, <span class="tcx-num">16:51</span>, הדיווח אינו סוגר את המסע; המסע מסתיים רק מכאן, אחרי אימות</div></div><a class="tc-btn" role="button" href="Cd10-Reports.dc.html">פתח בדיווחים</a></div></section><div style="flex:1;min-height:0;display:flex;gap:12px"><section class="tc-panel" aria-label="השהיה וחידוש" style="flex:1;min-width:0;display:flex;flex-direction:column"><div class="tc-panel__section"><div class="tcx-title">השהיה וחידוש</div></div><div class="tc-panel__section" style="flex:1;display:flex;flex-direction:column;gap:12px"><p style="margin:0;color:var(--ink-secondary);line-height:1.5"><b style="color:var(--ink)">השהיה:</b> המחפשים מפסיקים חיפוש וחוזרים לכינוס. המעקב ממשיך.</p>
+<p style="margin:0;color:var(--ink-secondary);line-height:1.5"><b style="color:var(--ink)">חידוש:</b> השיבוצים נשמרים. כל מחפש לוחץ שוב "התחל חיפוש".</p>
+<div class="tcx-banner"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5h.01"></path></svg><span>הצטרפות חסומה כשהמסע מושהה או הסתיים.</span></div>
+<div style="margin-top:auto" class="tcx-btn-row"><button class="tc-btn"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 5v14M16 5v14"></path></svg>השהה מסע</button><button class="tc-btn" disabled="" style="opacity:.5;cursor:not-allowed"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7z"></path></svg>חדש מסע</button></div>
+<div class="tcx-actionhint">חידוש זמין רק כשהמסע מושהה. כל פעולה דורשת אישור.</div></div></section><section class="tc-panel" aria-label="הנעדר אותר" style="flex:1;min-width:0;display:flex;flex-direction:column"><div class="tc-panel__section"><div class="tcx-title">הנעדר אותר</div></div><div class="tc-panel__section" style="flex:1;display:flex;flex-direction:column;gap:12px"><div class="tcx-field"><span class="tcx-label" id="loc-l">מיקום</span><div class="tc-seg" role="tablist" aria-labelledby="loc-l"><button class="tc-seg__tab" role="tab" aria-selected="true">מיקום המחפש</button><button class="tc-seg__tab" role="tab" aria-selected="false">בחירה במפה</button></div><div class="tcx-meta">02 שחר מור, <span class="tcx-num">31.7452, 35.0118</span>, <span class="tcx-num">16:51</span></div></div>
+<div class="tcx-field"><label class="tcx-label" for="loc-n">הערה (אופציונלי)</label><textarea id="loc-n" class="tcx-input" rows="3">נמצא בהכרה, מקבל מים. נדרש פינוי רפואי.</textarea></div>
+<div class="tcx-banner"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5h.01"></path></svg><span>המסע מסתיים כ"הנעדר אותר" ונשמר לקריאה בלבד. המעקב הבטיחותי נמשך עד סיום הפעילות של כל מחפש.</span></div>
+<button class="tc-btn tc-btn--primary" style="margin-top:auto">הנעדר אותר…</button></div></section><section class="tc-panel" aria-label="הפסקת מסע" style="flex:1;min-width:0;display:flex;flex-direction:column"><div class="tc-panel__section"><div class="tcx-title">הפסק מסע</div></div><div class="tc-panel__section" style="flex:1;display:flex;flex-direction:column;gap:12px"><div class="tcx-field"><label class="tcx-label" for="stop-r">סיבה</label><select id="stop-r" class="tcx-input"><option>בחר סיבה</option><option>תנאי מזג אוויר</option><option>החלטת מפקד</option><option>הועבר לגורם אחר</option><option>אחר</option></select></div>
+<div class="tcx-field"><label class="tcx-label" for="stop-n">הערה (אופציונלי)</label><textarea id="stop-n" class="tcx-input" rows="3" placeholder="פרטים נוספים"></textarea></div>
+<div class="tcx-banner"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7.5h.01"></path></svg><span>המסע מסתיים כ"הפסקת חיפוש" ונשמר לקריאה בלבד.</span></div>
+<button class="tc-btn tc-btn--danger-ghost" style="margin-top:auto">הפסק מסע…</button></div></section></div></main></div><div class="tcx-scrim"></div>
+<div class="tcx-dialog" role="dialog" aria-modal="true" aria-labelledby="dlg-t" style="top:50%;left:50%;transform:translate(-50%,-50%);width:480px">
+<div class="tc-panel__section"><div class="tcx-title" id="dlg-t">לסיים את המסע: הנעדר אותר?</div></div>
+<div class="tc-panel__section" style="display:flex;flex-direction:column;gap:12px">
+<dl class="tc-dl"><div><dt>זמן</dt><dd><span class="tcx-num">16:51</span></dd></div><div><dt>מדווח</dt><dd>02 שחר מור</dd></div><div class="tc-dl__wide"><dt>מיקום</dt><dd><span class="tcx-num">31.7452, 35.0118</span>, מיקום המחפש</dd></div></dl>
+<ul style="margin:0;padding-inline-start:18px;line-height:1.6;color:var(--ink-secondary)"><li>המסע יסתיים ויישמר לקריאה בלבד.</li><li>24 מחפשים בשטח יקבלו הודעת סיום.</li><li>המעקב הבטיחותי נמשך עד סיום הפעילות של כל מחפש.</li></ul></div>
+<div class="tc-panel__section" style="display:flex;gap:8px;justify-content:flex-start"><a class="tcx-lk tc-btn tc-btn--primary" href="Cd15-EndedMission.dc.html">אשר וסיים מסע</a><a class="tcx-lk tc-btn" href="Cd04-Live.dc.html">ביטול</a></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 1440, "height": 900}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'night';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

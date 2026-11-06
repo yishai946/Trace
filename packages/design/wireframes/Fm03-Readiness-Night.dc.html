@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F03 מוכנות והרשאות · לילה</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-chip{display:inline-flex;align-items:center;gap:var(--space-3);height:32px;padding:0 var(--space-6);border-radius:var(--radius-md);border:1px solid var(--border-strong);background:transparent;color:var(--ink-secondary);white-space:nowrap;flex:0 0 auto}
+.tcx-chip:hover{background:var(--surface-hover)}
+.tcx-chip[aria-pressed="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600;border-color:transparent}
+.tcx-chip__n{color:var(--ink-muted);font-weight:400;font-size:11.5px}
+.tcx-chip--lg{height:40px}
+.tcx-chips{display:flex;gap:var(--space-4);overflow:auto;scrollbar-width:none}
+.tcx-otp{width:100%;min-width:0;height:60px;border-radius:var(--radius-lg);background:var(--surface-sunken);border:1.5px solid var(--border-field);color:var(--ink);font:inherit;font-size:24px;font-weight:700;text-align:center;direction:ltr;padding:0}
+.tcx-otp--next{border-color:var(--accent);outline:2px solid var(--focus);outline-offset:2px}
+.tcx-scan{position:relative;border-radius:var(--radius-xl);background:var(--surface-sunken);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:var(--space-4);color:var(--ink-secondary);flex:0 0 auto}
+.tcx-scan__c{position:absolute;width:30px;height:30px;border:0 solid var(--ink)}
+.tcx-scan__c--a{top:18px;inset-inline-start:18px;border-block-start-width:3px;border-inline-start-width:3px;border-start-start-radius:8px}
+.tcx-scan__c--b{top:18px;inset-inline-end:18px;border-block-start-width:3px;border-inline-end-width:3px;border-start-end-radius:8px}
+.tcx-scan__c--c{bottom:18px;inset-inline-start:18px;border-block-end-width:3px;border-inline-start-width:3px;border-end-start-radius:8px}
+.tcx-scan__c--d{bottom:18px;inset-inline-end:18px;border-block-end-width:3px;border-inline-end-width:3px;border-end-end-radius:8px}
+.tc .tcx-mrow{display:flex;align-items:center;gap:var(--space-5);min-height:60px;padding:var(--space-4) 0;color:var(--ink);text-decoration:none;border-top:1px solid var(--border-subtle)}
+.tcx-lnk{display:inline-flex;align-items:center;gap:var(--space-2);text-decoration:none}
+.tcx-sec{font-size:12px;color:var(--ink-muted)}
+.tcx-h{font-size:14px;font-weight:600;line-height:20px;margin:0}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><div class="tcx-mbar__title">מוכנות לשטח</div><span class="tcx-badge">מסע <span class="tcx-num">0412</span></span></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div style="flex:1;display:flex;flex-direction:column;min-height:0;background:var(--surface);padding:16px"><section class="tcx-card" aria-label="הורדת מידע ללא חיבור">
+<div style="display:flex;align-items:center"><div class="tcx-title" style="flex:1">הורדת מידע ללא חיבור</div><b class="tcx-num">64%</b></div>
+<div class="tc-meter" style="height:8px;margin:10px 0 8px;flex:none"><div class="tc-meter__fill" style="width:64%"></div></div>
+<div class="tcx-meta">מפות, פרטי מסע ונעדר, LKP, נקודת כינוס, ההורדה התחילה אוטומטית</div></section>
+<h2 class="tcx-h" style="margin:18px 0 4px">הרשאות</h2>
+<ul style="list-style:none;margin:0;padding:0">
+<li style="display:flex;align-items:center;gap:12px;min-height:68px;border-top:1px solid var(--border-subtle)"><span class="tcx-check__box tcx-check__box--on"><svg class="tcx-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg></span><div style="flex:1;min-width:0"><div style="font-weight:600">מיקום <span class="tcx-badge" style="margin-inline-start:4px">חובה</span></div><div class="tcx-cap">להצגת מיקומך למנהל</div></div><span class="tcx-badge tcx-badge--ok" style="height:28px;padding:0 10px">מאושר</span></li>
+<li style="display:flex;align-items:center;gap:12px;min-height:68px;border-top:1px solid var(--border-subtle)"><span class="tcx-check__box"></span><div style="flex:1;min-width:0"><div style="font-weight:600">מיקום ברקע <span class="tcx-badge" style="margin-inline-start:4px">חובה</span></div><div class="tcx-cap">המעקב ממשיך כשהמסך כבוי</div></div><button class="tc-btn tc-btn--lg" style="height:44px">אשר</button></li>
+<li style="display:flex;align-items:center;gap:12px;min-height:68px;border-top:1px solid var(--border-subtle)"><span class="tcx-check__box"></span><div style="flex:1;min-width:0"><div style="font-weight:600">התראות Push <span class="tcx-badge" style="margin-inline-start:4px">חובה</span></div><div class="tcx-cap">שיבוץ, הודעות והתראות SOS</div></div><button class="tc-btn tc-btn--lg" style="height:44px">אשר</button></li>
+<li style="display:flex;align-items:center;gap:12px;min-height:68px;border-top:1px solid var(--border-subtle)"><span class="tcx-check__box"></span><div style="flex:1;min-width:0"><div style="font-weight:600">מצלמה <span class="tcx-badge" style="margin-inline-start:4px">רשות</span></div><div class="tcx-cap">לצילום בדיווחים, מתבקשת רק בעת צילום</div></div><span class="tcx-cap">בעת צילום</span></li>
+</ul>
+<div class="tcx-banner tcx-banner--warn" style="margin-top:10px"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18h.01"></path></svg><div><b style="color:var(--ink)">"התחל חיפוש" חסום</b><div style="margin-top:2px">חסר: מיקום ברקע, התראות Push, השלמת ההורדה. אפשר לצפות במסע גם עכשיו.</div></div></div>
+<div style="flex:1"></div>
+<a class="tcx-lk tc-btn tc-btn--primary tc-btn--lg tc-btn--block" href="Fm04-Waiting-Night.dc.html">המשך למסע</a></div></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'night';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

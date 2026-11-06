@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>C01 כניסת מנהל · מובייל</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-qr{background:#fff;color:#000;padding:8px;border-radius:var(--radius-md);display:block}
+.tcx-qr svg{display:block;width:100%;height:100%;fill:#000}
+.tc a.tcx-nav__item{color:var(--ink-secondary)}
+.tc a.tcx-nav__item[aria-current="page"]{color:var(--ink)}
+.tc a.tcx-mcard{color:var(--ink)}
+.tcx-mcard{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-6) var(--space-7)}
+.tcx-mcard:hover{background:var(--surface-hover)}
+.tcx-dashed{border:1px dashed var(--border-strong);border-radius:var(--radius-lg);background:var(--surface-sunken);color:var(--ink-secondary)}
+.tcx-btn-off{opacity:.45;cursor:not-allowed}
+.tcx-result{display:flex;align-items:center;gap:var(--space-5);padding:var(--space-4) var(--space-5);border-radius:var(--radius-md);color:var(--ink);text-decoration:none}
+.tcx-result:hover{background:var(--surface-hover)}
+.tcx-result[aria-selected="true"]{background:var(--surface-raised)}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<img class="tcx-mapimg" src="{{map}}" alt=""><div style="position:absolute;inset:0;background:var(--map-ground);opacity:.45"></div><svg class="tcx-mapsvg" viewBox="0 0 800 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="מפת המסע"><text class="tc-map-text tc-map-text--water" x="392" y="322" transform="rotate(-50 392 322)">נחל הדס</text><text class="tc-map-text" x="120" y="612">מצפה אורנים</text><text class="tc-map-text" x="560" y="522">כביש 3866</text><text class="tc-map-text" x="232" y="80">▲ 486</text><text class="tc-map-text" x="690" y="120">▲ 512</text></svg><div style="position:absolute;inset-inline:0;top:0;height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<div style="width:56px;height:56px;border-radius:var(--radius-xl);background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-panel)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></svg></div>
+<div style="font-weight:700;font-size:14px">TRACE Command</div><div class="tcx-meta" style="color:var(--ink-secondary)">ניהול מסע חיפוש והצלה</div></div>
+<main class="tcx-sheet" aria-label="כניסת מנהל" style="position:absolute;inset-inline:0;bottom:0;padding:20px 16px 24px">
+<div class="tcx-title" style="margin-bottom:14px">כניסת מנהל</div><form class="tcx-col" style="gap:14px" onsubmit="return false">
+<div class="tcx-field"><label class="tcx-label" for="em">אימייל</label><input class="tcx-input tcx-input--lg" id="em" type="email" dir="ltr" style="text-align:end" value="yishai@trace.example" autocomplete="username" aria-invalid="true" aria-describedby="err"></div>
+<div class="tcx-field"><label class="tcx-label" for="pw">סיסמה</label><input class="tcx-input tcx-input--lg" id="pw" type="password" dir="ltr" style="text-align:end" value="••••••••" autocomplete="current-password" aria-invalid="true" aria-describedby="err"></div>
+<div class="tcx-banner tcx-banner--warn" id="err" role="alert"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16h.01"/></svg><span>האימייל או הסיסמה שגויים. בדקו ונסו שוב.</span></div>
+<a class="tcx-lk tc-btn tc-btn--primary tc-btn--block tc-btn--lg" href="Cm02-Missions.dc.html">כניסה</a>
+</form></main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'night';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>C08 מחפשים ושיבוץ · מובייל · יום</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-mwin{position:absolute;overflow:hidden}
+.tcx-mwin img,.tcx-mwin svg{position:absolute}
+.tcx-s-ghost{fill:none;stroke:var(--ink-muted);stroke-dasharray:5 4}
+.tcx-s-new{fill:var(--accent);fill-opacity:.14;stroke:var(--accent)}
+.tcx-s-handle{fill:var(--surface);stroke:var(--accent)}
+.tcx-s-suggest{fill:none;stroke:var(--accent);stroke-dasharray:3 2}
+.tcx-s-link{fill:none;stroke:var(--ink-muted);stroke-dasharray:4 3}
+.tcx-s-out{fill:none;stroke:var(--warning);stroke-dasharray:5 3;stroke-linejoin:round;stroke-linecap:round}
+.tcx-s-in{fill:none;stroke:var(--accent);stroke-linejoin:round;stroke-linecap:round}
+.tcx-s-dim{fill:none;stroke:var(--warning)}
+.tcx-s-sel{fill:var(--accent);fill-opacity:.1;stroke:var(--accent)}
+.tcx-pl{width:24px;height:24px;border-radius:var(--radius-sm);border:1.5px solid var(--accent);color:var(--ink);font-weight:700;font-size:12px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tcx-pl--done{border-color:var(--ink-muted);color:var(--ink-secondary)}
+.tcx-pl--open{border:1.5px dashed var(--ink-secondary);color:var(--ink-secondary)}
+.tcx-cov{position:relative;height:6px;border-radius:3px;background:var(--surface-sunken);border:1px solid var(--border)}
+.tcx-cov__fill{position:absolute;inset-block:0;inset-inline-start:0;background:var(--accent);border-radius:3px}
+.tcx-cov__tick{position:absolute;top:-3px;bottom:-3px;width:1.5px;background:var(--ink-secondary)}
+.tcx-nw{white-space:nowrap}
+.tcx-warn{color:var(--warning)}
+.tcx-danger{color:var(--danger-ink)}
+.tcx-ok{color:var(--success)}
+.tcx-tool[aria-pressed="true"]{background:var(--surface-raised);color:var(--ink)}
+.tcx-list{list-style:none;margin:0;padding:0}
+.tcx-sight{display:flex;gap:var(--space-5);padding:10px 0;border-top:1px solid var(--border-subtle);align-items:flex-start}
+.tcx-sight:first-child{border-top:0}
+.tcx-dia{width:22px;height:22px;flex:0 0 auto;position:relative;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.tcx-dia svg{position:absolute;inset:0;width:22px;height:22px;fill:var(--surface);stroke:var(--ink);stroke-width:1.5}
+.tcx-dia span{position:relative}
+.tcx-btn-off{opacity:.45;cursor:not-allowed}
+.tc-btn[disabled]{opacity:.45;cursor:not-allowed}
+.tcx-chk{appearance:none;-webkit-appearance:none;width:16px;height:16px;margin:0;border:1.5px solid var(--ink-muted);border-radius:var(--radius-sm);background:transparent;position:relative;display:inline-block;vertical-align:middle}
+.tcx-chk:checked{background:var(--accent);border-color:var(--accent)}
+.tcx-chk:checked::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid var(--surface);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.tcx-table tr.tcx-sos td{background:var(--danger-tint)}
+.tcx-trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.tcx-link{display:inline-flex;align-items:center;gap:var(--space-3);color:var(--accent);text-decoration:none}
+select.tcx-input{appearance:auto}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><div class="tcx-mbar__title">מחפשים</div><span class="tcx-badge">24 במסע</span></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-row" style="gap:8px;padding:10px 12px;background:var(--surface);border-bottom:1px solid var(--border)"><span class="tcx-meta">קוד</span><b class="tcx-num tcx-grow" style="font-size:15px;letter-spacing:.06em">K7-4Q2</b>
+<a class="tcx-lk tc-btn" style="height:44px" href="Cm05-MissionDetails-Day.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-4v-2M14 18h2"/></svg>QR</a><button class="tc-btn" style="height:44px"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></svg>שתף</button></div><div style="padding:10px 12px 6px;background:var(--surface);border-bottom:1px solid var(--border)"><div class="tc-seg" role="tablist" style="padding:3px"><button class="tc-seg__tab" role="tab" aria-selected="true">הכל</button><button class="tc-seg__tab" role="tab" aria-selected="false">זמינים 3</button><button class="tc-seg__tab" role="tab" aria-selected="false">משובצים 1</button><button class="tc-seg__tab" role="tab" aria-selected="false">בחיפוש 20</button></div></div><div class="tcx-scroll tcx-grow" style="padding:10px 12px;display:flex;flex-direction:column;gap:10px"><div class="tc-group" style="padding:2px 4px 0"><span class="tc-group__title">ממתינים לשיבוץ</span><span>3</span></div><div class="tcx-card"><div class="tcx-row" style="gap:10px"><span class="tc-callsign tc-callsign--waiting">18</span><span class="tcx-grow tcx-trunc" style="font-weight:600">עדי פרץ</span><span class="tcx-badge">זמין</span></div><div class="tcx-meta" style="margin:6px 0 8px;line-height:1.4"><span class="tcx-num">052-340-1187</span>, סוללה <span class="tcx-num">88%</span>, <span class="tcx-ok">מקוון</span></div><div class="tcx-row" style="gap:8px"><button class="tc-btn" style="height:44px;flex:1">שבץ לפוליגון</button><button class="tc-btn" style="height:44px;flex:1">התקשר</button></div></div><div class="tc-group" style="padding:2px 4px 0"><span class="tc-group__title">בחיפוש</span><span>8</span></div><div class="tcx-card" style="background:var(--danger-tint);border-color:var(--danger-border)"><div class="tcx-row" style="gap:10px"><span class="tc-callsign tc-callsign--sos">07</span><span class="tcx-grow tcx-trunc" style="font-weight:600">אלון שגיא</span><span class="tcx-badge tcx-badge--danger">SOS</span></div><div class="tcx-meta" style="margin:6px 0 8px;line-height:1.4">חורשת אורנים, עדכון אחרון <span class="tcx-num">16:58</span></div><div class="tcx-row" style="gap:8px"><a class="tcx-lk tc-btn" style="height:44px;flex:1" href="Cm09-SearcherDetail-Day.dc.html">פרטים</a><button class="tc-btn" style="height:44px;flex:1">התקשר</button></div></div><div class="tcx-card"><div class="tcx-row" style="gap:10px"><span class="tc-callsign tc-callsign--offline">09</span><span class="tcx-grow tcx-trunc" style="font-weight:600">נוי אזולאי</span><span class="tcx-badge tcx-badge--warn">לא מקוון</span></div><div class="tcx-meta" style="margin:6px 0 8px;line-height:1.4">חורשת אורנים, לא מקוון 9 דק׳. אין שינוי משימה כשהמחפש לא מקוון.</div><div class="tcx-row" style="gap:8px"><button class="tc-btn" style="height:44px;flex:1" disabled><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>העבר</button><a class="tcx-lk tc-btn" style="height:44px;flex:1" href="Cm09-SearcherDetail-Day.dc.html">פרטים</a></div></div><div class="tcx-card"><div class="tcx-row" style="gap:10px"><span class="tc-callsign ">15</span><span class="tcx-grow tcx-trunc" style="font-weight:600">רן לוי</span><span class="tcx-badge">בחיפוש</span></div><div class="tcx-meta" style="margin:6px 0 8px;line-height:1.4">חורשת אורנים, עדכון אחרון <span class="tcx-num">16:58</span></div><div class="tcx-row" style="gap:8px"><button class="tc-btn" style="height:44px;flex:1">העבר</button><button class="tc-btn" style="height:44px;flex:1">התקשר</button></div></div></div></div><nav class="tcx-tabbar" aria-label="ניווט ראשי"><a href="Cm04-Live-Day.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>לוח</a><a href="Cm08-Searchers-Day.dc.html" aria-current="page"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14a6 6 0 0 1 3.5 6"/></svg>מחפשים</a><a href="Cm10-Reports-Day.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>דיווחים<span class="tcx-tabbar__n">3</span></a><a href="Cm11-Messages-Day.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>הודעות</a><a href="Cm16-More-Day.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg>עוד</a></nav></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "day"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'day';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

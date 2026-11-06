@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F08 דיווח שטח</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-opt{min-height:56px;display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-5);border-radius:var(--radius-lg);background:var(--surface-sunken);border:2px solid var(--border-field);color:var(--ink);font:inherit;font-size:14px;text-align:start;width:100%}
+.tcx-opt svg{width:18px;height:18px;flex:0 0 auto;color:var(--ink-secondary)}
+.tcx-opt[aria-checked="true"]{background:var(--surface-raised);border-color:var(--accent);font-weight:600}
+.tcx-opt[aria-checked="true"] svg{color:var(--accent)}
+.tcx-opt__sub{display:block;font-size:11.5px;font-weight:400;color:var(--ink-muted)}
+.tcx-segl .tc-seg__tab{height:44px;font-size:14px}
+.tcx-segl .tc-seg__tab[aria-checked="true"]{background:var(--surface-raised);color:var(--ink);font-weight:600}
+.tcx-foot{flex:0 0 auto;padding:var(--space-6);background:var(--surface);border-top:1px solid var(--border)}
+.tcx-scrim{position:absolute;inset:0;background:var(--map-ground);opacity:.62;z-index:6}
+.tcx-minimap{position:relative;height:var(--mm-h,184px);border-radius:var(--radius-lg);overflow:hidden;border:1px solid var(--border-strong);background:var(--map-ground)}
+.tcx-stat{display:flex;flex-direction:column;align-items:flex-start;gap:0;min-width:0}
+.tcx-stat b{font-size:15px;font-weight:700}
+.tcx-fbtn{height:48px;min-width:48px}
+.tcx-lbl{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:var(--space-3);display:block}
+.tcx-report{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-5) var(--space-6);border-radius:var(--radius-lg);min-height:68px}
+.tcx-report+.tcx-report{margin-top:var(--space-2)}
+.tcx-report--sel{background:var(--surface-raised)}
+.tcx-report__top{display:flex;align-items:center;gap:var(--space-4)}
+.tcx-report__text{font-size:14px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcx-hairline{height:1px;background:var(--border-subtle);margin:0}
+.tcx-halo{paint-order:stroke;stroke:var(--map-halo);stroke-width:3px;stroke-linejoin:round}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar" style="gap:6px"><a class="tcx-lk tc-btn tc-btn--ghost tcx-fbtn" style="height:48px;padding:0 10px;margin-inline-start:-6px" href="Fm06-Searching.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg>ביטול</a><div class="tcx-mbar__title" style="font-size:16px">דיווח חדש</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-scroll tcx-grow" style="padding:16px 12px 12px;display:flex;flex-direction:column;gap:20px">
+<div><span class="tcx-lbl" id="f08c">קטגוריה</span><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" role="radiogroup" aria-label="קטגוריה"><button class="tcx-opt" role="radio" aria-checked="true"><svg class="tcx-i" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg><span style="min-width:0"><span>ממצא / רמז</span></span></button><button class="tcx-opt" role="radio" aria-checked="false"><svg class="tcx-i" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18h.01"></path></svg><span style="min-width:0"><span>מפגע</span></span></button><button class="tcx-opt" role="radio" aria-checked="false"><svg class="tcx-i" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg><span style="min-width:0"><span>לא נגיש</span></span></button><button class="tcx-opt" role="radio" aria-checked="false"><svg class="tcx-i" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg><span style="min-width:0"><span>כללי</span></span></button></div><div style="margin-top:8px"><button class="tcx-opt" role="radio" aria-checked="false"><svg class="tcx-i" style="width:18px;height:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6"></path></svg><span style="min-width:0"><span>הנעדר אותר</span><span class="tcx-opt__sub">התראה קריטית למנהל, לא סוגר את המסע</span></span></button></div></div>
+<div class="tcx-field"><label class="tcx-lbl" for="f08t">פירוט</label><textarea id="f08t" class="tcx-input" rows="4" style="font-size:14px;min-height:124px">כובע צמר אפור ליד הנחל, כ-15 מ׳ מצפון לשביל</textarea></div>
+<button class="tc-btn tc-btn--lg tc-btn--block" style="justify-content:flex-start"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>צרף תמונה<span class="tcx-meta" style="margin-inline-start:auto">אופציונלי</span></button>
+<div class="tcx-card" style="display:flex;align-items:center;gap:10px;padding:10px 12px"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><div class="tcx-grow"><div class="tcx-title">מיקום ושעה אוטומטיים</div><div class="tcx-meta"><span class="tcx-num">31.7412, 35.0139</span>, <span class="tcx-num">16:58</span></div></div><span class="tcx-badge tcx-badge--accent" style="height:24px;padding:0 6px;gap:3px">פוליגון A</span></div>
+<div class="tcx-banner"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 20h.01M3 3l18 18"></path></svg><div>אם אין חיבור, הדיווח נשמר במכשיר ויסונכרן אוטומטית.</div></div></div>
+<div class="tcx-foot"><a class="tcx-lk tc-btn tc-btn--primary tc-btn--lg tc-btn--block" style="font-size:16px;height:52px" href="Fm06-Searching.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-8-8 18-2-8z"></path></svg>שלח דיווח</a></div></div></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "day"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'day';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>C03 יצירת מסע · דסקטופ</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-qr{background:#fff;color:#000;padding:8px;border-radius:var(--radius-md);display:block}
+.tcx-qr svg{display:block;width:100%;height:100%;fill:#000}
+.tc a.tcx-nav__item{color:var(--ink-secondary)}
+.tc a.tcx-nav__item[aria-current="page"]{color:var(--ink)}
+.tc a.tcx-mcard{color:var(--ink)}
+.tcx-mcard{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--space-6) var(--space-7)}
+.tcx-mcard:hover{background:var(--surface-hover)}
+.tcx-dashed{border:1px dashed var(--border-strong);border-radius:var(--radius-lg);background:var(--surface-sunken);color:var(--ink-secondary)}
+.tcx-btn-off{opacity:.45;cursor:not-allowed}
+.tcx-result{display:flex;align-items:center;gap:var(--space-5);padding:var(--space-4) var(--space-5);border-radius:var(--radius-md);color:var(--ink);text-decoration:none}
+.tcx-result:hover{background:var(--surface-hover)}
+.tcx-result[aria-selected="true"]{background:var(--surface-raised)}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 1440px; height: 900px">
+<img class="tcx-mapimg" src="{{map}}" alt=""><svg class="tcx-mapsvg" viewBox="0 0 800 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="מפת המסע"><text class="tc-map-text tc-map-text--water" x="392" y="322" transform="rotate(-50 392 322)">נחל הדס</text><text class="tc-map-text" x="120" y="612">מצפה אורנים</text><text class="tc-map-text" x="560" y="522">כביש 3866</text><text class="tc-map-text" x="232" y="80">▲ 486</text><text class="tc-map-text" x="690" y="120">▲ 512</text><g transform="translate(400 250)"><circle class="tc-sym-lkp" r="8"></circle><path class="tc-sym-lkp" d="M0 -13V-5M0 5V13M-13 0H-5M5 0H13"></path></g><rect class="tc-sym-lkp-flag" x="413" y="241" width="62" height="16" rx="3"></rect><text class="tc-sym-lkp-text" x="444" y="252.5" text-anchor="middle">LKP 13:05</text><g transform="translate(330 430)"><circle class="tc-sym-rally" r="9" stroke-dasharray="3 2"></circle><path class="tc-sym-rally-flag" d="M-2 4V-5H4L2.5 -2.5 4 0H-2"></path></g><rect class="tc-tag" x="344" y="421" width="104" height="18" rx="4"></rect><text class="tc-tag__text" x="396" y="434" text-anchor="middle">חניון מצפה אורנים</text></svg><section class="tc-panel" aria-label="פרטי מסע חדש" style="position:absolute;top:72px;bottom:12px;inset-inline-start:12px;width:400px;display:flex;flex-direction:column">
+<div class="tc-panel__section" style="display:flex;align-items:center;gap:8px;padding:10px 12px">
+<a class="tcx-lk tc-btn tc-btn--icon" aria-label="חזרה לרשימת המסעות" href="Cd02-Missions.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a><button class="tc-btn tc-btn--ghost tcx-grow" style="justify-content:flex-start;padding:0 6px;font-weight:600;font-size:14px" aria-label="נועם אברהם, עריכת שם המסע">נועם אברהם<svg class="tcx-i" style="width:14px;height:14px;color:var(--ink-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"></path></svg></button></div>
+<div class="tcx-scroll" style="flex:1;padding:14px;display:flex;flex-direction:column;gap:14px">
+<div class="tcx-col" style="gap:10px"><div class="tcx-title">פרטי הנעדר</div>
+<div style="display:grid;grid-template-columns:1fr 72px;gap:10px"><div class="tcx-field" style=""><label class="tcx-label" for="pn">שם הנעדר</label><input class="tcx-input" id="pn" type="text" value="נועם אברהם" placeholder=""></div><div class="tcx-field" style=""><label class="tcx-label" for="pa">גיל</label><input class="tcx-input" id="pa" type="text" value="74" placeholder="" dir="ltr" style="text-align:end"></div></div>
+<div class="tcx-field" style=""><label class="tcx-label" for="pt">זמן היעלמות</label><input class="tcx-input" id="pt" type="text" value="03.10.2026, 11:20" placeholder="" dir="ltr" style="text-align:end"></div>
+<div style="display:flex;gap:10px;align-items:stretch">
+<div style="flex:0 0 96px;display:flex;flex-direction:column;gap:6px"><div class="tcx-ph" style="flex:1;min-height:100px">תמונה</div><button class="tc-btn tc-btn--sm"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>החלף</button></div>
+<div class="tcx-field" style="flex:1"><label class="tcx-label" for="pd">תיאור / לבוש</label><textarea class="tcx-input" id="pd" rows="5" placeholder="">מעיל חום, כובע צמר אפור, מקל הליכה</textarea></div></div>
+<div class="tcx-field" style=""><label class="tcx-label" for="pi">מידע רלוונטי נוסף</label><textarea class="tcx-input" id="pi" rows="4" placeholder="">דמנציה קלה. לוקח תרופות לב. עלול לא להגיב לקריאה בשמו.</textarea></div></div>
+</div>
+<div class="tc-panel__section" style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+<sc-if value="{{rallyMissing}}" hint-placeholder-val="{{true}}"><div class="tcx-meta"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16h.01"></path></svg> חסרה נקודת כינוס — חובה לפני יצירת המסע.</div></sc-if><div style="display:flex;gap:8px"><a class="tc-btn tcx-lk" style="flex:0 0 96px" href="Cd02-Missions.dc.html">ביטול</a><sc-if value="{{rallyMissing}}" hint-placeholder-val="{{true}}"><button class="tc-btn tc-btn--primary tcx-grow tcx-btn-off" disabled aria-disabled="true">צור מסע</button></sc-if><sc-if value="{{rallySet}}" hint-placeholder-val="{{false}}"><a class="tc-btn tc-btn--primary tcx-grow tcx-lk" href="Cd04-Live.dc.html">צור מסע</a></sc-if></div>
+<div class="tcx-cap">המסע נפתח מיד כפעיל, ונוצר קוד הצטרפות.</div></div>
+</section><section class="tc-panel" aria-label="LKP ונקודת כינוס" style="position:absolute;top:72px;inset-inline-end:12px;width:360px">
+<div class="tc-panel__section" style="display:flex;flex-direction:column;gap:10px">
+<div class="tcx-row"><div class="tcx-title tcx-grow">LKP, נקודה אחרונה שבה נראה</div><span class="tcx-badge tcx-badge--ok"><svg class="tcx-i" style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>הוגדר</span></div>
+<div class="tc-seg" role="tablist" aria-label="אופן הגדרת LKP"><button class="tc-seg__tab" role="tab" aria-selected="true">לחיצה על מפה</button><button class="tc-seg__tab" role="tab" aria-selected="false">חיפוש מקום</button><button class="tc-seg__tab" role="tab" aria-selected="false">קואורדינטות</button></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="tcx-field" style=""><label class="tcx-label" for="lk1">קו רוחב</label><input class="tcx-input" id="lk1" type="text" value="31.7431" placeholder="" dir="ltr" style="text-align:end"></div><div class="tcx-field" style=""><label class="tcx-label" for="lk2">קו אורך</label><input class="tcx-input" id="lk2" type="text" value="35.0127" placeholder="" dir="ltr" style="text-align:end"></div></div><div class="tcx-field" style=""><label class="tcx-label" for="lk3">תאריך ושעה שבהם נראה</label><input class="tcx-input" id="lk3" type="text" value="03.10.2026, 13:05" placeholder="" dir="ltr" style="text-align:end"></div>
+<div class="tcx-hint">לחצו על המפה להזזת הנקודה.</div></div>
+<div class="tc-panel__section" style="display:flex;flex-direction:column;gap:10px">
+<div class="tcx-row"><div class="tcx-title tcx-grow">נקודת כינוס</div><span class="tcx-badge tcx-badge--warn">חובה, לא הוגדרה</span></div>
+<div class="tc-seg" role="tablist" aria-label="אופן הגדרת נקודת כינוס"><button class="tc-seg__tab" role="tab" aria-selected="false">לחיצה על מפה</button><button class="tc-seg__tab" role="tab" aria-selected="true">חיפוש מקום</button><button class="tc-seg__tab" role="tab" aria-selected="false">קואורדינטות</button></div>
+<label class="tc-search" style="background:var(--surface-sunken)"><svg class="tcx-i" style="width:14px;height:14px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><input aria-label="חיפוש מקום לנקודת כינוס" value="מצפה אורנים"></label>
+<ul role="listbox" aria-label="תוצאות חיפוש" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px">
+<li role="option" aria-selected="true" class="tcx-result"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6"></path></svg><span class="tcx-grow"><div>חניון מצפה אורנים</div><div class="tcx-cap">חניון, כביש 3866</div></span><span class="tcx-cap"><span class="tcx-num">0.8</span> ק״מ</span></li>
+<li role="option" aria-selected="false" class="tcx-result"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><span class="tcx-grow"><div>מצפה אורנים</div><div class="tcx-cap">נקודת תצפית</div></span><span class="tcx-cap"><span class="tcx-num">1.1</span> ק״מ</span></li></ul>
+<button class="tc-btn" onClick="{{setRally}}"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"></path></svg>קבע כנקודת כינוס</button></div>
+</section><div class="tc-toolbar" role="toolbar" aria-label="הצבה על המפה" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%)"><button class="tc-btn tc-btn--ghost"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"></circle><path d="M12 2v4M12 18v4M2 12h4M18 12h4"></path></svg>הצב LKP</button><button class="tc-btn tc-btn--ghost" aria-pressed="true" style="background:var(--surface-raised);color:var(--ink)"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6"></path></svg>הצב כינוס</button><span class="tc-toolbar__sep"></span><button class="tc-btn tc-btn--ghost"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5zM2 13l10 5 10-5"></path></svg>שכבות</button></div><div style="position:absolute;bottom:12px;inset-inline-end:384px;display:flex;flex-direction:column;gap:8px;align-items:flex-end"><div class="tcx-zoom"><button aria-label="הגדל">+</button><button aria-label="הקטן">−</button></div></div><header class="tc-appbar" style="position:absolute;top:12px;inset-inline:12px;z-index:5"><div class="tc-appbar__brand"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><circle cx="12" cy="12" r="2.5" fill="currentColor"></circle></svg>Trace</div><div class="tc-appbar__actions" style="flex:1;"><span style="margin-inline-start:auto;display:flex;align-items:center;gap:8px"><span class="tc-status tc-status--up" role="status" title="מחובר לשרת."><span class="tc-status__dot" aria-hidden="true"></span>זמין</span></span></div><a class="tcx-lk tcx-avatar tcx-avatar--btn" href="Cd16-Profile.dc.html" aria-label="פרופיל: ישי, מנהל מסע" style="margin-inline-start:4px">יש</a></header>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 1440, "height": 900}}'>
+class Component extends DCLogic {
+constructor(props) { super(props); this.state = { rally: false }; }
+renderVals() {
+const theme = this.props.theme ?? 'night';
+const rally = !!this.state.rally;
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9', rallyMissing: !rally, rallySet: rally,
+setRally: () => this.setState({ rally: true }) };
+}
+}
+</script>
+</body>
+</html>

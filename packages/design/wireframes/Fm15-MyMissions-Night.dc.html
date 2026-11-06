@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>F15 המסעות שלי · לילה</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="tc.css">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Hebrew:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;overflow-x:clip}
+
+.tcx-surf{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.tcx-msg{display:block;width:100%;text-align:start;padding:var(--space-6) var(--space-7);background:var(--surface);color:var(--ink);border:1px solid var(--border-strong);border-radius:var(--radius-lg);font:inherit}
+.tcx-msg--crit{border:2px solid var(--ink)}
+.tcx-msg--imp{border:2px solid var(--ink-muted)}
+.tcx-msg__head{display:flex;align-items:center;gap:var(--space-4);margin-bottom:var(--space-4)}
+.tcx-msg__text{display:block;font-size:14px;line-height:1.5}
+.tcx-msg--read .tcx-msg__text{color:var(--ink-secondary)}
+.tcx-msg__foot{display:flex;align-items:center;gap:var(--space-3);margin-top:var(--space-4);font-size:12px;color:var(--ink-muted)}
+.tcx-msg__foot svg{width:14px;height:14px}
+.tcx-badge--ink{background:var(--primary);color:var(--on-primary)}
+.tcx-badge--outline{background:transparent;color:var(--ink);border:1px solid var(--ink-muted)}
+.tcx-badge svg{width:14px;height:14px}
+.tcx-foot{flex:0 0 auto;display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-6) 16px;background:var(--surface);border-top:1px solid var(--border)}
+.tcx-sosring{position:relative;width:248px;height:248px;margin:0 auto;display:flex;align-items:center;justify-content:center}
+.tcx-sosring svg{position:absolute;inset:0;width:100%;height:100%}
+.tc .tcx-sosbtn{width:208px;height:208px;border-radius:50%;border:0;background:var(--danger);color:var(--on-danger);font-size:48px;font-weight:700;letter-spacing:.04em;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tc .tcx-sosbtn:hover{background:var(--danger);opacity:.94}
+.tc .tcx-sosbtn small{font-size:13px;font-weight:600;letter-spacing:0}
+.tcx-mini{width:100%;position:relative;overflow:hidden;border-radius:var(--radius-md);border:1px solid var(--border)}
+.tcx-banner .tcx-mini .tcx-mapsvg{width:100%;height:100%;margin:0}
+.tcx-banner .tc-btn svg,.tcx-banner .tcx-ln svg{color:inherit;margin:0}
+.tcx-ln{display:flex;align-items:center;gap:var(--space-4);min-height:44px;padding:0 var(--space-2);border-top:1px solid var(--border-subtle)}
+.tcx-ln:first-child{border-top:0}
+.tcx-ln__k{flex:1;color:var(--ink-muted)}
+.tcx-btnrow{display:flex;gap:var(--space-4)}
+.tcx-btnrow>*{flex:1;min-width:0}
+.tcx-pill{display:flex;align-items:center;gap:var(--space-4);min-height:48px}
+.tcx-ring{fill:none;stroke:var(--danger);stroke-width:3;stroke-opacity:.35}
+
+</style>
+</helmet>
+<div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><div class="tcx-mbar__title">המסעות שלי</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-scroll tcx-grow" style="padding:12px 16px;display:flex;flex-direction:column;gap:12px">
+<div class="tcx-surf" style="display:flex;align-items:center;gap:10px;padding:8px 12px"><div class="tcx-avatar">דכ</div><div style="flex:1;min-width:0"><div class="tcx-title">דנה כהן</div><div class="tcx-meta"><span class="tcx-num">052-340-1187</span></div></div><a class="tcx-lk tc-btn tc-btn--ghost" style="height:44px" href="Fm01-Login-Night.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"></path></svg>יציאה מהחשבון</a></div>
+<section class="tcx-surf" style="border:2px solid var(--ink);padding:12px 14px;display:flex;flex-direction:column;gap:8px" aria-label="מסע פעיל">
+<div style="display:flex;align-items:center;gap:8px"><b class="tcx-title" style="flex:1;font-size:15px">מסע 0412, נועם אברהם</b><span class="tcx-badge tcx-badge--ok"><span class="tc-dot tc-dot--ok"></span>פעיל עכשיו</span></div>
+<div class="tcx-meta">מצב שלי: בחיפוש, פוליגון A, מאז <span class="tcx-num">11:16</span></div>
+<a class="tcx-lk tc-btn tc-btn--lg tc-btn--primary tc-btn--block" href="Fm06-Searching-Night.dc.html">חזור למסע</a></section>
+<a class="tcx-lk tc-btn tc-btn--lg tc-btn--block" href="Fm02-Join-Night.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>הצטרף למסע</a>
+<div class="tcx-title" style="margin-top:2px">היסטוריה</div>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px"><li><button class="tcx-msg tcx-msg--read" style="padding:10px 14px;border-color:var(--ink-muted);" aria-expanded="true"><span class="tcx-msg__head" style="margin:0"><b class="tcx-title" style="flex:1;color:var(--ink)">מסע 0371, מאיר חדד, 68</b><span class="tcx-badge">הסתיים</span></span><span class="tcx-meta">14.09.2026, אותר</span></button></li></ul>
+<section class="tcx-surf" style="padding:10px 14px 4px;margin-top:-4px" aria-label="צפייה במסע שהסתיים, קריאה בלבד">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><b class="tcx-title" style="flex:1">המסע שלי, מסע 0371</b><span class="tcx-badge"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>קריאה בלבד</span></div>
+<div class="tcx-mini" style="height:108px"><img class="tcx-mapimg" src="{{map}}" alt=""><svg class="tcx-mapsvg" viewBox="300 55 260 240" preserveAspectRatio="xMidYMid slice" role="img" aria-label="מפה"><path class="tc-poly--done" d="M120 330L300 290 340 440 180 480 100 420Z"></path><path class="tc-poly--open" d="M360 330L500 320 540 460 380 490Z"></path><path class="tc-poly--active" d="M330 90L520 70 560 230 420 280 320 220Z"></path><path class="tc-poly--active-b" d="M560 230L720 210 760 380 600 410 520 320Z"></path><path class="tc-route" style="stroke-opacity:1;stroke-width:2.4" d="M345 105L400 125 372 160 440 178 420 215 470 232 440 262 410 240"></path><text class="tc-map-text" x="440" y="88" text-anchor="middle" style="font-weight:600;fill:var(--ink)">הפוליגון שלי A</text></svg></div>
+<div class="tcx-ln"><span class="tcx-ln__k">זמן פעילות</span><b><span class="tcx-num">04:12:36</span></b></div>
+<div class="tcx-ln"><span class="tcx-ln__k">הדיווחים שלי</span><b><span class="tcx-num">5</span></b></div></section>
+<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px"><li><button class="tcx-msg tcx-msg--read" style="padding:10px 14px;"><span class="tcx-msg__head" style="margin:0"><b class="tcx-title" style="flex:1;color:var(--ink)">מסע 0329, רועי גולן, 31</b><span class="tcx-badge">הסתיים</span></span><span class="tcx-meta">21.08.2026, הופסק</span></button></li></ul>
+</div></div><nav class="tcx-tabbar" aria-label="ניווט ראשי"><a href="Fm06-Searching-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="18" r="2"></circle><circle cx="18" cy="6" r="2"></circle><path d="M8 18h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6"></path></svg>מסע</a><a href="Fm10-PolygonReports-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>דיווחים</a><a href="Fm11-Messages-Night.dc.html"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"></path></svg>הודעות<span class="tcx-tabbar__n">2</span></a><a href="Fm12-SOS-Night.dc.html" style="color:var(--danger-ink)"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6M12 16h.01"></path></svg>SOS</a><a href="Fm16-More-Night.dc.html" aria-current="page"><svg class="tcx-i tcx-i--lg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="19" cy="12" r="1.2"></circle></svg>עוד</a></nav></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme": {"editor": "enum", "options": ["night", "day"], "default": "night"}, "$preview": {"width": 390, "height": 844}}'>
+class Component extends DCLogic {
+renderVals() {
+const theme = this.props.theme ?? 'night';
+return { theme: theme, map: theme === 'day' ? '/_blob/5071e42e814aa739f9cfafabad33f9c9' : '/_blob/d8d89c7ae30e59bb2a231523b72763a9' };
+}
+}
+</script>
+</body>
+</html>
