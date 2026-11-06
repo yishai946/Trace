@@ -3,13 +3,10 @@ import type { LngLat } from '@trace/geo';
 import { asc, eq } from 'drizzle-orm';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { missions, participations, searchers } from '../../db/schema';
-import { notFound } from '../../errors';
+import { participations, searchers } from '../../db/schema';
 
+/** The mission's searchers. The route's access check has already answered 404 for an unknown mission. */
 export async function listParticipants(db: Db, missionId: string): Promise<Participant[]> {
-  const [mission] = await db.select({ id: missions.id }).from(missions).where(eq(missions.id, missionId));
-  if (!mission) throw notFound('Mission');
-
   const rows = await db
     .select({
       id: participations.id,

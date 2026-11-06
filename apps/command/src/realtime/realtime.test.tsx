@@ -13,6 +13,7 @@ class FakeSocket {
   handlers = new Map<string, Handler[]>();
   joins: { missionId: string; ack: (result: JoinMissionAck) => void }[] = [];
   disconnected = false;
+  connects = 0;
 
   on(name: string, handler: Handler) {
     this.handlers.set(name, [...(this.handlers.get(name) ?? []), handler]);
@@ -20,6 +21,10 @@ class FakeSocket {
   }
   emit(name: string, payload: { missionId: string }, ack: (result: JoinMissionAck) => void) {
     if (name === 'mission:join') this.joins.push({ missionId: payload.missionId, ack });
+    return this;
+  }
+  connect() {
+    this.connects++;
     return this;
   }
   disconnect() {
@@ -162,6 +167,19 @@ describe('useMissionLive', () => {
     expect(result.current.live).toBe('live');
     await waitFor(() => expect(result.current.polygons).toEqual([first, second]));
     expect(fetchPolygons).toHaveBeenCalledTimes(3);
+  });
+
+  it('connects again after the server closed the connection, as on a restart', async () => {
+    const { result } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await connectAndJoin(socket);
+
+    act(() => socket.fire('disconnect', 'io server disconnect'));
+    expect(result.current.live).toBe('down');
+    expect(socket.connects).toBe(1);
+
+    await connectAndJoin(socket);
+    expect(result.current.live).toBe('live');
   });
 
   it('closes the connection when the mission closes', () => {
