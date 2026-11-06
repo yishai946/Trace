@@ -49,8 +49,9 @@
 
 /* Scanners need dark modules on a light ground: the light token of each theme behind its dark ink. */
 .qr {
-  width: 188px;
-  height: 188px;
+  /* Fills the panel's width (panel-end-w), so the code is as large as the panel allows. */
+  width: 100%;
+  aspect-ratio: 1;
   padding: var(--space-4);
   border-radius: var(--radius-md);
   background-color: var(--primary);

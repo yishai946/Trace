@@ -160,7 +160,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             setCreating(false);
             setOpenId(created.id);
             setJoinOpen(true);
-            setCreatedNotice(photoFailed ? 'המסע נוצר, אבל התמונה לא נשמרה. אפשר לנסות שוב מפרטי המסע.' : null);
+            setCreatedNotice(photoFailed ? 'המסע נוצר, אבל התמונה לא נשמרה.' : null);
           }}
         />
       ) : !mission ? (

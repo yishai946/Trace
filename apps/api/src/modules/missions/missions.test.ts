@@ -1,6 +1,8 @@
 import { isJoinCode, MAX_PHOTO_BYTES } from '@trace/domain';
 import { ApiError, Mission, MissionList } from '@trace/schemas';
+import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { missions } from '../../db/schema';
 import {
   addParticipant,
   createTestApp,
@@ -209,5 +211,24 @@ describe('missing person photo', () => {
     const other = injectAs(ctx, await signInCommander(ctx));
     expect((await other({ method: 'GET', url: `/api/missions/${missionId}/photo` })).statusCode).toBe(404);
     expect((await upload(PNG, 'image/png', other)).statusCode).toBe(404);
+  });
+
+  it('lets the browser keep only the current version of the photo, and never sniff it', async () => {
+    const photoUrl = Mission.parse((await upload(PNG, 'image/png')).json()).missingPerson.photoUrl ?? '';
+    const current = await inject({ method: 'GET', url: photoUrl });
+    expect(current.headers['cache-control']).toBe('private, max-age=31536000, immutable');
+    expect(current.headers['x-content-type-options']).toBe('nosniff');
+
+    const unversioned = await inject({ method: 'GET', url: `/api/missions/${missionId}/photo` });
+    expect(unversioned.headers['cache-control']).toBe('private, no-cache');
+    const stale = await inject({ method: 'GET', url: `/api/missions/${missionId}/photo?v=1` });
+    expect(stale.headers['cache-control']).toBe('private, no-cache');
+  });
+
+  it('keeps the photo of an ended mission as it was', async () => {
+    await ctx.db.update(missions).set({ status: 'ended_located' }).where(eq(missions.id, missionId));
+    const res = await upload(PNG, 'image/png');
+    expect(res.statusCode).toBe(409);
+    expect(ApiError.parse(res.json()).error.code).toBe('MISSION_ENDED');
   });
 });

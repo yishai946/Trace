@@ -1,4 +1,4 @@
-import { detectPhotoType, generateJoinCode, type RandomInt } from '@trace/domain';
+import { detectPhotoType, generateJoinCode, isMissionEnded, type RandomInt } from '@trace/domain';
 import { PointGeometry, type CreateMissionBody, type Mission } from '@trace/schemas';
 import type { z } from 'zod';
 import { desc, eq, inArray } from 'drizzle-orm';
@@ -168,10 +168,19 @@ export async function createMission(
 export interface MissionPhoto {
   contentType: string;
   data: Buffer;
+  updatedAt: Date;
 }
 
-/** Saves or replaces the missing person's photo. The content must really be a JPEG, PNG or WebP image. */
+/**
+ * Saves or replaces the missing person's photo. The content must really be a JPEG, PNG or WebP image.
+ * An ended mission is read-only (UC-C03 edits only an active or paused mission).
+ */
 export async function setMissionPhoto(db: Db, missionId: string, data: Buffer): Promise<Mission> {
+  const [mission] = await db.select({ status: missions.status }).from(missions).where(eq(missions.id, missionId));
+  if (!mission) throw notFound('Mission');
+  if (isMissionEnded(mission.status)) {
+    throw new AppError(409, 'MISSION_ENDED', 'The photo of an ended mission cannot be changed');
+  }
   const contentType = detectPhotoType(data);
   if (!contentType) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'The photo must be a JPEG, PNG or WebP image');
   await db
@@ -183,7 +192,7 @@ export async function setMissionPhoto(db: Db, missionId: string, data: Buffer): 
 
 export async function getMissionPhoto(db: Db, missionId: string): Promise<MissionPhoto> {
   const [photo] = await db
-    .select({ contentType: missionPhotos.contentType, data: missionPhotos.data })
+    .select({ contentType: missionPhotos.contentType, data: missionPhotos.data, updatedAt: missionPhotos.updatedAt })
     .from(missionPhotos)
     .where(eq(missionPhotos.missionId, missionId));
   if (!photo) throw notFound('Photo');

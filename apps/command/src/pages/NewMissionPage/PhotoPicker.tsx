@@ -52,10 +52,10 @@ export function PhotoPicker({ photo, onChange }: PhotoPickerProps) {
         </div>
       )}
       <FileTrigger acceptedFileTypes={[...PHOTO_TYPES]} onSelect={choose}>
-        <Button size="sm">{photo ? 'החלף' : 'הוסף תמונה'}</Button>
+        <Button>{photo ? 'החלף' : 'הוסף תמונה'}</Button>
       </FileTrigger>
       {photo && (
-        <Button size="sm" variant="danger-outline" onPress={() => show(null)}>
+        <Button variant="danger-outline" onPress={() => show(null)}>
           הסר
         </Button>
       )}

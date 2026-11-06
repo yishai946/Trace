@@ -54,7 +54,7 @@ export function JoinCodePanel({ mission, onClose }: JoinCodePanelProps) {
           <span className={styles.url} dir="ltr">
             {link}
           </span>
-          <Button variant="icon" size="sm" aria-label="העתק קישור" onPress={() => void copy('link')}>
+          <Button variant="icon" aria-label="העתק קישור" onPress={() => void copy('link')}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
               <rect x="8" y="8" width="12" height="12" rx="2" />
               <path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" />
@@ -62,12 +62,9 @@ export function JoinCodePanel({ mission, onClose }: JoinCodePanelProps) {
           </Button>
         </div>
         <div className={styles.actions}>
-          <Button size="sm" onPress={() => void copy('code')}>
-            העתק קוד
-          </Button>
+          <Button onPress={() => void copy('code')}>העתק קוד</Button>
           {canShare && (
             <Button
-              size="sm"
               onPress={() =>
                 void navigator.share({ title: 'הצטרפות למסע', text: `קוד הצטרפות: ${mission.joinCode}`, url: link })
               }

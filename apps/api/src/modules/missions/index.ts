@@ -2,6 +2,7 @@ import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
 import { ApiError, CreateMissionBody, Mission, MissionList, MissionParams } from '@trace/schemas';
 import type { FastifyError } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { commandersOnly, missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
@@ -86,6 +87,7 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
           401: ApiError,
           403: ApiError,
           404: ApiError,
+          409: ApiError,
           413: ApiError,
           415: ApiError,
         },
@@ -110,16 +112,20 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
         summary: "Get the missing person's photo",
         description: 'Commanders and searchers in the mission see the photo (UC-F04). 404 when there is none.',
         params: MissionParams,
+        querystring: z.object({ v: z.string().optional().describe("The photo's version, from photoUrl") }),
         produces: [...PHOTO_TYPES],
       },
       preHandler: missionAccess(db, 'member'),
     },
     async (request, reply) => {
       const photo = await getMissionPhoto(db, request.params.missionId);
-      // The URL carries the photo's version, so a browser may keep it; only the signed-in user may.
+      // A URL with the current version (`?v=`, from photoUrl) never changes, so the browser may keep it.
+      // Any other URL may point at a newer photo next time. Only the signed-in user's browser may cache either.
+      const current = request.query.v === String(photo.updatedAt.getTime());
       return reply
         .header('content-type', photo.contentType)
-        .header('cache-control', 'private, max-age=31536000, immutable')
+        .header('x-content-type-options', 'nosniff')
+        .header('cache-control', current ? 'private, max-age=31536000, immutable' : 'private, no-cache')
         .send(photo.data);
     },
   );
