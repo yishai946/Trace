@@ -22,7 +22,10 @@ export function toMissionArea(polygons: MissionPolygon[]): MissionArea {
       })),
     },
     bounds: polygons.length
-      ? boundsOf({ type: 'FeatureCollection', features: polygons.map((p) => ({ type: 'Feature', geometry: p.geometry, properties: {} })) })
+      ? boundsOf({
+          type: 'FeatureCollection',
+          features: polygons.map((p) => ({ type: 'Feature', geometry: p.geometry, properties: {} })),
+        })
       : null,
   };
 }

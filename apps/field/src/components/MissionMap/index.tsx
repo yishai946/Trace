@@ -44,13 +44,7 @@ export function MissionMap({ area }: MissionMapProps) {
   }
 
   return (
-    <Map
-      style={styles.fill}
-      mapStyle={mapStyle}
-      accessibilityLabel="מפת המסע"
-      logo={false}
-      compass={false}
-    >
+    <Map style={styles.fill} mapStyle={mapStyle} accessibilityLabel="מפת המסע" logo={false} compass={false}>
       <Camera bounds={area.bounds ?? ISRAEL_BOUNDS} padding={framePadding} duration={0} />
     </Map>
   );

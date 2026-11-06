@@ -34,7 +34,10 @@ export default function MapScreen() {
         <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
           <View
             accessibilityLiveRegion="polite"
-            style={[styles.banner, { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel }]}
+            style={[
+              styles.banner,
+              { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel },
+            ]}
           >
             <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{status.text}</Text>
             {status.action}

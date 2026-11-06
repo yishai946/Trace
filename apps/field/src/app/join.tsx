@@ -11,7 +11,9 @@ export default function JoinScreen() {
     <Screen
       title="הצטרפות למסע"
       action={<Button label="המסעות שלי" onPress={() => router.push(routes.myMissions)} />}
-      footer={<Button label="אשר והצטרף" variant="primary" size="lg" block onPress={() => router.replace(routes.map)} />}
+      footer={
+        <Button label="אשר והצטרף" variant="primary" size="lg" block onPress={() => router.replace(routes.map)} />
+      }
     >
       <Placeholder useCase="UC-F02" />
     </Screen>

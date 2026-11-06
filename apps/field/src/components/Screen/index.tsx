@@ -23,13 +23,13 @@ export function Screen({ title, action, children, footer }: ScreenProps) {
   const { color } = useTheme().theme;
 
   return (
-    <SafeAreaView
-      testID="screen"
-      edges={['top']}
-      style={[styles.screen, { backgroundColor: color.surface }]}
-    >
+    <SafeAreaView testID="screen" edges={['top']} style={[styles.screen, { backgroundColor: color.surface }]}>
       <View style={[styles.bar, { borderBottomColor: color.border }]}>
-        <Text accessibilityRole="header" numberOfLines={1} style={[typography.title, styles.title, { color: color.ink }]}>
+        <Text
+          accessibilityRole="header"
+          numberOfLines={1}
+          style={[typography.title, styles.title, { color: color.ink }]}
+        >
           {title}
         </Text>
         {action}

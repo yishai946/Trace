@@ -8,7 +8,14 @@ import { ThemeProvider } from '../../theme';
 
 function Providers({ children }: { children: ReactNode }) {
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics ?? { frame: { x: 0, y: 0, width: 390, height: 844 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
+    <SafeAreaProvider
+      initialMetrics={
+        initialWindowMetrics ?? {
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 0, left: 0, right: 0, bottom: 0 },
+        }
+      }
+    >
       <ThemeProvider>{children}</ThemeProvider>
     </SafeAreaProvider>
   );
@@ -24,5 +31,5 @@ describe('Screen', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'המסעות שלי' })).toBeInTheDocument();
-      });
+  });
 });

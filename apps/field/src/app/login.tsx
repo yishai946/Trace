@@ -10,7 +10,9 @@ export default function LoginScreen() {
   return (
     <Screen
       title="TRACE Field"
-      footer={<Button label="אמת והמשך" variant="primary" size="lg" block onPress={() => router.replace(routes.join)} />}
+      footer={
+        <Button label="אמת והמשך" variant="primary" size="lg" block onPress={() => router.replace(routes.join)} />
+      }
     >
       <Placeholder useCase="UC-F01" />
     </Screen>

@@ -7,12 +7,18 @@ export default defineConfig({
     mainFields: ['module', 'main'],
     alias: [
       { find: /^react-native$/, replacement: 'react-native-web' },
-      { find: '@react-native/assets-registry/registry', replacement: new URL('./src/test/assetsRegistry.ts', import.meta.url).pathname },
+      {
+        find: '@react-native/assets-registry/registry',
+        replacement: new URL('./src/test/assetsRegistry.ts', import.meta.url).pathname,
+      },
     ],
     extensions: ['.web.tsx', '.web.ts', '.tsx', '.ts', '.web.js', '.js', '.mjs', '.json'],
   },
   define: { __DEV__: 'true', 'process.env.EXPO_OS': '"web"' },
   test: {
     server: { deps: { inline: ['react-native-svg'] } },
-    environment: 'jsdom', setupFiles: ['./src/test/setup.ts'], css: false },
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+  },
 });

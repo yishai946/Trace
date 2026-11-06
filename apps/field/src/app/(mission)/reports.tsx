@@ -11,7 +11,14 @@ export default function ReportsScreen() {
     <Screen
       title="דיווחים"
       footer={
-        <Button label="דיווח חדש" variant="primary" size="lg" block icon="plus" onPress={() => router.push(routes.report)} />
+        <Button
+          label="דיווח חדש"
+          variant="primary"
+          size="lg"
+          block
+          icon="plus"
+          onPress={() => router.push(routes.report)}
+        />
       }
     >
       <Placeholder useCase="UC-F11" />

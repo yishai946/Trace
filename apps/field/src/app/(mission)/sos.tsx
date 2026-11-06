@@ -6,7 +6,14 @@ import { Screen } from '../../components/Screen';
 export default function SosScreen() {
   return (
     <Screen title="חירום">
-      <Button label="SOS" accessibilityLabel="הפעל SOS, לחיצה ארוכה 3 שניות" variant="danger" size="lg" block disabled />
+      <Button
+        label="SOS"
+        accessibilityLabel="הפעל SOS, לחיצה ארוכה 3 שניות"
+        variant="danger"
+        size="lg"
+        block
+        disabled
+      />
       <Placeholder useCase="UC-F13" />
     </Screen>
   );

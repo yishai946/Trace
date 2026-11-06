@@ -18,9 +18,7 @@ export function ThemeChoice() {
 
   return (
     <View style={styles.field}>
-      <Text style={[typography.meta, { color: color.inkMuted }]}>
-        ערכת צבעים
-      </Text>
+      <Text style={[typography.meta, { color: color.inkMuted }]}>ערכת צבעים</Text>
       <View
         accessibilityRole="radiogroup"
         accessibilityLabel="ערכת צבעים"
@@ -39,7 +37,10 @@ export function ThemeChoice() {
               style={[styles.option, checked && { backgroundColor: color.surfaceRaised }]}
             >
               <Text
-                style={[checked ? typography.bodyStrong : typography.body, { color: checked ? color.ink : color.inkSecondary }]}
+                style={[
+                  checked ? typography.bodyStrong : typography.body,
+                  { color: checked ? color.ink : color.inkSecondary },
+                ]}
               >
                 {option.label}
               </Text>
