@@ -1,4 +1,3 @@
-import { Camera, Map } from '@maplibre/maplibre-react-native';
 import { spacing, typography } from '@trace/design';
 import { buildMapStyle, ISRAEL_BOUNDS, maptilerProvider, type MapProvider } from '@trace/map';
 import { useMemo } from 'react';
@@ -11,6 +10,23 @@ const mapTilerKey = process.env.EXPO_PUBLIC_MAPTILER_API_KEY?.trim();
 const provider: MapProvider | null = mapTilerKey ? maptilerProvider(mapTilerKey) : null;
 
 // MapLibre Native has no client-side contour generation and 3D is an open decision (TECH_STACK.md): relief only.
+import type * as MapLibre from '@maplibre/maplibre-react-native';
+type MapLibreModule = typeof MapLibre;
+
+/**
+ * MapLibre Native is a native module: it is missing from Expo Go, and importing it there throws at load time, which
+ * would take the whole route down. Load it lazily so the app still opens and the map shows a notice instead.
+ */
+function loadMapLibre(): MapLibreModule | null {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require('@maplibre/maplibre-react-native') as MapLibreModule;
+  } catch {
+    return null;
+  }
+}
+const mapLibre = loadMapLibre();
+
 const terrain = { hillshade: true, contours: false, terrain3d: false };
 
 export interface MissionMapProps {
@@ -29,7 +45,7 @@ export function MissionMap({ area }: MissionMapProps) {
     [themeId, area.data],
   );
 
-  if (!mapStyle) {
+  if (!mapLibre || !mapStyle) {
     return (
       <View
         accessibilityRole="image"
@@ -37,12 +53,13 @@ export function MissionMap({ area }: MissionMapProps) {
         style={[styles.fill, styles.notice, { backgroundColor: theme.color.mapGround }]}
       >
         <Text style={[typography.body, { color: theme.color.inkSecondary }]}>
-          המפה לא מוגדרת: חסר EXPO_PUBLIC_MAPTILER_API_KEY
+          {mapLibre ? 'המפה לא מוגדרת: חסר EXPO_PUBLIC_MAPTILER_API_KEY' : 'המפה דורשת בילד פיתוח (לא Expo Go)'}
         </Text>
       </View>
     );
   }
 
+  const { Camera, Map } = mapLibre;
   return (
     <Map style={styles.fill} mapStyle={mapStyle} accessibilityLabel="מפת המסע" logo={false} compass={false}>
       <Camera bounds={area.bounds ?? ISRAEL_BOUNDS} padding={framePadding} duration={0} />
