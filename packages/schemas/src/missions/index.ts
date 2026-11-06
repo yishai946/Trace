@@ -45,7 +45,8 @@ export const CreateMissionBody = z.object({
   name: z.string().trim().min(1, 'Mission name is required').max(120),
   missingPerson: MissingPersonInput.prefault({}),
   rallyPoint: PointGeometry,
-  lkp: Lkp.optional(),
+  /** Required: the search is planned from it (UC-C02 step 2, decision 1). */
+  lkp: Lkp,
 });
 
 export const Mission = z

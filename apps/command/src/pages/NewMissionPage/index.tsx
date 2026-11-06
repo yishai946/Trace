@@ -10,7 +10,7 @@ import { TextField } from '../../components/TextField';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { useCreateMission } from '../../mission/missionQueries';
 import styles from './NewMissionPage.module.css';
-import { emptyForm, toCreateBody, validate, type FormErrors, type NewMissionForm } from './newMissionForm';
+import { emptyForm, MESSAGES, toCreateBody, validate, type FormErrors, type NewMissionForm } from './newMissionForm';
 import { PhotoPicker } from './PhotoPicker';
 import { PointPicker, type PlaceMode } from './PointPicker';
 
@@ -164,7 +164,8 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
         </div>
 
         <div className={styles.footer}>
-          {!form.rally && <p className={styles.meta}>חסרה נקודת כינוס — חובה לפני יצירת המסע.</p>}
+          {!form.lkp && <p className={styles.meta}>{MESSAGES.lkp}</p>}
+          {!form.rally && <p className={styles.meta}>{MESSAGES.rally}</p>}
           {!online && <p className={styles.meta}>אין חיבור לשרת. אפשר ליצור מסע כשהחיבור יחזור.</p>}
           {failure && (
             <p className={styles.fieldError} role="alert">
@@ -179,7 +180,7 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
               type="submit"
               variant="primary"
               className={styles.grow}
-              isDisabled={!form.rally || !online || create.isPending}
+              isDisabled={!form.lkp || !form.rally || !online || create.isPending}
             >
               {create.isPending ? 'יוצר מסע…' : 'צור מסע'}
             </Button>
@@ -194,11 +195,12 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
           title="LKP, נקודה אחרונה שבה נראה"
           pointName="LKP"
           point={form.lkp}
-          status={form.lkp ? { label: 'הוגדר', tone: 'ok' } : { label: 'רשות, לא הוגדר', tone: 'muted' }}
+          status={form.lkp ? { label: 'הוגדר', tone: 'ok' } : { label: 'חובה, לא הוגדר', tone: 'warn' }}
           mode={modes.lkp}
           onModeChange={(mode) => setMode('lkp', mode)}
           onChange={(point) => setPoint('lkp', point)}
           onPlaceFound={(place) => setFocus({ center: place.center })}
+          error={errors.lkp}
         >
           {form.lkp && (
             <TextField

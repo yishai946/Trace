@@ -16,6 +16,7 @@ import {
 import { createMission } from './missions.service';
 
 const rallyPoint = { type: 'Point', coordinates: [35.1335, 31.7835] };
+const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };
 
 /** The smallest files that pass as each format: their signature and a few more bytes. */
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
@@ -48,7 +49,7 @@ describe('missions', () => {
       name: 'מסע 0412',
       missingPerson: { name: 'נועם אברהם', age: 74, disappearedAt: '2026-10-03T11:20:00+03:00' },
       rallyPoint,
-      lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' },
+      lkp,
     });
     expect(res.statusCode).toBe(201);
     const mission = Mission.parse(res.json());
@@ -67,8 +68,14 @@ describe('missions', () => {
     expect(issuePaths(res.json())).toContain('/rallyPoint');
   });
 
+  it('requires an LKP', async () => {
+    const res = await post({ name: 'מסע', rallyPoint });
+    expect(res.statusCode).toBe(400);
+    expect(issuePaths(res.json())).toContain('/lkp');
+  });
+
   it('names a missing mission name', async () => {
-    const res = await post({ name: ' ', rallyPoint });
+    const res = await post({ name: ' ', rallyPoint, lkp });
     expect(res.statusCode).toBe(400);
     expect(issuePaths(res.json())).toContain('/name');
   });
@@ -78,7 +85,7 @@ describe('missions', () => {
     const res = await injectAs(
       ctx,
       searcher,
-    )({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint } });
+    )({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint, lkp } });
     expect(res.statusCode).toBe(403);
     expect(ApiError.parse(res.json()).error.code).toBe('FORBIDDEN');
   });
@@ -86,17 +93,16 @@ describe('missions', () => {
   it('gives every mission its own join code', async () => {
     const codes = new Set<string>();
     for (let i = 0; i < 5; i++)
-      codes.add(Mission.parse((await post({ name: `מסע ${i}`, rallyPoint })).json()).joinCode);
+      codes.add(Mission.parse((await post({ name: `מסע ${i}`, rallyPoint, lkp })).json()).joinCode);
     expect(codes.size).toBe(5);
   });
 
   it('lists missions newest first and gets one by id', async () => {
-    const first = Mission.parse((await post({ name: 'ראשון', rallyPoint })).json());
-    const second = Mission.parse((await post({ name: 'שני', rallyPoint })).json());
+    const first = Mission.parse((await post({ name: 'ראשון', rallyPoint, lkp })).json());
+    const second = Mission.parse((await post({ name: 'שני', rallyPoint, lkp })).json());
 
     const list = MissionList.parse((await inject({ method: 'GET', url: '/api/missions' })).json());
     expect(list.map((m) => m.id)).toEqual([second.id, first.id]);
-    expect(list[1]?.lkp).toBeNull();
 
     const one = await inject({ method: 'GET', url: `/api/missions/${first.id}` });
     expect(Mission.parse(one.json()).name).toBe('ראשון');
@@ -118,6 +124,10 @@ describe('missions', () => {
       name: 'מסע',
       missingPerson: { name: null, age: null, disappearedAt: null, description: null, additionalInfo: null },
       rallyPoint: { type: 'Point' as const, coordinates: [35.13, 31.78] as [number, number] },
+      lkp: {
+        position: { type: 'Point' as const, coordinates: [35.137, 31.769] as [number, number] },
+        observedAt: lkp.observedAt,
+      },
       commanderId: commander.userId,
     };
     const a = await createMission(ctx.db, input, random);
@@ -140,7 +150,7 @@ describe('missing person photo', () => {
     await resetDb(ctx.db);
     commander = await signInCommander(ctx);
     inject = injectAs(ctx, commander);
-    const created = await inject({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint } });
+    const created = await inject({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint, lkp } });
     missionId = Mission.parse(created.json()).id;
   });
   afterAll(() => ctx.close());

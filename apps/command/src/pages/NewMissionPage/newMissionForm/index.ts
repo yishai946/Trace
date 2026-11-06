@@ -28,31 +28,33 @@ export const emptyForm: NewMissionForm = {
   rally: null,
 };
 
-export type FormErrors = Partial<Record<'name' | 'age' | 'lkpObservedAt' | 'rally', string>>;
+export type FormErrors = Partial<Record<'name' | 'age' | 'lkp' | 'lkpObservedAt' | 'rally', string>>;
 
 export const MESSAGES = {
   name: 'חסר שם או מזהה למסע.',
   age: 'גיל במספרים שלמים, 0 עד 130.',
+  lkp: 'חסר LKP — חובה לפני יצירת המסע.',
   lkpObservedAt: 'חסרים התאריך והשעה שבהם נראה ב-LKP.',
   rally: 'חסרה נקודת כינוס — חובה לפני יצירת המסע.',
 } as const;
 
 const MAX_AGE = 130;
 
-/** The fields to fix before the mission can be created (UC-C02: required fields, and the rally point). */
+/** The fields to fix before the mission can be created (UC-C02): the name, the LKP with its time, the rally point. */
 export function validate(form: NewMissionForm): FormErrors {
   const errors: FormErrors = {};
   if (!form.name.trim()) errors.name = MESSAGES.name;
   const age = form.age.trim();
   if (age && !(/^\d+$/.test(age) && Number(age) <= MAX_AGE)) errors.age = MESSAGES.age;
-  if (form.lkp && !form.lkpObservedAt) errors.lkpObservedAt = MESSAGES.lkpObservedAt;
+  if (!form.lkp) errors.lkp = MESSAGES.lkp;
+  else if (!form.lkpObservedAt) errors.lkpObservedAt = MESSAGES.lkpObservedAt;
   if (!form.rally) errors.rally = MESSAGES.rally;
   return errors;
 }
 
 /** The API request for a valid form. Call `validate` first. */
 export function toCreateBody(form: NewMissionForm): CreateMissionBody {
-  if (!form.rally) throw new Error('A mission needs a rally point');
+  if (!form.rally || !form.lkp) throw new Error('A mission needs a rally point and an LKP');
   const text = (value: string) => value.trim() || null;
   return {
     name: form.name.trim(),
@@ -64,14 +66,7 @@ export function toCreateBody(form: NewMissionForm): CreateMissionBody {
       additionalInfo: text(form.additionalInfo),
     },
     rallyPoint: { type: 'Point', coordinates: form.rally },
-    ...(form.lkp
-      ? {
-          lkp: {
-            position: { type: 'Point', coordinates: form.lkp },
-            observedAt: new Date(form.lkpObservedAt).toISOString(),
-          },
-        }
-      : {}),
+    lkp: { position: { type: 'Point', coordinates: form.lkp }, observedAt: new Date(form.lkpObservedAt).toISOString() },
   };
 }
 

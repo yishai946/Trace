@@ -23,6 +23,7 @@ import {
 type Client = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 const rallyPoint = { type: 'Point', coordinates: [35.13, 31.78] };
+const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };
 const area = {
   type: 'Polygon',
   coordinates: [
@@ -93,7 +94,7 @@ describe('realtime', () => {
     const res = await injectAs(
       ctx,
       user,
-    )({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint } });
+    )({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint, lkp } });
     expect(res.statusCode).toBe(201);
     return Mission.parse(res.json());
   };

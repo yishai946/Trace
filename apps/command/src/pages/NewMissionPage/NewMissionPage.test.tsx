@@ -36,6 +36,14 @@ const points = () => within(screen.getByRole('group', { name: 'LKP ונקודת 
 const rallySection = () => within(points().getByRole('region', { name: 'נקודת כינוס' }));
 const createButton = () => screen.getByRole('button', { name: 'צור מסע' });
 
+const lkpSection = () => within(points().getByRole('region', { name: 'LKP, נקודה אחרונה שבה נראה' }));
+
+/** The LKP follows map clicks when the screen opens. */
+function placeLkpOnMap(observedAt = '2026-10-03T13:05') {
+  fireEvent.click(screen.getByRole('button', { name: 'לחיצה על המפה' }));
+  fireEvent.change(lkpSection().getByLabelText('תאריך ושעה שבהם נראה'), { target: { value: observedAt } });
+}
+
 function placeRallyOnMap() {
   fireEvent.click(rallySection().getByRole('tab', { name: 'מפה' }));
   fireEvent.click(screen.getByRole('button', { name: 'לחיצה על המפה' }));
@@ -44,10 +52,13 @@ function placeRallyOnMap() {
 describe('NewMissionPage', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('cannot create a mission until the rally point is set (decision 91)', () => {
+  it('cannot create a mission until the LKP and rally point are set (decision 91)', () => {
     renderPage();
     expect(createButton()).toBeDisabled();
+    expect(screen.getByText('חובה, לא הוגדר')).toBeInTheDocument();
     expect(screen.getByText('חובה, לא הוגדרה')).toBeInTheDocument();
+    placeLkpOnMap();
+    expect(createButton()).toBeDisabled();
     placeRallyOnMap();
     expect(createButton()).toBeEnabled();
     expect(rallySection().getByText('הוגדרה')).toBeInTheDocument();
@@ -56,8 +67,10 @@ describe('NewMissionPage', () => {
   it('marks missing fields and does not send the form', () => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     renderPage();
+    placeLkpOnMap('');
     placeRallyOnMap();
     fireEvent.click(createButton());
+    expect(screen.getByText(MESSAGES.lkpObservedAt)).toBeInTheDocument();
     expect(screen.getByText(MESSAGES.name)).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /שם \/ מזהה מסע/ })).toHaveAttribute('aria-invalid', 'true');
     expect(fetch).not.toHaveBeenCalled();
@@ -65,6 +78,7 @@ describe('NewMissionPage', () => {
 
   it('places the rally point by coordinates', () => {
     renderPage();
+    placeLkpOnMap();
     fireEvent.click(rallySection().getByRole('tab', { name: 'קואורדינטות' }));
     fireEvent.change(rallySection().getByRole('textbox', { name: 'קו רוחב' }), { target: { value: '31.7431' } });
     const lng = rallySection().getByRole('textbox', { name: 'קו אורך' });
@@ -75,11 +89,10 @@ describe('NewMissionPage', () => {
 
   it('only one point follows map clicks at a time', () => {
     renderPage();
-    const lkpSection = within(points().getByRole('region', { name: 'LKP, נקודה אחרונה שבה נראה' }));
-    expect(lkpSection.getByRole('tab', { name: 'מפה' })).toHaveAttribute('aria-selected', 'true');
+    expect(lkpSection().getByRole('tab', { name: 'מפה' })).toHaveAttribute('aria-selected', 'true');
     placeRallyOnMap();
-    expect(lkpSection.getByRole('tab', { name: 'מפה' })).toHaveAttribute('aria-selected', 'false');
-    expect(lkpSection.getByText('רשות, לא הוגדר')).toBeInTheDocument();
+    expect(lkpSection().getByRole('tab', { name: 'מפה' })).toHaveAttribute('aria-selected', 'false');
+    expect(lkpSection().getByText('חובה, לא הוגדר')).toBeInTheDocument();
   });
 
   it('creates the mission and hands it over to be opened', async () => {
@@ -88,6 +101,7 @@ describe('NewMissionPage', () => {
       .mockResolvedValue(new Response(JSON.stringify(mission), { status: 201 }));
     const { onCreated } = renderPage();
     fireEvent.change(screen.getByRole('textbox', { name: /שם \/ מזהה מסע/ }), { target: { value: '0412' } });
+    placeLkpOnMap();
     placeRallyOnMap();
     fireEvent.click(createButton());
 
@@ -97,6 +111,10 @@ describe('NewMissionPage', () => {
     expect(JSON.parse(String(init?.body))).toMatchObject({
       name: '0412',
       rallyPoint: { type: 'Point', coordinates: CLICKED },
+      lkp: {
+        position: { type: 'Point', coordinates: CLICKED },
+        observedAt: new Date('2026-10-03T13:05').toISOString(),
+      },
     });
   });
 

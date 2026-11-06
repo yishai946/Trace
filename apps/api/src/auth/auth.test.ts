@@ -15,6 +15,7 @@ import {
 } from '../testing';
 
 const rallyPoint = { type: 'Point', coordinates: [35.13, 31.78] };
+const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };
 const area: Polygon = {
   type: 'Polygon',
   coordinates: [
@@ -40,7 +41,7 @@ describe('auth', () => {
   afterAll(() => ctx.close());
 
   const createMissionAs = async (user: TestUser, name = 'מסע') => {
-    const res = await injectAs(ctx, user)({ method: 'POST', url: '/api/missions', payload: { name, rallyPoint } });
+    const res = await injectAs(ctx, user)({ method: 'POST', url: '/api/missions', payload: { name, rallyPoint, lkp } });
     expect(res.statusCode).toBe(201);
     return Mission.parse(res.json());
   };
@@ -146,7 +147,7 @@ describe('auth', () => {
       const res = await injectAs(
         ctx,
         searcher,
-      )({ method: 'POST', url: '/api/missions', payload: { name: 'x', rallyPoint } });
+      )({ method: 'POST', url: '/api/missions', payload: { name: 'x', rallyPoint, lkp } });
       expect(res.statusCode).toBe(403);
     });
 
@@ -207,7 +208,7 @@ describe('auth', () => {
       const res = await injectAs(
         ctx,
         searcher,
-      )({ method: 'POST', url: '/api/missions', payload: { name: 'x', rallyPoint } });
+      )({ method: 'POST', url: '/api/missions', payload: { name: 'x', rallyPoint, lkp } });
       expect(res.statusCode).toBe(403);
       expect(errorCode(res)).toBe('FORBIDDEN');
     });
