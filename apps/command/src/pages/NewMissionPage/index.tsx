@@ -10,7 +10,16 @@ import { TextField } from '../../components/TextField';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { useCreateMission } from '../../mission/missionQueries';
 import styles from './NewMissionPage.module.css';
-import { emptyForm, MESSAGES, toCreateBody, validate, type FormErrors, type NewMissionForm } from './newMissionForm';
+import {
+  emptyForm,
+  MESSAGES,
+  missionName,
+  toCreateBody,
+  validate,
+  type FormErrors,
+  type NewMissionForm,
+} from './newMissionForm';
+import { MissionNameTitle } from './MissionNameTitle';
 import { PhotoPicker } from './PhotoPicker';
 import { PointPicker, type PlaceMode } from './PointPicker';
 
@@ -106,27 +115,23 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </Button>
-          <h1 className={styles.title}>מסע חדש</h1>
+          <MissionNameTitle
+            name={missionName(form)}
+            onRename={(name) => update({ name: name === form.personName.trim() ? '' : name })}
+          />
         </div>
 
         <div className={styles.scroll}>
           <fieldset className={styles.group}>
-            <legend className={styles.sectionTitle}>פרטי מסע</legend>
-            <TextField
-              label="שם / מזהה מסע"
-              description="יופיע ברשימת המסעות ובלוח המבצעי."
-              isRequired
-              value={form.name}
-              onChange={(name) => update({ name })}
-              isInvalid={!!errors.name}
-              errorMessage={errors.name}
-            />
-          </fieldset>
-
-          <fieldset className={styles.group}>
             <legend className={styles.sectionTitle}>פרטי הנעדר</legend>
             <div className={styles.nameAge}>
-              <TextField label="שם הנעדר" value={form.personName} onChange={(personName) => update({ personName })} />
+              <TextField
+                label="שם הנעדר"
+                value={form.personName}
+                onChange={(personName) => update({ personName })}
+                isInvalid={!!errors.personName}
+                errorMessage={errors.personName}
+              />
               <TextField
                 label="גיל"
                 ltr

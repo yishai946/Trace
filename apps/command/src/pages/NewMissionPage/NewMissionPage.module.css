@@ -35,8 +35,63 @@
 }
 
 .title {
+  flex: 1;
+  min-width: 0;
   margin: 0;
   font: var(--text-title);
+}
+
+/* The mission name: it follows the missing person's name, and a click turns it into a field. */
+.titleButton {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleButton svg {
+  flex: none;
+  width: var(--space-7);
+  height: var(--space-7);
+  color: var(--ink-muted);
+}
+
+.titleButton[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.titleButton[data-focus-visible],
+.titleInput[data-focused] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.titleField {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleInput {
+  width: 100%;
+  height: var(--control-h);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink);
+  font: var(--text-title);
+  outline: none;
 }
 
 .scroll {

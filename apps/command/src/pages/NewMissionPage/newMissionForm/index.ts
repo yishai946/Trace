@@ -3,6 +3,7 @@ import type { CreateMissionBody } from '@trace/schemas';
 
 /** What the commander typed on the new-mission screen, as the inputs hold it. */
 export interface NewMissionForm {
+  /** The mission's name when typed by hand; empty while it follows the missing person's name. */
   name: string;
   personName: string;
   age: string;
@@ -28,10 +29,10 @@ export const emptyForm: NewMissionForm = {
   rally: null,
 };
 
-export type FormErrors = Partial<Record<'name' | 'age' | 'lkp' | 'lkpObservedAt' | 'rally', string>>;
+export type FormErrors = Partial<Record<'personName' | 'age' | 'lkp' | 'lkpObservedAt' | 'rally', string>>;
 
 export const MESSAGES = {
-  name: 'חסר שם או מזהה למסע.',
+  personName: 'חסר שם הנעדר. הוא גם שם המסע, ואפשר לשנות אותו בכותרת.',
   age: 'גיל במספרים שלמים, 0 עד 130.',
   lkp: 'חסר LKP — חובה לפני יצירת המסע.',
   lkpObservedAt: 'חסרים התאריך והשעה שבהם נראה ב-LKP.',
@@ -40,10 +41,14 @@ export const MESSAGES = {
 
 const MAX_AGE = 130;
 
-/** The fields to fix before the mission can be created (UC-C02): the name, the LKP with its time, the rally point. */
+/** The mission's name: the one typed in the title, or else the missing person's name. */
+export const missionName = (form: Pick<NewMissionForm, 'name' | 'personName'>) =>
+  form.name.trim() || form.personName.trim();
+
+/** The fields to fix before the mission can be created (UC-C02): a name, the LKP with its time, the rally point. */
 export function validate(form: NewMissionForm): FormErrors {
   const errors: FormErrors = {};
-  if (!form.name.trim()) errors.name = MESSAGES.name;
+  if (!missionName(form)) errors.personName = MESSAGES.personName;
   const age = form.age.trim();
   if (age && !(/^\d+$/.test(age) && Number(age) <= MAX_AGE)) errors.age = MESSAGES.age;
   if (!form.lkp) errors.lkp = MESSAGES.lkp;
@@ -57,7 +62,7 @@ export function toCreateBody(form: NewMissionForm): CreateMissionBody {
   if (!form.rally || !form.lkp) throw new Error('A mission needs a rally point and an LKP');
   const text = (value: string) => value.trim() || null;
   return {
-    name: form.name.trim(),
+    name: missionName(form),
     missingPerson: {
       name: text(form.personName),
       age: form.age.trim() ? Number(form.age) : null,

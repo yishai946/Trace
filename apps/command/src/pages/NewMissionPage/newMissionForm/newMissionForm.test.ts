@@ -1,6 +1,6 @@
 import { CreateMissionBody } from '@trace/schemas';
 import { describe, expect, it } from 'vitest';
-import { emptyForm, formatCoordinate, MESSAGES, parseLatLng, toCreateBody, validate } from '.';
+import { emptyForm, formatCoordinate, MESSAGES, missionName, parseLatLng, toCreateBody, validate } from '.';
 
 const rally: [number, number] = [35.1335, 31.7835];
 const lkp: [number, number] = [35.137, 31.769];
@@ -8,7 +8,8 @@ const placed = { lkp, lkpObservedAt: '2026-10-02T13:05', rally };
 
 describe('validate', () => {
   it('requires a name, an LKP and a rally point', () => {
-    expect(validate(emptyForm)).toEqual({ name: MESSAGES.name, lkp: MESSAGES.lkp, rally: MESSAGES.rally });
+    expect(validate({ ...emptyForm, personName: 'נועם', ...placed })).toEqual({});
+    expect(validate(emptyForm)).toEqual({ personName: MESSAGES.personName, lkp: MESSAGES.lkp, rally: MESSAGES.rally });
     expect(validate({ ...emptyForm, name: '0412', ...placed })).toEqual({});
   });
 
@@ -17,6 +18,14 @@ describe('validate', () => {
     expect(validate(form)).toEqual({ age: MESSAGES.age, lkpObservedAt: MESSAGES.lkpObservedAt });
     expect(validate({ ...form, age: '131' }).age).toBe(MESSAGES.age);
     expect(validate({ ...form, age: '74', lkpObservedAt: '2026-10-03T13:05' })).toEqual({});
+  });
+});
+
+describe('missionName', () => {
+  it("follows the missing person's name until a name is typed", () => {
+    expect(missionName({ name: '', personName: ' נועם אברהם ' })).toBe('נועם אברהם');
+    expect(missionName({ name: ' מסע 0412 ', personName: 'נועם אברהם' })).toBe('מסע 0412');
+    expect(missionName({ name: '', personName: '' })).toBe('');
   });
 });
 

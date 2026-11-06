@@ -65,6 +65,21 @@ describe('NewMissionPage', () => {
     expect(rallySection().getByText('הוגדרה')).toBeInTheDocument();
   });
 
+  it('names the mission after the missing person, and lets the commander rename it from the title', () => {
+    renderPage();
+    expect(screen.getByRole('heading', { name: /מסע חדש/ })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'שם הנעדר' }), { target: { value: 'נועם אברהם' } });
+    expect(screen.getByRole('heading', { name: /נועם אברהם/ })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /שם המסע/ }));
+    const field = screen.getByRole('textbox', { name: 'שם המסע' });
+    fireEvent.change(field, { target: { value: 'מסע 0412' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(screen.getByRole('heading', { name: /מסע 0412/ })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: 'שם הנעדר' }), { target: { value: 'נועם' } });
+    expect(screen.getByRole('heading', { name: /מסע 0412/ })).toBeInTheDocument();
+  });
+
   it('marks missing fields and does not send the form', () => {
     const fetch = vi.spyOn(globalThis, 'fetch');
     renderPage();
@@ -72,8 +87,8 @@ describe('NewMissionPage', () => {
     placeRallyOnMap();
     fireEvent.click(createButton());
     expect(screen.getByText(MESSAGES.lkpObservedAt)).toBeInTheDocument();
-    expect(screen.getByText(MESSAGES.name)).toBeInTheDocument();
-    expect(screen.getByRole('textbox', { name: /שם \/ מזהה מסע/ })).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText(MESSAGES.personName)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'שם הנעדר' })).toHaveAttribute('aria-invalid', 'true');
     expect(fetch).not.toHaveBeenCalled();
   });
 
@@ -113,7 +128,7 @@ describe('NewMissionPage', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(JSON.stringify(mission), { status: 201 }));
     const { onCreated } = renderPage();
-    fireEvent.change(screen.getByRole('textbox', { name: /שם \/ מזהה מסע/ }), { target: { value: '0412' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'שם הנעדר' }), { target: { value: 'נועם אברהם' } });
     placeLkpOnMap();
     placeRallyOnMap();
     fireEvent.click(createButton());
@@ -122,7 +137,7 @@ describe('NewMissionPage', () => {
     const [url, init] = fetch.mock.calls[0] ?? [];
     expect(url).toBe('/api/missions');
     expect(JSON.parse(String(init?.body))).toMatchObject({
-      name: '0412',
+      name: 'נועם אברהם',
       rallyPoint: { type: 'Point', coordinates: CLICKED },
       lkp: {
         position: { type: 'Point', coordinates: CLICKED },
