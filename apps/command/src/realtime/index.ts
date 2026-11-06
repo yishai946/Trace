@@ -78,8 +78,12 @@ export function useMissionLive(missionId: string | undefined): LiveState {
     });
     socket.on('disconnect', (reason) => {
       set('down');
-      // The server closed the connection, as when the session expires: it does not reconnect on its own.
-      if (reason === 'io server disconnect') void queryClient.invalidateQueries({ queryKey: sessionKey });
+      // The server closed the connection (a restart, or an expired session): Socket.IO does not reconnect on its own.
+      // Check the session and connect again; an expired one fails with UNAUTHENTICATED and signs the user out.
+      if (reason === 'io server disconnect') {
+        void queryClient.invalidateQueries({ queryKey: sessionKey });
+        socket.connect();
+      }
     });
     socket.on('connect_error', (error) => {
       set('down');

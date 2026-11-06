@@ -24,6 +24,8 @@ const box = (west: number, south: number, east: number, north: number): Polygon 
 });
 
 const env = loadEnv();
+// The seed creates a commander whose password is in this file.
+if (env.NODE_ENV === 'production') throw new Error('db:seed never runs in production');
 const { db, close } = createDb(env.DATABASE_URL);
 const auth = createAuth({ env, db, sendOtp: async () => {} });
 

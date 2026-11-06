@@ -117,9 +117,8 @@ async function searchersOutside(
   });
 }
 
+/** The mission's polygons. The route's access check has already answered 404 for an unknown mission. */
 export async function listPolygons(db: Db, missionId: string): Promise<MissionPolygon[]> {
-  const [mission] = await db.select({ id: missions.id }).from(missions).where(eq(missions.id, missionId));
-  if (!mission) throw notFound('Mission');
   const rows = await selectPolygons(db)
     .where(and(isNull(polygons.deletedAt), eq(polygons.missionId, missionId)))
     .orderBy(asc(polygons.createdAt));

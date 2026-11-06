@@ -28,6 +28,7 @@ interface SocketData {
 type RealtimeSocket = Socket<ClientToServerEvents, ServerToClientEvents, Record<string, never>, SocketData>;
 
 // Rooms per mission: everyone who joined it, its commander, and each searcher on their own.
+// shortcut: rooms live in this process only; with more than one API instance, add the Socket.IO Postgres adapter.
 const membersRoom = (missionId: string) => `mission:${missionId}`;
 const commanderRoom = (missionId: string) => `mission:${missionId}:commander`;
 const searcherRoom = (missionId: string, searcherId: string) => `mission:${missionId}:searcher:${searcherId}`;
