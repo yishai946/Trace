@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 import { useTheme } from '../../theme';
 import { Icon, type IconName } from '../Icon';
 
-export interface TabButtonProps extends Omit<TabTriggerSlotProps, 'children' | 'style'> {
+export interface TabButtonProps extends Omit<TabTriggerSlotProps, 'children' | 'style' | 'ref'> {
   label: string;
   icon: IconName;
   tone?: 'danger';

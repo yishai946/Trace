@@ -9,7 +9,7 @@ import { fontWeights } from './packages/design/scripts/lint-values.mjs';
 const RAW_COLOR = String.raw`/#[0-9a-fA-F]{3,8}\b|\b(rgba?|hsla?|hwb|lab|lch|oklab|oklch|color-mix)\(/`;
 const COLOR_KEYWORDS = '/^(transparent|inherit|currentColor|currentcolor|none)$/';
 const STYLE_KEYS =
-  '/^(fontSize|lineHeight|fontFamily|letterSpacing|(border\\w*)?[rR]adius|margin\\w*|padding\\w*|gap|rowGap|columnGap|boxShadow|shadow\\w*|elevation)$/';
+  '/^(fontSize|lineHeight|fontFamily|letterSpacing|(border\\w*)?[rR]adius|margin\\w*|padding\\w*|gap|rowGap|columnGap|boxShadow|shadow\\w*|elevation|(min|max)?(Width|Height)|width|height)$/';
 // Font weights have no tokens; only the weights used by the design system's text styles are allowed.
 const ALLOWED_WEIGHTS = fontWeights.flatMap((w) => [`:not([value.value=${w}])`, `:not([value.value='${w}'])`]).join('');
 const FREE_VALUES = '/%$|^(auto|inherit|normal|none)$/';
@@ -46,6 +46,8 @@ export default defineConfig(
   {
     // Design values come only from @trace/design (the Trace Console design system). See AGENTS.md.
     files: ['apps/**/*.{ts,tsx,js,jsx}'],
+    // Tests hold fixture data (image sizes, sample colors), not design values.
+    ignores: ['**/*.test.{ts,tsx}'],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -72,7 +74,7 @@ export default defineConfig(
         {
           selector: `Property[key.name=${STYLE_KEYS}][value.type='Literal']:not([value.value=0]):not([value.value=${FREE_VALUES}])`,
           message:
-            'Use a token from @trace/design (spacing, radius, typography, themes.*.shadow) instead of a raw style value.',
+            'Use a token from @trace/design (spacing, radius, size, typography, themes.*.shadow) instead of a raw style value.',
         },
       ],
     },

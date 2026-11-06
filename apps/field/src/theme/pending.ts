@@ -8,6 +8,9 @@ export const pendingTokens = {
   touchTarget: 44,
   /** Large mobile button, wireframe `.tc-btn--lg`. */
   controlHLg: 48,
+  /** CallsignChip, Trace Console `.tc-callsign` (`min-width`, `height`): sizes without a `size` token. */
+  callsignMinW: 26,
+  callsignH: 20,
   /** Bottom tab bar, wireframe `.tcx-tabbar`. */
   tabBarH: 64,
   /** Line icon, brand book "16px". */
