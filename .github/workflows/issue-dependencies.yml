@@ -6,12 +6,15 @@
 #   the issues it blocks at once. Actions cannot listen to "Blocked by" links being added or removed, so a scheduled
 #   run re-checks every open issue.
 # With the PROJECT_TOKEN secret (a token with the `project` and `repo` scopes) it also moves board cards between
-# Backlog (blocked) and Ready, and to In progress on assignment. Without it the board is updated by hand.
+# Backlog (blocked) and Ready, to In progress on assignment, back to Ready when the last assignee leaves, and to In
+# review when a Pull Request that closes the issue opens. The scheduled run also copies each card's Priority and Size
+# into `priority: <P>` and `size: <S>` labels, for agents that cannot reach the board (it needs GraphQL, which cloud
+# sessions do not have). Without the secret the board is updated by hand.
 name: Issue dependencies
 
 on:
   issues:
-    types: [assigned, closed, reopened]
+    types: [assigned, unassigned, closed, reopened]
   pull_request:
     types: [opened, edited, synchronize, reopened]
   schedule:
@@ -92,12 +95,40 @@ jobs:
               );
             }
 
-            /** Brings one open issue's label and board column in line with its blockers. Returns true when it was just unblocked. */
+            /** Copies the card's Priority and Size into `priority: <P>` and `size: <S>` labels, replacing older ones. */
+            async function syncFieldLabels(issue) {
+              if (!process.env.PROJECT_TOKEN) return;
+              const { repository } = await projectQuery(
+                `query($owner: String!, $repo: String!, $n: Int!) {
+                  repository(owner: $owner, name: $repo) { issue(number: $n) { projectItems(first: 20) { nodes {
+                    project { number }
+                    priority: fieldValueByName(name: "Priority") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+                    size: fieldValueByName(name: "Size") { ... on ProjectV2ItemFieldSingleSelectValue { name } }
+                  } } } }
+                }`,
+                { owner, repo, n: issue.number },
+              );
+              const item = repository.issue.projectItems.nodes.find((i) => i.project.number === Number(process.env.PROJECT_NUMBER));
+              if (!item) return;
+              const current = issue.labels.map((l) => l.name ?? l);
+              for (const [prefix, value] of [['priority: ', item.priority?.name], ['size: ', item.size?.name]]) {
+                const wanted = value ? `${prefix}${value}` : null;
+                for (const name of current.filter((n) => n.startsWith(prefix) && n !== wanted)) {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number: issue.number, name });
+                }
+                if (wanted && !current.includes(wanted)) {
+                  await github.rest.issues.addLabels({ owner, repo, issue_number: issue.number, labels: [wanted] });
+                }
+              }
+            }
+
+            /** Brings one open issue's labels and board column in line with its blockers and its card. Returns true when it was just unblocked. */
             async function refresh(issue) {
               const blockers = await openBlockers(issue.number);
               const unblocked = await syncBlockedLabel(issue, blockers);
               if (blockers.length > 0) await setStatus(issue.number, 'Backlog', ['Ready']);
               else await setStatus(issue.number, 'Ready', ['Backlog']);
+              await syncFieldLabels(issue);
               return unblocked;
             }
 
@@ -122,6 +153,14 @@ jobs:
                 body: `@${context.payload.assignee.login} אי אפשר לקחת את המשימה עדיין. היא חסומה על ידי:\n\n${list(blockers)}\n\nבחרו משימה מהעמודה **Ready** בבורד.`,
               });
               return;
+            }
+
+            if (context.eventName === 'issues' && context.payload.action === 'unassigned') {
+              // Work stopped without finishing: once nobody holds the issue, it goes back to Ready (or Backlog).
+              const issue = context.payload.issue;
+              if (issue.state !== 'open' || issue.assignees.length > 0) return;
+              const blockers = await openBlockers(issue.number);
+              return setStatus(issue.number, blockers.length > 0 ? 'Backlog' : 'Ready', ['In progress']);
             }
 
             if (context.eventName === 'issues') {
@@ -159,4 +198,6 @@ jobs:
             }
             if (problems.length > 0) {
               core.setFailed(`This Pull Request closes issues that still have open blockers:\n${problems.join('\n')}`);
+            } else if (['opened', 'reopened'].includes(context.payload.action) && !pr.draft) {
+              for (const n of numbers) await setStatus(n, 'In review', ['Ready', 'In progress']);
             }
