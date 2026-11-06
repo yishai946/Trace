@@ -56,39 +56,39 @@ TRACE Command + TRACE Field
 
 ### מסע
 
-Active ← Paused ← Ended — Missing Person Located ← Ended — Search Stopped
+Active → Paused → Ended — Missing Person Located → Ended — Search Stopped
 
 ### פוליגון
 
-Unassigned ← Active ← Completed
+Unassigned → Active → Completed
 
 ### השתתפות מחפש
 
-Available ← Assigned ← Activity Ended
+Available → Assigned → Activity Ended
 
 ### משימת חיפוש
 
-Assigned / Ready ← Searching ← Paused ← Finished Search (נשאר Assigned)
+Assigned / Ready → Searching → Paused → Finished Search (נשאר Assigned)
 
 ### דיווח
 
-New ← Handled
+New → Handled
 
 ### הודעה רגילה
 
-Sent ← Read
+Sent → Read
 
 ### הודעה קריטית
 
-Sent ← Read ← Acknowledged
+Sent → Read → Acknowledged
 
 ### SOS
 
-Active ← Closed
+Active → Closed
 
 ### קישוריות
 
-Online ← Offline
+Online → Offline
 
 הערה חשובה: סטטוס המחפש וסטטוס משימת החיפוש אינם אותו דבר. “סיימתי חיפוש” מסיים משימת חיפוש אך אינו מסיים השתתפות; המחפש נשאר Assigned עד החלטת המנהל.
 

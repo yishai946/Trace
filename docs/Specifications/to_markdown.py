@@ -96,7 +96,14 @@ def use_case_spec() -> list[tuple[str, str]]:
     """Splits the use case spec into an overview and one file per use case. Returns (id, title) per use case."""
     blocks = docx_blocks(UC_SPEC)
     overview, cases, current = [], [], None
+    in_state_models = False
     for kind, text in blocks:
+        if kind == "h1":
+            in_state_models = text.startswith("5.")
+        elif in_state_models and kind == "text":
+            # Section 5 writes each state flow for right-to-left reading ("A ← B" means A, then B); every other
+            # source writes the same flows as "A → B". Turn them around so the copy reads the same as the rest.
+            text = text.replace("←", "→")
         uc = re.match(r"(UC-[CFS]\d+)\s*[—-]\s*(.+)", text) if kind == "h2" else None
         if uc:
             current = (uc.group(1), uc.group(2), [])
