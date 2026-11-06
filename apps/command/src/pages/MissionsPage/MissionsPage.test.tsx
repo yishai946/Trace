@@ -12,12 +12,14 @@ const missions: Mission[] = [
   mission({ id: 'm3', name: 'מסע 0409', status: 'ended_located', joinCode: 'EF-789' }),
 ];
 
+const create = { onNew: () => {}, canCreate: true };
+
 const rows = () => within(screen.getByRole('table')).getAllByRole('row').slice(1);
 
 describe('MissionsPage', () => {
   it("lists the commander's missions with their status and opens one", () => {
     const onOpen = vi.fn();
-    render(<MissionsPage missions={missions} loadFailed={false} onOpen={onOpen} />);
+    render(<MissionsPage missions={missions} loadFailed={false} onOpen={onOpen} {...create} />);
 
     expect(rows()).toHaveLength(3);
     expect(screen.getByText('הסתיים, אותר')).toBeTruthy();
@@ -27,14 +29,14 @@ describe('MissionsPage', () => {
 
   it('opens a mission by clicking anywhere on its row', () => {
     const onOpen = vi.fn();
-    render(<MissionsPage missions={missions} loadFailed={false} onOpen={onOpen} />);
+    render(<MissionsPage missions={missions} loadFailed={false} onOpen={onOpen} {...create} />);
 
     fireEvent.click(screen.getByText('מסע 0409'));
     expect(onOpen).toHaveBeenCalledWith('m3');
   });
 
   it('filters by status, with a count on each tab', () => {
-    render(<MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} />);
+    render(<MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} {...create} />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'הסתיים 1' }));
     expect(rows()).toHaveLength(1);
@@ -42,17 +44,28 @@ describe('MissionsPage', () => {
   });
 
   it('searches by mission name or join code', () => {
-    render(<MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} />);
+    render(<MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} {...create} />);
 
     fireEvent.change(screen.getByRole('searchbox', { name: 'חיפוש מסע' }), { target: { value: 'cd-4' } });
     expect(rows()).toHaveLength(1);
     expect(screen.getByText('מסע 0410')).toBeTruthy();
   });
 
+  it('opens the new-mission screen, only while connected', () => {
+    const onNew = vi.fn();
+    const { rerender } = render(
+      <MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} onNew={onNew} canCreate />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'מסע חדש' }));
+    expect(onNew).toHaveBeenCalled();
+    rerender(<MissionsPage missions={missions} loadFailed={false} onOpen={vi.fn()} onNew={onNew} canCreate={false} />);
+    expect(screen.getByRole('button', { name: 'מסע חדש' })).toBeDisabled();
+  });
+
   it('explains an empty list and a failed load', () => {
-    const { rerender } = render(<MissionsPage missions={[]} loadFailed={false} onOpen={vi.fn()} />);
+    const { rerender } = render(<MissionsPage missions={[]} loadFailed={false} onOpen={vi.fn()} {...create} />);
     expect(screen.getByText(/אין לך מסעות עדיין/)).toBeTruthy();
-    rerender(<MissionsPage missions={undefined} loadFailed onOpen={vi.fn()} />);
+    rerender(<MissionsPage missions={undefined} loadFailed onOpen={vi.fn()} {...create} />);
     expect(screen.getByText('לא ניתן לטעון מסעות מהשרת.')).toBeTruthy();
   });
 });

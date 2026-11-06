@@ -1,0 +1,123 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: var(--panel-end-w);
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font: var(--text-title);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--success);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+/* Scanners need dark modules on a light ground: the light token of each theme behind its dark ink. */
+.qr {
+  /* Fills the panel's width (panel-end-w), so the code is as large as the panel allows. */
+  width: 100%;
+  aspect-ratio: 1;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+:global([data-theme='day']) .qr {
+  background-color: var(--surface);
+  color: var(--ink);
+  outline: 1px solid var(--border);
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  fill: currentcolor;
+}
+
+.code {
+  /* The wireframe shows the code larger; the design system has no display text style yet, so it uses the title. */
+  font: var(--text-title);
+  font-variant-numeric: tabular-nums;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+}
+
+.url {
+  flex: 1;
+  overflow: hidden;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.actions > * {
+  flex: 1;
+}
+
+.note {
+  margin: 0;
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.copied {
+  color: var(--success);
+  font: var(--text-meta);
+}

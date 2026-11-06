@@ -1,0 +1,323 @@
+/* Two floating panels over the map, below the app bar: details at the start, the LKP and rally point at the end. */
+.details,
+.points {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.details {
+  bottom: var(--space-6);
+  inset-inline-start: var(--space-6);
+  width: var(--panel-start-w);
+  min-height: 0;
+}
+
+.points {
+  inset-inline-end: var(--space-6);
+  width: var(--panel-end-w);
+  max-height: calc(100% - var(--space-6) * 3 - var(--header-h));
+  overflow-y: auto;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--text-title);
+}
+
+/* The mission name: it follows the missing person's name, and a click turns it into a field. */
+.titleButton {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleButton svg {
+  flex: none;
+  width: var(--space-7);
+  height: var(--space-7);
+  color: var(--ink-muted);
+}
+
+.titleButton[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.titleButton[data-focus-visible],
+.titleInput[data-focused] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.titleField {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleInput {
+  width: 100%;
+  height: var(--control-h);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink);
+  font: var(--text-title);
+  outline: none;
+}
+
+.scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-7);
+  min-height: 0;
+  padding: var(--space-7);
+  overflow-y: auto;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group + .group {
+  padding-top: var(--space-7);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sectionTitle {
+  margin: 0;
+  padding: 0;
+  font: var(--text-title);
+}
+
+.group > .sectionTitle {
+  margin-bottom: var(--space-5);
+}
+
+.nameAge {
+  display: grid;
+  grid-template-columns: 1fr calc(var(--control-h) * 2);
+  gap: var(--space-5);
+}
+
+.photoRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-5);
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.photo {
+  display: flex;
+  flex: 0 0 calc(var(--control-h) * 2.8);
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.photoImage,
+.photoEmpty {
+  width: 100%;
+  min-height: calc(var(--control-h) * 3);
+  flex: 1;
+  border-radius: var(--radius-md);
+}
+
+.photoImage {
+  object-fit: cover;
+}
+
+.photoEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-raised);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.meta {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.caption {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.cancel {
+  flex: 0 0 calc(var(--control-h) * 2.8);
+}
+
+.fieldError {
+  margin: 0;
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font: var(--text-meta);
+}
+
+.pointSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.pointSection + .pointSection {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.pointHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.pointHead .sectionTitle {
+  flex: 1;
+}
+
+/* The point's state in a word, with a dot in its state colour. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  white-space: nowrap;
+}
+
+.badgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-faint);
+}
+
+.badge[data-tone='ok'] .badgeDot {
+  background-color: var(--success);
+}
+
+.badge[data-tone='warn'] .badgeDot {
+  background-color: var(--warning);
+}
+
+.seg {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.segTab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: var(--segment-h);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.segTab[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.segTab[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segTab[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.tabPanel {
+  outline: none;
+}
+
+.tabPanel[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.coords {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.coordsRead {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}

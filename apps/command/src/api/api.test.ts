@@ -22,6 +22,16 @@ describe('apiRequest', () => {
     );
   });
 
+  it('sends files as they are, with their own type', async () => {
+    const fetch = respond(200, {});
+    const photo = new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' });
+    await apiRequest('/missions/1/photo', { method: 'PUT', body: photo });
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/missions/1/photo',
+      expect.objectContaining({ method: 'PUT', body: photo, headers: { 'content-type': 'image/jpeg' } }),
+    );
+  });
+
   it('turns the shared error shape into an ApiRequestError', async () => {
     respond(409, { error: { code: 'POLYGON_HAS_ACTIVE_SEARCHERS', message: 'busy', details: { activeSearchers: 2 } } });
     const error = await apiRequest('/x').catch((e: unknown) => e);

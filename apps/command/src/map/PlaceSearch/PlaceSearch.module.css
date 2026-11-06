@@ -3,6 +3,10 @@
   max-width: 100%;
 }
 
+.root[data-full-width] {
+  width: 100%;
+}
+
 .label {
   position: absolute;
   width: 1px;

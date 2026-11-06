@@ -103,10 +103,25 @@
 }
 
 .meta {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background-color: transparent;
   white-space: nowrap;
   color: var(--ink-muted);
   font: var(--text-meta);
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  outline: none;
+}
+
+.meta[data-hovered] {
+  color: var(--ink);
+}
+
+.meta[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 /* Narrow windows: the join code gives way to the missing person's name and the search. */
@@ -121,6 +136,12 @@
   top: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-end: var(--space-6);
   width: var(--panel-end-w);
+}
+
+.join {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  inset-inline-start: var(--space-6);
 }
 
 .editBar {

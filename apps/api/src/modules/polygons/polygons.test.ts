@@ -38,7 +38,11 @@ describe('polygons', () => {
     const res = await inject({
       method: 'POST',
       url: '/api/missions',
-      payload: { name: 'מסע', rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] } },
+      payload: {
+        name: 'מסע',
+        rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
+        lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' },
+      },
     });
     missionId = Mission.parse(res.json()).id;
   });

@@ -1,6 +1,17 @@
 import { MISSION_STATUSES, PARTICIPATION_STATUSES, POLYGON_STATUSES, TASK_STATUSES, USER_ROLES } from '@trace/domain';
 import { sql } from 'drizzle-orm';
-import { boolean, index, integer, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  customType,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { pointColumn, polygonColumn } from './geometry';
 
 const timestamps = {
@@ -101,6 +112,21 @@ export const missions = pgTable('missions', {
   description: text(),
   additionalInfo: text('additional_info'),
   rallyPoint: pointColumn('rally_point').notNull(),
+  ...timestamps,
+});
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
+
+/**
+ * The missing person's photo (UC-C02), at most one per mission. Kept in Postgres so the server needs no other storage
+ * until the infrastructure decision (TECH_STACK.md); the size limit keeps rows small.
+ */
+export const missionPhotos = pgTable('mission_photos', {
+  missionId: uuid('mission_id')
+    .primaryKey()
+    .references(() => missions.id, { onDelete: 'cascade' }),
+  contentType: text('content_type').notNull(),
+  data: bytea().notNull(),
   ...timestamps,
 });
 

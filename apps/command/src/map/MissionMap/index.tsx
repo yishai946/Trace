@@ -47,6 +47,8 @@ interface MissionMapProps {
   editing?: { polygonId: string; geometry: Polygon } | null;
   /** The reshaped boundary after each vertex move. */
   onEditChange?: (geometry: Polygon) => void;
+  /** A click on the map while placing a point, such as the LKP or rally point. Turns off polygon selection. */
+  onMapClick?: (point: LngLat) => void;
   /** Tools, zoom buttons and cursor coordinates. Off for the map behind the login and mission list screens. */
   controls?: boolean;
 }
@@ -99,6 +101,7 @@ export function MissionMap({
   onPolygonSelect,
   editing,
   onEditChange,
+  onMapClick,
   controls = true,
 }: MissionMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +112,7 @@ export function MissionMap({
   const onDrawnRef = useRef(onPolygonDrawn);
   const onSelectRef = useRef(onPolygonSelect);
   const onEditChangeRef = useRef(onEditChange);
+  const onMapClickRef = useRef(onMapClick);
   const editFeatureRef = useRef<string | null>(null);
   const toolRef = useRef<MapTool>('select');
 
@@ -121,6 +125,7 @@ export function MissionMap({
     onDrawnRef.current = onPolygonDrawn;
     onSelectRef.current = onPolygonSelect;
     onEditChangeRef.current = onEditChange;
+    onMapClickRef.current = onMapClick;
     toolRef.current = tool;
   });
 
@@ -159,8 +164,12 @@ export function MissionMap({
       created.on('mouseout', () => setCursor(null));
 
       // Selecting polygons: only with the selection tool, and not while a boundary is being reshaped.
-      const selecting = () => toolRef.current === 'select' && !editFeatureRef.current;
+      const selecting = () => toolRef.current === 'select' && !editFeatureRef.current && !onMapClickRef.current;
       created.on('click', (e) => {
+        if (onMapClickRef.current) {
+          onMapClickRef.current([e.lngLat.lng, e.lngLat.lat]);
+          return;
+        }
         if (!selecting()) return;
         const [hit] = created.queryRenderedFeatures(e.point, { layers: [POLYGON_FILL_LAYER] });
         const id = hit?.properties?.id;
@@ -288,6 +297,14 @@ export function MissionMap({
     const canvas = mapRef.current?.getCanvas();
     if (canvas) canvas.style.cursor = tool === 'polygon' ? 'crosshair' : '';
   }, [ready, tool, editingId]);
+
+  // Placing a point shows a crosshair over the whole map.
+  const placing = !!onMapClick;
+  useEffect(() => {
+    const canvas = mapRef.current?.getCanvas();
+    if (!canvas || !ready || tool !== 'select' || editingId) return;
+    canvas.style.cursor = placing ? 'crosshair' : '';
+  }, [ready, placing, tool, editingId]);
 
   useEffect(() => {
     const map = mapRef.current;

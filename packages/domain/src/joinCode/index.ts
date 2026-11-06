@@ -17,3 +17,24 @@ const JOIN_CODE_PATTERN = new RegExp(`^[${CHARSET}]{2}-[${CHARSET}]{3}$`);
 export function isJoinCode(value: string): boolean {
   return JOIN_CODE_PATTERN.test(value);
 }
+
+/** The path of a join link, after the base address, e.g. `/j/K7-4Q2` (wireframe Cd05). */
+const JOIN_PATH = 'j';
+
+/**
+ * The link a searcher opens or scans to join a mission (decision 6). `base` is where Field answers join links: a web
+ * address in production, or the app's own scheme (`trace-field://`) in development.
+ */
+export function joinLink(base: string, code: string): string {
+  const root = base.endsWith('/') ? base : `${base}/`;
+  return `${root}${JOIN_PATH}/${code}`;
+}
+
+/** The join code in a join link, or null when the text is not one. Accepts a bare code too, as typed by hand. */
+export function joinCodeFromLink(text: string): string | null {
+  const trimmed = text.trim();
+  const code = trimmed.split('/').at(-1)?.toUpperCase() ?? '';
+  const isLink = trimmed.includes('/');
+  if (isLink && trimmed.split('/').at(-2) !== JOIN_PATH) return null;
+  return isJoinCode(code) ? code : null;
+}

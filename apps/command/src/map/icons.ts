@@ -18,10 +18,15 @@ export async function preloadMapIcons(): Promise<void> {
   );
 }
 
-/** Adds Trace symbols on demand; MapLibre fires `styleimagemissing` for each icon a new style references. */
+/**
+ * Adds every Trace symbol as soon as a style loads (a theme switch loads a new one). Adding them only on
+ * `styleimagemissing` left the first point placed on an empty layer invisible until the map's next update.
+ */
 export function registerMapIcons(map: MapLibreMap): void {
-  map.on('styleimagemissing', ({ id }) => {
+  const add = (id: string) => {
     const image = loaded.get(id);
     if (image && !map.hasImage(id)) map.addImage(id, image, { pixelRatio: ICON_PIXEL_RATIO });
-  });
+  };
+  map.on('style.load', () => loaded.forEach((_image, id) => add(id)));
+  map.on('styleimagemissing', ({ id }) => add(id));
 }
