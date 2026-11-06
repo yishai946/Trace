@@ -7,16 +7,16 @@
 #   run re-checks every open issue.
 # With the PROJECT_TOKEN secret (a token with the `project` and `repo` scopes) it also moves board cards between
 # Backlog (blocked) and Ready, to In progress on assignment, back to Ready when the last assignee leaves, and to In
-# review when a Pull Request that closes the issue opens. The scheduled run also copies each card's Priority and Size
-# into `priority: <P>` and `size: <S>` labels, for agents that cannot reach the board (it needs GraphQL, which cloud
-# sessions do not have). Without the secret the board is updated by hand.
+# review when a Pull Request that closes the issue opens or leaves draft. The scheduled run also copies each card's
+# Priority and Size into `priority: <P>` and `size: <S>` labels, for agents that cannot reach the board (it needs
+# GraphQL, which cloud sessions do not have). Without the secret the board is updated by hand.
 name: Issue dependencies
 
 on:
   issues:
     types: [assigned, unassigned, closed, reopened]
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
@@ -198,6 +198,6 @@ jobs:
             }
             if (problems.length > 0) {
               core.setFailed(`This Pull Request closes issues that still have open blockers:\n${problems.join('\n')}`);
-            } else if (['opened', 'reopened'].includes(context.payload.action) && !pr.draft) {
+            } else if (['opened', 'reopened', 'ready_for_review'].includes(context.payload.action) && !pr.draft) {
               for (const n of numbers) await setStatus(n, 'In review', ['Ready', 'In progress']);
             }
