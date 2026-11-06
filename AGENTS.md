@@ -59,3 +59,5 @@ Rules (enforced by ESLint and Stylelint in `apps/**`):
 # Product source of truth
 
 The MVP specification lives in [`docs/Specifications/`](docs/Specifications/) (Hebrew, RTL). Use case IDs (`UC-C*` Command, `UC-F*` Field, `UC-S*` System) and the decision log (`04_TRACE_MVP_Decision_Log_QA_HE.xlsx`) are authoritative. Parameters marked TBD there must not be invented; ask instead.
+
+Read the specification through its Markdown copy in [`docs/Specifications/md/`](docs/Specifications/md/README.md), not the .docx and .xlsx files: `use-cases/<UC-ID>.md` for one use case, `overview.md` for scope, actors, state models, rules and permissions, `state-and-rules.md`, and `decision-log.md` (decision N is the row numbered N). Read only the files the task needs. The .docx and .xlsx files remain the source: after changing one, run `python docs/Specifications/to_markdown.py` and commit the result with it.
