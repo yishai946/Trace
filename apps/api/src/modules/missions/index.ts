@@ -92,7 +92,8 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
           415: ApiError,
         },
       },
-      preHandler: missionAccess(db, 'commander'),
+      // onRequest, not preHandler: refuse outsiders before the server reads up to 5 MB of body.
+      onRequest: missionAccess(db, 'commander'),
       errorHandler: (error) => {
         throw photoUploadError(error);
       },

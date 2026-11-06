@@ -223,6 +223,13 @@ describe('missing person photo', () => {
     expect((await upload(PNG, 'image/png', other)).statusCode).toBe(404);
   });
 
+  it('turns an outsider away before reading the photo', async () => {
+    const other = injectAs(ctx, await signInCommander(ctx));
+    const big = Buffer.concat([PNG, Buffer.alloc(MAX_PHOTO_BYTES)]);
+    // 404, not 413: the access check runs before the body is read.
+    expect((await upload(big, 'image/png', other)).statusCode).toBe(404);
+  });
+
   it('lets the browser keep only the current version of the photo, and never sniff it', async () => {
     const photoUrl = Mission.parse((await upload(PNG, 'image/png')).json()).missingPerson.photoUrl ?? '';
     const current = await inject({ method: 'GET', url: photoUrl });
