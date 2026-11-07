@@ -10,6 +10,7 @@
   },
   "scripts": {
     "generate": "node scripts/generate/index.mjs",
+    "brand-icons": "node scripts/brand-icons/index.mjs",
     "record-sync": "node scripts/record-sync.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"scripts/**/*.test.mjs\""

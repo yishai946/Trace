@@ -4,7 +4,7 @@ import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@ta
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { I18nProvider } from 'react-aria-components';
-import { App } from './App';
+import { Launch } from './App/Launch';
 import { isSignedOutError, signedOut } from './auth';
 import { ThemeProvider } from './theme/theme';
 
@@ -25,7 +25,7 @@ createRoot(root).render(
     <I18nProvider locale="he-IL">
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <Launch />
         </QueryClientProvider>
       </ThemeProvider>
     </I18nProvider>

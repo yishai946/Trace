@@ -1,0 +1,86 @@
+/* Launch splash: soles walk across the screen, then the last one opens into the console. */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--surface-sunken);
+  transition: opacity 150ms ease-out;
+}
+
+.closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The grown sole spills past the picture, so the picture must not clip it. */
+.art {
+  width: min(80vw, 53vh);
+  aspect-ratio: 2 / 3;
+  overflow: visible;
+}
+
+.ink {
+  fill: var(--ink);
+}
+
+.lines {
+  fill: none;
+  stroke: var(--surface-sunken);
+  stroke-linejoin: round;
+}
+
+.peak {
+  fill: var(--warning);
+}
+
+.hole {
+  fill: var(--surface-sunken);
+}
+
+.step {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: step-in var(--fade) ease-out forwards;
+  animation-delay: calc(var(--i) * var(--gap));
+}
+
+/* The forefoot of the last step turns into the console's own background and grows over everything. */
+.grow {
+  fill: var(--map-ground);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: grow var(--open) cubic-bezier(0.7, 0, 0.3, 1) forwards;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes grow {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(60);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step {
+    opacity: 1;
+    animation: none;
+  }
+}
