@@ -1,5 +1,5 @@
 import type { ThemeId } from '@trace/design';
-import { canChangePolygons, isActiveInPolygon } from '@trace/domain';
+import { canChangePolygons, canChangeRallyPoint, isActiveInPolygon } from '@trace/domain';
 import { boundsOf, findOutside, isValidPolygon, type LngLat, type Polygon } from '@trace/geo';
 import { emptyMissionMapData, type MapProvider } from '@trace/map';
 import {
@@ -22,12 +22,21 @@ import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
 import { MissionMap, type MapFocus } from '../map/MissionMap';
 import { PlaceSearch } from '../map/PlaceSearch';
+import type { PlaceMode } from '../map/PlacePicker';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
-import { useMissions, useParticipants, usePolygonMutations, usePolygons } from '../mission/missionQueries';
+import {
+  useMissions,
+  useParticipants,
+  usePolygonMutations,
+  usePolygons,
+  useUpdateRallyPoint,
+} from '../mission/missionQueries';
 import { PolygonInspector } from '../mission/PolygonInspector';
+import { rallyErrorMessage } from '../mission/rallyErrorMessage';
+import { RallyPointPanel } from '../mission/RallyPointPanel';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
 import { MissionsPage } from '../pages/MissionsPage';
@@ -117,10 +126,13 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [creating, setCreating] = useState(false);
   /** The join code, QR and link panel; it opens by itself on a mission just created (UC-C02 step 4). */
   const [joinOpen, setJoinOpen] = useState(false);
+  /** The rally point panel (UC-C05). It shares the panel corner with the join code, so only one is open. */
+  const [rallyOpen, setRallyOpen] = useState(false);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
   const openMission = (id: string | null) => {
     setOpenId(id);
     setJoinOpen(false);
+    setRallyOpen(false);
     setCreatedNotice(null);
   };
   const mission = missions.data?.find((m) => m.id === openId);
@@ -160,6 +172,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             setCreating(false);
             setOpenId(created.id);
             setJoinOpen(true);
+            setRallyOpen(false);
             setCreatedNotice(photoFailed ? 'המסע נוצר, אבל התמונה לא נשמרה.' : null);
           }}
         />
@@ -186,6 +199,9 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           participants={participants.data ?? []}
           themeId={theme}
           online={operational}
+          rallyOpen={rallyOpen}
+          onRallyClose={() => setRallyOpen(false)}
+          onPlaceFound={setFocus}
         />
       )}
 
@@ -218,9 +234,22 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               className={styles.meta}
               aria-expanded={joinOpen}
               aria-label={`קוד הצטרפות ${mission.joinCode}`}
-              onPress={() => setJoinOpen((open) => !open)}
+              onPress={() => {
+                setJoinOpen((open) => !open);
+                setRallyOpen(false);
+              }}
             >
               קוד {mission.joinCode}
+            </AriaButton>
+            <AriaButton
+              className={styles.meta}
+              aria-expanded={rallyOpen}
+              onPress={() => {
+                setRallyOpen((open) => !open);
+                setJoinOpen(false);
+              }}
+            >
+              נקודת כינוס
             </AriaButton>
           </>
         )}
@@ -263,6 +292,11 @@ interface MissionWorkspaceProps {
   themeId: ThemeId;
   /** Without a connection, new operational actions are blocked (UC-C01). */
   online: boolean;
+  /** The rally point panel is open. */
+  rallyOpen: boolean;
+  onRallyClose: () => void;
+  /** The commander searched for a place for the rally point: the map moves there. */
+  onPlaceFound: (focus: MapFocus) => void;
 }
 
 /** The live map of one mission: polygons from the server, drawing, the polygon Inspector and boundary editing. */
@@ -274,8 +308,16 @@ function MissionWorkspace({
   participants,
   themeId,
   online,
+  rallyOpen,
+  onRallyClose,
+  onPlaceFound,
 }: MissionWorkspaceProps) {
   const mutations = usePolygonMutations(mission.id);
+  const rallyUpdate = useUpdateRallyPoint(mission.id);
+  const [rallyMode, setRallyMode] = useState<PlaceMode>('map');
+  const [rallySaved, setRallySaved] = useState(false);
+  const [rallyError, setRallyError] = useState<string | null>(null);
+  const rallyBlocked = !canChangeRallyPoint(mission.status) ? 'ended' : !online ? 'offline' : null;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [edit, setEdit] = useState<BoundaryEdit | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -318,6 +360,15 @@ function MissionWorkspace({
       return p ? [{ callsign: p.callsign, name: p.name, meters }] : [];
     });
   }, [edit, participants]);
+
+  const changeRally = (point: LngLat) => {
+    setRallySaved(false);
+    setRallyError(null);
+    rallyUpdate.mutate(point, {
+      onSuccess: () => setRallySaved(true),
+      onError: (e) => setRallyError(rallyErrorMessage(e)),
+    });
+  };
 
   const select = (polygonId: string | null) => {
     setSelectedId(polygonId);
@@ -384,6 +435,9 @@ function MissionWorkspace({
         data={mapData}
         initialView={initialView}
         focus={focus}
+        onMapClick={
+          rallyOpen && rallyMode === 'map' && !rallyBlocked && !rallyUpdate.isPending ? changeRally : undefined
+        }
         onPolygonDrawn={canEdit ? create : undefined}
         onPolygonSelect={select}
         editing={edit ? { polygonId: edit.polygonId, geometry: edit.original } : null}
@@ -392,6 +446,24 @@ function MissionWorkspace({
           if (draft.success) setEdit((e) => (e ? { ...e, draft: draft.data, serverOutside: null } : e));
         }}
       />
+
+      {rallyOpen && (
+        <div className={styles.rallyPanel}>
+          <RallyPointPanel
+            provider={provider}
+            point={mission.rallyPoint.coordinates}
+            mode={rallyMode}
+            onModeChange={setRallyMode}
+            onChange={changeRally}
+            onPlaceFound={(place) => onPlaceFound({ center: place.center, bounds: place.bounds })}
+            busy={rallyUpdate.isPending}
+            error={rallyError}
+            saved={rallySaved}
+            blocked={rallyBlocked}
+            onClose={onRallyClose}
+          />
+        </div>
+      )}
 
       {selected && !edit && (
         <div className={styles.inspector}>
