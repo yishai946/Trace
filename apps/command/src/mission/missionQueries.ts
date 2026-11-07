@@ -8,6 +8,7 @@ import {
   type CreatePolygonBody,
   type UpdatePolygonBody,
 } from '@trace/schemas';
+import type { LngLat } from '@trace/geo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../api';
 
@@ -90,4 +91,23 @@ export function usePolygonMutations(missionId: string) {
       onSuccess,
     }),
   };
+}
+
+/** Moves the mission's rally point (UC-C05). The saved mission replaces the cached one at once. */
+export function useUpdateRallyPoint(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (coordinates: LngLat) =>
+      apiRequest(`/missions/${missionId}/rally-point`, {
+        method: 'PUT',
+        body: { rallyPoint: { type: 'Point', coordinates } },
+        schema: Mission,
+      }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === mission.id ? mission : m)),
+      );
+      return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    },
+  });
 }
