@@ -226,6 +226,32 @@ describe('sightings', () => {
       expect(new Date((await getMissionLkp())?.observedAt ?? '').getTime()).toBe(new Date(b.observedAt).getTime());
     });
 
+    it('stamps rows when the mission lock is taken, not when the request started', async () => {
+      const a = await add({ observedAt: '2026-10-03T14:22:00+03:00' });
+      let releasedAt = 0;
+      let release!: () => void;
+      const held = new Promise<void>((resolve) => (release = resolve));
+      let locked!: () => void;
+      const lockTaken = new Promise<void>((resolve) => (locked = resolve));
+      const holder = ctx.db.transaction(async (tx) => {
+        await tx.select({ id: missions.id }).from(missions).where(eq(missions.id, missionId)).for('update');
+        locked();
+        await held;
+        releasedAt = Date.now();
+      });
+      await lockTaken;
+      const waiting = Promise.all([decide(a.id, 'accepted'), post(body())]);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      release();
+      await holder;
+      const [decided, created] = await waiting;
+      expect(decided.statusCode).toBe(200);
+      expect(created.statusCode).toBe(201);
+      const [current] = await getLkps();
+      expect(new Date(current?.createdAt ?? '').getTime()).toBeGreaterThanOrEqual(releasedAt);
+      expect(new Date(Sighting.parse(created.json()).createdAt).getTime()).toBeGreaterThanOrEqual(releasedAt);
+    });
+
     it('records who set the LKP created with the mission', async () => {
       const lkps = await getLkps();
       expect(lkps).toHaveLength(1);

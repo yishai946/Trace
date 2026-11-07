@@ -84,6 +84,13 @@ async function currentLkp(db: Db | Tx, missionId: string): Promise<CurrentLkp | 
   return row;
 }
 
+/**
+ * The time a row is stamped inside the mission lock. `now()` is the transaction's start, so a request that started
+ * earlier but got the lock later would look older; `clock_timestamp()` is read after the lock is held, so the stamps
+ * follow the order the changes were committed. "Newest created_at" is the current LKP and orders sighting numbers.
+ */
+const lockedAt = sql<Date>`clock_timestamp()`;
+
 /** Locks the mission row so concurrent LKP changes in one mission run one after another. */
 async function lockMission(tx: Tx, missionId: string) {
   const [mission] = await tx
@@ -130,6 +137,7 @@ export async function createSighting(db: Db, input: CreateSightingInput): Promis
         position: input.position,
         observedAt: new Date(input.observedAt),
         description: input.description,
+        createdAt: lockedAt,
       })
       .returning({ id: sightings.id });
     if (!created) throw new Error('Sighting insert returned no row');
@@ -169,6 +177,7 @@ export async function decideLkp(
         observedAt: found.observedAt,
         sightingId: found.id,
         setBy: input.userId,
+        createdAt: lockedAt,
       });
     }
     const lkp = await currentLkp(tx, input.missionId);
