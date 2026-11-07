@@ -1,4 +1,5 @@
-import { eq, sql } from 'drizzle-orm';
+import { SearcherProfile } from '@trace/schemas';
+import { sql } from 'drizzle-orm';
 import type { InjectOptions } from 'fastify';
 import { buildApp } from '../app';
 import { createCommander } from '../auth';
@@ -12,12 +13,15 @@ export async function createTestApp() {
   const database = createDb(TEST_DATABASE_URL);
   /** The last sign-in code sent to each phone number. */
   const sentCodes = new Map<string, string>();
+  /** Every sign-in code sent, in order. */
+  const sentOtps: { phoneNumber: string; code: string }[] = [];
   const { app, auth, realtime } = await buildApp({
     env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL }),
     db: database.db,
     realtimeRevalidateMs: 100,
     sendOtp: async ({ phoneNumber, code }) => {
       sentCodes.set(phoneNumber, code);
+      sentOtps.push({ phoneNumber, code });
     },
   });
   return {
@@ -26,6 +30,7 @@ export async function createTestApp() {
     realtime,
     db: database.db,
     sentCodes,
+    sentOtps,
     close: async () => {
       await app.close();
       await database.close();
@@ -38,7 +43,7 @@ export type TestContext = Awaited<ReturnType<typeof createTestApp>>;
 /** Empties every table between tests. */
 export async function resetDb(db: Db) {
   await db.execute(
-    sql`truncate missions, lkp_points, polygons, searchers, participations, users, sessions, accounts, verifications restart identity cascade`,
+    sql`truncate missions, lkp_points, polygons, searchers, participations, users, sessions, accounts, verifications, otp_requests restart identity cascade`,
   );
 }
 
@@ -67,24 +72,48 @@ export async function signInCommander(ctx: TestContext): Promise<TestUser> {
   return { userId, headers: { cookie: cookiesFrom(res.headers['set-cookie']) } };
 }
 
-/** Signs a searcher in with a phone OTP, as Field does. Requests carry the session token as a bearer token. */
-export async function signInSearcher(ctx: TestContext): Promise<TestUser & { searcherId: string }> {
-  const phoneNumber = `+97252${String(next()).padStart(7, '0')}`;
-  await ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/send-otp', payload: { phoneNumber } });
+/** Asks for a sign-in code, as Field does. */
+export const requestOtp = (ctx: TestContext, phoneNumber: string) =>
+  ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/send-otp', payload: { phoneNumber } });
+
+/** Sends the code the searcher received. */
+export const verifyOtp = (ctx: TestContext, phoneNumber: string, code: string) =>
+  ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/verify', payload: { phoneNumber, code } });
+
+const nextPhoneNumber = () => `+97252${String(next()).padStart(7, '0')}`;
+
+/**
+ * Signs in by phone OTP, as Field does. Requests carry the session token as a bearer token. The searcher has no
+ * profile until they enter a name (`signInSearcher` does that too).
+ */
+export async function signInByPhone(
+  ctx: TestContext,
+  phoneNumber: string = nextPhoneNumber(),
+): Promise<TestUser & { token: string; phoneNumber: string }> {
+  const sent = await requestOtp(ctx, phoneNumber);
+  if (sent.statusCode !== 200) throw new Error(`Requesting a sign-in code failed: ${sent.statusCode} ${sent.body}`);
   const code = ctx.sentCodes.get(phoneNumber);
   if (!code) throw new Error('No sign-in code was sent');
-  const res = await ctx.app.inject({
-    method: 'POST',
-    url: '/api/auth/phone-number/verify',
-    payload: { phoneNumber, code },
-  });
+  const res = await verifyOtp(ctx, phoneNumber, code);
   const body = res.json<{ token?: string; user?: { id: string } }>();
   if (res.statusCode !== 200 || !body.token || !body.user) throw new Error(`Searcher sign-in failed: ${res.body}`);
+  return { userId: body.user.id, token: body.token, phoneNumber, headers: { authorization: `Bearer ${body.token}` } };
+}
 
-  const [profile] = await ctx.db.select({ id: searchers.id }).from(searchers).where(eq(searchers.userId, body.user.id));
-  if (!profile) throw new Error('Sign-in created no searcher profile');
-  const searcherId = profile.id;
-  return { userId: body.user.id, searcherId, headers: { authorization: `Bearer ${body.token}` } };
+/** Signs a searcher in by phone and enters their name, as Field does on first sign-in. */
+export async function signInSearcher(
+  ctx: TestContext,
+  options: { phoneNumber?: string; name?: string } = {},
+): Promise<TestUser & { searcherId: string }> {
+  const user = await signInByPhone(ctx, options.phoneNumber);
+  const res = await ctx.app.inject({
+    method: 'PUT',
+    url: '/api/searchers/me',
+    headers: user.headers,
+    payload: { name: options.name ?? `מחפש ${next()}` },
+  });
+  if (res.statusCode !== 200) throw new Error(`Entering the searcher name failed: ${res.statusCode} ${res.body}`);
+  return { userId: user.userId, headers: user.headers, searcherId: SearcherProfile.parse(res.json()).id };
 }
 
 /** `app.inject` on behalf of a signed-in user. */
