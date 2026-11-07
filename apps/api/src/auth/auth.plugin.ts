@@ -15,6 +15,8 @@ export type Actor =
 declare module 'fastify' {
   interface FastifyRequest {
     actor: Actor | null;
+    /** The Better Auth session the request signed in with. */
+    sessionId: string | null;
   }
 }
 
@@ -22,6 +24,12 @@ declare module 'fastify' {
 export function actorOf(request: FastifyRequest): Actor {
   if (!request.actor) throw unauthenticated();
   return request.actor;
+}
+
+/** The id of the session the request signed in with. Use inside `authenticated` routes, where it is always set. */
+export function sessionIdOf(request: FastifyRequest): string {
+  if (!request.sessionId) throw unauthenticated();
+  return request.sessionId;
 }
 
 /** Serves Better Auth's own endpoints (sign-in, OTP, sign-out, session) under /api/auth. */
@@ -49,14 +57,14 @@ export const authRoutes: FastifyPluginAsync<{ auth: Auth }> = async (app, { auth
 export async function resolveSession(
   { auth, db }: { auth: Auth; db: Db },
   headers: Headers,
-): Promise<{ actor: Actor; expiresAt: Date } | null> {
+): Promise<{ actor: Actor; sessionId: string; expiresAt: Date } | null> {
   const result = await auth.api.getSession({ headers });
   if (!result) return null;
   const { id: userId, role } = result.user;
-  const { expiresAt } = result.session;
-  if (role === 'commander') return { actor: { role, userId }, expiresAt };
+  const { expiresAt, id: sessionId } = result.session;
+  if (role === 'commander') return { actor: { role, userId }, sessionId, expiresAt };
   const [profile] = await db.select({ id: searchers.id }).from(searchers).where(eq(searchers.userId, userId));
-  return { actor: { role: 'searcher', userId, searcherId: profile?.id ?? null }, expiresAt };
+  return { actor: { role: 'searcher', userId, searcherId: profile?.id ?? null }, sessionId, expiresAt };
 }
 
 /**
@@ -65,9 +73,11 @@ export async function resolveSession(
  */
 export function requireSignIn(app: FastifyInstance, options: { auth: Auth; db: Db }) {
   app.decorateRequest('actor', null);
+  app.decorateRequest('sessionId', null);
   app.addHook('onRequest', async (request) => {
     const session = await resolveSession(options, fromNodeHeaders(request.headers));
     if (!session) throw unauthenticated();
     request.actor = session.actor;
+    request.sessionId = session.sessionId;
   });
 }
