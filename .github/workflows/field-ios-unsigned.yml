@@ -3,6 +3,12 @@ name: Field iOS unsigned IPA
 # Builds an unsigned .ipa for Sideloadly (free Apple ID, re-signed every 7 days).
 on:
   workflow_dispatch:
+    inputs:
+      configuration:
+        description: Debug includes the dev client (Fast Refresh with expo start --dev-client); Release embeds the JS
+        type: choice
+        options: [Release, Debug]
+        default: Release
 
 jobs:
   build:
@@ -34,7 +40,7 @@ jobs:
           WORKSPACE=$(ls -d *.xcworkspace | head -n 1)
           SCHEME="${WORKSPACE%.xcworkspace}"
           xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" \
-            -configuration Release -sdk iphoneos -derivedDataPath build \
+            -configuration ${{ inputs.configuration }} -sdk iphoneos -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build
 
@@ -42,11 +48,11 @@ jobs:
         working-directory: apps/field/ios
         run: |
           mkdir Payload
-          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
+          cp -R build/Build/Products/${{ inputs.configuration }}-iphoneos/*.app Payload/
           zip -qry TraceField.ipa Payload
 
       - uses: actions/upload-artifact@v4
         with:
-          name: TraceField-unsigned-ipa
+          name: TraceField-${{ inputs.configuration }}-unsigned-ipa
           path: apps/field/ios/TraceField.ipa
           retention-days: 7
