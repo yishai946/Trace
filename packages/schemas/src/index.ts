@@ -3,6 +3,7 @@ export * from './errors';
 export * from './geo';
 export * from './health';
 export * from './missions';
+export * from './notifications';
 export * from './participants';
 export * from './polygons';
 export * from './realtime';

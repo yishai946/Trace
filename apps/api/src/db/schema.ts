@@ -204,3 +204,21 @@ export const participations = pgTable(
       .where(sql`${t.status} = 'assigned'`),
   ],
 );
+
+/** An Expo push token of a searcher's device, registered by the session signed in on it. Signing out deletes it. */
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    token: text().notNull().unique(),
+    searcherId: uuid('searcher_id')
+      .notNull()
+      .references(() => searchers.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id')
+      .notNull()
+      .unique()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
+    ...timestamps,
+  },
+  (t) => [index('push_tokens_searcher_idx').on(t.searcherId)],
+);
