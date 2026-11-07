@@ -66,7 +66,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs }: AppOp
       await api.register(authRoutes, { auth });
       await api.register(async (signedIn) => {
         requireSignIn(signedIn, { auth, db });
-        await signedIn.register(missionRoutes, { db });
+        await signedIn.register(missionRoutes, { db, realtime });
         await signedIn.register(polygonRoutes, { db, realtime });
         await signedIn.register(participantRoutes, { db });
       });
