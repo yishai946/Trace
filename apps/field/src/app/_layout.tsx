@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Splash } from '../components/Splash';
 import { applyDocumentDirection } from '../i18n/rtl';
 import { ThemeProvider, useTheme } from '../theme';
 
@@ -10,12 +11,21 @@ const queryClient = new QueryClient();
 
 function ThemedStack() {
   const { themeId, theme } = useTheme();
+  const [splashDone, setSplashDone] = useState(false);
   return (
     <>
       <StatusBar style={themeId === 'night' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.surface } }}>
-        <Stack.Screen name="report" options={{ presentation: 'modal' }} />
-      </Stack>
+      {/* Hidden from VoiceOver and TalkBack while the splash covers it, so nothing behind it can be focused. */}
+      <View
+        style={styles.stack}
+        accessibilityElementsHidden={!splashDone}
+        importantForAccessibility={splashDone ? 'auto' : 'no-hide-descendants'}
+      >
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.surface } }}>
+          <Stack.Screen name="report" options={{ presentation: 'modal' }} />
+        </Stack>
+      </View>
+      {!splashDone && <Splash onDone={() => setSplashDone(true)} />}
     </>
   );
 }
@@ -33,3 +43,7 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  stack: { flex: 1 },
+});
