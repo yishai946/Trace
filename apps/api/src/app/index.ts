@@ -18,6 +18,7 @@ import { healthRoutes } from '../modules/health/routes';
 import { missionRoutes } from '../modules/missions';
 import { participantRoutes } from '../modules/participants';
 import { polygonRoutes } from '../modules/polygons';
+import { searcherRoutes } from '../modules/searchers';
 import { createRealtime } from '../realtime';
 
 const VERSION = '0.1.0';
@@ -69,6 +70,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs }: AppOp
         await signedIn.register(missionRoutes, { db });
         await signedIn.register(polygonRoutes, { db, realtime });
         await signedIn.register(participantRoutes, { db });
+        await signedIn.register(searcherRoutes, { db });
       });
     },
     { prefix: '/api' },
