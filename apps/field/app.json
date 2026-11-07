@@ -7,7 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yishai946.tracefield",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,7 +33,26 @@
           "forcesRTL": true
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-dev-client",
+      [
+        "expo-location",
+        {
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "TRACE משתמשת במיקום שלך, גם ברקע, כדי לרשום את המסלול ולשלוח SOS.",
+          "locationWhenInUsePermission": "TRACE משתמשת במיקום שלך כדי להציג אותך על המפה."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "TRACE משתמשת במצלמה לסריקת QR ולצילום תמונה לדיווח.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "scheme": "trace-field"
   }
