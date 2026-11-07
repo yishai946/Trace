@@ -41,13 +41,21 @@
   font: var(--text-meta);
 }
 
-/* The sightings list scrolls inside the panel. */
+/* Under the head the panel scrolls as one: a long history never hides the sightings or the add form. */
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .sightings {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  min-height: 0;
-  overflow-y: auto;
+}
+
+.nowrap {
+  white-space: nowrap;
 }
 
 .titleRow {

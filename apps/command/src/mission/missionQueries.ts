@@ -14,7 +14,14 @@ import {
   type LkpDecision,
   type UpdatePolygonBody,
 } from '@trace/schemas';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type MutateOptions,
+  type UseMutationResult,
+} from '@tanstack/react-query';
+import { useRef } from 'react';
 import { apiRequest } from '../api';
 
 export const missionKeys = {
@@ -122,34 +129,51 @@ export function useSightingMutations(missionId: string) {
   const queryClient = useQueryClient();
   const base = `/missions/${missionId}/sightings`;
 
-  return {
-    create: useMutation({
-      mutationFn: (body: CreateSightingBody) => apiRequest(base, { method: 'POST', body, schema: Sighting }),
-      onSuccess: (sighting) => {
-        // It shows on the map at once (decision 62), before the list is fetched again.
-        queryClient.setQueryData<Sighting[]>(missionKeys.sightings(missionId), (list) =>
-          list && !list.some((s) => s.id === sighting.id) ? [...list, sighting] : list,
-        );
-        return queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) });
-      },
-    }),
-    decide: useMutation({
-      mutationFn: ({ sightingId, decision }: { sightingId: string; decision: LkpDecision }) =>
-        apiRequest(`${base}/${sightingId}/lkp-decision`, {
-          method: 'PUT',
-          body: { decision },
-          schema: LkpDecisionResult,
-        }),
-      onSuccess: ({ lkp }) => {
-        queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
-          list?.map((m) => (m.id === missionId ? { ...m, lkp } : m)),
-        );
-        // Other sightings may stop being candidates, so the server's answer replaces the cached list.
-        return Promise.all([
-          queryClient.invalidateQueries({ queryKey: missionKeys.lkps(missionId) }),
-          queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) }),
-        ]);
-      },
-    }),
-  };
+  const create = useMutation({
+    mutationFn: (body: CreateSightingBody) => apiRequest(base, { method: 'POST', body, schema: Sighting }),
+    onSuccess: (sighting) => {
+      // It shows on the map at once (decision 62), before the list is fetched again.
+      queryClient.setQueryData<Sighting[]>(missionKeys.sightings(missionId), (list) =>
+        list && !list.some((s) => s.id === sighting.id) ? [...list, sighting] : list,
+      );
+      return queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) });
+    },
+  });
+  const decide = useMutation({
+    mutationFn: ({ sightingId, decision }: { sightingId: string; decision: LkpDecision }) =>
+      apiRequest(`${base}/${sightingId}/lkp-decision`, {
+        method: 'PUT',
+        body: { decision },
+        schema: LkpDecisionResult,
+      }),
+    onSuccess: ({ lkp }) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === missionId ? { ...m, lkp } : m)),
+      );
+      // Other sightings may stop being candidates, so the server's answer replaces the cached list.
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: missionKeys.lkps(missionId) }),
+        queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) }),
+      ]);
+    },
+  });
+
+  // The mutations' own `isPending` lags a render behind a click, so a quick second click would send the request twice
+  // (and the second one would fail). One request at a time runs; a start while another is running is dropped.
+  const inFlight = useRef(false);
+  const once =
+    <D, V>(mutation: UseMutationResult<D, Error, V>) =>
+    (variables: V, options?: MutateOptions<D, Error, V>) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      mutation.mutate(variables, {
+        ...options,
+        onSettled: (...args) => {
+          inFlight.current = false;
+          options?.onSettled?.(...args);
+        },
+      });
+    };
+
+  return { create: once(create), decide: once(decide), isPending: create.isPending || decide.isPending };
 }

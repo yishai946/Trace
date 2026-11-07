@@ -18,10 +18,12 @@ interface AddSightingFormProps {
   busy: boolean;
   onSubmit: (body: CreateSightingBody) => void;
   onCancel: () => void;
+  /** A field changed. */
+  onEdit: () => void;
 }
 
 /** The add-sighting form (decision 61): source, location from the map, time and a short description. */
-export function AddSightingForm({ position, busy, onSubmit, onCancel }: AddSightingFormProps) {
+export function AddSightingForm({ position, busy, onSubmit, onCancel, onEdit }: AddSightingFormProps) {
   const [source, setSource] = useState<SightingSource | null>(null);
   const [observedAt, setObservedAt] = useState(nowLocal);
   const [description, setDescription] = useState('');
@@ -48,7 +50,10 @@ export function AddSightingForm({ position, busy, onSubmit, onCancel }: AddSight
         className={styles.formField}
         orientation="horizontal"
         value={source}
-        onChange={(value) => setSource(value as SightingSource)}
+        onChange={(value) => {
+          setSource(value as SightingSource);
+          onEdit();
+        }}
         isInvalid={!!errors.source && !source}
       >
         <Label className={styles.label}>מקור</Label>
@@ -85,14 +90,31 @@ export function AddSightingForm({ position, busy, onSubmit, onCancel }: AddSight
         </p>
       )}
 
-      <DateTimeField label="זמן התצפית" value={observedAt} onChange={setObservedAt} isInvalid={!!errors.observedAt} />
+      <DateTimeField
+        label="זמן התצפית"
+        value={observedAt}
+        onChange={(value) => {
+          setObservedAt(value);
+          onEdit();
+        }}
+        isInvalid={!!errors.observedAt}
+      />
       {errors.observedAt && !observedAt && (
         <p role="alert" className={styles.error}>
           {errors.observedAt}
         </p>
       )}
 
-      <TextField label="תיאור קצר" value={description} onChange={setDescription} rows={3} maxLength={2000} />
+      <TextField
+        label="תיאור קצר"
+        value={description}
+        onChange={(value) => {
+          setDescription(value);
+          onEdit();
+        }}
+        rows={3}
+        maxLength={2000}
+      />
 
       <div className={styles.row}>
         <Button type="submit" variant="primary" isDisabled={busy}>

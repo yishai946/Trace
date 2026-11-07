@@ -16,7 +16,7 @@ import {
   type SessionUser,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
@@ -403,10 +403,20 @@ function MissionWorkspace({
     setAdding({ position: null });
   };
 
+  // Escape leaves add-sighting mode, unless a field or the map already used it.
+  useEffect(() => {
+    if (!adding) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) setAdding(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [adding]);
+
   const selectPoint = (target: PointTarget) => openLkpPanel(target.kind === 'sighting' ? target.id : null);
 
   const submitSighting = (body: CreateSightingBody) => {
-    sightingMutations.create.mutate(body, {
+    sightingMutations.create(body, {
       onSuccess: (created) => {
         setAdding(null);
         setSelectedSightingId(created.id);
@@ -417,7 +427,7 @@ function MissionWorkspace({
   };
 
   const decide = (sightingId: string, decision: LkpDecision) => {
-    sightingMutations.decide.mutate(
+    sightingMutations.decide(
       { sightingId, decision },
       { onSuccess: () => setSightingError(null), onError: (e) => setSightingError(sightingErrorMessage(e)) },
     );
@@ -530,13 +540,14 @@ function MissionWorkspace({
             loading={sightingsLoading}
             loadFailed={sightingsFailed}
             canChange={canChangeSightings}
-            busy={sightingMutations.create.isPending || sightingMutations.decide.isPending}
+            busy={sightingMutations.isPending}
             error={sightingError}
             selectedSightingId={selectedSightingId}
             adding={adding}
             onRetry={onRetrySightings}
             onStartAdd={toggleAddSighting}
             onCancelAdd={() => setAdding(null)}
+            onEdit={() => setSightingError(null)}
             onSubmit={submitSighting}
             onDecide={decide}
             onClose={() => {

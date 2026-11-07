@@ -10,6 +10,7 @@ const handlers = () => ({
   onSubmit: vi.fn(),
   onDecide: vi.fn(),
   onClose: vi.fn(),
+  onEdit: vi.fn(),
 });
 
 type Props = Partial<Parameters<typeof LkpPanel>[0]>;
@@ -49,7 +50,8 @@ describe('LkpPanel', () => {
   it('lists past LKPs with their time', () => {
     renderPanel();
     const history = screen.getByRole('list', { name: 'היסטוריה' });
-    expect(within(history).getByText('LKP קודם, 31.7398, 35.1398')).toBeTruthy();
+    // The coordinates read left to right inside the right-to-left sentence.
+    expect(within(history).getByText('31.7398, 35.1398').getAttribute('dir')).toBe('ltr');
     expect(within(history).getByText('12:10')).toBeTruthy();
   });
 
@@ -61,7 +63,14 @@ describe('LkpPanel', () => {
   it('suggests the candidate sighting, and approving or rejecting calls back', () => {
     const h = renderPanel();
     expect(screen.getByText('הצעת TRACE')).toBeTruthy();
-    expect(screen.getByText('תצפית 1 (עד ראייה, 14:22) מאוחרת מה-LKP הנוכחי. להפוך אותה ל-LKP?')).toBeTruthy();
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.tagName === 'P' && el.textContent === 'תצפית 1 (עד ראייה, 14:22) מאוחרת מה-LKP הנוכחי. להפוך אותה ל-LKP?',
+      ),
+    ).toBeTruthy();
+    // The Latin word is isolated and stays with its Hebrew prefix.
+    expect(document.querySelectorAll('p bdi')).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'אשר' }));
     expect(h.onDecide).toHaveBeenCalledWith(sightingA.id, 'accepted');
     fireEvent.click(screen.getByRole('button', { name: 'דחה' }));
@@ -77,7 +86,7 @@ describe('LkpPanel', () => {
   it('marks a candidate row, and a rejected row has no promote button', () => {
     const h = renderPanel();
     const [first, second] = screen.getAllByRole('listitem').filter((li) => li.closest('[aria-label="תצפיות"]'));
-    expect(within(first!).getByText('מוצע כ-LKP')).toBeTruthy();
+    expect(within(first!).getByText((_, el) => el?.textContent === 'מוצע כ-LKP' && el.tagName === 'SPAN')).toBeTruthy();
     expect(within(first!).getByText('עד ראייה')).toBeTruthy();
     expect(within(first!).getByText('מטייל ראה אדם עם כובע אפור')).toBeTruthy();
     fireEvent.click(within(first!).getByRole('button', { name: 'הפוך ל-LKP' }));
@@ -175,10 +184,26 @@ describe('LkpPanel', () => {
       });
     });
 
+    it('tells the app when a field is edited, so an old error can go', () => {
+      const h = renderPanel({ adding: { position: null } });
+      fireEvent.click(screen.getByRole('radio', { name: 'עד ראייה' }));
+      expect(h.onEdit).toHaveBeenCalledTimes(1);
+      fireEvent.change(screen.getByLabelText('תיאור קצר'), { target: { value: 'כובע' } });
+      expect(h.onEdit).toHaveBeenCalledTimes(2);
+    });
+
     it('cancels', () => {
       const h = renderPanel({ adding: { position: null } });
       fireEvent.click(screen.getByRole('button', { name: 'בטל' }));
       expect(h.onCancelAdd).toHaveBeenCalledOnce();
     });
+  });
+
+  it('keeps the sightings list and the add form in the same scrolling body as a long history', () => {
+    const many = Array.from({ length: 20 }, (_, i) => ({ ...lkps[1]!, id: `old-${i}`, current: false }));
+    renderPanel({ lkps: [lkps[0]!, ...many], adding: { position: null } });
+    const body = screen.getByTestId('lkp-panel-body');
+    expect(within(body).getByRole('list', { name: 'היסטוריה' })).toBeTruthy();
+    expect(within(body).getByRole('button', { name: 'שמור תצפית' })).toBeTruthy();
   });
 });
