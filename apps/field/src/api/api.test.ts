@@ -1,0 +1,57 @@
+import { MissionPolygonList } from '@trace/schemas';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { apiRequest, ApiRequestError } from '.';
+
+const json = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('apiRequest', () => {
+  it('calls the API with the searcher token and validates the response', async () => {
+    const fetch = vi.fn().mockResolvedValue(json(200, []));
+    vi.stubGlobal('fetch', fetch);
+
+    await expect(
+      apiRequest('/missions/m1/polygons', { baseUrl: 'https://api.test', token: 't1', schema: MissionPolygonList }),
+    ).resolves.toEqual([]);
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.test/api/missions/m1/polygons',
+      expect.objectContaining({ method: 'GET', headers: { authorization: 'Bearer t1' } }),
+    );
+  });
+
+  it('sends no authorization header before sign-in', async () => {
+    const fetch = vi.fn().mockResolvedValue(json(200, []));
+    vi.stubGlobal('fetch', fetch);
+
+    await apiRequest('/health', { baseUrl: 'https://api.test', token: null });
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ headers: {} });
+  });
+
+  it('turns the shared error shape into an ApiRequestError', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(json(404, { error: { code: 'NOT_FOUND', message: 'Mission not found' } })),
+    );
+
+    const error = await apiRequest('/missions/x', { baseUrl: 'https://api.test', token: 't1' }).catch((e) => e);
+    expect(error).toBeInstanceOf(ApiRequestError);
+    expect(error).toMatchObject({ status: 404, code: 'NOT_FOUND' });
+  });
+
+  it('reports an unreachable server as a network error', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network request failed')));
+
+    await expect(apiRequest('/health', { baseUrl: 'https://api.test', token: null })).rejects.toMatchObject({
+      code: 'NETWORK_ERROR',
+    });
+  });
+
+  it('fails clearly when the API address is not configured', async () => {
+    await expect(apiRequest('/health', { baseUrl: undefined, token: null })).rejects.toMatchObject({
+      code: 'NETWORK_ERROR',
+      message: 'EXPO_PUBLIC_API_URL is not set',
+    });
+  });
+});

@@ -1,0 +1,65 @@
+import { ApiError, type ErrorCode } from '@trace/schemas';
+import type { z } from 'zod';
+
+/** The TRACE API address, e.g. `http://192.168.1.20:3001` in development. Set in `apps/field/.env.local`. */
+export const apiBaseUrl: string | undefined = process.env.EXPO_PUBLIC_API_URL?.trim() || undefined;
+
+/** A failed API call. `code` and `details` come from the server's shared error shape. */
+export class ApiRequestError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: ErrorCode | 'NETWORK_ERROR',
+    message: string,
+    readonly details?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+interface RequestOptions<S extends z.ZodType> {
+  baseUrl: string | undefined;
+  /** The searcher's session token; null before sign-in. */
+  token: string | null;
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** Sent as JSON. */
+  body?: unknown;
+  /** Validates the response. Omit for responses without a body. */
+  schema?: S;
+  signal?: AbortSignal;
+}
+
+/** Calls the TRACE API with the searcher's bearer token and validates the response with the shared zod schema. */
+export async function apiRequest<S extends z.ZodType>(
+  path: string,
+  { baseUrl, token, method = 'GET', body, schema, signal }: RequestOptions<S>,
+): Promise<z.infer<S>> {
+  if (!baseUrl) throw new ApiRequestError(0, 'NETWORK_ERROR', 'EXPO_PUBLIC_API_URL is not set');
+
+  const headers: Record<string, string> = {};
+  if (token) headers.authorization = `Bearer ${token}`;
+  if (body !== undefined) headers['content-type'] = 'application/json';
+
+  let res: Response;
+  try {
+    res = await fetch(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
+      method,
+      signal,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw new ApiRequestError(0, 'NETWORK_ERROR', 'The server is not reachable');
+  }
+
+  if (!res.ok) {
+    const parsed = ApiError.safeParse(await res.json().catch(() => null));
+    if (parsed.success) {
+      const { code, message, details } = parsed.data.error;
+      throw new ApiRequestError(res.status, code, message, details);
+    }
+    throw new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`);
+  }
+  return (schema ? schema.parse(await res.json()) : undefined) as z.infer<S>;
+}

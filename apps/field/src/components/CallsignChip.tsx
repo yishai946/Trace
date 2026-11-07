@@ -1,7 +1,8 @@
 import { radius, spacing, typography } from '@trace/design';
 import { formatCallsign } from '@trace/domain';
 import { StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '../theme/theme';
+import { useTheme } from '../theme';
+import { pendingTokens } from '../theme/pending';
 
 /** Trace Console CallsignChip: the searcher's two-digit number, identical across Command and Field. */
 export function CallsignChip({ callsign, sos = false }: { callsign: number; sos?: boolean }) {
@@ -15,8 +16,8 @@ export function CallsignChip({ callsign, sos = false }: { callsign: number; sos?
 
 const styles = StyleSheet.create({
   chip: {
-    minWidth: 26,
-    height: 20,
+    minWidth: pendingTokens.callsignMinW,
+    height: pendingTokens.callsignH,
     paddingHorizontal: spacing.space2,
     borderRadius: radius.radiusSm,
     alignItems: 'center',

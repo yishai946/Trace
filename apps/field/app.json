@@ -28,7 +28,8 @@
         {
           "forcesRTL": true
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "scheme": "trace-field"
   }
