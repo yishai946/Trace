@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
-import { LngLat } from './geo';
+import { LngLat, PointGeometry } from './geo';
 import { MissionPolygon } from './polygons';
 
 /**
@@ -26,6 +26,17 @@ const PolygonSaved = z.object({ type: z.literal('polygon.saved'), missionId: z.u
 const PolygonDeleted = z.object({ type: z.literal('polygon.deleted'), missionId: z.uuid(), polygonId: z.uuid() });
 
 /**
+ * The commander moved the rally point (UC-C05). Every member of the mission gets it; a searcher who is offline gets the
+ * new point from `GET /missions/:id` when they reconnect (decision 92).
+ */
+const RallyChanged = z.object({
+  type: z.literal('rally.changed'),
+  missionId: z.uuid(),
+  rallyPoint: PointGeometry,
+  updatedAt: z.iso.datetime({ offset: true }),
+});
+
+/**
  * A searcher reported a position. Only the mission's commander and that searcher get it: searchers do not see each
  * other's positions (decision 32).
  */
@@ -39,7 +50,7 @@ const ParticipantMoved = z.object({
 });
 
 /** Every event the server sends about a mission, on the `mission:event` channel. */
-export const MissionEvent = z.discriminatedUnion('type', [PolygonSaved, PolygonDeleted, ParticipantMoved]);
+export const MissionEvent = z.discriminatedUnion('type', [PolygonSaved, PolygonDeleted, RallyChanged, ParticipantMoved]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */
 export interface ServerToClientEvents {
