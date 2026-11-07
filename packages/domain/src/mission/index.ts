@@ -10,3 +10,8 @@ export function isMissionEnded(status: MissionStatus): boolean {
 export function canChangePolygons(status: MissionStatus): boolean {
   return status === 'active';
 }
+
+/** LKP and sightings can change while the mission is active or paused; an ended mission is read-only (spec §6). */
+export function canChangeLkp(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
