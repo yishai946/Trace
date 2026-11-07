@@ -38,8 +38,12 @@ function roomsFor(actor: Actor, missionId: string): string[] {
   return actor.searcherId ? [membersRoom(missionId), searcherRoom(missionId, actor.searcherId)] : [];
 }
 
-/** Who gets an event. Positions go only to the commander and the searcher who moved (decision 32). */
+/**
+ * Who gets an event. Positions go only to the commander and the searcher who moved (decision 32). Sightings go only to
+ * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
+ */
 function audienceOf(event: MissionEvent): string[] {
+  if (event.type === 'sighting.saved') return [commanderRoom(event.missionId)];
   if (event.type === 'participant.moved') {
     return [commanderRoom(event.missionId), searcherRoom(event.missionId, event.searcherId)];
   }

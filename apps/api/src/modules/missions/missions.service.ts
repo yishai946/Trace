@@ -153,6 +153,7 @@ export async function createMission(
             missionId: created.id,
             position: input.lkp.position,
             observedAt: new Date(input.lkp.observedAt),
+            setBy: input.commanderId,
           });
         }
         return created.id;

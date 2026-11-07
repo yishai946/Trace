@@ -32,8 +32,11 @@ export const sampleData: MissionMapData = {
     },
   ],
   lkp: { id: 'lkp', position: [35.004, 31.703], time: '13:05' },
-  lkpHistory: [{ id: 'old', position: [35.002, 31.702] }],
-  sightings: [{ id: 's1', position: [35.006, 31.706], time: '15:40' }],
+  lkpHistory: [{ id: 'old', position: [35.002, 31.702], time: '12:10' }],
+  sightings: [
+    { id: 's1', position: [35.006, 31.706], time: '15:40', label: '1 15:40', suggested: true },
+    { id: 's2', position: [35.003, 31.704], time: '14:22', label: '2 14:22' },
+  ],
   rally: [34.999, 31.699],
   reports: [{ id: 'r1', position: [35.007, 31.707], hazard: true }],
 };

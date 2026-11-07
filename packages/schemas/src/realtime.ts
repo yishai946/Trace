@@ -1,7 +1,9 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
 import { LngLat } from './geo';
+import { Lkp } from './missions';
 import { MissionPolygon } from './polygons';
+import { Sighting } from './sightings';
 
 /**
  * The realtime channel (Socket.IO) between the API and both apps. A client connects with its session (Command's cookie,
@@ -38,8 +40,26 @@ const ParticipantMoved = z.object({
   positionAt: z.iso.datetime({ offset: true }),
 });
 
+/**
+ * A sighting was added or decided. Only the mission's commander gets it: searchers' maps show the LKP, not sightings
+ * (decisions 31, 32).
+ */
+const SightingSaved = z.object({ type: z.literal('sighting.saved'), missionId: z.uuid(), sighting: Sighting });
+
+/**
+ * The current LKP changed. Every member gets it at once; one who was offline gets it by refetching after reconnect
+ * (decision 87).
+ */
+const LkpChanged = z.object({ type: z.literal('lkp.changed'), missionId: z.uuid(), lkp: Lkp });
+
 /** Every event the server sends about a mission, on the `mission:event` channel. */
-export const MissionEvent = z.discriminatedUnion('type', [PolygonSaved, PolygonDeleted, ParticipantMoved]);
+export const MissionEvent = z.discriminatedUnion('type', [
+  PolygonSaved,
+  PolygonDeleted,
+  ParticipantMoved,
+  SightingSaved,
+  LkpChanged,
+]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */
 export interface ServerToClientEvents {

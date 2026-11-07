@@ -36,6 +36,13 @@
       "when": 1793744230313,
       "tag": "0004_mission_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794055791271,
+      "tag": "0005_sightings",
+      "breakpoints": true
     }
   ]
 }

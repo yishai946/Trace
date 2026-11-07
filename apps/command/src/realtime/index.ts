@@ -2,9 +2,11 @@ import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
+  type Mission,
   type MissionPolygon,
   type Participant,
   type ServerToClientEvents,
+  type Sighting,
 } from '@trace/schemas';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -33,6 +35,23 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
       queryClient.setQueryData<MissionPolygon[]>(missionKeys.polygons(event.missionId), (list) =>
         list?.filter((p) => p.id !== event.polygonId),
       );
+      return;
+    case 'sighting.saved': {
+      const { sighting } = event;
+      queryClient.setQueryData<Sighting[]>(missionKeys.sightings(event.missionId), (list) =>
+        list?.some((s) => s.id === sighting.id)
+          ? list.map((s) => (s.id === sighting.id ? sighting : s))
+          : list && [...list, sighting],
+      );
+      return;
+    }
+    case 'lkp.changed':
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === event.missionId ? { ...m, lkp: event.lkp } : m)),
+      );
+      // Whether a sighting is suggested depends on the current LKP, so refetch it instead of patching it by hand.
+      void queryClient.invalidateQueries({ queryKey: missionKeys.lkps(event.missionId) });
+      void queryClient.invalidateQueries({ queryKey: missionKeys.sightings(event.missionId) });
       return;
     case 'participant.moved':
       queryClient.setQueryData<Participant[]>(missionKeys.participants(event.missionId), (list) =>
@@ -69,6 +88,8 @@ export function useMissionLive(missionId: string | undefined): LiveState {
         }
         // Events sent before the join (while the first fetch ran, or while disconnected) are not replayed: refetch.
         void queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+        // The missions list holds the current LKP, which may have changed while away.
+        void queryClient.invalidateQueries({ queryKey: missionKeys.all, exact: true });
         set('live');
       });
     });

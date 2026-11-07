@@ -1,7 +1,9 @@
 import {
+  LkpDecisionResult,
   Mission,
   MissionPolygon,
   REALTIME_PATH,
+  Sighting,
   type ClientToServerEvents,
   type JoinMissionAck,
   type MissionEvent,
@@ -110,6 +112,36 @@ describe('realtime', () => {
     });
     expect(res.statusCode).toBe(201);
     return MissionPolygon.parse(res.json());
+  };
+
+  const createSightingAs = async (user: TestUser, missionId: string) => {
+    const res = await injectAs(
+      ctx,
+      user,
+    )({
+      method: 'POST',
+      url: `/api/missions/${missionId}/sightings`,
+      payload: {
+        position: { type: 'Point', coordinates: [35.14, 31.77] },
+        observedAt: '2026-10-03T14:22:00+03:00',
+        source: 'witness',
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    return Sighting.parse(res.json());
+  };
+
+  const decideAs = async (user: TestUser, missionId: string, sightingId: string, decision: 'accepted' | 'rejected') => {
+    const res = await injectAs(
+      ctx,
+      user,
+    )({
+      method: 'PUT',
+      url: `/api/missions/${missionId}/sightings/${sightingId}/lkp-decision`,
+      payload: { decision },
+    });
+    expect(res.statusCode).toBe(200);
+    return LkpDecisionResult.parse(res.json());
   };
 
   it('rejects a connection without a session, or with a forged token', async () => {
@@ -251,5 +283,71 @@ describe('realtime', () => {
     await createPolygonAs(commander, mission.id);
     await settle();
     expect(events).toEqual([]);
+  });
+
+  it('sends the new LKP to every member at once, and sightings only to the commander', async () => {
+    const commander = await signInCommander(ctx);
+    const otherCommander = await signInCommander(ctx);
+    const searcher = await signInSearcher(ctx);
+    const mission = await createMissionAs(commander);
+    const otherMission = await createMissionAs(otherCommander);
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: searcher.searcherId });
+
+    const commanderSocket = socketFor(commander);
+    const searcherSocket = socketFor(searcher);
+    const otherSocket = socketFor(otherCommander);
+    await Promise.all([commanderSocket, searcherSocket, otherSocket].map(connect));
+    expect(await join(commanderSocket, mission.id)).toEqual({ ok: true });
+    expect(await join(searcherSocket, mission.id)).toEqual({ ok: true });
+    expect(await join(otherSocket, otherMission.id)).toEqual({ ok: true });
+    const [toCommander, toSearcher, toOther] = [commanderSocket, searcherSocket, otherSocket].map(record) as [
+      MissionEvent[],
+      MissionEvent[],
+      MissionEvent[],
+    ];
+
+    const sighting = await createSightingAs(commander, mission.id);
+    await settle();
+    expect(toCommander).toEqual([{ type: 'sighting.saved', missionId: mission.id, sighting }]);
+
+    const result = await decideAs(commander, mission.id, sighting.id, 'accepted');
+    await settle();
+    expect(toCommander.slice(1)).toEqual([
+      { type: 'sighting.saved', missionId: mission.id, sighting: result.sighting },
+      { type: 'lkp.changed', missionId: mission.id, lkp: result.lkp },
+    ]);
+    expect(toSearcher).toEqual([{ type: 'lkp.changed', missionId: mission.id, lkp: result.lkp }]);
+    expect(toOther).toEqual([]);
+  });
+
+  it('does not announce an LKP change when the suggestion is rejected', async () => {
+    const commander = await signInCommander(ctx);
+    const searcher = await signInSearcher(ctx);
+    const mission = await createMissionAs(commander);
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: searcher.searcherId });
+    const searcherSocket = socketFor(searcher);
+    await connect(searcherSocket);
+    await join(searcherSocket, mission.id);
+    const toSearcher = record(searcherSocket);
+
+    const sighting = await createSightingAs(commander, mission.id);
+    await decideAs(commander, mission.id, sighting.id, 'rejected');
+    await settle();
+    expect(toSearcher).toEqual([]);
+  });
+
+  it('gives a member who was away the new LKP from the mission after reconnecting', async () => {
+    const commander = await signInCommander(ctx);
+    const searcher = await signInSearcher(ctx);
+    const mission = await createMissionAs(commander);
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: searcher.searcherId });
+
+    const sighting = await createSightingAs(commander, mission.id);
+    const result = await decideAs(commander, mission.id, sighting.id, 'accepted');
+
+    // Nothing was delivered while the searcher was away; the mission snapshot carries the LKP (decision 87).
+    const res = await injectAs(ctx, searcher)({ method: 'GET', url: `/api/missions/${mission.id}` });
+    expect(res.statusCode).toBe(200);
+    expect(Mission.parse(res.json()).lkp).toEqual(result.lkp);
   });
 });

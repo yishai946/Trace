@@ -40,6 +40,23 @@ export const Lkp = z
   .object({ position: PointGeometry, observedAt: z.iso.datetime({ offset: true }) })
   .meta({ id: 'Lkp' });
 
+/** One LKP the mission had. Exactly one is current: the newest; the rest are history, shown dimmed (decision 58). */
+export const LkpPoint = z
+  .object({
+    id: z.uuid(),
+    position: PointGeometry,
+    observedAt: z.iso.datetime({ offset: true }),
+    current: z.boolean(),
+    /** The sighting it came from, or null for the LKP set when the mission was created. */
+    sightingId: z.uuid().nullable(),
+    /** Who set it; null when unknown (points set before this was recorded). */
+    setBy: z.string().nullable(),
+    createdAt: z.iso.datetime({ offset: true }),
+  })
+  .meta({ id: 'LkpPoint' });
+
+export const LkpPointList = z.array(LkpPoint).meta({ id: 'LkpPointList' });
+
 /** A new mission starts active. The rally point is required (decision 91); the LKP may come later (UC-C04). */
 export const CreateMissionBody = z.object({
   name: z.string().trim().min(1, 'Mission name is required').max(120),
@@ -71,4 +88,6 @@ export const MissionParams = z.object({ missionId: z.uuid() });
 export type MissionStatus = z.infer<typeof MissionStatus>;
 export type MissingPerson = z.infer<typeof MissingPerson>;
 export type CreateMissionBody = z.input<typeof CreateMissionBody>;
+export type Lkp = z.infer<typeof Lkp>;
+export type LkpPoint = z.infer<typeof LkpPoint>;
 export type Mission = z.infer<typeof Mission>;

@@ -6,3 +6,4 @@ export * from './missions';
 export * from './participants';
 export * from './polygons';
 export * from './realtime';
+export * from './sightings';
