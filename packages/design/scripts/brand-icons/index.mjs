@@ -5,8 +5,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { CONTOUR_WIDTH, SOLE, printContours, walk } from '../../src/brand/geometry.ts';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { CONTOUR_WIDTH, PEAK_RADIUS, SOLE, printContours, walk } from '../../src/brand/geometry.ts';
 import { themes } from '../../src/generated/tokens.ts';
 
 const { ink, surface, warning } = themes.night.color;
@@ -27,7 +27,7 @@ function trail({ fill, line, peak, mono = false }) {
       const lines = contours
         .map((c) => `<path d="${c.d}" stroke-width="${c.major ? CONTOUR_WIDTH.major : CONTOUR_WIDTH.minor}"/>`)
         .join('');
-      const dot = `<circle cx="${summit.x}" cy="${summit.y}" r="${last ? 16 : 12}" fill="${mono ? 'black' : last ? peak : line}"/>`;
+      const dot = `<circle cx="${summit.x}" cy="${summit.y}" r="${last ? PEAK_RADIUS.last : PEAK_RADIUS.hole}" fill="${mono ? 'black' : last ? peak : line}"/>`;
       const place = `translate(${CENTER.x + step.x * SOLE_SCALE} ${CENTER.y + step.y * SOLE_SCALE}) rotate(${step.rotate}) scale(${SOLE_SCALE})`;
       if (mono) {
         return `<mask id="m${i}" maskUnits="userSpaceOnUse" x="-120" y="-220" width="240" height="440"><g fill="white">${sole}</g><g fill="none" stroke="black" stroke-linejoin="round">${lines}</g>${dot}</mask><g transform="${place}"><rect x="-120" y="-220" width="240" height="440" fill="${fill}" mask="url(#m${i})"/></g>`;
@@ -79,6 +79,9 @@ const browser = [
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  `${process.env.LOCALAPPDATA}/Google/Chrome/Application/chrome.exe`,
+  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
 ].find((path) => path && existsSync(path));
 if (!browser) throw new Error('Chrome or Edge is needed to render the PNGs; set CHROME_PATH.');
 
@@ -100,7 +103,7 @@ try {
       '--default-background-color=00000000',
       `--window-size=${size},${size}`,
       `--screenshot=${root(out)}`,
-      `file:///${source.replaceAll('\\', '/')}`,
+      pathToFileURL(source).href,
     ]);
   }
   // The favicon of the web console stays vector.

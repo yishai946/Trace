@@ -9,7 +9,10 @@ export function Launch() {
   const [splashDone, setSplashDone] = useState(false);
   return (
     <>
-      <App />
+      {/* inert: nobody can tab into, or hear, the console while the splash covers it. */}
+      <div style={{ display: 'contents' }} inert={!splashDone}>
+        <App />
+      </div>
       {!splashDone && <Splash ready={!session.isPending} onDone={() => setSplashDone(true)} />}
     </>
   );

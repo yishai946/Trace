@@ -1,13 +1,13 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SPLASH } from '@trace/design';
 import { Splash } from '.';
 
 const WALKED_MS = 10_000;
 
-/** Runs the timers twice: the closing timer is only set after the walk's timer has re-rendered the splash. */
+/** Each timer is set only after the previous one re-rendered the splash (walk, opening, closing), so run them in turn. */
 function letTimeRun() {
-  act(() => vi.advanceTimersByTime(WALKED_MS));
-  act(() => vi.advanceTimersByTime(WALKED_MS));
+  for (let phase = 0; phase < 4; phase += 1) act(() => vi.advanceTimersByTime(WALKED_MS));
 }
 
 describe('Splash', () => {
@@ -35,12 +35,21 @@ describe('Splash', () => {
     render(<Splash ready onDone={onDone} />);
     expect(screen.queryByTestId('grow')).not.toBeInTheDocument();
 
-    act(() => vi.advanceTimersByTime(WALKED_MS));
+    act(() => vi.advanceTimersByTime(SPLASH.openMs * 3));
     expect(screen.getByTestId('grow')).toBeInTheDocument();
-    letTimeRun();
+    act(() => vi.advanceTimersByTime(SPLASH.openMs));
     expect(onDone).not.toHaveBeenCalled();
 
     fireEvent.transitionEnd(screen.getByRole('img', { name: 'TRACE' }));
+    expect(onDone).toHaveBeenCalledTimes(1);
+    letTimeRun();
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('still finishes when the fade never reports its end (a throttled background tab)', () => {
+    const onDone = vi.fn();
+    render(<Splash ready onDone={onDone} />);
+    letTimeRun();
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 

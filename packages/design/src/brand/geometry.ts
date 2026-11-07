@@ -12,6 +12,13 @@ export const SOLE = {
   heel: 'M-52 122 C-52 92 -30 68 0 68 C32 68 54 92 54 122 C54 162 36 186 0 186 C-36 186 -52 162 -52 122 Z',
 } as const;
 
+/** The box one sole is drawn in, and its height, in print units. */
+export const PRINT_BOX = { x: -120, y: -220, w: 240, h: 440 } as const;
+export const SOLE_HEIGHT = 381;
+
+/** Summit marker radius: the last step's amber summit is a little bigger than the holes of the others. */
+export const PEAK_RADIUS = { hole: 12, last: 16 } as const;
+
 /** The forefoot's centre and radius, where a step grows into a full screen (splash). */
 export const FOREFOOT = { cx: 2, cy: -80, radius: 90 } as const;
 
@@ -72,7 +79,8 @@ export interface Step {
 
 const STRIDE = 256;
 const SIDE = 100;
-const HEADING = 30;
+/** Walking direction in degrees clockwise from straight up. */
+export const HEADING = 30;
 
 /** `count` steps walking up and to the right, left foot first, centred on the origin. */
 export function walk(count: number): Step[] {

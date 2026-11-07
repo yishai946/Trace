@@ -1,5 +1,5 @@
-import { CONTOUR_WIDTH, FOREFOOT, SOLE, SPLASH, printContours, walk } from '@trace/design';
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { CONTOUR_WIDTH, PEAK_RADIUS, SOLE, SPLASH, printContours, walk } from '@trace/design';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import styles from './Splash.module.css';
 
 export interface SplashProps {
@@ -9,6 +9,7 @@ export interface SplashProps {
   onDone: () => void;
 }
 
+const FADE_MS = 150;
 const WALK_MS = (SPLASH.steps - 1) * SPLASH.stepMs + SPLASH.fadeMs + SPLASH.holdMs;
 const TIMING = {
   '--gap': `${SPLASH.stepMs}ms`,
@@ -30,6 +31,12 @@ export function Splash({ ready = true, onDone }: SplashProps) {
   const [walked, setWalked] = useState(false);
   const [closing, setClosing] = useState(false);
   const steps = useMemo(() => walk(SPLASH.steps), []);
+  const finished = useRef(false);
+  const finish = () => {
+    if (finished.current) return;
+    finished.current = true;
+    onDone();
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setWalked(true), reduceMotion ? SPLASH.holdMs * 2 : WALK_MS);
@@ -44,6 +51,14 @@ export function Splash({ ready = true, onDone }: SplashProps) {
     return () => clearTimeout(timer);
   }, [open, reduceMotion]);
 
+  // The fade's transitionend does not fire in a throttled background tab; never leave the splash mounted.
+  useEffect(() => {
+    if (!closing) return;
+    const timer = setTimeout(finish, FADE_MS * 2);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- finish only reads refs and the latest onDone
+  }, [closing]);
+
   return (
     <div
       role="img"
@@ -51,7 +66,7 @@ export function Splash({ ready = true, onDone }: SplashProps) {
       className={closing ? `${styles.root} ${styles.closing}` : styles.root}
       style={TIMING}
       onTransitionEnd={(event) => {
-        if (closing && event.target === event.currentTarget) onDone();
+        if (closing && event.target === event.currentTarget) finish();
       }}
     >
       <svg className={styles.art} viewBox="-480 -720 960 1440" aria-hidden="true">
@@ -64,12 +79,7 @@ export function Splash({ ready = true, onDone }: SplashProps) {
           <g
             transform={`translate(${steps[steps.length - 1]?.x ?? 0} ${steps[steps.length - 1]?.y ?? 0}) rotate(${steps[steps.length - 1]?.rotate ?? 0})`}
           >
-            <path
-              data-testid="grow"
-              className={styles.grow}
-              d={SOLE.forefoot}
-              style={{ transformOrigin: `${FOREFOOT.cx}px ${FOREFOOT.cy}px` }}
-            />
+            <path data-testid="grow" className={styles.grow} d={SOLE.forefoot} />
           </g>
         )}
       </svg>
@@ -94,7 +104,12 @@ function Sole({ index, last }: { index: number; last: boolean }) {
           <path key={i} d={c.d} strokeWidth={c.major ? CONTOUR_WIDTH.major : CONTOUR_WIDTH.minor} />
         ))}
       </g>
-      <circle className={last ? styles.peak : styles.hole} cx={peak.x} cy={peak.y} r={last ? 16 : 12} />
+      <circle
+        className={last ? styles.peak : styles.hole}
+        cx={peak.x}
+        cy={peak.y}
+        r={last ? PEAK_RADIUS.last : PEAK_RADIUS.hole}
+      />
     </g>
   );
 }

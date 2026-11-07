@@ -1,13 +1,21 @@
-import { CONTOUR_WIDTH, FOREFOOT, SOLE, SPLASH, printContours, walk } from '@trace/design';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  CONTOUR_WIDTH,
+  FOREFOOT,
+  HEADING,
+  PEAK_RADIUS,
+  PRINT_BOX,
+  SOLE,
+  SOLE_HEIGHT,
+  SPLASH,
+  printContours,
+  walk,
+} from '@trace/design';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
 import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
 import { useTheme } from '../../theme';
 
-/** Every sole is drawn in this box (print units): about 190 wide and 380 tall around the origin. */
-const BOX = { x: -120, y: -220, w: 240, h: 440 } as const;
-const SOLE_HEIGHT = 381;
-const HEADING_DEG = 30;
+const BOX = PRINT_BOX;
 const FOREFOOT_BOX = { w: 240, h: 280 } as const;
 
 export interface SplashProps {
@@ -27,6 +35,11 @@ export function Splash({ onDone }: SplashProps) {
   const [appear] = useState(() => steps.map(() => new Animated.Value(0)));
   const [open] = useState(() => new Animated.Value(0));
   const [fade] = useState(() => new Animated.Value(1));
+  // A re-render with a new callback (e.g. the theme changes mid-splash) must not restart the animation.
+  const done = useRef(onDone);
+  useEffect(() => {
+    done.current = onDone;
+  }, [onDone]);
 
   // One print unit in pixels: the trail takes about two thirds of the screen height and fits narrow screens.
   const unit = Math.min(height * 0.17, width * 0.28) / SOLE_HEIGHT;
@@ -35,7 +48,7 @@ export function Splash({ onDone }: SplashProps) {
   const last = steps[steps.length - 1];
   const lastAt = last ? place(last) : { x: width / 2, y: height / 2 };
   // The forefoot's centre on screen: its offset from the sole's origin, turned with the sole.
-  const angle = (HEADING_DEG * Math.PI) / 180;
+  const angle = (HEADING * Math.PI) / 180;
   const growFrom = {
     x: lastAt.x + (FOREFOOT.cx * Math.cos(angle) - FOREFOOT.cy * Math.sin(angle)) * unit,
     y: lastAt.y + (FOREFOOT.cx * Math.sin(angle) + FOREFOOT.cy * Math.cos(angle)) * unit,
@@ -66,7 +79,7 @@ export function Splash({ onDone }: SplashProps) {
             timing(fade, 0, SPLASH.fadeMs / 2),
           ]);
       running.start(({ finished }) => {
-        if (finished) onDone();
+        if (finished) done.current();
       });
     });
 
@@ -74,7 +87,7 @@ export function Splash({ onDone }: SplashProps) {
       cancelled = true;
       running?.stop();
     };
-  }, [appear, open, fade, onDone]);
+  }, [appear, open, fade]);
 
   return (
     <Animated.View
@@ -123,7 +136,7 @@ export function Splash({ onDone }: SplashProps) {
             // Hidden until the screen opens, then the last forefoot turns into the app's own background.
             opacity: open.interpolate({ inputRange: [0, 0.001, 1], outputRange: [0, 1, 1] }),
             transform: [
-              { rotate: `${HEADING_DEG}deg` },
+              { rotate: `${HEADING}deg` },
               { scale: open.interpolate({ inputRange: [0, 1], outputRange: [1, coverScale] }) },
             ],
           },
@@ -169,7 +182,7 @@ function Sole({ index, ink, line, peak }: SoleProps) {
             <Path key={i} d={c.d} strokeWidth={c.major ? CONTOUR_WIDTH.major : CONTOUR_WIDTH.minor} />
           ))}
         </G>
-        <Circle cx={summit.x} cy={summit.y} r={peak ? 16 : 12} fill={peak ?? line} />
+        <Circle cx={summit.x} cy={summit.y} r={peak ? PEAK_RADIUS.last : PEAK_RADIUS.hole} fill={peak ?? line} />
       </Svg>
     </View>
   );

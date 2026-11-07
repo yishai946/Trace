@@ -51,6 +51,8 @@
 /* The forefoot of the last step turns into the console's own background and grows over everything. */
 .grow {
   fill: var(--map-ground);
+  transform-box: fill-box;
+  transform-origin: center;
   animation: grow var(--open) cubic-bezier(0.7, 0, 0.3, 1) forwards;
 }
 
