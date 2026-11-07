@@ -37,6 +37,13 @@ export interface MapPoint {
   time?: string;
 }
 
+export interface MapSighting extends MapPoint {
+  /** Number and time, e.g. `1 14:22`. */
+  label: string;
+  /** TRACE suggests making it the new LKP (UC-C04). */
+  suggested?: boolean;
+}
+
 export interface MapReport extends MapPoint {
   hazard: boolean;
 }
@@ -48,7 +55,7 @@ export interface MissionMapData {
   tracks: MapTrack[];
   lkp: MapPoint | null;
   lkpHistory: MapPoint[];
-  sightings: MapPoint[];
+  sightings: MapSighting[];
   rally: LngLat | null;
   reports: MapReport[];
 }
@@ -127,8 +134,12 @@ export function toMissionSources(data: MissionMapData): Record<SourceId, Feature
     [SOURCE.lkp]: collection(
       data.lkp ? [point(data.lkp.position, { label: `LKP ${data.lkp.time ?? ''}`.trim() })] : [],
     ),
-    [SOURCE.lkpHistory]: collection(data.lkpHistory.map((p) => point(p.position, { id: p.id }))),
-    [SOURCE.sightings]: collection(data.sightings.map((p) => point(p.position, { id: p.id, time: p.time ?? '' }))),
+    [SOURCE.lkpHistory]: collection(
+      data.lkpHistory.map((p) => point(p.position, { id: p.id, label: `LKP ${p.time ?? ''}`.trim() })),
+    ),
+    [SOURCE.sightings]: collection(
+      data.sightings.map((p) => point(p.position, { id: p.id, label: p.label, suggested: p.suggested ?? false })),
+    ),
     [SOURCE.rally]: collection(data.rally ? [point(data.rally, {})] : []),
     [SOURCE.reports]: collection(data.reports.map((r) => point(r.position, { id: r.id, hazard: r.hazard }))),
   };
