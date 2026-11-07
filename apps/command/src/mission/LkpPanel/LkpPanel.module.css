@@ -46,6 +46,7 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  position: relative;
 }
 
 .sightings {
@@ -242,6 +243,7 @@
 }
 
 .description {
+  overflow-wrap: anywhere;
   margin: 0;
   color: var(--ink-secondary);
   font: var(--text-meta);
