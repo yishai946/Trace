@@ -50,7 +50,12 @@ const ParticipantMoved = z.object({
 });
 
 /** Every event the server sends about a mission, on the `mission:event` channel. */
-export const MissionEvent = z.discriminatedUnion('type', [PolygonSaved, PolygonDeleted, RallyChanged, ParticipantMoved]);
+export const MissionEvent = z.discriminatedUnion('type', [
+  PolygonSaved,
+  PolygonDeleted,
+  RallyChanged,
+  ParticipantMoved,
+]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */
 export interface ServerToClientEvents {
