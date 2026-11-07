@@ -1,14 +1,18 @@
 import type { ThemeId } from '@trace/design';
-import { canChangePolygons, isActiveInPolygon } from '@trace/domain';
+import { canChangeLkp, canChangePolygons, isActiveInPolygon } from '@trace/domain';
 import { boundsOf, findOutside, isValidPolygon, type LngLat, type Polygon } from '@trace/geo';
 import { emptyMissionMapData, type MapProvider } from '@trace/map';
 import {
   HealthResponse,
   PolygonGeometry,
   SearchersOutsideDetails,
+  type CreateSightingBody,
+  type LkpDecision,
+  type LkpPoint,
   type Mission,
   type MissionPolygon,
   type Participant,
+  type Sighting,
   type SessionUser,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
@@ -20,13 +24,22 @@ import { useSession, useSignOut } from '../auth';
 import { MissionSwitcher } from '../components/MissionSwitcher';
 import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
-import { MissionMap, type MapFocus } from '../map/MissionMap';
+import { MissionMap, type MapFocus, type PointTarget } from '../map/MissionMap';
 import { PlaceSearch } from '../map/PlaceSearch';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
-import { errorMessage } from '../mission/errorMessage';
+import { errorMessage, sightingErrorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
-import { useMissions, useParticipants, usePolygonMutations, usePolygons } from '../mission/missionQueries';
+import { LkpPanel } from '../mission/LkpPanel';
+import {
+  useLkps,
+  useMissions,
+  useParticipants,
+  usePolygonMutations,
+  usePolygons,
+  useSightingMutations,
+  useSightings,
+} from '../mission/missionQueries';
 import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
@@ -126,6 +139,8 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
+  const sightings = useSightings(mission?.id);
+  const lkps = useLkps(mission?.id);
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
@@ -184,6 +199,14 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           mission={mission}
           polygons={polygons.data ?? []}
           participants={participants.data ?? []}
+          sightings={sightings.data}
+          lkps={lkps.data}
+          sightingsLoading={sightings.isPending || lkps.isPending}
+          sightingsFailed={sightings.isError || lkps.isError}
+          onRetrySightings={() => {
+            void sightings.refetch();
+            void lkps.refetch();
+          }}
           themeId={theme}
           online={operational}
         />
@@ -260,6 +283,13 @@ interface MissionWorkspaceProps {
   mission: Mission;
   polygons: MissionPolygon[];
   participants: Participant[];
+  /** Undefined until loaded; the panel shows loading or the failure. */
+  sightings: Sighting[] | undefined;
+  /** The LKP history, newest first. */
+  lkps: LkpPoint[] | undefined;
+  sightingsLoading: boolean;
+  sightingsFailed: boolean;
+  onRetrySightings: () => void;
   themeId: ThemeId;
   /** Without a connection, new operational actions are blocked (UC-C01). */
   online: boolean;
@@ -272,15 +302,28 @@ function MissionWorkspace({
   mission,
   polygons,
   participants,
+  sightings,
+  lkps,
+  sightingsLoading,
+  sightingsFailed,
+  onRetrySightings,
   themeId,
   online,
 }: MissionWorkspaceProps) {
   const mutations = usePolygonMutations(mission.id);
+  const sightingMutations = useSightingMutations(mission.id);
+  /** The LKP and sightings panel (UC-C04), in the end-side slot while no polygon is selected. */
+  const [lkpOpen, setLkpOpen] = useState(false);
+  /** The add-sighting form is open; its position comes from a click on the map. */
+  const [adding, setAdding] = useState<{ position: LngLat | null } | null>(null);
+  const [selectedSightingId, setSelectedSightingId] = useState<string | null>(null);
+  const [sightingError, setSightingError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [edit, setEdit] = useState<BoundaryEdit | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const canEdit = canChangePolygons(mission.status) && online;
+  const canChangeSightings = canChangeLkp(mission.status) && online;
   // The map opens on everything the mission has placed: polygons, rally point and LKP. Read once, at mount.
   const [initialView] = useState(() => {
     const points = [mission.rallyPoint, ...(mission.lkp ? [mission.lkp.position] : [])];
@@ -299,10 +342,23 @@ function MissionWorkspace({
         mission,
         polygons,
         participants,
+        sightings: sightings ?? [],
+        lkps: lkps ?? [],
         selectedPolygonId: selectedId,
         editingPolygonId: edit?.polygonId ?? null,
       }),
-    [mission, polygons, participants, selectedId, edit?.polygonId],
+    [mission, polygons, participants, sightings, lkps, selectedId, edit?.polygonId],
+  );
+  // The spot chosen for a new sighting shows on the map before it is saved.
+  const mapDataWithDraft = useMemo(
+    () =>
+      adding?.position
+        ? {
+            ...mapData,
+            sightings: [...mapData.sightings, { id: 'draft', position: adding.position, label: 'תצפית חדשה' }],
+          }
+        : mapData,
+    [mapData, adding?.position],
   );
 
   // The client warns as the boundary moves; the server checks again when saving.
@@ -322,6 +378,48 @@ function MissionWorkspace({
   const select = (polygonId: string | null) => {
     setSelectedId(polygonId);
     setError(null);
+    // The end-side slot holds one panel: a polygon replaces the LKP panel and ends adding a sighting.
+    if (polygonId) {
+      setLkpOpen(false);
+      setAdding(null);
+    }
+  };
+
+  const openLkpPanel = (sightingId: string | null) => {
+    setSelectedId(null);
+    setError(null);
+    setSightingError(null);
+    setLkpOpen(true);
+    setSelectedSightingId(sightingId);
+  };
+
+  const toggleAddSighting = () => {
+    if (adding) {
+      setAdding(null);
+      return;
+    }
+    openLkpPanel(null);
+    setAdding({ position: null });
+  };
+
+  const selectPoint = (target: PointTarget) => openLkpPanel(target.kind === 'sighting' ? target.id : null);
+
+  const submitSighting = (body: CreateSightingBody) => {
+    sightingMutations.create.mutate(body, {
+      onSuccess: (created) => {
+        setAdding(null);
+        setSelectedSightingId(created.id);
+        setSightingError(null);
+      },
+      onError: (e) => setSightingError(sightingErrorMessage(e)),
+    });
+  };
+
+  const decide = (sightingId: string, decision: LkpDecision) => {
+    sightingMutations.decide.mutate(
+      { sightingId, decision },
+      { onSuccess: () => setSightingError(null), onError: (e) => setSightingError(sightingErrorMessage(e)) },
+    );
   };
 
   const create = (drawn: Polygon) => {
@@ -381,11 +479,15 @@ function MissionWorkspace({
       <MissionMap
         provider={provider}
         themeId={themeId}
-        data={mapData}
+        data={mapDataWithDraft}
         initialView={initialView}
         focus={focus}
         onPolygonDrawn={canEdit ? create : undefined}
         onPolygonSelect={select}
+        onPointSelect={selectPoint}
+        onMapClick={adding ? (position) => setAdding({ position }) : undefined}
+        onSighting={canChangeSightings || adding ? toggleAddSighting : undefined}
+        sightingActive={!!adding}
         editing={edit ? { polygonId: edit.polygonId, geometry: edit.original } : null}
         onEditChange={(changed) => {
           const draft = PolygonGeometry.safeParse(changed);
@@ -414,6 +516,33 @@ function MissionWorkspace({
               });
             }}
             onDelete={remove}
+          />
+        </div>
+      )}
+
+      {lkpOpen && !selected && !edit && (
+        <div className={`${styles.inspector} ${styles.scrolling}`}>
+          <LkpPanel
+            mission={mission}
+            lkps={lkps}
+            sightings={sightings}
+            loading={sightingsLoading}
+            loadFailed={sightingsFailed}
+            canChange={canChangeSightings}
+            busy={sightingMutations.create.isPending || sightingMutations.decide.isPending}
+            error={sightingError}
+            selectedSightingId={selectedSightingId}
+            adding={adding}
+            onRetry={onRetrySightings}
+            onStartAdd={toggleAddSighting}
+            onCancelAdd={() => setAdding(null)}
+            onSubmit={submitSighting}
+            onDecide={decide}
+            onClose={() => {
+              setLkpOpen(false);
+              setAdding(null);
+              setSelectedSightingId(null);
+            }}
           />
         </div>
       )}

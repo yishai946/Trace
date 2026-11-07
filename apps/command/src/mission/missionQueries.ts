@@ -1,11 +1,17 @@
 import {
+  LkpDecisionResult,
+  LkpPointList,
   Mission,
   MissionList,
   MissionPolygon,
   MissionPolygonList,
   ParticipantList,
+  Sighting,
+  SightingList,
   type CreateMissionBody,
   type CreatePolygonBody,
+  type CreateSightingBody,
+  type LkpDecision,
   type UpdatePolygonBody,
 } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +21,8 @@ export const missionKeys = {
   all: ['missions'] as const,
   polygons: (missionId: string) => ['missions', missionId, 'polygons'] as const,
   participants: (missionId: string) => ['missions', missionId, 'participants'] as const,
+  sightings: (missionId: string) => ['missions', missionId, 'sightings'] as const,
+  lkps: (missionId: string) => ['missions', missionId, 'lkps'] as const,
 };
 
 export function useMissions() {
@@ -88,6 +96,60 @@ export function usePolygonMutations(missionId: string) {
     remove: useMutation({
       mutationFn: (polygonId: string) => apiRequest(`${base}/${polygonId}`, { method: 'DELETE' }),
       onSuccess,
+    }),
+  };
+}
+
+export function useSightings(missionId: string | undefined) {
+  return useQuery({
+    queryKey: missionKeys.sightings(missionId ?? ''),
+    queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/sightings`, { schema: SightingList, signal }),
+    enabled: !!missionId,
+  });
+}
+
+/** Every LKP the mission had, newest first; the first is the current one. */
+export function useLkps(missionId: string | undefined) {
+  return useQuery({
+    queryKey: missionKeys.lkps(missionId ?? ''),
+    queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/lkps`, { schema: LkpPointList, signal }),
+    enabled: !!missionId,
+  });
+}
+
+/** Add a sighting, and accept or reject making it the new LKP (UC-C04). */
+export function useSightingMutations(missionId: string) {
+  const queryClient = useQueryClient();
+  const base = `/missions/${missionId}/sightings`;
+
+  return {
+    create: useMutation({
+      mutationFn: (body: CreateSightingBody) => apiRequest(base, { method: 'POST', body, schema: Sighting }),
+      onSuccess: (sighting) => {
+        // It shows on the map at once (decision 62), before the list is fetched again.
+        queryClient.setQueryData<Sighting[]>(missionKeys.sightings(missionId), (list) =>
+          list && !list.some((s) => s.id === sighting.id) ? [...list, sighting] : list,
+        );
+        return queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) });
+      },
+    }),
+    decide: useMutation({
+      mutationFn: ({ sightingId, decision }: { sightingId: string; decision: LkpDecision }) =>
+        apiRequest(`${base}/${sightingId}/lkp-decision`, {
+          method: 'PUT',
+          body: { decision },
+          schema: LkpDecisionResult,
+        }),
+      onSuccess: ({ lkp }) => {
+        queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+          list?.map((m) => (m.id === missionId ? { ...m, lkp } : m)),
+        );
+        // Other sightings may stop being candidates, so the server's answer replaces the cached list.
+        return Promise.all([
+          queryClient.invalidateQueries({ queryKey: missionKeys.lkps(missionId) }),
+          queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) }),
+        ]);
+      },
     }),
   };
 }

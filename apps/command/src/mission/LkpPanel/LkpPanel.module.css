@@ -1,0 +1,295 @@
+/* Trace Console Inspector (.tc-panel, .tc-inspector__head, .tc-dl), the LKP and sightings panel of wireframe Cd06. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.section {
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.head {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font: var(--text-title);
+}
+
+.sub {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+/* The sightings list scrolls inside the panel. */
+.sightings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-block-end: var(--space-5);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-body-strong);
+}
+
+.label {
+  margin: 0;
+  margin-block: var(--space-5) var(--space-3);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-6);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.meta {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger-ink);
+  font: var(--text-meta);
+}
+
+.loadError {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* Past LKPs: a ring in ink-faint (a symbol, never text) and the text in ink-secondary. */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--ink-faint);
+}
+
+.history svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.historyText {
+  flex: 1;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Badges are local to the wireframe (.tcx-badge): a word in a small bordered box. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+  white-space: nowrap;
+}
+
+.badge[data-tone='accent'] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-raised);
+}
+
+.cardText {
+  margin: 0;
+  font: var(--text-body);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sighting {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+}
+
+.sighting[aria-current='true'] {
+  background-color: var(--surface-raised);
+}
+
+.sightingHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.diamond {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--ink);
+  font: var(--text-map-label);
+}
+
+.diamond svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.description {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+/* The add form (Fm09 fields): source, location from the map, time, description. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.coordinates {
+  align-self: flex-start;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+/* The source picker is a choice, not a view switch, so it is a radio group with the segmented-tabs look. */
+.seg {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.segOption {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: var(--segment-h);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.segOption[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.segOption[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segOption[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}

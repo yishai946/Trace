@@ -12,3 +12,15 @@ const MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
 export function errorMessage(error: unknown): string {
   return (error instanceof ApiRequestError && MESSAGES[error.code]) || 'השינוי לא נשמר. נסו שוב.';
 }
+
+const SIGHTING_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
+  NETWORK_ERROR: 'אין חיבור לשרת. השינוי לא נשמר.',
+  NOT_FOUND: 'התצפית כבר לא קיימת. רעננו את המפה.',
+  MISSION_ENDED: 'המסע הסתיים. אי אפשר לשנות LKP ותצפיות.',
+  SIGHTING_NOT_LKP_CANDIDATE: 'כבר הוחלט על התצפית, או שהיא אינה מאוחרת מה-LKP הנוכחי.',
+};
+
+/** A Hebrew message for a failed sighting or LKP change. */
+export function sightingErrorMessage(error: unknown): string {
+  return (error instanceof ApiRequestError && SIGHTING_MESSAGES[error.code]) || 'השינוי לא נשמר. נסו שוב.';
+}
