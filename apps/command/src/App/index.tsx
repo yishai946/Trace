@@ -497,7 +497,7 @@ function MissionWorkspace({
         onPolygonSelect={select}
         onPointSelect={selectPoint}
         onMapClick={adding ? (position) => setAdding({ position }) : undefined}
-        onSighting={canChangeSightings || adding ? toggleAddSighting : undefined}
+        onSighting={(canChangeSightings || adding) && !edit ? toggleAddSighting : undefined}
         sightingActive={!!adding}
         editing={edit ? { polygonId: edit.polygonId, geometry: edit.original } : null}
         onEditChange={(changed) => {
