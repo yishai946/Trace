@@ -161,6 +161,7 @@ All contributors and coding assistants should preserve existing behavior, follow
 ### Merging
 
 - Feature and fix Pull Requests into `dev` are merged with **Squash and merge**: the whole branch becomes one commit on `dev`. The Pull Request title becomes the commit message, so it must follow the commit convention above (`fix: ...`, `feat: ...`).
+- The `Checks` workflow (format, lint, types, tests; the same as `pnpm check`) must pass before a Pull Request into `dev` is merged. The Claude task that picks board items merges its own Pull Requests into `dev` once `Checks` is green; everyone else merges after review. Releases to `main` are always manual.
 - Release Pull Requests from `dev` into `main` are merged with **Create a merge commit**, never squashed. Squashing a release would leave `main` and `dev` with different histories, and every later release would repeat old changes and conflict.
 - Rebase merging is disabled in the repository.
 - GitHub deletes the head branch automatically when its Pull Request is merged. Delete your local copy too (`git branch -D <branch>`; `-D` is needed because a squashed branch does not look merged to Git). A branch whose Pull Request was closed without merging is deleted by hand.

@@ -1,0 +1,54 @@
+# The gate for every Pull Request into dev. Branch protection on dev requires the `checks` job, so a Pull Request
+# merges only after formatting, lint, types and tests pass (the same as `pnpm check`).
+name: Checks
+
+on:
+  pull_request:
+    branches: [dev]
+  # Also after every merge, so a semantic conflict between two merged PRs shows up on dev itself.
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      # Same image and port as docker-compose.yml: the api tests connect to localhost:5433.
+      db:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: trace
+          POSTGRES_PASSWORD: trace
+          POSTGRES_DB: trace
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U trace -d trace"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
