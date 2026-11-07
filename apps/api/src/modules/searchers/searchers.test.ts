@@ -98,7 +98,7 @@ describe('searchers/me', () => {
 
   it('rejects an empty or too long name', async () => {
     const inject = injectAs(ctx, await signInByPhone(ctx));
-    for (const payload of [{ name: '   ' }, { name: 'א'.repeat(61) }, {}]) {
+    for (const payload of [{ name: '   ' }, { name: 'א'.repeat(61) }, { name: 'x\u0000y' }, {}]) {
       const res = await inject({ method: 'PUT', url: '/api/searchers/me', payload });
       expect(res.statusCode, JSON.stringify(payload)).toBe(400);
       expect(errorCode(res)).toBe('VALIDATION_ERROR');
