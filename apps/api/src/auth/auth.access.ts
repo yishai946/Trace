@@ -11,6 +11,11 @@ export async function commandersOnly(request: FastifyRequest) {
   if (actorOf(request).role !== 'commander') throw forbidden();
 }
 
+/** Route guard: only searchers may call the route (their own profile, UC-F01). */
+export async function searchersOnly(request: FastifyRequest) {
+  if (actorOf(request).role !== 'searcher') throw forbidden();
+}
+
 /**
  * Who may call a route under /missions/:missionId.
  * - `commander`: only the mission's own commander (create or edit polygons, list searchers' positions).
