@@ -93,7 +93,8 @@ export function Splash({ onDone }: SplashProps) {
     <Animated.View
       accessible
       accessibilityLabel="TRACE"
-      style={[StyleSheet.absoluteFill, { backgroundColor: color.surfaceSunken, opacity: fade }]}
+      // ltr: the soles are placed with `left`, which forced RTL would mirror, stacking them and walking backwards.
+      style={[StyleSheet.absoluteFill, { direction: 'ltr', backgroundColor: color.surfaceSunken, opacity: fade }]}
     >
       {steps.map((step, i) => {
         const at = place(step);
