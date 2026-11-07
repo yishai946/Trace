@@ -225,6 +225,17 @@ describe('auth', () => {
         expect((await requestOtp(ctx, '+972542222222')).statusCode).toBe(200);
       });
 
+      it('purges expired requests of numbers that never ask again', async () => {
+        const gone = '+972543333333';
+        await ctx.db.insert(otpRequests).values({
+          phone: gone,
+          requestedAt: new Date(Date.now() - (OTP_REQUEST_LIMIT.windowSeconds + 1) * 1000),
+        });
+        expect((await requestOtp(ctx, '+972542222222')).statusCode).toBe(200);
+        const rows = await ctx.db.select().from(otpRequests).where(eq(otpRequests.phone, gone));
+        expect(rows).toHaveLength(0);
+      });
+
       it('lets a blocked number request again after the window', async () => {
         const phoneNumber = '+972541111111';
         vi.useFakeTimers({ toFake: ['Date'] });

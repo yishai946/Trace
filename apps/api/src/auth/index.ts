@@ -3,7 +3,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { bearer, phoneNumber } from 'better-auth/plugins';
-import { and, asc, eq, lte, sql } from 'drizzle-orm';
+import { asc, eq, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { accounts, otpRequests, sessions, users, verifications } from '../db/schema';
 import type { Env } from '../env';
@@ -36,9 +36,8 @@ async function claimOtpRequest(db: Db, phone: string) {
   await db.transaction(async (tx) => {
     // Serialises concurrent requests for one number so none slips past the count.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${phone}))`);
-    await tx
-      .delete(otpRequests)
-      .where(and(eq(otpRequests.phone, phone), lte(otpRequests.requestedAt, new Date(now.getTime() - windowMs))));
+    // Expired rows of every number go, so numbers that never ask again leave nothing behind.
+    await tx.delete(otpRequests).where(lte(otpRequests.requestedAt, new Date(now.getTime() - windowMs)));
     const recent = await tx
       .select({ requestedAt: otpRequests.requestedAt })
       .from(otpRequests)
