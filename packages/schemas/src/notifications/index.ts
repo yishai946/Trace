@@ -3,6 +3,7 @@ import { z } from 'zod';
 /** An Expo push token, in the two forms Expo issues (the same prefixes `Expo.isExpoPushToken` accepts). */
 export const ExpoPushToken = z
   .string()
+  .max(200)
   .regex(/^Expo(nent)?PushToken\[[^\]\s]+\]$/)
   .meta({ id: 'ExpoPushToken' });
 

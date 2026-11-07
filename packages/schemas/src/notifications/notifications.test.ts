@@ -15,6 +15,11 @@ describe('ExpoPushToken', () => {
 });
 
 describe('RegisterPushTokenBody', () => {
+  it('rejects an oversized token', () => {
+    const token = `ExponentPushToken[${'a'.repeat(200)}]`;
+    expect(RegisterPushTokenBody.safeParse({ token }).success).toBe(false);
+  });
+
   it('requires a token', () => {
     expect(RegisterPushTokenBody.safeParse({}).success).toBe(false);
     expect(RegisterPushTokenBody.safeParse({ token: 'ExponentPushToken[a]' }).success).toBe(true);
