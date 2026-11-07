@@ -350,15 +350,16 @@ function MissionWorkspace({
     [mission, polygons, participants, sightings, lkps, selectedId, edit?.polygonId],
   );
   // The spot chosen for a new sighting shows on the map before it is saved.
+  const draftPosition = adding?.position ?? null;
   const mapDataWithDraft = useMemo(
     () =>
-      adding?.position
+      draftPosition
         ? {
             ...mapData,
-            sightings: [...mapData.sightings, { id: 'draft', position: adding.position, label: 'תצפית חדשה' }],
+            sightings: [...mapData.sightings, { id: 'draft', position: draftPosition, label: 'תצפית חדשה' }],
           }
         : mapData,
-    [mapData, adding?.position],
+    [mapData, draftPosition],
   );
 
   // The client warns as the boundary moves; the server checks again when saving.
