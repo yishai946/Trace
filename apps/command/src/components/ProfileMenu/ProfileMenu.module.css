@@ -99,10 +99,19 @@
   inset: 0;
   display: flex;
   align-items: flex-end;
-  background-color: color-mix(in srgb, var(--map-ground) 60%, transparent);
+}
+
+/* The scrim: the map ground at 60%, as a layer so only it is translucent. */
+.overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--map-ground);
+  opacity: 0.6;
 }
 
 .sheet {
+  position: relative;
   width: 100%;
   border: 1px solid var(--border);
   border-block-end: 0;
