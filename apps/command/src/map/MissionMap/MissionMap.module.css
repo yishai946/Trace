@@ -2,6 +2,8 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  /* MapLibre's controls (z-index 2) stay inside the map and never cover panels above it. */
+  isolation: isolate;
   background-color: var(--map-ground);
 }
 
