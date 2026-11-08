@@ -1,7 +1,7 @@
 import { ApiError, SaveSearcherProfileBody, SearcherProfile } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { actorOf } from '../../auth/auth.plugin';
-import { searchersOnly } from '../../auth/auth.access';
+import { searcherSessionsOnly } from '../../auth/auth.access';
 import type { Db } from '../../db';
 import { notFound } from '../../errors';
 import { getOwnProfile, saveOwnProfile } from './searchers.service';
@@ -16,7 +16,7 @@ export const searcherRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { d
         description: 'Answers 404 until the searcher has entered a name on first sign-in (UC-F01).',
         response: { 200: SearcherProfile, 401: ApiError, 403: ApiError, 404: ApiError },
       },
-      preHandler: searchersOnly,
+      preHandler: searcherSessionsOnly,
     },
     async (request) => {
       const profile = await getOwnProfile(db, actorOf(request).userId);
@@ -35,7 +35,7 @@ export const searcherRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { d
         body: SaveSearcherProfileBody,
         response: { 200: SearcherProfile, 400: ApiError, 401: ApiError, 403: ApiError },
       },
-      preHandler: searchersOnly,
+      preHandler: searcherSessionsOnly,
     },
     (request) => saveOwnProfile(db, { userId: actorOf(request).userId, name: request.body.name }),
   );

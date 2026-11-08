@@ -249,3 +249,103 @@ describe('missing person photo', () => {
     expect(ApiError.parse(res.json()).error.code).toBe('MISSION_ENDED');
   });
 });
+
+describe('rally point', () => {
+  let ctx: TestContext;
+  let commander: TestUser;
+  let inject: ReturnType<typeof injectAs>;
+  let missionId: string;
+
+  beforeAll(async () => {
+    ctx = await createTestApp();
+  });
+  beforeEach(async () => {
+    await resetDb(ctx.db);
+    commander = await signInCommander(ctx);
+    inject = injectAs(ctx, commander);
+    const created = await inject({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint, lkp } });
+    missionId = Mission.parse(created.json()).id;
+  });
+  afterAll(() => ctx.close());
+
+  const moved = { type: 'Point', coordinates: [35.15, 31.8] };
+  const change = (payload: unknown, as = inject, id = missionId) =>
+    as({ method: 'PUT', url: `/api/missions/${id}/rally-point`, payload: payload as object });
+  const current = async () =>
+    Mission.parse((await inject({ method: 'GET', url: `/api/missions/${missionId}` })).json()).rallyPoint;
+
+  it('replaces the rally point; only one stays', async () => {
+    const before = Mission.parse((await inject({ method: 'GET', url: `/api/missions/${missionId}` })).json());
+    const res = await change({ rallyPoint: moved });
+    expect(res.statusCode).toBe(200);
+    const mission = Mission.parse(res.json());
+    expect(mission.rallyPoint).toEqual(moved);
+    expect(await current()).toEqual(moved);
+    expect(Date.parse(mission.updatedAt)).toBeGreaterThan(Date.parse(before.updatedAt));
+
+    const again = { type: 'Point', coordinates: [35.2, 31.9] };
+    expect(Mission.parse((await change({ rallyPoint: again })).json()).rallyPoint).toEqual(again);
+    expect(await current()).toEqual(again);
+  });
+
+  it.each([
+    ['latitude above 90', { rallyPoint: { type: 'Point', coordinates: [35, 91] } }],
+    ['longitude above 180', { rallyPoint: { type: 'Point', coordinates: [181, 31] } }],
+    ['longitude below -180', { rallyPoint: { type: 'Point', coordinates: [-181, 31] } }],
+    ['text coordinates', { rallyPoint: { type: 'Point', coordinates: ['35', '31'] } }],
+    ['no body', undefined],
+    ['a polygon', { rallyPoint: { type: 'Polygon', coordinates: [[[0, 0]]] } }],
+    ['one coordinate', { rallyPoint: { type: 'Point', coordinates: [35] } }],
+  ])('rejects %s and keeps the point', async (_name, payload) => {
+    const res = await change(payload);
+    expect(res.statusCode).toBe(400);
+    expect(ApiError.parse(res.json()).error.code).toBe('VALIDATION_ERROR');
+    expect(await current()).toEqual(rallyPoint);
+  });
+
+  it('lets only the mission commander change it', async () => {
+    const searcher = await signInSearcher(ctx);
+    const outsider = await signInSearcher(ctx);
+    const other = await signInCommander(ctx);
+    await addParticipant(ctx.db, { missionId, callsign: 1, searcherId: searcher.searcherId });
+
+    expect((await change({ rallyPoint: moved }, injectAs(ctx, searcher))).statusCode).toBe(403);
+    expect((await change({ rallyPoint: moved }, injectAs(ctx, outsider))).statusCode).toBe(404);
+    expect((await change({ rallyPoint: moved }, injectAs(ctx, other))).statusCode).toBe(404);
+    const res = await ctx.app.inject({
+      method: 'PUT',
+      url: `/api/missions/${missionId}/rally-point`,
+      payload: { rallyPoint: moved },
+    });
+    expect(res.statusCode).toBe(401);
+    expect(await current()).toEqual(rallyPoint);
+  });
+
+  it('answers 400 for a malformed id and 404 for an unknown one', async () => {
+    expect((await change({ rallyPoint: moved }, inject, 'not-a-uuid')).statusCode).toBe(400);
+    const unknown = await change({ rallyPoint: moved }, inject, '00000000-0000-4000-8000-000000000000');
+    expect(unknown.statusCode).toBe(404);
+  });
+
+  it.each(['ended_located', 'ended_stopped'] as const)('refuses a mission that is %s', async (status) => {
+    await ctx.db.update(missions).set({ status }).where(eq(missions.id, missionId));
+    const res = await change({ rallyPoint: moved });
+    expect(res.statusCode).toBe(409);
+    expect(ApiError.parse(res.json()).error.code).toBe('MISSION_ENDED');
+    expect(await current()).toEqual(rallyPoint);
+  });
+
+  it('allows a paused mission', async () => {
+    await ctx.db.update(missions).set({ status: 'paused' }).where(eq(missions.id, missionId));
+    expect((await change({ rallyPoint: moved })).statusCode).toBe(200);
+    expect(await current()).toEqual(moved);
+  });
+
+  it('shows the new point to a searcher who fetches the mission later', async () => {
+    const searcher = await signInSearcher(ctx);
+    await addParticipant(ctx.db, { missionId, callsign: 1, searcherId: searcher.searcherId });
+    await change({ rallyPoint: moved });
+    const res = await injectAs(ctx, searcher)({ method: 'GET', url: `/api/missions/${missionId}` });
+    expect(Mission.parse(res.json()).rallyPoint).toEqual(moved);
+  });
+});

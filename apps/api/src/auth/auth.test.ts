@@ -64,6 +64,8 @@ describe('auth', () => {
         { method: 'GET', url: `/api/missions/${id}/participants` },
         { method: 'GET', url: '/api/searchers/me' },
         { method: 'PUT', url: '/api/searchers/me' },
+        { method: 'PUT', url: '/api/push-token' },
+        { method: 'DELETE', url: '/api/push-token' },
       ] as const;
       for (const route of routes) {
         const res = await ctx.app.inject(route);

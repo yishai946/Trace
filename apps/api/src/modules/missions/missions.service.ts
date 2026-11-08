@@ -1,4 +1,4 @@
-import { detectPhotoType, generateJoinCode, isMissionEnded, type RandomInt } from '@trace/domain';
+import { canChangeRallyPoint, detectPhotoType, generateJoinCode, isMissionEnded, type RandomInt } from '@trace/domain';
 import { PointGeometry, type CreateMissionBody, type Mission } from '@trace/schemas';
 import type { z } from 'zod';
 import { desc, eq, inArray } from 'drizzle-orm';
@@ -163,6 +163,26 @@ export async function createMission(
       throw error;
     }
   }
+}
+
+/**
+ * Moves the rally point (UC-C05). The mission has exactly one, so the new point replaces the old one. A mission that
+ * ended is read-only. The status is locked while checking, so an ending mission cannot slip through.
+ */
+export async function updateRallyPoint(db: Db, missionId: string, rallyPoint: PointGeometry): Promise<Mission> {
+  await db.transaction(async (tx) => {
+    const [mission] = await tx
+      .select({ status: missions.status })
+      .from(missions)
+      .where(eq(missions.id, missionId))
+      .for('update');
+    if (!mission) throw notFound('Mission');
+    if (!canChangeRallyPoint(mission.status)) {
+      throw new AppError(409, 'MISSION_ENDED', 'The rally point of an ended mission cannot be changed');
+    }
+    await tx.update(missions).set({ rallyPoint, updatedAt: new Date() }).where(eq(missions.id, missionId));
+  });
+  return getMission(db, missionId);
 }
 
 export interface MissionPhoto {

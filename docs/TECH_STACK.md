@@ -91,6 +91,24 @@
 - מיקומי מחפשים (`participant.moved`) מגיעים רק למנהל המסע ולמחפש עצמו (החלטה 32). שינויי פוליגונים מגיעים לכל חברי המסע.
 - אירועים שנשלחו בזמן ניתוק לא נשלחים שוב: אחרי התחברות מחדש הלקוח מצטרף שוב וטוען מחדש את נתוני המסע. ב-Command נורית החיבור מראה "לא זמין" כל עוד המפה לא מתעדכנת, ופעולות חדשות חסומות.
 
+## Push
+
+שליחה דרך Expo Push (`expo-server-sdk`), מאחורי ממשק `PushSender` (`apps/api/src/modules/notifications`). בבדיקות מחליפים אותו בזיוף.
+
+- Field שולח `PUT /api/push-token` אחרי התחברות ובכל פעם ש-Expo נותן token חדש, ו-`DELETE /api/push-token` כשההרשאה בוטלה. ה-token שייך ל-session: יציאה מהמערכת מוחקת אותו גם כשהמכשיר מנותק. מכשיר משותף: אותו token שנרשם על ידי מחפש אחר עובר אליו.
+- `createPushNotifier(...).notifySearchers({ missionId, polygonId?, excludeSearcherIds?, message })` שולח רק למחפשים פעילים במסע (לא "סיום פעילות", בכל סטטוס מסע) עם session בתוקף. עם `polygonId`: רק למשובצים לפוליגון (החלטות 98 ו-100). הכשל בשליחה נרשם ביומן ואינו נזרק; Realtime נשאר ערוץ ההתראה בתוך האפליקציה.
+- token ש-Expo מחזיר עבורו `DeviceNotRegistered` נמחק בעת השליחה. קבלות (receipts) עדיין לא נבדקות.
+- `EXPO_ACCESS_TOKEN` אופציונלי (Expo "enhanced push security"); לא נשמר בקוד.
+- אירועי השליחה עצמם (SOS, שיבוץ, הודעות) יתחברו אל `notifySearchers` בתוך הנושאים שלהם.
+
+מגבלות שנמצאו (מתועדות, לא הוחלט עליהן; הפריט TBD באפיון נשאר פתוח):
+
+- Android: Expo Go לא תומך ב-Push מ-SDK 53, נדרש development build. מ-Android 13 חלון ההרשאה לא מופיע לפני שנוצר ערוץ התראות.
+- iOS: Push דורש entitlement של `aps-environment`, שאינו זמין בחתימה חינמית (Sideloadly, #115).
+- token אמיתי דורש פרויקט EAS (`extra.eas.projectId`) ואישורי FCM (Android) ו-APNs (iOS) שהועלו ל-EAS.
+- `DeviceNotRegistered` עלול להגיע רק בקבלה כ-15 דקות אחרי השליחה; בדיקת קבלות דורשת job ברקע (pg-boss).
+- אפליקציה שנסגרה: התראה עם תוכן גלוי מוצגת על ידי מערכת ההפעלה; התראה שקטה (data-only) אינה מובטחת, ובפרט ב-iOS אחרי סגירה יזומה.
+
 ## פיתוח מקומי
 
 בסיס הנתונים המקומי רץ ב-Docker (`docker-compose.yml`, ‏PostGIS על פורט 5433, כדי לא להתנגש ב-PostgreSQL שמותקן על המחשב). הפריסה לסביבות אחרות בהחלטת איש התשתיות.
@@ -109,6 +127,7 @@
 ## החלטות פתוחות
 
 - ספק SMS לישראל.
+- פרויקט EAS ואישורי Push (FCM ו-APNs), ובדיקת קבלות Expo.
 - מעבר מ-MapTiler לאריחים מאוחסנים (PMTiles בסכמת OpenMapTiles ו-DEM), כולל רישיון לשמירה Offline ב-Field.
 - פלטת צבעים ייעודית למפת הבסיס במערכת העיצוב (כרגע נגזרת מ-tokens ניטרליים בשקיפות).
 - תמיכה בתלת-ממד ב-MapLibre Native.
