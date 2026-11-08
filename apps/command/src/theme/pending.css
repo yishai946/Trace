@@ -1,0 +1,17 @@
+/*
+ * Values the Trace Console design system does not have yet. Each one is a design-system gap, listed in the
+ * Pull Request; when the artifact gains the token, delete the line here (Field keeps the same in
+ * apps/field/src/theme/pending.ts).
+ */
+:root {
+  /* Minimum size of a touch target on the phone (Console "Command בטלפון": every touch target is 44px or more). */
+  --pending-touch-target: 44px;
+  /* The bottom tab bar (wireframe tcx-tabbar). */
+  --pending-tabbar-h: 64px;
+  /* The bottom sheet when expanded (wireframe tcx-sheet). */
+  --pending-sheet-h: 300px;
+  /* Large control: phone login inputs and primary buttons (wireframe .tc-btn--lg, .tcx-input--lg). */
+  --pending-control-lg-h: 48px;
+  /* The brand tile of the phone login screen (wireframe Cm01). */
+  --pending-login-mark: 56px;
+}
