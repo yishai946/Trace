@@ -21,6 +21,7 @@ import { ConnectionStatus, type Connection } from '../components/ConnectionStatu
 import { MissionSwitcher } from '../components/MissionSwitcher';
 import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
+import { usePhoneLayout } from '../hooks/usePhoneLayout';
 import { MissionMap, type MapFocus } from '../map/MissionMap';
 import { PlaceSearch } from '../map/PlaceSearch';
 import { getMapProvider } from '../map/provider';
@@ -28,6 +29,7 @@ import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBa
 import { errorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
 import { useMissions, useParticipants, usePolygonMutations, usePolygons } from '../mission/missionQueries';
+import { PhoneMissionScreen } from '../mission/PhoneMissionScreen';
 import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
@@ -103,6 +105,7 @@ function Backdrop({ provider, themeId, veil }: { provider: MapProvider; themeId:
 function Console({ provider, user }: { provider: MapProvider; user: SessionUser }) {
   const { theme } = useTheme();
   const online = useOnline();
+  const phone = usePhoneLayout();
   const signOut = useSignOut();
   // The server is pinged regularly: navigator.onLine alone misses a lost server or a network with no way out.
   const health = useQuery({
@@ -149,6 +152,56 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           }
         : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
 
+  const workspace = !mission ? null : polygons.isPending ? (
+    <p className={styles.setup}>טוען מסע…</p>
+  ) : (
+    <MissionWorkspace
+      key={mission.id}
+      provider={provider}
+      focus={focus}
+      mission={mission}
+      polygons={polygons.data ?? []}
+      participants={participants.data ?? []}
+      themeId={theme}
+      online={operational}
+    />
+  );
+
+  // The phone gets its own mission screen (Cm04). The mission list, login and new mission stay as on the desktop until
+  // their phone screens land (#105).
+  if (phone && mission && !creating) {
+    return (
+      <main className={styles.screen}>
+        <PhoneMissionScreen
+          key={mission.id}
+          mission={mission}
+          missions={missions.data ?? []}
+          connection={connection}
+          onSelectMission={openMission}
+          onShowAll={() => openMission(null)}
+          joinOpen={joinOpen}
+          onJoinOpenChange={setJoinOpen}
+          notice={createdNotice}
+          participants={participants.data}
+          participantsFailed={participants.isError}
+          polygons={polygons.data ?? []}
+          workspace={workspace}
+          renderSearch={(close) => (
+            <PlaceSearch
+              provider={provider}
+              fullWidth
+              autoFocus
+              onSelect={(place) => {
+                setFocus({ center: place.center, bounds: place.bounds });
+                close();
+              }}
+            />
+          )}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className={styles.screen}>
       {creating ? (
@@ -175,19 +228,8 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             canCreate={connected}
           />
         </>
-      ) : polygons.isPending ? (
-        <p className={styles.setup}>טוען מסע…</p>
       ) : (
-        <MissionWorkspace
-          key={mission.id}
-          provider={provider}
-          focus={focus}
-          mission={mission}
-          polygons={polygons.data ?? []}
-          participants={participants.data ?? []}
-          themeId={theme}
-          online={operational}
-        />
+        workspace
       )}
 
       {mission && !creating && joinOpen && (

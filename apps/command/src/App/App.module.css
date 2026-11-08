@@ -135,3 +135,29 @@
 .veil[data-veil='dense'] {
   opacity: 0.82;
 }
+
+/* Phone (usePhoneLayout, 768px): the inspector and edit bar float above the bottom sheet, full width. */
+@media (width <= 768px) {
+  .inspector {
+    top: auto;
+    bottom: var(--space-6);
+    inset-inline: var(--space-6);
+    z-index: 1;
+    width: auto;
+    max-height: calc(100% - var(--header-h) - var(--space-6) * 3);
+    border-radius: var(--radius-xl);
+    overflow-y: auto;
+  }
+
+  .editBar,
+  .notice {
+    left: var(--space-6);
+    right: var(--space-6);
+    z-index: 1;
+    transform: none;
+  }
+
+  .editBar {
+    bottom: var(--space-6);
+  }
+}

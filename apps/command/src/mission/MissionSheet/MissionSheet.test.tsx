@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { Participant } from '@trace/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import { MissionSheet } from '.';
@@ -47,7 +47,7 @@ describe('MissionSheet', () => {
   it('sorts searchers by callsign', () => {
     renderSheet({ tab: 'searchers', participants: [...participants].reverse() });
     const rows = screen.getAllByRole('listitem');
-    expect(within(rows[0]).getByText('דנה כהן')).toBeInTheDocument();
+    expect(rows[0]).toHaveTextContent('דנה כהן');
   });
 
   it('leaves out searchers who ended', () => {
