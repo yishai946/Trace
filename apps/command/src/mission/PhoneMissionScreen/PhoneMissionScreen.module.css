@@ -1,0 +1,89 @@
+.phone {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* MapLibre's attribution sits above the sheet, not under it. */
+.stage[data-sheet='expanded'] :global(.maplibregl-ctrl-bottom-left),
+.stage[data-sheet='expanded'] :global(.maplibregl-ctrl-bottom-right) {
+  bottom: min(var(--pending-sheet-h), 45%);
+}
+
+.stage[data-sheet='collapsed'] :global(.maplibregl-ctrl-bottom-left),
+.stage[data-sheet='collapsed'] :global(.maplibregl-ctrl-bottom-right) {
+  bottom: var(--pending-touch-target);
+}
+
+/* The compact top bar: brand mark, mission selector, connection, then the icon actions. */
+.bar {
+  position: absolute;
+  top: var(--space-6);
+  inset-inline: var(--space-6);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  height: var(--header-h);
+  padding-inline: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.bar > * {
+  flex-shrink: 0;
+}
+
+.brand {
+  display: inline-flex;
+  padding-inline: var(--space-2);
+}
+
+.bar > .mission {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+/* What opens under the bar: a notice, the join code, the place search. */
+.below {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  inset-inline: var(--space-6);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-height: calc(100% - var(--header-h) - var(--space-6) * 3);
+  overflow-y: auto;
+}
+
+.search,
+.notice {
+  align-self: stretch;
+}
+
+.notice {
+  margin: 0;
+  padding-block: var(--space-4);
+  padding-inline: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+  color: var(--ink-secondary);
+}

@@ -87,7 +87,7 @@ describe('notifications', () => {
 
     it('keeps a token per signed-in device', async () => {
       const phone = await signInSearcher(ctx);
-      const tablet = await signInSearcher(ctx, phone.phoneNumber);
+      const tablet = await signInSearcher(ctx, { phoneNumber: phone.phoneNumber });
       await put(phone, tokenOf('a'));
       await put(tablet, tokenOf('b'));
       expect((await rows()).map((row) => row.token).sort()).toEqual([tokenOf('a'), tokenOf('b')]);
@@ -108,7 +108,7 @@ describe('notifications', () => {
 
     it("deletes only this device's token, and again without error", async () => {
       const phone = await signInSearcher(ctx);
-      const tablet = await signInSearcher(ctx, phone.phoneNumber);
+      const tablet = await signInSearcher(ctx, { phoneNumber: phone.phoneNumber });
       await put(phone, tokenOf('a'));
       await put(tablet, tokenOf('b'));
 
