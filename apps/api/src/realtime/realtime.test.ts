@@ -252,4 +252,38 @@ describe('realtime', () => {
     await settle();
     expect(events).toEqual([]);
   });
+
+  it("sends the Timeline only to the mission's commander", async () => {
+    const commanderA = await signInCommander(ctx);
+    const commanderB = await signInCommander(ctx);
+    const missionA = await createMissionAs(commanderA);
+    const missionB = await createMissionAs(commanderB);
+    const searcher = await signInSearcher(ctx);
+    await addParticipant(ctx.db, { missionId: missionA.id, callsign: 1, searcherId: searcher.searcherId });
+
+    const [socketA, socketSearcher, socketB] = [commanderA, searcher, commanderB].map(socketFor) as [
+      Client,
+      Client,
+      Client,
+    ];
+    await Promise.all([socketA, socketSearcher, socketB].map(connect));
+    expect(await join(socketA, missionA.id)).toEqual({ ok: true });
+    expect(await join(socketSearcher, missionA.id)).toEqual({ ok: true });
+    expect(await join(socketB, missionB.id)).toEqual({ ok: true });
+    const commanderEvents = record(socketA);
+    const searcherEvents = record(socketSearcher);
+    const otherEvents = record(socketB);
+
+    const polygon = await createPolygonAs(commanderA, missionA.id);
+    await settle();
+
+    expect(commanderEvents.map((e) => e.type)).toEqual(['polygon.saved', 'timeline.recorded']);
+    const recorded = commanderEvents.find((e) => e.type === 'timeline.recorded');
+    expect(recorded).toMatchObject({
+      missionId: missionA.id,
+      event: { type: 'polygon.created', subject: { id: polygon.id } },
+    });
+    expect(searcherEvents.map((e) => e.type)).toEqual(['polygon.saved']);
+    expect(otherEvents).toEqual([]);
+  });
 });
