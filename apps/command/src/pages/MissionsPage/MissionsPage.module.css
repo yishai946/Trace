@@ -199,3 +199,153 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+
+/* Phone (Cm02): the list fills the screen on the map ground, with a top bar instead of a floating panel. */
+.phonePanel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--map-ground);
+}
+
+.bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--header-h);
+  padding-inline: var(--space-6);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+}
+
+.barTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--text-title);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.barEnd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.newMission {
+  width: 100%;
+}
+
+.search.phoneSearch {
+  flex: none;
+  width: 100%;
+  height: var(--pending-touch-target);
+  margin-inline-start: 0;
+}
+
+.phoneTabs {
+  width: 100%;
+}
+
+.phoneTab {
+  flex: 1;
+  justify-content: center;
+  height: var(--pending-touch-target);
+}
+
+.phoneBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-block-start: 0;
+  padding-inline: var(--space-6);
+  padding-block-end: var(--space-6);
+  outline: none;
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  color: var(--ink);
+  font: var(--text-body);
+  text-align: start;
+  cursor: pointer;
+  outline: none;
+}
+
+.card[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.card[data-pressed] {
+  background-color: var(--surface-raised);
+}
+
+.card[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.cardTitle {
+  flex: 1;
+  min-width: 0;
+  font: var(--text-title);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--chip);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cardPerson {
+  color: var(--ink-secondary);
+}
+
+.cardMeta {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}

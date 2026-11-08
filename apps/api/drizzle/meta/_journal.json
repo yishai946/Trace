@@ -40,8 +40,29 @@
     {
       "idx": 5,
       "version": "7",
-      "when": 1794055791271,
-      "tag": "0005_sightings",
+      "when": 1794053555314,
+      "tag": "0005_push_tokens",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794123990287,
+      "tag": "0006_otp_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794174166056,
+      "tag": "0007_timeline_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794176356405,
+      "tag": "0008_sightings",
       "breakpoints": true
     }
   ]

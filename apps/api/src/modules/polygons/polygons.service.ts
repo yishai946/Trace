@@ -6,16 +6,18 @@ import {
   type CreatePolygonBody,
   type MissionPolygon,
   type SearchersOutsideDetails,
+  type TimelineEvent,
   type UpdatePolygonBody,
 } from '@trace/schemas';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
-import type { Db } from '../../db';
+import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { missions, participations, polygons, searchers } from '../../db/schema';
+import type { Actor } from '../../auth/auth.plugin';
 import { AppError, notFound } from '../../errors';
+import { recordEvent } from '../timeline/timeline.service';
 
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 export type CreatePolygonInput = z.output<typeof CreatePolygonBody>;
 export type UpdatePolygonInput = z.output<typeof UpdatePolygonBody>;
 
@@ -126,7 +128,12 @@ export async function listPolygons(db: Db, missionId: string): Promise<MissionPo
 }
 
 /** Draws a new polygon (UC-C06). Unnamed, it is called "פוליגון N"; it starts unassigned. Overlap is allowed. */
-export async function createPolygon(db: Db, missionId: string, input: CreatePolygonInput): Promise<MissionPolygon> {
+export async function createPolygon(
+  db: Db,
+  missionId: string,
+  input: CreatePolygonInput,
+  actor: Actor,
+): Promise<{ polygon: MissionPolygon; event: TimelineEvent }> {
   await assertValid(db, input.geometry);
   return db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
@@ -139,9 +146,16 @@ export async function createPolygon(db: Db, missionId: string, input: CreatePoly
         name: input.name ?? nextPolygonName(used.map((p) => p.name)),
         geometry: input.geometry,
       })
-      .returning({ id: polygons.id });
+      .returning({ id: polygons.id, name: polygons.name });
     if (!created) throw new Error('Polygon insert returned no row');
-    return toPolygon(await findPolygon(tx, missionId, created.id));
+    const event = await recordEvent(tx, {
+      missionId,
+      actor,
+      type: 'polygon.created',
+      subject: { kind: 'polygon', id: created.id, label: created.name },
+      details: {},
+    });
+    return { polygon: toPolygon(await findPolygon(tx, missionId, created.id)), event };
   });
 }
 
@@ -154,23 +168,22 @@ export async function updatePolygon(
   missionId: string,
   polygonId: string,
   input: UpdatePolygonInput,
-): Promise<MissionPolygon> {
+  actor: Actor,
+): Promise<{ polygon: MissionPolygon; event: TimelineEvent | null }> {
   if (input.geometry) await assertValid(db, input.geometry);
   return db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
-    await findPolygon(tx, missionId, polygonId);
+    const existing = await findPolygon(tx, missionId, polygonId);
 
-    if (input.geometry && !input.confirmSearchersOutside) {
-      const outside = await searchersOutside(tx, polygonId, input.geometry);
-      if (outside.length > 0) {
-        const details: SearchersOutsideDetails = { searchers: outside };
-        throw new AppError(
-          409,
-          'SEARCHERS_OUTSIDE_POLYGON',
-          'Active searchers would be outside the new boundary',
-          details,
-        );
-      }
+    const outside = input.geometry ? await searchersOutside(tx, polygonId, input.geometry) : [];
+    if (outside.length > 0 && !input.confirmSearchersOutside) {
+      const details: SearchersOutsideDetails = { searchers: outside };
+      throw new AppError(
+        409,
+        'SEARCHERS_OUTSIDE_POLYGON',
+        'Active searchers would be outside the new boundary',
+        details,
+      );
     }
     // TODO(realtime): notify the searchers left outside once Socket.IO and push notifications exist.
     // TODO(tracking): block the change while an affected searcher is offline (decision 86); needs connectivity state.
@@ -182,13 +195,28 @@ export async function updatePolygon(
         ...(input.name !== undefined ? { name: input.name } : {}),
       })
       .where(eq(polygons.id, polygonId));
-    return toPolygon(await findPolygon(tx, missionId, polygonId));
+    // A rename alone is not a significant event (decision 54); only a new boundary is recorded.
+    const event = input.geometry
+      ? await recordEvent(tx, {
+          missionId,
+          actor,
+          type: 'polygon.boundary_changed',
+          subject: { kind: 'polygon', id: polygonId, label: input.name ?? existing.name },
+          details: { searchersOutside: outside.length },
+        })
+      : null;
+    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), event };
   });
 }
 
 /** Removes a polygon from the active map (UC-C06). Blocked while a searcher is assigned; history stays. */
-export async function deletePolygon(db: Db, missionId: string, polygonId: string): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function deletePolygon(
+  db: Db,
+  missionId: string,
+  polygonId: string,
+  actor: Actor,
+): Promise<{ event: TimelineEvent }> {
+  return db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     const polygon = await findPolygon(tx, missionId, polygonId);
     if (polygon.activeSearchers > 0) {
@@ -197,5 +225,13 @@ export async function deletePolygon(db: Db, missionId: string, polygonId: string
       });
     }
     await tx.update(polygons).set({ deletedAt: new Date() }).where(eq(polygons.id, polygonId));
+    const event = await recordEvent(tx, {
+      missionId,
+      actor,
+      type: 'polygon.deleted',
+      subject: { kind: 'polygon', id: polygonId, label: polygon.name },
+      details: {},
+    });
+    return { event };
   });
 }

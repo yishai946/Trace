@@ -5,6 +5,7 @@ import type { Mission } from '@trace/schemas';
 import { useMemo, useState, type FormEvent } from 'react';
 import { Form } from 'react-aria-components';
 import { ApiRequestError } from '../../api';
+import { PhotoPicker } from '../../components/PhotoPicker';
 import { Button } from '../../components/Button';
 import { DateTimeField } from '../../components/DateTimeField';
 import { TextField } from '../../components/TextField';
@@ -21,7 +22,6 @@ import {
   type NewMissionForm,
 } from './newMissionForm';
 import { MissionNameTitle } from './MissionNameTitle';
-import { PhotoPicker } from './PhotoPicker';
 import { PointPicker, type PlaceMode } from './PointPicker';
 
 /** Where the map opens for a new mission: Jerusalem, until the commander places a point. */

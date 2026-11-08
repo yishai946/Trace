@@ -11,6 +11,8 @@ interface PlaceSearchProps {
   placeholder?: string;
   /** Fills its container instead of the app bar's fixed width. */
   fullWidth?: boolean;
+  /** Focuses the field when it appears, for a search opened by a button. */
+  autoFocus?: boolean;
 }
 
 /** Search for a place or address in Israel and move the map there, or place a point on it. */
@@ -20,6 +22,7 @@ export function PlaceSearch({
   label = 'חיפוש מקום',
   placeholder = 'חפש מקום, כתובת או נחל…',
   fullWidth = false,
+  autoFocus = false,
 }: PlaceSearchProps) {
   const list = useAsyncList<Place>({
     async load({ signal, filterText }) {
@@ -60,7 +63,7 @@ export function PlaceSearch({
           <circle cx="11" cy="11" r="7" />
           <path d="m20 20-4-4" />
         </svg>
-        <Input className={styles.input} placeholder={placeholder} />
+        <Input className={styles.input} placeholder={placeholder} autoFocus={autoFocus} />
         {list.filterText && (
           // slot={null}: a plain button, not the ComboBox's own trigger that opens the list.
           <Button slot={null} className={styles.clear} aria-label="נקה חיפוש" onPress={() => list.setFilterText('')}>

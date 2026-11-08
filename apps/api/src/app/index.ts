@@ -15,10 +15,16 @@ import type { Db } from '../db';
 import type { Env } from '../env';
 import { registerErrorHandlers } from '../errors';
 import { healthRoutes } from '../modules/health/routes';
+import { createExpoPushSender } from '../modules/notifications/expoPushSender';
+import { notificationRoutes } from '../modules/notifications';
+import { createPushNotifier } from '../modules/notifications/notifications.service';
+import type { PushSender } from '../modules/notifications/pushSender';
 import { missionRoutes } from '../modules/missions';
 import { participantRoutes } from '../modules/participants';
 import { polygonRoutes } from '../modules/polygons';
 import { sightingRoutes } from '../modules/sightings';
+import { searcherRoutes } from '../modules/searchers';
+import { timelineRoutes } from '../modules/timeline';
 import { createRealtime } from '../realtime';
 
 const VERSION = '0.1.0';
@@ -30,10 +36,12 @@ interface AppOptions {
   sendOtp?: OtpSender;
   /** How often open realtime connections recheck their session. Tests shorten it. */
   realtimeRevalidateMs?: number;
+  /** Sends push notifications. Defaults to Expo Push; tests pass a fake. */
+  pushSender?: PushSender;
 }
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
-export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs }: AppOptions) {
+export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSender }: AppOptions) {
   const app = Fastify({ logger: { level: env.LOG_LEVEL } }).withTypeProvider<ZodTypeProvider>();
   const auth = createAuth({
     env,
@@ -52,6 +60,12 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs }: AppOp
   registerErrorHandlers(app);
   const realtime = createRealtime({ app, auth, db, env, revalidateMs: realtimeRevalidateMs });
 
+  const push = createPushNotifier({
+    db,
+    sender: pushSender ?? createExpoPushSender({ accessToken: env.EXPO_ACCESS_TOKEN }),
+    log: app.log,
+  });
+
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
   await app.register(swagger, {
     openapi: { info: { title: 'TRACE API', version: VERSION } },
@@ -67,14 +81,17 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs }: AppOp
       await api.register(authRoutes, { auth });
       await api.register(async (signedIn) => {
         requireSignIn(signedIn, { auth, db });
-        await signedIn.register(missionRoutes, { db });
+        await signedIn.register(missionRoutes, { db, realtime });
         await signedIn.register(polygonRoutes, { db, realtime });
         await signedIn.register(sightingRoutes, { db, realtime });
         await signedIn.register(participantRoutes, { db });
+        await signedIn.register(searcherRoutes, { db });
+        await signedIn.register(notificationRoutes, { db });
+        await signedIn.register(timelineRoutes, { db });
       });
     },
     { prefix: '/api' },
   );
 
-  return { app, auth, realtime };
+  return { app, auth, realtime, push };
 }

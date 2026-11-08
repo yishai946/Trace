@@ -112,3 +112,22 @@
   width: 16px;
   height: 16px;
 }
+
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+@media (width <= 768px) {
+  .button,
+  .sm {
+    height: var(--pending-touch-target);
+  }
+
+  .icon {
+    width: var(--pending-touch-target);
+  }
+}
+
+/* Large: phone login inputs and primary actions (wireframe .tc-btn--lg). */
+.lg {
+  height: var(--pending-control-lg-h);
+  padding-inline: var(--space-7);
+  font: var(--text-title);
+}

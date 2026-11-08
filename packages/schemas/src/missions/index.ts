@@ -40,6 +40,8 @@ export const Lkp = z
   .object({ position: PointGeometry, observedAt: z.iso.datetime({ offset: true }) })
   .meta({ id: 'Lkp' });
 
+const MissionName = z.string().trim().min(1, 'Mission name is required').max(120);
+
 /** One LKP the mission had. Exactly one is current: the newest; the rest are history, shown dimmed (decision 58). */
 export const LkpPoint = z
   .object({
@@ -59,11 +61,23 @@ export const LkpPointList = z.array(LkpPoint).meta({ id: 'LkpPointList' });
 
 /** A new mission starts active. The rally point is required (decision 91); the LKP may come later (UC-C04). */
 export const CreateMissionBody = z.object({
-  name: z.string().trim().min(1, 'Mission name is required').max(120),
+  name: MissionName,
   missingPerson: MissingPersonInput.prefault({}),
   rallyPoint: PointGeometry,
   /** Required: the search is planned from it (UC-C02 step 2, decision 1). */
   lkp: Lkp,
+});
+
+/** UC-C05: the commander's new rally point. */
+export const UpdateRallyPointBody = z.object({ rallyPoint: PointGeometry });
+
+/**
+ * UC-C03: the commander's edited mission name and missing-person details. It replaces them all: a field sent empty
+ * or null is cleared. The photo is replaced separately (`PUT /missions/:id/photo`).
+ */
+export const UpdateMissionDetailsBody = z.object({
+  name: MissionName,
+  missingPerson: MissingPersonInput,
 });
 
 export const Mission = z
@@ -90,4 +104,6 @@ export type MissingPerson = z.infer<typeof MissingPerson>;
 export type CreateMissionBody = z.input<typeof CreateMissionBody>;
 export type Lkp = z.infer<typeof Lkp>;
 export type LkpPoint = z.infer<typeof LkpPoint>;
+export type UpdateRallyPointBody = z.input<typeof UpdateRallyPointBody>;
+export type UpdateMissionDetailsBody = z.input<typeof UpdateMissionDetailsBody>;
 export type Mission = z.infer<typeof Mission>;

@@ -10,6 +10,7 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { missionAccess } from '../../auth/auth.access';
+import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import type { Realtime } from '../../realtime';
 import { createPolygon, deletePolygon, listPolygons, updatePolygon } from './polygons.service';
@@ -43,8 +44,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request, reply) => {
       const { missionId } = request.params;
-      const polygon = await createPolygon(db, missionId, request.body);
+      const { polygon, event } = await createPolygon(db, missionId, request.body, actorOf(request));
       realtime.publish({ type: 'polygon.saved', missionId, polygon });
+      realtime.publish({ type: 'timeline.recorded', missionId, event });
       return reply.status(201).send(polygon);
     },
   );
@@ -66,8 +68,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request) => {
       const { missionId, polygonId } = request.params;
-      const polygon = await updatePolygon(db, missionId, polygonId, request.body);
+      const { polygon, event } = await updatePolygon(db, missionId, polygonId, request.body, actorOf(request));
       realtime.publish({ type: 'polygon.saved', missionId, polygon });
+      if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
       return polygon;
     },
   );
@@ -85,8 +88,9 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request, reply) => {
       const { missionId, polygonId } = request.params;
-      await deletePolygon(db, missionId, polygonId);
+      const { event } = await deletePolygon(db, missionId, polygonId, actorOf(request));
       realtime.publish({ type: 'polygon.deleted', missionId, polygonId });
+      realtime.publish({ type: 'timeline.recorded', missionId, event });
       return reply.status(204).send(null);
     },
   );

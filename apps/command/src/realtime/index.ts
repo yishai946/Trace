@@ -7,6 +7,7 @@ import {
   type Participant,
   type ServerToClientEvents,
   type Sighting,
+  type TimelineEvent,
 } from '@trace/schemas';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -53,6 +54,18 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
       void queryClient.invalidateQueries({ queryKey: missionKeys.lkps(event.missionId) });
       void queryClient.invalidateQueries({ queryKey: missionKeys.sightings(event.missionId) });
       return;
+    case 'rally.changed':
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) =>
+          m.id === event.missionId ? { ...m, rallyPoint: event.rallyPoint, updatedAt: event.updatedAt } : m,
+        ),
+      );
+      return;
+    case 'mission.updated':
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === event.missionId ? event.mission : m)),
+      );
+      return;
     case 'participant.moved':
       queryClient.setQueryData<Participant[]>(missionKeys.participants(event.missionId), (list) =>
         list?.map((p) =>
@@ -60,6 +73,24 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         ),
       );
       return;
+    case 'timeline.recorded': {
+      const key = missionKeys.timeline(event.missionId);
+      // Not cached yet: either the Timeline was never opened, or its first fetch is in flight and may have read the
+      // server before this event. Cancel that fetch and fetch again (an in-flight first fetch is otherwise reused),
+      // so it cannot leave the list without the event. Nothing happens if the Timeline was never opened.
+      if (!queryClient.getQueryData(key)) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+        return;
+      }
+      // The sort is stable, so events of the same instant keep their arrival order, as the API orders them by
+      // recording order.
+      queryClient.setQueryData<TimelineEvent[]>(key, (list) =>
+        list && !list.some((e) => e.id === event.event.id)
+          ? [...list, event.event].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt))
+          : list,
+      );
+      return;
+    }
   }
 }
 

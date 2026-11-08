@@ -1,5 +1,13 @@
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
-import { ApiError, CreateMissionBody, Mission, MissionList, MissionParams } from '@trace/schemas';
+import {
+  ApiError,
+  CreateMissionBody,
+  Mission,
+  MissionList,
+  MissionParams,
+  UpdateMissionDetailsBody,
+  UpdateRallyPointBody,
+} from '@trace/schemas';
 import type { FastifyError } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -7,7 +15,16 @@ import { commandersOnly, missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { AppError } from '../../errors';
-import { createMission, getMission, getMissionPhoto, listMissions, setMissionPhoto } from './missions.service';
+import type { Realtime } from '../../realtime';
+import {
+  createMission,
+  getMission,
+  getMissionPhoto,
+  listMissions,
+  setMissionPhoto,
+  updateMissionDetails,
+  updateRallyPoint,
+} from './missions.service';
 
 /** Fastify's own errors for a photo upload, in the API's error codes. Anything else goes to the app's handler. */
 function photoUploadError(error: FastifyError): Error {
@@ -22,7 +39,7 @@ function photoUploadError(error: FastifyError): Error {
   return error;
 }
 
-export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db }) => {
+export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   // Photos arrive as the raw image bytes, so a phone or browser can send the file as is.
   app.addContentTypeParser(
     [...PHOTO_TYPES],
@@ -54,6 +71,7 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
       },
       preHandler: commandersOnly,
     },
+    // Nothing is published: nobody can have joined a mission that did not exist, so no one is listening for its events.
     async (request, reply) =>
       reply.status(201).send(await createMission(db, { ...request.body, commanderId: actorOf(request).userId })),
   );
@@ -73,12 +91,67 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
   );
 
   app.put(
+    '/missions/:missionId/rally-point',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'Change the rally point (UC-C05)',
+        description:
+          'Replaces the mission rally point and sends it at once to the searchers who are online (decision 92); ' +
+          'the others get it with the mission when they reconnect. 409 MISSION_ENDED once the mission ended.',
+        params: MissionParams,
+        body: UpdateRallyPointBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId } = request.params;
+      const mission = await updateRallyPoint(db, missionId, request.body.rallyPoint);
+      realtime.publish({
+        type: 'rally.changed',
+        missionId,
+        rallyPoint: mission.rallyPoint,
+        updatedAt: mission.updatedAt,
+      });
+      return mission;
+    },
+  );
+
+  app.put(
+    '/missions/:missionId/details',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'Edit the mission and missing-person details (UC-C03)',
+        description:
+          'Replaces the mission name and the missing-person details; a field sent empty or null is cleared. ' +
+          'Only the mission commander, while the mission is active or paused (decision 94): 409 MISSION_ENDED once ' +
+          'it ended. Every member of the mission gets the new details at once; the others with the mission when they ' +
+          'reconnect.',
+        params: MissionParams,
+        body: UpdateMissionDetailsBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId } = request.params;
+      const mission = await updateMissionDetails(db, missionId, request.body);
+      realtime.publish({ type: 'mission.updated', missionId, mission });
+      return mission;
+    },
+  );
+
+  app.put(
     '/missions/:missionId/photo',
     {
       schema: {
         tags: ['missions'],
-        summary: "Set or replace the missing person's photo (UC-C02)",
-        description: `The body is the image itself: JPEG, PNG or WebP, at most ${MAX_PHOTO_BYTES / 1024 / 1024} MB.`,
+        summary: "Set or replace the missing person's photo (UC-C02, UC-C03)",
+        description:
+          `The body is the image itself: JPEG, PNG or WebP, at most ${MAX_PHOTO_BYTES / 1024 / 1024} MB.` +
+          ' Every member of the mission gets the new photo address at once.',
         params: MissionParams,
         consumes: [...PHOTO_TYPES],
         response: {
@@ -98,10 +171,12 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
         throw photoUploadError(error);
       },
     },
-    (request) => {
+    async (request) => {
       const body: unknown = request.body;
       if (!Buffer.isBuffer(body)) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'Send the photo as an image');
-      return setMissionPhoto(db, request.params.missionId, body);
+      const mission = await setMissionPhoto(db, request.params.missionId, body);
+      realtime.publish({ type: 'mission.updated', missionId: mission.id, mission });
+      return mission;
     },
   );
 

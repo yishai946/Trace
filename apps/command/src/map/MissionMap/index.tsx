@@ -186,7 +186,7 @@ export function MissionMap({
       // Selecting polygons: only with the selection tool, and not while a boundary is being reshaped.
       const selecting = () => toolRef.current === 'select' && !editFeatureRef.current && !onMapClickRef.current;
       created.on('click', (e) => {
-        if (onMapClickRef.current) {
+        if (onMapClickRef.current && toolRef.current === 'select') {
           onMapClickRef.current([e.lngLat.lng, e.lngLat.lat]);
           return;
         }

@@ -16,6 +16,8 @@
   border-radius: var(--radius-xl);
   background-color: var(--surface);
   box-shadow: var(--shadow-panel);
+  /* Above the details screen, which covers the map and its controls. */
+  z-index: 4;
 }
 
 /* Fixed parts keep their size; the mission name, search and status shrink as the window narrows. */
@@ -27,49 +29,6 @@
   padding-inline: var(--space-3);
   font: var(--text-title);
   font-weight: 700;
-}
-
-/* Connection indicator: a dot and one word, always shown. Green pulses softly while connected; red when not. */
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-3);
-  color: var(--ink-secondary);
-  font: var(--text-meta);
-  white-space: nowrap;
-  cursor: default;
-}
-
-.statusDot {
-  width: 7px;
-  height: 7px;
-  border-radius: var(--radius-sm);
-  background-color: var(--ink-muted);
-}
-
-.status[data-state='up'] .statusDot {
-  background-color: var(--success);
-  animation: pulse 2.4s ease-in-out infinite;
-}
-
-.status[data-state='down'] {
-  color: var(--danger-ink);
-}
-
-.status[data-state='down'] .statusDot {
-  background-color: var(--danger);
-}
-
-@keyframes pulse {
-  50% {
-    opacity: 0.4;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .status[data-state='up'] .statusDot {
-    animation: none;
-  }
 }
 
 .appbar > .search {
@@ -142,9 +101,9 @@
   bottom: var(--space-6);
 }
 
-.join {
+.rallyPanel {
   position: absolute;
-  top: calc(var(--space-6) * 2 + var(--header-h));
+  bottom: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-start: var(--space-6);
 }
 
@@ -181,4 +140,38 @@
 
 .veil[data-veil='dense'] {
   opacity: 0.82;
+}
+
+/* Phone login: the sheet covers the bottom of the map, so the map attribution (required by MapTiler and OSM) moves to the top. */
+@media (width <= 768px) {
+  .screen[data-login] :global(.maplibregl-ctrl-bottom-right) {
+    top: 0;
+    bottom: auto;
+  }
+}
+
+/* Phone (usePhoneLayout, 768px): the inspector and edit bar float above the bottom sheet, full width. */
+@media (width <= 768px) {
+  .inspector {
+    top: auto;
+    bottom: var(--space-6);
+    inset-inline: var(--space-6);
+    z-index: 1;
+    width: auto;
+    max-height: calc(100% - var(--header-h) - var(--space-6) * 3);
+    border-radius: var(--radius-xl);
+    overflow-y: auto;
+  }
+
+  .editBar,
+  .notice {
+    left: var(--space-6);
+    right: var(--space-6);
+    z-index: 1;
+    transform: none;
+  }
+
+  .editBar {
+    bottom: var(--space-6);
+  }
 }

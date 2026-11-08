@@ -1,5 +1,5 @@
 import type { ThemeId } from '@trace/design';
-import { canChangeLkp, canChangePolygons, isActiveInPolygon } from '@trace/domain';
+import { canChangeLkp, canChangePolygons, canChangeRallyPoint, isActiveInPolygon } from '@trace/domain';
 import { boundsOf, findOutside, isValidPolygon, type LngLat, type Polygon } from '@trace/geo';
 import { emptyMissionMapData, type MapProvider } from '@trace/map';
 import {
@@ -16,21 +16,26 @@ import {
   type SessionUser,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
+import { ConnectionStatus, type Connection } from '../components/ConnectionStatus';
 import { MissionSwitcher } from '../components/MissionSwitcher';
 import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
+import { usePhoneLayout } from '../hooks/usePhoneLayout';
 import { MissionMap, type MapFocus, type PointTarget } from '../map/MissionMap';
 import { PlaceSearch } from '../map/PlaceSearch';
+import type { PlaceMode } from '../map/PlacePicker';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage, sightingErrorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
 import { LkpPanel } from '../mission/LkpPanel';
+import { MissionLayout } from '../mission/MissionLayout';
+import type { MissionView } from '../mission/MissionNav';
 import {
   useLkps,
   useMissions,
@@ -39,12 +44,19 @@ import {
   usePolygons,
   useSightingMutations,
   useSightings,
+  useTimeline,
+  useUpdateRallyPoint,
 } from '../mission/missionQueries';
+import { PhoneMissionScreen } from '../mission/PhoneMissionScreen';
 import { PolygonInspector } from '../mission/PolygonInspector';
+import { rallyErrorMessage } from '../mission/rallyErrorMessage';
+import { RallyPointPanel } from '../mission/RallyPointPanel';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
+import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { TimelinePage } from '../pages/TimelinePage';
 import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
 
@@ -84,7 +96,7 @@ export function App() {
 
   if (!session.data) {
     return (
-      <div className={styles.screen}>
+      <div className={styles.screen} data-login="">
         <Backdrop provider={provider} themeId={theme} veil="light" />
         <LoginPage />
       </div>
@@ -115,6 +127,7 @@ function Backdrop({ provider, themeId, veil }: { provider: MapProvider; themeId:
 function Console({ provider, user }: { provider: MapProvider; user: SessionUser }) {
   const { theme } = useTheme();
   const online = useOnline();
+  const phone = usePhoneLayout();
   const signOut = useSignOut();
   // The server is pinged regularly: navigator.onLine alone misses a lost server or a network with no way out.
   const health = useQuery({
@@ -130,10 +143,20 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [creating, setCreating] = useState(false);
   /** The join code, QR and link panel; it opens by itself on a mission just created (UC-C02 step 4). */
   const [joinOpen, setJoinOpen] = useState(false);
+  /** The rally point panel (UC-C05). It shares the panel corner with the join code, so only one is open. */
+  const [rallyOpen, setRallyOpen] = useState(false);
+  /** The mission details screen (UC-C03). It covers the map and the panels, so no other panel stays open with it. */
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsButton = useRef<HTMLButtonElement>(null);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
+  /** The live map or the Timeline. The Timeline is also open for an ended mission, read-only (UC-C19). */
+  const [view, setView] = useState<MissionView>('map');
   const openMission = (id: string | null) => {
     setOpenId(id);
+    setView('map');
     setJoinOpen(false);
+    setRallyOpen(false);
+    setDetailsOpen(false);
     setCreatedNotice(null);
   };
   const mission = missions.data?.find((m) => m.id === openId);
@@ -141,13 +164,14 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const participants = useParticipants(mission?.id);
   const sightings = useSightings(mission?.id);
   const lkps = useLkps(mission?.id);
+  const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
   const [focus, setFocus] = useState<MapFocus | null>(null);
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
-  const connection = !connected
+  const connection: Connection = !connected
     ? {
         state: 'down',
         label: 'לא זמין',
@@ -163,6 +187,79 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           }
         : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
 
+  const phoneList = phone && !mission && !creating;
+  const profileMenu = (
+    <ProfileMenu
+      user={user}
+      canSignOut={connected}
+      signingOut={signOut.isPending}
+      signOutFailed={signOut.isError}
+      onSignOut={() => signOut.mutate()}
+    />
+  );
+
+  const workspace =
+    !mission || (view === 'timeline' && !phone) ? null : polygons.isPending ? (
+      <p className={styles.setup}>טוען מסע…</p>
+    ) : (
+      <MissionWorkspace
+        key={mission.id}
+        provider={provider}
+        focus={focus}
+        mission={mission}
+        polygons={polygons.data ?? []}
+        participants={participants.data ?? []}
+        sightings={sightings.data}
+        lkps={lkps.data}
+        sightingsLoading={sightings.isPending || lkps.isPending}
+        sightingsFailed={sightings.isError || lkps.isError}
+        onRetrySightings={() => {
+          void sightings.refetch();
+          void lkps.refetch();
+        }}
+        themeId={theme}
+        online={operational}
+        rallyOpen={rallyOpen}
+        onRallyClose={() => setRallyOpen(false)}
+        onPlaceFound={setFocus}
+      />
+    );
+
+  // The phone gets its own mission screen (Cm04). The mission list and login have their own phone screens;
+  // new mission stays as on the desktop.
+  if (phone && mission && !creating) {
+    return (
+      <main className={styles.screen}>
+        <PhoneMissionScreen
+          key={mission.id}
+          mission={mission}
+          missions={missions.data ?? []}
+          connection={connection}
+          onSelectMission={openMission}
+          onShowAll={() => openMission(null)}
+          joinOpen={joinOpen}
+          onJoinOpenChange={setJoinOpen}
+          notice={createdNotice}
+          participants={participants.data}
+          participantsFailed={participants.isError}
+          polygons={polygons.data ?? []}
+          workspace={workspace}
+          renderSearch={(close) => (
+            <PlaceSearch
+              provider={provider}
+              fullWidth
+              autoFocus
+              onSelect={(place) => {
+                setFocus({ center: place.center, bounds: place.bounds });
+                close();
+              }}
+            />
+          )}
+        />
+      </main>
+    );
+  }
+
   return (
     <main className={styles.screen}>
       {creating ? (
@@ -175,47 +272,62 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             setCreating(false);
             setOpenId(created.id);
             setJoinOpen(true);
+            setRallyOpen(false);
+            setDetailsOpen(false);
             setCreatedNotice(photoFailed ? 'המסע נוצר, אבל התמונה לא נשמרה.' : null);
           }}
         />
       ) : !mission ? (
         <>
-          <Backdrop provider={provider} themeId={theme} veil="dense" />
+          {!phone && <Backdrop provider={provider} themeId={theme} veil="dense" />}
           <MissionsPage
             missions={missions.data}
             loadFailed={missions.isError}
             onOpen={openMission}
             onNew={() => setCreating(true)}
             canCreate={connected}
+            phoneBar={
+              <>
+                <ConnectionStatus connection={connection} />
+                {profileMenu}
+              </>
+            }
           />
         </>
-      ) : polygons.isPending ? (
-        <p className={styles.setup}>טוען מסע…</p>
       ) : (
-        <MissionWorkspace
-          key={mission.id}
-          provider={provider}
-          focus={focus}
+        workspace
+      )}
+
+      {mission && !creating && detailsOpen && (
+        <MissionDetailsPage
+          key={`details-${mission.id}`}
           mission={mission}
-          polygons={polygons.data ?? []}
-          participants={participants.data ?? []}
-          sightings={sightings.data}
-          lkps={lkps.data}
-          sightingsLoading={sightings.isPending || lkps.isPending}
-          sightingsFailed={sightings.isError || lkps.isError}
-          onRetrySightings={() => {
-            void sightings.refetch();
-            void lkps.refetch();
-          }}
-          themeId={theme}
+          commanderName={user.name}
+          searcherCount={(participants.data ?? []).filter((p) => p.status !== 'ended').length}
           online={operational}
+          onClose={() => {
+            setDetailsOpen(false);
+            detailsButton.current?.focus();
+          }}
         />
       )}
 
-      {mission && !creating && joinOpen && (
-        <div className={styles.join}>
-          <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />
-        </div>
+      {mission && !creating && (
+        <MissionLayout
+          missionName={mission.name}
+          view={view}
+          onNavigate={setView}
+          joinPanel={joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
+        >
+          {view === 'timeline' && (
+            <TimelinePage
+              events={timeline.data}
+              loadFailed={timeline.isError}
+              onRetry={() => void timeline.refetch()}
+              onGoToMap={() => setView('map')}
+            />
+          )}
+        </MissionLayout>
       )}
 
       {mission && !creating && createdNotice && (
@@ -224,55 +336,69 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         </p>
       )}
 
-      <header className={styles.appbar}>
-        <span className={styles.brand}>Trace</span>
-        {mission && !creating && (
-          <>
-            <span className={styles.sep} aria-hidden="true" />
-            <div className={styles.mission}>
-              <MissionSwitcher
-                mission={mission}
-                missions={missions.data ?? []}
-                onSelect={openMission}
-                onShowAll={() => openMission(null)}
-              />
-            </div>
-            <AriaButton
-              className={styles.meta}
-              aria-expanded={joinOpen}
-              aria-label={`קוד הצטרפות ${mission.joinCode}`}
-              onPress={() => setJoinOpen((open) => !open)}
-            >
-              קוד {mission.joinCode}
-            </AriaButton>
-          </>
-        )}
-        <div className={styles.search}>
+      {!phoneList && (
+        <header className={styles.appbar}>
+          <span className={styles.brand}>Trace</span>
           {mission && !creating && (
-            <PlaceSearch
-              provider={provider}
-              onSelect={(place) => setFocus({ center: place.center, bounds: place.bounds })}
-            />
+            <>
+              <span className={styles.sep} aria-hidden="true" />
+              <div className={styles.mission}>
+                <MissionSwitcher
+                  mission={mission}
+                  missions={missions.data ?? []}
+                  onSelect={openMission}
+                  onShowAll={() => openMission(null)}
+                />
+              </div>
+              <AriaButton
+                className={styles.meta}
+                aria-expanded={joinOpen}
+                aria-label={`קוד הצטרפות ${mission.joinCode}`}
+                onPress={() => {
+                  setJoinOpen((open) => !open);
+                  setRallyOpen(false);
+                  setDetailsOpen(false);
+                }}
+              >
+                קוד {mission.joinCode}
+              </AriaButton>
+              <AriaButton
+                className={styles.meta}
+                aria-expanded={rallyOpen}
+                onPress={() => {
+                  setRallyOpen((open) => !open);
+                  setJoinOpen(false);
+                  setDetailsOpen(false);
+                }}
+              >
+                נקודת כינוס
+              </AriaButton>
+              <AriaButton
+                ref={detailsButton}
+                className={styles.meta}
+                aria-expanded={detailsOpen}
+                onPress={() => {
+                  setDetailsOpen((open) => !open);
+                  setJoinOpen(false);
+                  setRallyOpen(false);
+                }}
+              >
+                פרטי מסע
+              </AriaButton>
+            </>
           )}
-        </div>
-        <span
-          className={styles.status}
-          data-state={connection.state}
-          role="status"
-          title={connection.detail}
-          aria-label={`${connection.label}. ${connection.detail}`}
-        >
-          <span className={styles.statusDot} aria-hidden="true" />
-          {connection.label}
-        </span>
-        <ProfileMenu
-          user={user}
-          canSignOut={connected}
-          signingOut={signOut.isPending}
-          signOutFailed={signOut.isError}
-          onSignOut={() => signOut.mutate()}
-        />
-      </header>
+          <div className={styles.search}>
+            {mission && !creating && (
+              <PlaceSearch
+                provider={provider}
+                onSelect={(place) => setFocus({ center: place.center, bounds: place.bounds })}
+              />
+            )}
+          </div>
+          <ConnectionStatus connection={connection} />
+          {profileMenu}
+        </header>
+      )}
     </main>
   );
 }
@@ -293,6 +419,11 @@ interface MissionWorkspaceProps {
   themeId: ThemeId;
   /** Without a connection, new operational actions are blocked (UC-C01). */
   online: boolean;
+  /** The rally point panel is open. */
+  rallyOpen: boolean;
+  onRallyClose: () => void;
+  /** The commander searched for a place for the rally point: the map moves there. */
+  onPlaceFound: (focus: MapFocus) => void;
 }
 
 /** The live map of one mission: polygons from the server, drawing, the polygon Inspector and boundary editing. */
@@ -309,6 +440,9 @@ function MissionWorkspace({
   onRetrySightings,
   themeId,
   online,
+  rallyOpen,
+  onRallyClose,
+  onPlaceFound,
 }: MissionWorkspaceProps) {
   const mutations = usePolygonMutations(mission.id);
   const sightingMutations = useSightingMutations(mission.id);
@@ -318,6 +452,11 @@ function MissionWorkspace({
   const [adding, setAdding] = useState<{ position: LngLat | null } | null>(null);
   const [selectedSightingId, setSelectedSightingId] = useState<string | null>(null);
   const [sightingError, setSightingError] = useState<string | null>(null);
+  const rallyUpdate = useUpdateRallyPoint(mission.id);
+  const [rallyMode, setRallyMode] = useState<PlaceMode>('map');
+  const [rallySaved, setRallySaved] = useState(false);
+  const [rallyError, setRallyError] = useState<string | null>(null);
+  const rallyBlocked = !canChangeRallyPoint(mission.status) ? 'ended' : !online ? 'offline' : null;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [edit, setEdit] = useState<BoundaryEdit | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -375,6 +514,15 @@ function MissionWorkspace({
       return p ? [{ callsign: p.callsign, name: p.name, meters }] : [];
     });
   }, [edit, participants]);
+
+  const changeRally = (point: LngLat) => {
+    setRallySaved(false);
+    setRallyError(null);
+    rallyUpdate.mutate(point, {
+      onSuccess: () => setRallySaved(true),
+      onError: (e) => setRallyError(rallyErrorMessage(e)),
+    });
+  };
 
   const select = (polygonId: string | null) => {
     setSelectedId(polygonId);
@@ -493,10 +641,16 @@ function MissionWorkspace({
         data={mapDataWithDraft}
         initialView={initialView}
         focus={focus}
+        onMapClick={
+          rallyOpen && rallyMode === 'map' && !rallyBlocked && !rallyUpdate.isPending
+            ? changeRally
+            : adding
+              ? (position) => setAdding({ position })
+              : undefined
+        }
         onPolygonDrawn={canEdit ? create : undefined}
         onPolygonSelect={select}
         onPointSelect={selectPoint}
-        onMapClick={adding ? (position) => setAdding({ position }) : undefined}
         onSighting={(canChangeSightings || adding) && !edit ? toggleAddSighting : undefined}
         sightingActive={!!adding}
         editing={edit ? { polygonId: edit.polygonId, geometry: edit.original } : null}
@@ -505,6 +659,24 @@ function MissionWorkspace({
           if (draft.success) setEdit((e) => (e ? { ...e, draft: draft.data, serverOutside: null } : e));
         }}
       />
+
+      {rallyOpen && (
+        <div className={styles.rallyPanel}>
+          <RallyPointPanel
+            provider={provider}
+            point={mission.rallyPoint.coordinates}
+            mode={rallyMode}
+            onModeChange={setRallyMode}
+            onChange={changeRally}
+            onPlaceFound={(place) => onPlaceFound({ center: place.center, bounds: place.bounds })}
+            busy={rallyUpdate.isPending}
+            error={rallyError}
+            saved={rallySaved}
+            blocked={rallyBlocked}
+            onClose={onRallyClose}
+          />
+        </div>
+      )}
 
       {selected && !edit && (
         <div className={styles.inspector}>

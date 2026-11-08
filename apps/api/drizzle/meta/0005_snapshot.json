@@ -1,5 +1,5 @@
 {
-  "id": "140821da-be6a-4e5b-9078-bcc61659a48e",
+  "id": "a65c9750-015b-4f36-a22b-f34272198004",
   "prevId": "4ff41016-1840-4bf2-9f80-073de2f806de",
   "version": "7",
   "dialect": "postgresql",
@@ -153,18 +153,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "sighting_id": {
-          "name": "sighting_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "set_by": {
-          "name": "set_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -204,24 +192,6 @@
           "columnsFrom": ["mission_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "lkp_points_sighting_id_sightings_id_fk": {
-          "name": "lkp_points_sighting_id_sightings_id_fk",
-          "tableFrom": "lkp_points",
-          "tableTo": "sightings",
-          "columnsFrom": ["sighting_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "lkp_points_set_by_users_id_fk": {
-          "name": "lkp_points_set_by_users_id_fk",
-          "tableFrom": "lkp_points",
-          "tableTo": "users",
-          "columnsFrom": ["set_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -655,6 +625,104 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.push_tokens": {
+      "name": "push_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "searcher_id": {
+          "name": "searcher_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "push_tokens_searcher_idx": {
+          "name": "push_tokens_searcher_idx",
+          "columns": [
+            {
+              "expression": "searcher_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "push_tokens_searcher_id_searchers_id_fk": {
+          "name": "push_tokens_searcher_id_searchers_id_fk",
+          "tableFrom": "push_tokens",
+          "tableTo": "searchers",
+          "columnsFrom": ["searcher_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "push_tokens_session_id_sessions_id_fk": {
+          "name": "push_tokens_session_id_sessions_id_fk",
+          "tableFrom": "push_tokens",
+          "tableTo": "sessions",
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "push_tokens_token_unique": {
+          "name": "push_tokens_token_unique",
+          "nullsNotDistinct": false,
+          "columns": ["token"]
+        },
+        "push_tokens_session_id_unique": {
+          "name": "push_tokens_session_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["session_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.searchers": {
       "name": "searchers",
       "schema": "",
@@ -813,124 +881,6 @@
           "columns": ["token"]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.sightings": {
-      "name": "sightings",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "mission_id": {
-          "name": "mission_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reported_by": {
-          "name": "reported_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "source": {
-          "name": "source",
-          "type": "sighting_source",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "geometry(Point,4326)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "observed_at": {
-          "name": "observed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "lkp_decision": {
-          "name": "lkp_decision",
-          "type": "lkp_decision",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "decided_at": {
-          "name": "decided_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "sightings_mission_idx": {
-          "name": "sightings_mission_idx",
-          "columns": [
-            {
-              "expression": "mission_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "sightings_mission_id_missions_id_fk": {
-          "name": "sightings_mission_id_missions_id_fk",
-          "tableFrom": "sightings",
-          "tableTo": "missions",
-          "columnsFrom": ["mission_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "sightings_reported_by_users_id_fk": {
-          "name": "sightings_reported_by_users_id_fk",
-          "tableFrom": "sightings",
-          "tableTo": "users",
-          "columnsFrom": ["reported_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1095,11 +1045,6 @@
     }
   },
   "enums": {
-    "public.lkp_decision": {
-      "name": "lkp_decision",
-      "schema": "public",
-      "values": ["accepted", "rejected"]
-    },
     "public.mission_status": {
       "name": "mission_status",
       "schema": "public",
@@ -1114,11 +1059,6 @@
       "name": "polygon_status",
       "schema": "public",
       "values": ["unassigned", "active", "completed"]
-    },
-    "public.sighting_source": {
-      "name": "sighting_source",
-      "schema": "public",
-      "values": ["self", "witness"]
     },
     "public.task_status": {
       "name": "task_status",

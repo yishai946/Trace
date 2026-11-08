@@ -8,12 +8,15 @@ import {
   ParticipantList,
   Sighting,
   SightingList,
+  TimelineEventList,
   type CreateMissionBody,
   type CreatePolygonBody,
   type CreateSightingBody,
   type LkpDecision,
+  type UpdateMissionDetailsBody,
   type UpdatePolygonBody,
 } from '@trace/schemas';
+import type { LngLat } from '@trace/geo';
 import {
   useMutation,
   useQuery,
@@ -22,7 +25,7 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { useRef } from 'react';
-import { apiRequest } from '../api';
+import { ApiRequestError, apiRequest } from '../api';
 
 export const missionKeys = {
   all: ['missions'] as const,
@@ -30,6 +33,7 @@ export const missionKeys = {
   participants: (missionId: string) => ['missions', missionId, 'participants'] as const,
   sightings: (missionId: string) => ['missions', missionId, 'sightings'] as const,
   lkps: (missionId: string) => ['missions', missionId, 'lkps'] as const,
+  timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,
 };
 
 export function useMissions() {
@@ -68,6 +72,41 @@ export function useCreateMission() {
   });
 }
 
+/**
+ * Saves the mission and missing-person details (UC-C03), then uploads the new photo when one was chosen. The details
+ * are saved even if the photo fails; `photoFailed` tells the caller to say so. The saved mission replaces the cached one.
+ */
+export function useUpdateMissionDetails(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ body, photo }: { body: UpdateMissionDetailsBody; photo: File | null }) => {
+      const saved = await apiRequest(`/missions/${missionId}/details`, { method: 'PUT', body, schema: Mission });
+      if (!photo) return { mission: saved, photoFailed: false };
+      try {
+        const withPhoto = await apiRequest(`/missions/${missionId}/photo`, {
+          method: 'PUT',
+          body: photo,
+          schema: Mission,
+        });
+        return { mission: withPhoto, photoFailed: false };
+      } catch {
+        return { mission: saved, photoFailed: true };
+      }
+    },
+    onSuccess: ({ mission }) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === mission.id ? mission : m)),
+      );
+      return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    },
+    // The mission ended meanwhile: reload it, so the screen turns read-only.
+    onError: (error) =>
+      error instanceof ApiRequestError && error.code === 'MISSION_ENDED'
+        ? queryClient.invalidateQueries({ queryKey: missionKeys.all })
+        : undefined,
+  });
+}
+
 export function usePolygons(missionId: string | undefined) {
   return useQuery({
     queryKey: missionKeys.polygons(missionId ?? ''),
@@ -80,6 +119,15 @@ export function useParticipants(missionId: string | undefined) {
   return useQuery({
     queryKey: missionKeys.participants(missionId ?? ''),
     queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/participants`, { schema: ParticipantList, signal }),
+    enabled: !!missionId,
+  });
+}
+
+/** The mission's Timeline, oldest first (UC-C19). A successful realtime join invalidates it, so a reconnect refetches. */
+export function useTimeline(missionId: string | undefined) {
+  return useQuery({
+    queryKey: missionKeys.timeline(missionId ?? ''),
+    queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/timeline`, { schema: TimelineEventList, signal }),
     enabled: !!missionId,
   });
 }
@@ -176,4 +224,23 @@ export function useSightingMutations(missionId: string) {
     };
 
   return { create: once(create), decide: once(decide), isPending: create.isPending || decide.isPending };
+}
+
+/** Moves the mission's rally point (UC-C05). The saved mission replaces the cached one at once. */
+export function useUpdateRallyPoint(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (coordinates: LngLat) =>
+      apiRequest(`/missions/${missionId}/rally-point`, {
+        method: 'PUT',
+        body: { rallyPoint: { type: 'Point', coordinates } },
+        schema: Mission,
+      }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === mission.id ? mission : m)),
+      );
+      return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    },
+  });
 }

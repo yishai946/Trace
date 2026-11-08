@@ -1,9 +1,9 @@
-import type { JoinMissionAck, Mission, MissionEvent, MissionPolygon, Sighting } from '@trace/schemas';
+import type { JoinMissionAck, Mission, MissionEvent, MissionPolygon, Sighting, TimelineEvent } from '@trace/schemas';
 import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mission as missionFixture, sightingA } from '../mission/fixtures';
+import { eventSamples, mission, sightingA } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -73,6 +73,10 @@ const second = polygon('33333333-3333-4333-8333-333333333333', 'פוליגון 2
 
 /** The mission's polygons as the server has them; changes while the console is away. */
 let serverPolygons: MissionPolygon[];
+/** The mission's Timeline as the server has it, oldest first. */
+let serverTimeline: TimelineEvent[];
+/** Holds back the Timeline fetches, to fire an event while the first one is in flight. */
+let timelineGate: Promise<void>;
 
 function setup() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -84,6 +88,15 @@ function setup() {
     () => ({
       live: useMissionLive(missionId),
       polygons: useQuery({ queryKey: missionKeys.polygons(missionId), queryFn: fetchPolygons }).data,
+      timeline: useQuery({
+        queryKey: missionKeys.timeline(missionId),
+        queryFn: async () => {
+          // The server answers with what it has when asked, but the answer arrives once the gate opens.
+          const snapshot = serverTimeline;
+          await timelineGate;
+          return snapshot;
+        },
+      }).data,
     }),
     { wrapper },
   );
@@ -103,6 +116,8 @@ describe('useMissionLive', () => {
   beforeEach(() => {
     sockets.length = 0;
     serverPolygons = [first];
+    serverTimeline = [];
+    timelineGate = Promise.resolve();
   });
 
   it('is connecting until the join succeeds, then live', async () => {
@@ -150,6 +165,141 @@ describe('useMissionLive', () => {
 
     act(() => socket.fire('mission:event', { type: 'polygon.deleted', missionId, polygonId: first.id }));
     await waitFor(() => expect(result.current.polygons).toEqual([second]));
+  });
+
+  it('adds a recorded event to the cached Timeline once, in time order', async () => {
+    const e1: TimelineEvent = { ...eventSamples['polygon.created'], missionId };
+    serverTimeline = [e1];
+    const { result } = setup();
+    const socket = sockets[0] as FakeSocket;
+    const e2: TimelineEvent = { ...eventSamples['polygon.deleted'], missionId };
+    const earlier: TimelineEvent = {
+      ...eventSamples['lkp.changed'],
+      missionId,
+      occurredAt: '2026-10-03T09:00:00.000Z',
+    };
+    await waitFor(() => expect(result.current.timeline).toEqual([e1]));
+
+    const recorded = (event: TimelineEvent): MissionEvent => ({ type: 'timeline.recorded', missionId, event });
+    act(() => {
+      socket.fire('mission:event', recorded(e2));
+      socket.fire('mission:event', recorded(e2));
+    });
+    await waitFor(() => expect(result.current.timeline).toEqual([e1, e2]));
+
+    act(() => socket.fire('mission:event', recorded(earlier)));
+    await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, e2]));
+
+    // Same instant as e1: it goes after it, as the API orders ties by recording order.
+    const tie: TimelineEvent = { ...eventSamples['mission.paused'], missionId, occurredAt: e1.occurredAt };
+    act(() => socket.fire('mission:event', recorded(tie)));
+    await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, tie, e2]));
+  });
+
+  it('keeps a Timeline event that arrives while the first fetch is in flight', async () => {
+    let open: () => void = () => {};
+    timelineGate = new Promise((resolve) => (open = resolve));
+    const { result } = setup();
+    const socket = sockets[0] as FakeSocket;
+
+    // The first fetch has asked the server and is waiting; then the event is recorded and published.
+    const recorded: TimelineEvent = { ...eventSamples['polygon.created'], missionId };
+    serverTimeline = [recorded];
+    act(() => socket.fire('mission:event', { type: 'timeline.recorded', missionId, event: recorded }));
+    open();
+
+    await waitFor(() => expect(result.current.timeline).toEqual([recorded]));
+  });
+
+  describe('rally point', () => {
+    const otherMission = { ...mission, id: '44444444-4444-4444-8444-444444444444' };
+    const moved = { type: 'Point', coordinates: [35.15, 31.8] } as const;
+    const event = (overrides: object = {}) => ({
+      type: 'rally.changed',
+      missionId: mission.id,
+      rallyPoint: moved,
+      updatedAt: '2026-11-02T09:00:00.000Z',
+      ...overrides,
+    });
+
+    function setupMissions() {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData<Mission[]>(missionKeys.all, [mission, otherMission]);
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      renderHook(() => useMissionLive(mission.id), { wrapper });
+      return queryClient;
+    }
+
+    it('updates the cached mission', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => socket.fire('mission:event', event()));
+      await waitFor(() => {
+        const [updated, untouched] = queryClient.getQueryData<Mission[]>(missionKeys.all) ?? [];
+        expect(updated).toEqual({ ...mission, rallyPoint: moved, updatedAt: '2026-11-02T09:00:00.000Z' });
+        expect(untouched).toEqual(otherMission);
+      });
+    });
+
+    it('ignores an event of another mission or with an invalid payload', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => {
+        socket.fire('mission:event', event({ missionId: otherMission.id }));
+        socket.fire('mission:event', event({ rallyPoint: { type: 'Point', coordinates: [35, 95] } }));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(queryClient.getQueryData<Mission[]>(missionKeys.all)).toEqual([mission, otherMission]);
+    });
+  });
+
+  describe('mission details', () => {
+    const otherMission = { ...mission, id: '44444444-4444-4444-8444-444444444444' };
+    const edited = {
+      ...mission,
+      name: 'מסע 0413',
+      missingPerson: { ...mission.missingPerson, description: 'מעיל חום' },
+    };
+    const event = (overrides: object = {}) => ({
+      type: 'mission.updated',
+      missionId: mission.id,
+      mission: edited,
+      ...overrides,
+    });
+
+    function setupMissions() {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData<Mission[]>(missionKeys.all, [mission, otherMission]);
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      renderHook(() => useMissionLive(mission.id), { wrapper });
+      return queryClient;
+    }
+
+    it('replaces the cached mission', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => socket.fire('mission:event', event()));
+      await waitFor(() => {
+        const [updated, untouched] = queryClient.getQueryData<Mission[]>(missionKeys.all) ?? [];
+        expect(updated).toEqual(edited);
+        expect(untouched).toEqual(otherMission);
+      });
+    });
+
+    it('ignores an event of another mission or with an invalid payload', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => {
+        socket.fire('mission:event', event({ missionId: otherMission.id }));
+        socket.fire('mission:event', event({ mission: { ...edited, status: 'unknown' } }));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(queryClient.getQueryData<Mission[]>(missionKeys.all)).toEqual([mission, otherMission]);
+    });
   });
 
   it('shows down while disconnected, and refetches the latest data after reconnecting', async () => {
@@ -207,7 +357,7 @@ describe('useMissionLive', () => {
     const { queryClient } = setup();
     const socket = sockets[0] as FakeSocket;
     await connectAndJoin(socket);
-    const current = { ...missionFixture, id: missionId };
+    const current = { ...mission, id: missionId };
     queryClient.setQueryData<Mission[]>(missionKeys.all, [current]);
     queryClient.setQueryData(missionKeys.lkps(missionId), []);
     queryClient.setQueryData(missionKeys.sightings(missionId), []);
@@ -223,7 +373,7 @@ describe('useMissionLive', () => {
   it('refetches the mission list after every join, for an LKP that changed while away', async () => {
     const { queryClient } = setup();
     const socket = sockets[0] as FakeSocket;
-    const fetchMissions = vi.fn(async () => [{ ...missionFixture, id: missionId }]);
+    const fetchMissions = vi.fn(async () => [{ ...mission, id: missionId }]);
     // The missions list is on screen, so it has an active observer.
     const observer = new QueryObserver(queryClient, { queryKey: missionKeys.all, queryFn: fetchMissions });
     const unsubscribe = observer.subscribe(() => undefined);

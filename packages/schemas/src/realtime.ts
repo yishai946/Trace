@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
-import { LngLat } from './geo';
-import { Lkp } from './missions';
+import { LngLat, PointGeometry } from './geo';
+import { Lkp, Mission } from './missions';
 import { MissionPolygon } from './polygons';
 import { Sighting } from './sightings';
+import { TimelineEvent } from './timeline';
 
 /**
  * The realtime channel (Socket.IO) between the API and both apps. A client connects with its session (Command's cookie,
@@ -26,6 +27,23 @@ const PolygonSaved = z.object({ type: z.literal('polygon.saved'), missionId: z.u
 
 /** A polygon left the active map. Every member of the mission gets it. */
 const PolygonDeleted = z.object({ type: z.literal('polygon.deleted'), missionId: z.uuid(), polygonId: z.uuid() });
+
+/**
+ * The commander moved the rally point (UC-C05). Every member of the mission gets it; a searcher who is offline gets the
+ * new point from `GET /missions/:id` when they reconnect (decision 92).
+ */
+const RallyChanged = z.object({
+  type: z.literal('rally.changed'),
+  missionId: z.uuid(),
+  rallyPoint: PointGeometry,
+  updatedAt: z.iso.datetime({ offset: true }),
+});
+
+/**
+ * The commander edited the mission or missing-person details, or replaced the photo (UC-C03). Every member of the
+ * mission gets the whole mission; a searcher who is offline gets it from `GET /missions/:id` when they reconnect.
+ */
+const MissionUpdated = z.object({ type: z.literal('mission.updated'), missionId: z.uuid(), mission: Mission });
 
 /**
  * A searcher reported a position. Only the mission's commander and that searcher get it: searchers do not see each
@@ -52,13 +70,19 @@ const SightingSaved = z.object({ type: z.literal('sighting.saved'), missionId: z
  */
 const LkpChanged = z.object({ type: z.literal('lkp.changed'), missionId: z.uuid(), lkp: Lkp });
 
+/** An event was added to the mission's Timeline (UC-C19). Only the mission's commander gets it. */
+const TimelineRecorded = z.object({ type: z.literal('timeline.recorded'), missionId: z.uuid(), event: TimelineEvent });
+
 /** Every event the server sends about a mission, on the `mission:event` channel. */
 export const MissionEvent = z.discriminatedUnion('type', [
   PolygonSaved,
   PolygonDeleted,
+  RallyChanged,
+  MissionUpdated,
   ParticipantMoved,
   SightingSaved,
   LkpChanged,
+  TimelineRecorded,
 ]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */

@@ -1,5 +1,11 @@
-import { detectPhotoType, generateJoinCode, isMissionEnded, type RandomInt } from '@trace/domain';
-import { PointGeometry, type CreateMissionBody, type Mission } from '@trace/schemas';
+import {
+  canChangeRallyPoint,
+  canEditMissionDetails,
+  detectPhotoType,
+  generateJoinCode,
+  type RandomInt,
+} from '@trace/domain';
+import { PointGeometry, type CreateMissionBody, type Mission, type UpdateMissionDetailsBody } from '@trace/schemas';
 import type { z } from 'zod';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { randomInt } from 'node:crypto';
@@ -8,6 +14,7 @@ import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { lkpPoints, missionPhotos, missions, participations } from '../../db/schema';
 import { AppError, notFound } from '../../errors';
+import { recordEvent } from '../timeline/timeline.service';
 
 /** The request body plus the commander who creates the mission and will manage it. */
 export type CreateMissionInput = z.output<typeof CreateMissionBody> & { commanderId: string };
@@ -148,12 +155,31 @@ export async function createMission(
           })
           .returning({ id: missions.id });
         if (!created) throw new Error('Mission insert returned no row');
+        const actor: Actor = { role: 'commander', userId: input.commanderId };
+        await recordEvent(tx, {
+          missionId: created.id,
+          actor,
+          type: 'mission.created',
+          subject: { kind: 'mission', id: created.id, label: input.name },
+          details: {},
+        });
         if (input.lkp) {
-          await tx.insert(lkpPoints).values({
+          const [lkp] = await tx
+            .insert(lkpPoints)
+            .values({
+              missionId: created.id,
+              position: input.lkp.position,
+              observedAt: new Date(input.lkp.observedAt),
+              setBy: input.commanderId,
+            })
+            .returning({ id: lkpPoints.id });
+          if (!lkp) throw new Error('LKP insert returned no row');
+          await recordEvent(tx, {
             missionId: created.id,
-            position: input.lkp.position,
-            observedAt: new Date(input.lkp.observedAt),
-            setBy: input.commanderId,
+            actor,
+            type: 'lkp.changed',
+            subject: { kind: 'lkp', id: lkp.id, label: null },
+            details: { observedAt: new Date(input.lkp.observedAt).toISOString(), previousObservedAt: null },
           });
         }
         return created.id;
@@ -164,6 +190,60 @@ export async function createMission(
       throw error;
     }
   }
+}
+
+/**
+ * Moves the rally point (UC-C05). The mission has exactly one, so the new point replaces the old one. A mission that
+ * ended is read-only. The status is locked while checking, so an ending mission cannot slip through.
+ */
+export async function updateRallyPoint(db: Db, missionId: string, rallyPoint: PointGeometry): Promise<Mission> {
+  await db.transaction(async (tx) => {
+    const [mission] = await tx
+      .select({ status: missions.status })
+      .from(missions)
+      .where(eq(missions.id, missionId))
+      .for('update');
+    if (!mission) throw notFound('Mission');
+    if (!canChangeRallyPoint(mission.status)) {
+      throw new AppError(409, 'MISSION_ENDED', 'The rally point of an ended mission cannot be changed');
+    }
+    await tx.update(missions).set({ rallyPoint, updatedAt: new Date() }).where(eq(missions.id, missionId));
+  });
+  return getMission(db, missionId);
+}
+
+export type MissionDetailsInput = z.output<typeof UpdateMissionDetailsBody>;
+
+/**
+ * Replaces the mission name and the missing-person details (UC-C03). Only an active or paused mission can be edited
+ * (decision 94). The status is locked while checking, so an ending mission cannot slip through.
+ */
+export async function updateMissionDetails(db: Db, missionId: string, details: MissionDetailsInput): Promise<Mission> {
+  await db.transaction(async (tx) => {
+    const [mission] = await tx
+      .select({ status: missions.status })
+      .from(missions)
+      .where(eq(missions.id, missionId))
+      .for('update');
+    if (!mission) throw notFound('Mission');
+    if (!canEditMissionDetails(mission.status)) {
+      throw new AppError(409, 'MISSION_ENDED', 'The details of an ended mission cannot be changed');
+    }
+    const { missingPerson } = details;
+    await tx
+      .update(missions)
+      .set({
+        name: details.name,
+        missingPersonName: missingPerson.name,
+        missingPersonAge: missingPerson.age,
+        disappearedAt: missingPerson.disappearedAt ? new Date(missingPerson.disappearedAt) : null,
+        description: missingPerson.description,
+        additionalInfo: missingPerson.additionalInfo,
+        updatedAt: new Date(),
+      })
+      .where(eq(missions.id, missionId));
+  });
+  return getMission(db, missionId);
 }
 
 export interface MissionPhoto {
@@ -179,7 +259,7 @@ export interface MissionPhoto {
 export async function setMissionPhoto(db: Db, missionId: string, data: Buffer): Promise<Mission> {
   const [mission] = await db.select({ status: missions.status }).from(missions).where(eq(missions.id, missionId));
   if (!mission) throw notFound('Mission');
-  if (isMissionEnded(mission.status)) {
+  if (!canEditMissionDetails(mission.status)) {
     throw new AppError(409, 'MISSION_ENDED', 'The photo of an ended mission cannot be changed');
   }
   const contentType = detectPhotoType(data);

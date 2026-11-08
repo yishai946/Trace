@@ -62,3 +62,18 @@
   color: var(--ink);
   font: var(--text-meta);
 }
+
+/* Phone: every touch target is at least 44px; the large input is 48px (pending tokens). */
+@media (width <= 768px) {
+  .input {
+    min-height: var(--pending-touch-target);
+  }
+}
+
+.input[data-size='lg'] {
+  height: var(--pending-control-lg-h);
+}
+
+.input[data-multiline] {
+  height: auto;
+}

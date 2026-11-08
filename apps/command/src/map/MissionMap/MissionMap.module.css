@@ -2,6 +2,8 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
+  /* MapLibre's controls (z-index 2) stay inside the map and never cover panels above it. */
+  isolation: isolate;
   background-color: var(--map-ground);
 }
 
@@ -80,4 +82,35 @@
 
 .root :global(.maplibregl-ctrl-attrib a) {
   color: var(--ink-muted);
+}
+
+/* Phone (usePhoneLayout, 768px): the toolbar is a column at the inline end under the app bar; zoom and coordinates go. */
+@media (width <= 768px) {
+  .toolbar {
+    top: calc(var(--space-6) * 2 + var(--header-h));
+    bottom: auto;
+    left: auto;
+    inset-inline-end: var(--space-6);
+    transform: none;
+
+    /* Never reach under the expanded bottom sheet (min(sheet height, 45%)); scroll instead. */
+    max-height: calc(100% - var(--space-6) * 2 - var(--header-h) - min(var(--pending-sheet-h), 45%) - var(--space-6));
+    overflow-y: auto;
+  }
+
+  .zoom,
+  .coords {
+    display: none;
+  }
+
+  /* Beside the toolbar column: one tool button plus its padding and border. */
+  .hint {
+    top: calc(var(--space-6) * 2 + var(--header-h));
+    bottom: auto;
+    left: auto;
+    inset-inline-start: var(--space-6);
+    inset-inline-end: calc(var(--space-6) * 2 + var(--pending-touch-target) + var(--space-2) * 2 + 2px);
+    transform: none;
+    white-space: normal;
+  }
 }

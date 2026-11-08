@@ -5,14 +5,17 @@ import {
   POLYGON_STATUSES,
   SIGHTING_SOURCES,
   TASK_STATUSES,
+  TIMELINE_EVENT_TYPES,
   USER_ROLES,
 } from '@trace/domain';
 import { sql } from 'drizzle-orm';
 import {
+  bigserial,
   boolean,
   customType,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -37,6 +40,7 @@ export const taskStatus = pgEnum('task_status', TASK_STATUSES);
 export const userRole = pgEnum('user_role', USER_ROLES);
 export const sightingSource = pgEnum('sighting_source', SIGHTING_SOURCES);
 export const lkpDecision = pgEnum('lkp_decision', LKP_DECISIONS);
+export const timelineEventType = pgEnum('timeline_event_type', TIMELINE_EVENT_TYPES);
 
 /*
  * Sign-in tables owned by Better Auth (users, sessions, accounts, verifications). Their columns follow its core schema
@@ -105,6 +109,17 @@ export const verifications = pgTable(
     ...timestamps,
   },
   (t) => [index('verifications_identifier_idx').on(t.identifier)],
+);
+
+/** Sign-in codes requested per phone number, to limit how often one number gets a code (UC-F01). */
+export const otpRequests = pgTable(
+  'otp_requests',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    phone: text().notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('otp_requests_phone_requested_at_idx').on(t.phone, t.requestedAt)],
 );
 
 export const missions = pgTable('missions', {
@@ -244,4 +259,44 @@ export const participations = pgTable(
       .on(t.polygonId)
       .where(sql`${t.status} = 'assigned'`),
   ],
+);
+
+/**
+ * The mission's operational Timeline (UC-C19): significant events only (decision 54), kept after the mission ends.
+ * `actor`, `subject` and `details` are snapshots in the shape of `TimelineEvent` (@trace/schemas), validated on read.
+ */
+export const timelineEvents = pgTable(
+  'timeline_events',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Recording order. Breaks ties between events of the same instant, such as two in one transaction. */
+    seq: bigserial({ mode: 'number' }).notNull().unique(),
+    missionId: uuid('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    type: timelineEventType().notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+    actor: jsonb().notNull(),
+    subject: jsonb().notNull(),
+    details: jsonb().notNull().default({}),
+  },
+  (t) => [index('timeline_events_mission_idx').on(t.missionId, t.occurredAt, t.seq)],
+);
+
+/** An Expo push token of a searcher's device, registered by the session signed in on it. Signing out deletes it. */
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    token: text().notNull().unique(),
+    searcherId: uuid('searcher_id')
+      .notNull()
+      .references(() => searchers.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id')
+      .notNull()
+      .unique()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
+    ...timestamps,
+  },
+  (t) => [index('push_tokens_searcher_idx').on(t.searcherId)],
 );

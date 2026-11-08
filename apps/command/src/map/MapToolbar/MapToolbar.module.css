@@ -16,3 +16,17 @@
   border: 0;
   background-color: var(--border-strong);
 }
+
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+@media (width <= 768px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .separator {
+    width: 22px;
+    height: 1px;
+    margin-block: var(--space-2);
+    margin-inline: 0;
+  }
+}
