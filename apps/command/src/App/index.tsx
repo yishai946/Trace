@@ -82,7 +82,7 @@ export function App() {
 
   if (!session.data) {
     return (
-      <div className={styles.screen}>
+      <div className={styles.screen} data-login="">
         <Backdrop provider={provider} themeId={theme} veil="light" />
         <LoginPage />
       </div>

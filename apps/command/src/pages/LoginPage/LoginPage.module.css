@@ -67,6 +67,8 @@
   inset: 0;
   /* Above the map's control layer (MapLibre attribution is z-index 2), so the sheet's buttons are never covered. */
   z-index: 3;
+  /* The brand area lets taps through to the map attribution at the top; the sheet takes them back. */
+  pointer-events: none;
   display: flex;
   flex-direction: column;
 }
@@ -106,6 +108,7 @@
 }
 
 .sheet {
+  pointer-events: auto;
   padding-block-start: calc(var(--space-7) + var(--space-3));
   padding-block-end: calc(var(--space-7) + var(--space-5));
   padding-inline: calc(var(--space-7) + var(--space-1));
