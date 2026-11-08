@@ -97,6 +97,17 @@ export const verifications = pgTable(
   (t) => [index('verifications_identifier_idx').on(t.identifier)],
 );
 
+/** Sign-in codes requested per phone number, to limit how often one number gets a code (UC-F01). */
+export const otpRequests = pgTable(
+  'otp_requests',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    phone: text().notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('otp_requests_phone_requested_at_idx').on(t.phone, t.requestedAt)],
+);
+
 export const missions = pgTable('missions', {
   id: uuid().primaryKey().defaultRandom(),
   /** The commander who created the mission and the only one who manages it (spec §3). */
