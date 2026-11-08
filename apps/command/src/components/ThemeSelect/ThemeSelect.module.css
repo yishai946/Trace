@@ -1,0 +1,107 @@
+.theme {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.theme[data-layout='row'] {
+  width: 100%;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.label {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.theme[data-layout='row'] .label {
+  color: var(--ink);
+  font: var(--text-body);
+}
+
+.select {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--border-field);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-sunken);
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+}
+
+.theme[data-layout='row'] .select {
+  min-width: var(--pending-select-min-w);
+}
+
+.select[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.option,
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.option svg,
+.item svg {
+  flex: 0 0 auto;
+  width: var(--pending-icon-sm);
+  height: var(--pending-icon-sm);
+}
+
+.chevron {
+  color: var(--ink-muted);
+}
+
+/* Above the profile sheet's overlay, which is a portal sibling. */
+.listPopover {
+  z-index: 101;
+  width: var(--trigger-width);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.list {
+  padding: var(--space-2);
+  outline: none;
+}
+
+.item {
+  height: var(--control-h);
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-sm);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.item[data-focused],
+.item[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.item[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@media (width <= 768px) {
+  .select,
+  .item {
+    height: var(--pending-touch-target);
+  }
+}

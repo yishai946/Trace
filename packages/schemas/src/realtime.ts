@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
 import { LngLat, PointGeometry } from './geo';
+import { Mission } from './missions';
 import { MissionPolygon } from './polygons';
 
 /**
@@ -37,6 +38,12 @@ const RallyChanged = z.object({
 });
 
 /**
+ * The commander edited the mission or missing-person details, or replaced the photo (UC-C03). Every member of the
+ * mission gets the whole mission; a searcher who is offline gets it from `GET /missions/:id` when they reconnect.
+ */
+const MissionUpdated = z.object({ type: z.literal('mission.updated'), missionId: z.uuid(), mission: Mission });
+
+/**
  * A searcher reported a position. Only the mission's commander and that searcher get it: searchers do not see each
  * other's positions (decision 32).
  */
@@ -54,6 +61,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   PolygonSaved,
   PolygonDeleted,
   RallyChanged,
+  MissionUpdated,
   ParticipantMoved,
 ]);
 

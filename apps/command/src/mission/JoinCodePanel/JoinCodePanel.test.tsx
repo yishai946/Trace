@@ -29,4 +29,9 @@ describe('JoinCodePanel', () => {
     render(<JoinCodePanel mission={{ joinCode: 'K7-4Q2', status: 'paused' }} onClose={() => {}} />);
     expect(screen.getByText('הצטרפות חסומה')).toBeInTheDocument();
   });
+
+  it('has no close button when it is part of a screen', () => {
+    render(<JoinCodePanel mission={{ joinCode: 'K7-4Q2', status: 'active' }} />);
+    expect(screen.queryByRole('button', { name: 'סגור' })).not.toBeInTheDocument();
+  });
 });

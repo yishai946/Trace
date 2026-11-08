@@ -1,5 +1,6 @@
 import type { ParticipationStatus, TaskStatus } from '@trace/domain';
-import { eq, sql } from 'drizzle-orm';
+import { SearcherProfile } from '@trace/schemas';
+import { sql } from 'drizzle-orm';
 import type { InjectOptions } from 'fastify';
 import { buildApp } from '../app';
 import { createCommander } from '../auth';
@@ -8,6 +9,9 @@ import type { PushMessage, PushSender } from '../modules/notifications/pushSende
 import { loadEnv } from '../env';
 import { participations, searchers, users } from '../db/schema';
 import { TEST_DATABASE_URL } from './testing.config';
+
+/** The smallest bytes that pass as a PNG: its signature and a few more. */
+export const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
 
 /** A push sender that records what it is asked to send instead of calling Expo. */
 export function createFakePushSender() {
@@ -42,6 +46,8 @@ export async function createTestApp() {
   const database = createDb(TEST_DATABASE_URL);
   /** The last sign-in code sent to each phone number. */
   const sentCodes = new Map<string, string>();
+  /** Every sign-in code sent, in order. */
+  const sentOtps: { phoneNumber: string; code: string }[] = [];
   const pushSender = createFakePushSender();
   const { app, auth, realtime, push } = await buildApp({
     env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL }),
@@ -50,6 +56,7 @@ export async function createTestApp() {
     pushSender: pushSender.sender,
     sendOtp: async ({ phoneNumber, code }) => {
       sentCodes.set(phoneNumber, code);
+      sentOtps.push({ phoneNumber, code });
     },
   });
   return {
@@ -60,6 +67,7 @@ export async function createTestApp() {
     pushSender,
     db: database.db,
     sentCodes,
+    sentOtps,
     close: async () => {
       await app.close();
       await database.close();
@@ -72,7 +80,7 @@ export type TestContext = Awaited<ReturnType<typeof createTestApp>>;
 /** Empties every table between tests. */
 export async function resetDb(db: Db) {
   await db.execute(
-    sql`truncate missions, lkp_points, polygons, searchers, participations, push_tokens, users, sessions, accounts, verifications restart identity cascade`,
+    sql`truncate missions, lkp_points, polygons, searchers, participations, push_tokens, users, sessions, accounts, verifications, otp_requests restart identity cascade`,
   );
 }
 
@@ -101,28 +109,53 @@ export async function signInCommander(ctx: TestContext): Promise<TestUser> {
   return { userId, headers: { cookie: cookiesFrom(res.headers['set-cookie']) } };
 }
 
-/** Signs a searcher in with a phone OTP, as Field does. Requests carry the session token as a bearer token. */
-export async function signInSearcher(
+/** Asks for a sign-in code, as Field does. */
+export const requestOtp = (ctx: TestContext, phoneNumber: string) =>
+  ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/send-otp', payload: { phoneNumber } });
+
+/** Sends the code the searcher received. */
+export const verifyOtp = (ctx: TestContext, phoneNumber: string, code: string) =>
+  ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/verify', payload: { phoneNumber, code } });
+
+const nextPhoneNumber = () => `+97252${String(next()).padStart(7, '0')}`;
+
+/**
+ * Signs in by phone OTP, as Field does. Requests carry the session token as a bearer token. The searcher has no
+ * profile until they enter a name (`signInSearcher` does that too).
+ */
+export async function signInByPhone(
   ctx: TestContext,
-  /** Sign in again on a phone that has signed in before, which opens a second session. */
-  phone?: string,
-): Promise<TestUser & { searcherId: string; phoneNumber: string }> {
-  const phoneNumber = phone ?? `+97252${String(next()).padStart(7, '0')}`;
-  await ctx.app.inject({ method: 'POST', url: '/api/auth/phone-number/send-otp', payload: { phoneNumber } });
+  phoneNumber: string = nextPhoneNumber(),
+): Promise<TestUser & { token: string; phoneNumber: string }> {
+  const sent = await requestOtp(ctx, phoneNumber);
+  if (sent.statusCode !== 200) throw new Error(`Requesting a sign-in code failed: ${sent.statusCode} ${sent.body}`);
   const code = ctx.sentCodes.get(phoneNumber);
   if (!code) throw new Error('No sign-in code was sent');
-  const res = await ctx.app.inject({
-    method: 'POST',
-    url: '/api/auth/phone-number/verify',
-    payload: { phoneNumber, code },
-  });
+  const res = await verifyOtp(ctx, phoneNumber, code);
   const body = res.json<{ token?: string; user?: { id: string } }>();
   if (res.statusCode !== 200 || !body.token || !body.user) throw new Error(`Searcher sign-in failed: ${res.body}`);
+  return { userId: body.user.id, token: body.token, phoneNumber, headers: { authorization: `Bearer ${body.token}` } };
+}
 
-  const [profile] = await ctx.db.select({ id: searchers.id }).from(searchers).where(eq(searchers.userId, body.user.id));
-  if (!profile) throw new Error('Sign-in created no searcher profile');
-  const searcherId = profile.id;
-  return { userId: body.user.id, searcherId, phoneNumber, headers: { authorization: `Bearer ${body.token}` } };
+/** Signs a searcher in by phone and enters their name, as Field does on first sign-in. */
+export async function signInSearcher(
+  ctx: TestContext,
+  options: { phoneNumber?: string; name?: string } = {},
+): Promise<TestUser & { searcherId: string; phoneNumber: string }> {
+  const user = await signInByPhone(ctx, options.phoneNumber);
+  const res = await ctx.app.inject({
+    method: 'PUT',
+    url: '/api/searchers/me',
+    headers: user.headers,
+    payload: { name: options.name ?? `מחפש ${next()}` },
+  });
+  if (res.statusCode !== 200) throw new Error(`Entering the searcher name failed: ${res.statusCode} ${res.body}`);
+  return {
+    userId: user.userId,
+    headers: user.headers,
+    phoneNumber: user.phoneNumber,
+    searcherId: SearcherProfile.parse(res.json()).id,
+  };
 }
 
 /** `app.inject` on behalf of a signed-in user. */

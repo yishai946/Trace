@@ -79,7 +79,7 @@
 
 - כל נתיב תחת `/api` דורש משתמש מחובר, חוץ מ-`/api/health` ומנתיבי Better Auth תחת `/api/auth`. בלי session מוחזר 401 `UNAUTHENTICATED`.
 - **מנהל** נכנס באימייל וסיסמה (`/api/auth/sign-in/email`) ו-Command שולח את עוגיית ה-session. אין הרשמה עצמית: חשבון מנהל נוצר בפקודה `pnpm --filter @trace/api auth:create-commander --email <אימייל> --name <שם> --password <סיסמה>`. ה-seed יוצר מנהל פיתוח (`commander@trace.local`, הסיסמה ב-`apps/api/src/scripts/seed.ts`).
-- **מחפש** נכנס בטלפון ו-OTP (`/api/auth/phone-number/send-otp`, ואז `/verify`); הכניסה הראשונה יוצרת משתמש בתפקיד `searcher`. Field שולח את ה-token שמוחזר כ-`Authorization: Bearer <token>`. עד שייבחר ספק SMS הקוד נכתב ללוג של השרת, ובפרודקשן שליחה נכשלת.
+- **מחפש** נכנס בטלפון ו-OTP (`/api/auth/phone-number/send-otp`, ואז `/verify`); הכניסה הראשונה יוצרת משתמש בתפקיד `searcher`. Field שולח את ה-token שמוחזר כ-`Authorization: Bearer <token>`. פרופיל המחפש נוצר כשהוא מזין שם (`PUT /api/searchers/me`); עד אז `GET /api/searchers/me` מחזיר 404 ו-Field מציג את מסך השם (UC-F01). מספר בקשות הקוד לכל מספר טלפון מוגבל (`OTP_REQUEST_LIMIT` ב-`apps/api/src/auth`), ומעבר לו מוחזר 429 עם `Retry-After`. תוקף הקוד ומספר הניסיונות הם ברירות המחדל של Better Auth עד להחלטה. עד שייבחר ספק SMS הקוד נכתב ללוג של השרת, ובפרודקשן שליחה נכשלת.
 - מטריצת ההרשאות (אפיון §7) נאכפת ב-`apps/api/src/auth/auth.access.ts`: מסע שאינו של המשתמש מחזיר 404; מחפש במסע שמבקש פעולת מנהל מקבל 403 `FORBIDDEN`. מחפש רואה את המסעות שהוא משתתף בהם ואת המפה שלהם, אבל לא את מיקומי המחפשים האחרים.
 - בפרודקשן חובה להגדיר `AUTH_SECRET` (לפחות 32 תווים) ו-`API_URL`.
 
@@ -89,6 +89,7 @@
 - החיבור מאומת באותו session כמו ה-REST: Command שולח את העוגייה, Field שולח את ה-token ב-`auth: { token }`. בלי session החיבור נדחה (`UNAUTHENTICATED`), החיבור בודק את ה-session מחדש כל 30 שניות ונסגר כשה-session פג או בוטל (יציאה במקום אחר).
 - הלקוח מצטרף לכל מסע שהוא מציג (`mission:join`) לפי אותם כללים כמו ה-REST: מסע זר מחזיר `NOT_FOUND`. אירועים מגיעים רק למי שהצטרף, בערוץ `mission:event`.
 - מיקומי מחפשים (`participant.moved`) מגיעים רק למנהל המסע ולמחפש עצמו (החלטה 32). שינויי פוליגונים מגיעים לכל חברי המסע.
+- שינוי פרטי מסע ונעדר או תמונת הנעדר (`mission.updated`, עם המסע כולו) מגיע לכל חברי המסע (UC-C03). מחפש מנותק מקבל אותם מ-`GET /api/missions/:id` אחרי שחזר.
 - אירועים שנשלחו בזמן ניתוק לא נשלחים שוב: אחרי התחברות מחדש הלקוח מצטרף שוב וטוען מחדש את נתוני המסע. ב-Command נורית החיבור מראה "לא זמין" כל עוד המפה לא מתעדכנת, ופעולות חדשות חסומות.
 
 ## Push

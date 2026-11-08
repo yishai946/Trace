@@ -196,6 +196,53 @@ describe('useMissionLive', () => {
     });
   });
 
+  describe('mission details', () => {
+    const otherMission = { ...mission, id: '44444444-4444-4444-8444-444444444444' };
+    const edited = {
+      ...mission,
+      name: 'מסע 0413',
+      missingPerson: { ...mission.missingPerson, description: 'מעיל חום' },
+    };
+    const event = (overrides: object = {}) => ({
+      type: 'mission.updated',
+      missionId: mission.id,
+      mission: edited,
+      ...overrides,
+    });
+
+    function setupMissions() {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData<Mission[]>(missionKeys.all, [mission, otherMission]);
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      renderHook(() => useMissionLive(mission.id), { wrapper });
+      return queryClient;
+    }
+
+    it('replaces the cached mission', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => socket.fire('mission:event', event()));
+      await waitFor(() => {
+        const [updated, untouched] = queryClient.getQueryData<Mission[]>(missionKeys.all) ?? [];
+        expect(updated).toEqual(edited);
+        expect(untouched).toEqual(otherMission);
+      });
+    });
+
+    it('ignores an event of another mission or with an invalid payload', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => {
+        socket.fire('mission:event', event({ missionId: otherMission.id }));
+        socket.fire('mission:event', event({ mission: { ...edited, status: 'unknown' } }));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(queryClient.getQueryData<Mission[]>(missionKeys.all)).toEqual([mission, otherMission]);
+    });
+  });
+
   it('shows down while disconnected, and refetches the latest data after reconnecting', async () => {
     const { result, fetchPolygons } = setup();
     const socket = sockets[0] as FakeSocket;

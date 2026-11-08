@@ -1,4 +1,4 @@
-// Line icons for the profile menu, drawn like the rest of Trace Console's icons (24 grid, 1.8 stroke).
+// Line icons for the profile menu and the "עוד" page, drawn like the rest of Trace Console's icons (24 grid, 1.8 stroke).
 
 const base = {
   viewBox: '0 0 24 24',
@@ -33,5 +33,17 @@ export const MonitorIcon = () => (
 export const SignOutIcon = () => (
   <svg {...base}>
     <path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10" />
+  </svg>
+);
+
+export const ChevronIcon = () => (
+  <svg {...base}>
+    <path d="m15 6-6 6 6 6" />
+  </svg>
+);
+
+export const MissionsListIcon = () => (
+  <svg {...base}>
+    <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
   </svg>
 );

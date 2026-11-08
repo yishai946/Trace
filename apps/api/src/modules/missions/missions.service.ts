@@ -1,5 +1,11 @@
-import { canChangeRallyPoint, detectPhotoType, generateJoinCode, isMissionEnded, type RandomInt } from '@trace/domain';
-import { PointGeometry, type CreateMissionBody, type Mission } from '@trace/schemas';
+import {
+  canChangeRallyPoint,
+  canEditMissionDetails,
+  detectPhotoType,
+  generateJoinCode,
+  type RandomInt,
+} from '@trace/domain';
+import { PointGeometry, type CreateMissionBody, type Mission, type UpdateMissionDetailsBody } from '@trace/schemas';
 import type { z } from 'zod';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { randomInt } from 'node:crypto';
@@ -185,6 +191,40 @@ export async function updateRallyPoint(db: Db, missionId: string, rallyPoint: Po
   return getMission(db, missionId);
 }
 
+export type MissionDetailsInput = z.output<typeof UpdateMissionDetailsBody>;
+
+/**
+ * Replaces the mission name and the missing-person details (UC-C03). Only an active or paused mission can be edited
+ * (decision 94). The status is locked while checking, so an ending mission cannot slip through.
+ */
+export async function updateMissionDetails(db: Db, missionId: string, details: MissionDetailsInput): Promise<Mission> {
+  await db.transaction(async (tx) => {
+    const [mission] = await tx
+      .select({ status: missions.status })
+      .from(missions)
+      .where(eq(missions.id, missionId))
+      .for('update');
+    if (!mission) throw notFound('Mission');
+    if (!canEditMissionDetails(mission.status)) {
+      throw new AppError(409, 'MISSION_ENDED', 'The details of an ended mission cannot be changed');
+    }
+    const { missingPerson } = details;
+    await tx
+      .update(missions)
+      .set({
+        name: details.name,
+        missingPersonName: missingPerson.name,
+        missingPersonAge: missingPerson.age,
+        disappearedAt: missingPerson.disappearedAt ? new Date(missingPerson.disappearedAt) : null,
+        description: missingPerson.description,
+        additionalInfo: missingPerson.additionalInfo,
+        updatedAt: new Date(),
+      })
+      .where(eq(missions.id, missionId));
+  });
+  return getMission(db, missionId);
+}
+
 export interface MissionPhoto {
   contentType: string;
   data: Buffer;
@@ -198,7 +238,7 @@ export interface MissionPhoto {
 export async function setMissionPhoto(db: Db, missionId: string, data: Buffer): Promise<Mission> {
   const [mission] = await db.select({ status: missions.status }).from(missions).where(eq(missions.id, missionId));
   if (!mission) throw notFound('Mission');
-  if (isMissionEnded(mission.status)) {
+  if (!canEditMissionDetails(mission.status)) {
     throw new AppError(409, 'MISSION_ENDED', 'The photo of an ended mission cannot be changed');
   }
   const contentType = detectPhotoType(data);

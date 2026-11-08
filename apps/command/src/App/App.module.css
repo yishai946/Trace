@@ -16,6 +16,8 @@
   border-radius: var(--radius-xl);
   background-color: var(--surface);
   box-shadow: var(--shadow-panel);
+  /* Above the details screen, which covers the map and its controls. */
+  z-index: 4;
 }
 
 /* Fixed parts keep their size; the mission name, search and status shrink as the window narrows. */
@@ -147,5 +149,31 @@
   .screen[data-login] :global(.maplibregl-ctrl-bottom-right) {
     top: 0;
     bottom: auto;
+  }
+}
+
+/* Phone (usePhoneLayout, 768px): the inspector and edit bar float above the bottom sheet, full width. */
+@media (width <= 768px) {
+  .inspector {
+    top: auto;
+    bottom: var(--space-6);
+    inset-inline: var(--space-6);
+    z-index: 1;
+    width: auto;
+    max-height: calc(100% - var(--header-h) - var(--space-6) * 3);
+    border-radius: var(--radius-xl);
+    overflow-y: auto;
+  }
+
+  .editBar,
+  .notice {
+    left: var(--space-6);
+    right: var(--space-6);
+    z-index: 1;
+    transform: none;
+  }
+
+  .editBar {
+    bottom: var(--space-6);
   }
 }

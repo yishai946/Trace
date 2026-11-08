@@ -1,0 +1,138 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: var(--map-ground);
+  color: var(--ink);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--surface);
+}
+
+.section {
+  margin: 0;
+  padding-block: var(--space-7) var(--space-3);
+  padding-inline: var(--space-7);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-height: var(--pending-row-h);
+  padding-block: 0;
+  padding-inline: var(--space-7);
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: transparent;
+  color: var(--ink);
+  font: var(--text-body);
+  text-align: start;
+}
+
+.large {
+  min-height: var(--pending-row-lg-h);
+}
+
+.action {
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+}
+
+.action:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+
+.action:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.action svg {
+  flex: 0 0 auto;
+  width: var(--pending-icon-md);
+  height: var(--pending-icon-md);
+}
+
+.action svg:last-child:not(:first-child) {
+  color: var(--ink-muted);
+}
+
+.danger {
+  color: var(--danger-ink);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font: var(--text-body-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.email {
+  overflow: hidden;
+  color: var(--ink-muted);
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.avatar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--pending-touch-target);
+  height: var(--pending-touch-target);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  background-color: var(--chip);
+  font: var(--text-meta);
+  font-weight: 600;
+}
+
+.note {
+  margin-block: var(--space-4) 0;
+  margin-inline: var(--space-7);
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}

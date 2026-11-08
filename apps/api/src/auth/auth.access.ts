@@ -17,6 +17,11 @@ export async function searchersOnly(request: FastifyRequest) {
   if (actor.role !== 'searcher' || actor.searcherId === null) throw forbidden();
 }
 
+/** Route guard: any searcher session, with or without a profile yet (their own profile, UC-F01). */
+export async function searcherSessionsOnly(request: FastifyRequest) {
+  if (actorOf(request).role !== 'searcher') throw forbidden();
+}
+
 /**
  * Who may call a route under /missions/:missionId.
  * - `commander`: only the mission's own commander (create or edit polygons, list searchers' positions).
