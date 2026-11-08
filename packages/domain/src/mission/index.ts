@@ -15,3 +15,8 @@ export function canChangePolygons(status: MissionStatus): boolean {
 export function canChangeRallyPoint(status: MissionStatus): boolean {
   return !isMissionEnded(status);
 }
+
+/** Mission and missing-person details can be edited while the mission runs, active or paused (UC-C03, decision 94). */
+export function canEditMissionDetails(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
