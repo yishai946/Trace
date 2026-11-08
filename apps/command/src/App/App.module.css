@@ -101,6 +101,12 @@
   inset-inline-start: var(--space-6);
 }
 
+.rallyPanel {
+  position: absolute;
+  bottom: calc(var(--space-6) * 2 + var(--header-h));
+  inset-inline-start: var(--space-6);
+}
+
 .editBar {
   position: absolute;
   bottom: calc(var(--space-6) * 2 + var(--header-h));

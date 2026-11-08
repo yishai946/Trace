@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canChangePolygons, isMissionEnded } from '.';
+import { canChangePolygons, canChangeRallyPoint, isMissionEnded } from '.';
 
 describe('mission rules', () => {
   it('allows polygon changes only while the mission is active', () => {
@@ -7,6 +7,13 @@ describe('mission rules', () => {
     expect(canChangePolygons('paused')).toBe(false);
     expect(canChangePolygons('ended_located')).toBe(false);
     expect(canChangePolygons('ended_stopped')).toBe(false);
+  });
+
+  it('allows a rally point change while the mission is active or paused', () => {
+    expect(canChangeRallyPoint('active')).toBe(true);
+    expect(canChangeRallyPoint('paused')).toBe(true);
+    expect(canChangeRallyPoint('ended_located')).toBe(false);
+    expect(canChangeRallyPoint('ended_stopped')).toBe(false);
   });
 
   it('treats both end reasons as ended', () => {

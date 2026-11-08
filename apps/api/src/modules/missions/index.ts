@@ -1,5 +1,5 @@
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
-import { ApiError, CreateMissionBody, Mission, MissionList, MissionParams } from '@trace/schemas';
+import { ApiError, CreateMissionBody, Mission, MissionList, MissionParams, UpdateRallyPointBody } from '@trace/schemas';
 import type { FastifyError } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -7,7 +7,15 @@ import { commandersOnly, missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { AppError } from '../../errors';
-import { createMission, getMission, getMissionPhoto, listMissions, setMissionPhoto } from './missions.service';
+import type { Realtime } from '../../realtime';
+import {
+  createMission,
+  getMission,
+  getMissionPhoto,
+  listMissions,
+  setMissionPhoto,
+  updateRallyPoint,
+} from './missions.service';
 
 /** Fastify's own errors for a photo upload, in the API's error codes. Anything else goes to the app's handler. */
 function photoUploadError(error: FastifyError): Error {
@@ -22,7 +30,7 @@ function photoUploadError(error: FastifyError): Error {
   return error;
 }
 
-export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db }) => {
+export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   // Photos arrive as the raw image bytes, so a phone or browser can send the file as is.
   app.addContentTypeParser(
     [...PHOTO_TYPES],
@@ -70,6 +78,34 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
       preHandler: missionAccess(db, 'member'),
     },
     (request) => getMission(db, request.params.missionId),
+  );
+
+  app.put(
+    '/missions/:missionId/rally-point',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'Change the rally point (UC-C05)',
+        description:
+          'Replaces the mission rally point and sends it at once to the searchers who are online (decision 92); ' +
+          'the others get it with the mission when they reconnect. 409 MISSION_ENDED once the mission ended.',
+        params: MissionParams,
+        body: UpdateRallyPointBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId } = request.params;
+      const mission = await updateRallyPoint(db, missionId, request.body.rallyPoint);
+      realtime.publish({
+        type: 'rally.changed',
+        missionId,
+        rallyPoint: mission.rallyPoint,
+        updatedAt: mission.updatedAt,
+      });
+      return mission;
+    },
   );
 
   app.put(

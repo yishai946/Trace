@@ -1,8 +1,9 @@
-import type { JoinMissionAck, MissionEvent, MissionPolygon } from '@trace/schemas';
+import type { JoinMissionAck, Mission, MissionEvent, MissionPolygon } from '@trace/schemas';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mission } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -149,6 +150,50 @@ describe('useMissionLive', () => {
 
     act(() => socket.fire('mission:event', { type: 'polygon.deleted', missionId, polygonId: first.id }));
     await waitFor(() => expect(result.current.polygons).toEqual([second]));
+  });
+
+  describe('rally point', () => {
+    const otherMission = { ...mission, id: '44444444-4444-4444-8444-444444444444' };
+    const moved = { type: 'Point', coordinates: [35.15, 31.8] } as const;
+    const event = (overrides: object = {}) => ({
+      type: 'rally.changed',
+      missionId: mission.id,
+      rallyPoint: moved,
+      updatedAt: '2026-11-02T09:00:00.000Z',
+      ...overrides,
+    });
+
+    function setupMissions() {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      queryClient.setQueryData<Mission[]>(missionKeys.all, [mission, otherMission]);
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      renderHook(() => useMissionLive(mission.id), { wrapper });
+      return queryClient;
+    }
+
+    it('updates the cached mission', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => socket.fire('mission:event', event()));
+      await waitFor(() => {
+        const [updated, untouched] = queryClient.getQueryData<Mission[]>(missionKeys.all) ?? [];
+        expect(updated).toEqual({ ...mission, rallyPoint: moved, updatedAt: '2026-11-02T09:00:00.000Z' });
+        expect(untouched).toEqual(otherMission);
+      });
+    });
+
+    it('ignores an event of another mission or with an invalid payload', async () => {
+      const queryClient = setupMissions();
+      const socket = sockets[0] as FakeSocket;
+      act(() => {
+        socket.fire('mission:event', event({ missionId: otherMission.id }));
+        socket.fire('mission:event', event({ rallyPoint: { type: 'Point', coordinates: [35, 95] } }));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(queryClient.getQueryData<Mission[]>(missionKeys.all)).toEqual([mission, otherMission]);
+    });
   });
 
   it('shows down while disconnected, and refetches the latest data after reconnecting', async () => {
