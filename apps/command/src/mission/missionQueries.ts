@@ -6,6 +6,7 @@ import {
   ParticipantList,
   type CreateMissionBody,
   type CreatePolygonBody,
+  type UpdateMissionDetailsBody,
   type UpdatePolygonBody,
 } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
@@ -49,6 +50,36 @@ export function useCreateMission() {
     onSuccess: ({ mission }) => {
       // The new mission opens at once, before the list is fetched again.
       queryClient.setQueryData<Mission[]>(missionKeys.all, (list) => [mission, ...(list ?? [])]);
+      return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    },
+  });
+}
+
+/**
+ * Saves the mission and missing-person details (UC-C03), then uploads the new photo when one was chosen. The details
+ * are saved even if the photo fails; `photoFailed` tells the caller to say so. The saved mission replaces the cached one.
+ */
+export function useUpdateMissionDetails(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ body, photo }: { body: UpdateMissionDetailsBody; photo: File | null }) => {
+      const saved = await apiRequest(`/missions/${missionId}/details`, { method: 'PUT', body, schema: Mission });
+      if (!photo) return { mission: saved, photoFailed: false };
+      try {
+        const withPhoto = await apiRequest(`/missions/${missionId}/photo`, {
+          method: 'PUT',
+          body: photo,
+          schema: Mission,
+        });
+        return { mission: withPhoto, photoFailed: false };
+      } catch {
+        return { mission: saved, photoFailed: true };
+      }
+    },
+    onSuccess: ({ mission }) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === mission.id ? mission : m)),
+      );
       return queryClient.invalidateQueries({ queryKey: missionKeys.all });
     },
   });

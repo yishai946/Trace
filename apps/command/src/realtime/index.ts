@@ -42,6 +42,11 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         ),
       );
       return;
+    case 'mission.updated':
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) => (m.id === event.missionId ? event.mission : m)),
+      );
+      return;
     case 'participant.moved':
       queryClient.setQueryData<Participant[]>(missionKeys.participants(event.missionId), (list) =>
         list?.map((p) =>
