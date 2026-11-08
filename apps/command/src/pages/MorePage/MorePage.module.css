@@ -25,6 +25,7 @@
 .list {
   display: flex;
   flex-direction: column;
+  background-color: var(--surface);
 }
 
 .section {
