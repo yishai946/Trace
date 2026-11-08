@@ -149,3 +149,10 @@
   width: 16px;
   height: 16px;
 }
+
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+@media (width <= 768px) {
+  .input {
+    height: var(--pending-touch-target);
+  }
+}
