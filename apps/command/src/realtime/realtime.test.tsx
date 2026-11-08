@@ -178,6 +178,11 @@ describe('useMissionLive', () => {
 
     act(() => socket.fire('mission:event', recorded(earlier)));
     await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, e2]));
+
+    // Same instant as e1: it goes after it, as the API orders ties by recording order.
+    const tie: TimelineEvent = { ...eventSamples['mission.paused'], missionId, occurredAt: e1.occurredAt };
+    act(() => socket.fire('mission:event', recorded(tie)));
+    await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, tie, e2]));
   });
 
   it('shows down while disconnected, and refetches the latest data after reconnecting', async () => {

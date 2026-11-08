@@ -26,7 +26,8 @@ import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
-import { MissionNav, type MissionView } from '../mission/MissionNav';
+import { MissionLayout } from '../mission/MissionLayout';
+import type { MissionView } from '../mission/MissionNav';
 import { useMissions, useParticipants, usePolygonMutations, usePolygons, useTimeline } from '../mission/missionQueries';
 import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
@@ -154,14 +155,6 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           }
         : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
 
-  // Mission navigation above the join code panel, on the start side of either view.
-  const startColumn = mission && !creating && (
-    <div className={styles.startColumn}>
-      <MissionNav missionName={mission.name} view={view} onNavigate={setView} />
-      {joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
-    </div>
-  );
-
   return (
     <main className={styles.screen}>
       {creating ? (
@@ -188,32 +181,37 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             canCreate={connected}
           />
         </>
-      ) : view === 'timeline' ? (
-        <div className={styles.page}>
-          {startColumn}
-          <TimelinePage
-            events={timeline.data}
-            loadFailed={timeline.isError}
-            onRetry={() => void timeline.refetch()}
-            onGoToMap={() => setView('map')}
-          />
-        </div>
-      ) : polygons.isPending ? (
+      ) : view === 'timeline' ? null : polygons.isPending ? (
         <p className={styles.setup}>טוען מסע…</p>
       ) : (
-        <>
-          <MissionWorkspace
-            key={mission.id}
-            provider={provider}
-            focus={focus}
-            mission={mission}
-            polygons={polygons.data ?? []}
-            participants={participants.data ?? []}
-            themeId={theme}
-            online={operational}
-          />
-          <div className={styles.start}>{startColumn}</div>
-        </>
+        <MissionWorkspace
+          key={mission.id}
+          provider={provider}
+          focus={focus}
+          mission={mission}
+          polygons={polygons.data ?? []}
+          participants={participants.data ?? []}
+          themeId={theme}
+          online={operational}
+        />
+      )}
+
+      {mission && !creating && (
+        <MissionLayout
+          missionName={mission.name}
+          view={view}
+          onNavigate={setView}
+          joinPanel={joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
+        >
+          {view === 'timeline' && (
+            <TimelinePage
+              events={timeline.data}
+              loadFailed={timeline.isError}
+              onRetry={() => void timeline.refetch()}
+              onGoToMap={() => setView('map')}
+            />
+          )}
+        </MissionLayout>
       )}
 
       {mission && !creating && createdNotice && (

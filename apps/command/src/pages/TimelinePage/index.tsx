@@ -1,3 +1,4 @@
+import { formatCallsign } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { useState } from 'react';
 import { Link, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
@@ -136,6 +137,10 @@ export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: Timelin
 
 function EventRow({ event, withDate, onGoToMap }: { event: TimelineEvent; withDate: boolean; onGoToMap: () => void }) {
   const view = describeEvent(event);
+  // Every row's link says what it leads from, so links in a list are told apart.
+  const plainText = view.segments
+    .map((segment) => (typeof segment === 'string' ? segment : formatCallsign(segment.callsign)))
+    .join('');
   return (
     <tr data-danger={view.danger || undefined}>
       <td>
@@ -159,7 +164,7 @@ function EventRow({ event, withDate, onGoToMap }: { event: TimelineEvent; withDa
       </td>
       <td>
         {view.destination === 'map' && (
-          <Link className={styles.link} onPress={onGoToMap}>
+          <Link className={styles.link} aria-label={`לוח מבצעי: ${plainText}`} onPress={onGoToMap}>
             לוח מבצעי
             <svg
               viewBox="0 0 24 24"

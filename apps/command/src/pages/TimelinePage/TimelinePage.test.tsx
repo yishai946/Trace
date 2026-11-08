@@ -104,8 +104,11 @@ describe('TimelinePage', () => {
     const onGoToMap = vi.fn();
     render(<TimelinePage {...props({ onGoToMap })} />);
 
-    fireEvent.click(within(rows()[2] as HTMLElement).getByRole('link', { name: 'לוח מבצעי' }));
+    fireEvent.click(within(rows()[2] as HTMLElement).getByRole('link', { name: /^לוח מבצעי: / }));
     expect(onGoToMap).toHaveBeenCalled();
+    expect(screen.getAllByRole('link').map((l) => l.getAttribute('aria-label'))).toContain(
+      'לוח מבצעי: הגבול של ואדי צפוני שונה',
+    );
     expect(within(rows()[0] as HTMLElement).queryByRole('link')).toBeNull();
   });
 
