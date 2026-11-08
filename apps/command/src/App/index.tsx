@@ -17,6 +17,7 @@ import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
 import { useSession, useSignOut } from '../auth';
+import { ConnectionStatus, type Connection } from '../components/ConnectionStatus';
 import { MissionSwitcher } from '../components/MissionSwitcher';
 import { ProfileMenu } from '../components/ProfileMenu';
 import { useOnline } from '../hooks/useOnline';
@@ -132,7 +133,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [focus, setFocus] = useState<MapFocus | null>(null);
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
-  const connection = !connected
+  const connection: Connection = !connected
     ? {
         state: 'down',
         label: 'לא זמין',
@@ -232,16 +233,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             />
           )}
         </div>
-        <span
-          className={styles.status}
-          data-state={connection.state}
-          role="status"
-          title={connection.detail}
-          aria-label={`${connection.label}. ${connection.detail}`}
-        >
-          <span className={styles.statusDot} aria-hidden="true" />
-          {connection.label}
-        </span>
+        <ConnectionStatus connection={connection} />
         <ProfileMenu
           user={user}
           canSignOut={connected}
