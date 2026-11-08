@@ -4,4 +4,9 @@
   --pending-control-lg-h: 48px;
   --pending-grab-w: 36px;
   --pending-grab-h: 4px;
+  --pending-select-min-w: 160px;
+  --pending-icon-sm: 16px;
+  --pending-icon-md: 18px;
+  --pending-row-h: 52px;
+  --pending-row-lg-h: 60px;
 }

@@ -80,8 +80,9 @@
   white-space: nowrap;
 }
 
-/* Trace Console Button `danger-outline`, across the panel with the icon at the start (ProfileMenu guidelines). */
-.signOut {
+/* Trace Console Button `danger-outline`, across the panel with the icon at the start (ProfileMenu guidelines).
+   Doubled class: it must beat Button's own `.button` height and alignment, whatever the stylesheet order. */
+.signOut.signOut {
   justify-content: flex-start;
   width: 100%;
 }
@@ -95,6 +96,8 @@
 
 /* Phone: the profile opens as a bottom sheet (Cm17). */
 .overlay {
+  /* Above the map's controls and attribution. */
+  z-index: 100;
   position: fixed;
   inset: 0;
   display: flex;
@@ -137,7 +140,7 @@
     height: var(--pending-touch-target);
   }
 
-  .signOut {
+  .signOut.signOut {
     justify-content: center;
     height: var(--pending-control-lg-h);
   }

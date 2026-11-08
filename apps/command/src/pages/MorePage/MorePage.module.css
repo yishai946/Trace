@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  min-height: 52px;
+  min-height: var(--pending-row-h);
   padding-block: 0;
   padding-inline: var(--space-7);
   border: 0;
@@ -51,7 +51,7 @@
 }
 
 .large {
-  min-height: 60px;
+  min-height: var(--pending-row-lg-h);
 }
 
 .action {
@@ -71,13 +71,13 @@
 
 .action:disabled {
   cursor: default;
-  opacity: 0.5;
+  opacity: 0.45;
 }
 
 .action svg {
   flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
+  width: var(--pending-icon-md);
+  height: var(--pending-icon-md);
 }
 
 .action svg:last-child:not(:first-child) {
