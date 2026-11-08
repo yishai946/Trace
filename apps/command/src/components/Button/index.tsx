@@ -9,10 +9,13 @@ export interface ButtonProps extends AriaButtonProps {
    * `danger-outline` is a destructive action elsewhere (delete, sign out), and `danger` confirms a delete.
    */
   variant?: ButtonVariant;
-  size?: 'md' | 'sm';
+  /** `lg` is the large phone control (48px), for login and the main action of a phone screen. */
+  size?: 'md' | 'sm' | 'lg';
 }
 
 export function Button({ variant = 'secondary', size = 'md', className, ...props }: ButtonProps) {
-  const classes = [styles.button, styles[variant], size === 'sm' && styles.sm, className].filter(Boolean).join(' ');
+  const classes = [styles.button, styles[variant], size === 'sm' && styles.sm, size === 'lg' && styles.lg, className]
+    .filter(Boolean)
+    .join(' ');
   return <AriaButton {...props} className={classes} />;
 }

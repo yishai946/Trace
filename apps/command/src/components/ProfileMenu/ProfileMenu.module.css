@@ -135,7 +135,7 @@
 }
 
 @media (width <= 768px) {
-  .avatar {
+  .avatar:not([data-static]) {
     width: var(--pending-touch-target);
     height: var(--pending-touch-target);
   }

@@ -124,3 +124,10 @@
     width: var(--pending-touch-target);
   }
 }
+
+/* Large: phone login inputs and primary actions (wireframe .tc-btn--lg). */
+.lg {
+  height: var(--pending-control-lg-h);
+  padding-inline: var(--space-7);
+  font: var(--text-title);
+}
