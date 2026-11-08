@@ -126,3 +126,19 @@
   padding: var(--space-4);
   color: var(--ink-muted);
 }
+
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+@media (width <= 768px) {
+  .field {
+    height: var(--pending-touch-target);
+  }
+
+  .item {
+    min-height: var(--pending-touch-target);
+  }
+
+  .clear {
+    width: var(--pending-touch-target);
+    height: calc(var(--pending-touch-target) - 2px);
+  }
+}

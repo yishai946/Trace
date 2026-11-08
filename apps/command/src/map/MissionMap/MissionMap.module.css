@@ -81,3 +81,30 @@
 .root :global(.maplibregl-ctrl-attrib a) {
   color: var(--ink-muted);
 }
+
+/* Phone (usePhoneLayout, 768px): the toolbar is a column at the inline end under the app bar; zoom and coordinates go. */
+@media (width <= 768px) {
+  .toolbar {
+    top: calc(var(--space-6) * 2 + var(--header-h));
+    bottom: auto;
+    left: auto;
+    inset-inline-end: var(--space-6);
+    transform: none;
+  }
+
+  .zoom,
+  .coords {
+    display: none;
+  }
+
+  /* Beside the toolbar column: one tool button plus its padding and border. */
+  .hint {
+    top: calc(var(--space-6) * 2 + var(--header-h));
+    bottom: auto;
+    left: auto;
+    inset-inline-start: var(--space-6);
+    inset-inline-end: calc(var(--space-6) * 2 + var(--pending-touch-target) + var(--space-2) * 2 + 2px);
+    transform: none;
+    white-space: normal;
+  }
+}
