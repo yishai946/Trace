@@ -49,6 +49,9 @@ export const CreateMissionBody = z.object({
   lkp: Lkp,
 });
 
+/** UC-C05: the commander's new rally point. */
+export const UpdateRallyPointBody = z.object({ rallyPoint: PointGeometry });
+
 export const Mission = z
   .object({
     id: z.uuid(),
@@ -71,4 +74,5 @@ export const MissionParams = z.object({ missionId: z.uuid() });
 export type MissionStatus = z.infer<typeof MissionStatus>;
 export type MissingPerson = z.infer<typeof MissingPerson>;
 export type CreateMissionBody = z.input<typeof CreateMissionBody>;
+export type UpdateRallyPointBody = z.input<typeof UpdateRallyPointBody>;
 export type Mission = z.infer<typeof Mission>;

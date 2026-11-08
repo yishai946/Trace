@@ -2,6 +2,7 @@ import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
+  type Mission,
   type MissionPolygon,
   type Participant,
   type ServerToClientEvents,
@@ -32,6 +33,13 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
     case 'polygon.deleted':
       queryClient.setQueryData<MissionPolygon[]>(missionKeys.polygons(event.missionId), (list) =>
         list?.filter((p) => p.id !== event.polygonId),
+      );
+      return;
+    case 'rally.changed':
+      queryClient.setQueryData<Mission[]>(missionKeys.all, (list) =>
+        list?.map((m) =>
+          m.id === event.missionId ? { ...m, rallyPoint: event.rallyPoint, updatedAt: event.updatedAt } : m,
+        ),
       );
       return;
     case 'participant.moved':
