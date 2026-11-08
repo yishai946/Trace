@@ -20,6 +20,8 @@ export interface TextFieldProps extends Omit<AriaTextFieldProps, 'children'> {
   /** A text area of this many rows instead of a one-line input. */
   rows?: number;
   placeholder?: string;
+  /** `lg` is the large phone input (48px). */
+  size?: 'md' | 'lg';
 }
 
 /** A labelled input: height `control-h`, border `border-field` (brand book §contrast). */
@@ -30,6 +32,7 @@ export function TextField({
   errorMessage,
   rows,
   placeholder,
+  size = 'md',
   className,
   ...props
 }: TextFieldProps) {
@@ -38,6 +41,7 @@ export function TextField({
     placeholder,
     dir: ltr ? 'ltr' : undefined,
     'data-ltr': ltr || undefined,
+    'data-size': size === 'lg' ? 'lg' : undefined,
   };
   return (
     <AriaTextField {...props} className={[styles.field, className].filter(Boolean).join(' ')}>

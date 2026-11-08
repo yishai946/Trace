@@ -60,3 +60,88 @@
 .submit {
   width: 100%;
 }
+
+/* Phone (Cm01): the brand fills the top, the form sits in a sheet at the bottom. */
+.phoneScreen {
+  position: absolute;
+  inset: 0;
+  /* Above the map's control layer (MapLibre attribution is z-index 2), so the sheet's buttons are never covered. */
+  z-index: 3;
+  /* The brand area lets taps through to the map attribution at the top; the sheet takes them back. */
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.hero {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pending-login-mark);
+  height: var(--pending-login-mark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+  color: var(--ink);
+}
+
+.heroProduct {
+  font: var(--text-title);
+  font-weight: 700;
+}
+
+.heroMeta {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.sheet {
+  pointer-events: auto;
+  padding-block-start: calc(var(--space-7) + var(--space-3));
+  padding-block-end: calc(var(--space-7) + var(--space-5));
+  padding-inline: calc(var(--space-7) + var(--space-1));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.sheet .title {
+  margin-block: 0 var(--space-7);
+}
+
+.sheet .form {
+  gap: var(--space-7);
+}
+
+.phoneError {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  background-color: var(--surface-raised);
+  color: var(--ink-secondary);
+}
+
+.errorIcon {
+  flex: 0 0 auto;
+  width: var(--pending-icon-size);
+  height: var(--pending-icon-size);
+  margin-block-start: var(--space-1);
+  color: var(--warning);
+}
+
+.sheet .submit {
+  width: 100%;
+}

@@ -84,7 +84,7 @@ export function App() {
 
   if (!session.data) {
     return (
-      <div className={styles.screen}>
+      <div className={styles.screen} data-login="">
         <Backdrop provider={provider} themeId={theme} veil="light" />
         <LoginPage />
       </div>
@@ -169,6 +169,17 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           }
         : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
 
+  const phoneList = phone && !mission && !creating;
+  const profileMenu = (
+    <ProfileMenu
+      user={user}
+      canSignOut={connected}
+      signingOut={signOut.isPending}
+      signOutFailed={signOut.isError}
+      onSignOut={() => signOut.mutate()}
+    />
+  );
+
   const workspace = !mission ? null : polygons.isPending ? (
     <p className={styles.setup}>טוען מסע…</p>
   ) : (
@@ -187,8 +198,8 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
     />
   );
 
-  // The phone gets its own mission screen (Cm04). The mission list, login and new mission stay as on the desktop until
-  // their phone screens land (#105).
+  // The phone gets its own mission screen (Cm04). The mission list and login have their own phone screens;
+  // new mission stays as on the desktop.
   if (phone && mission && !creating) {
     return (
       <main className={styles.screen}>
@@ -241,13 +252,19 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         />
       ) : !mission ? (
         <>
-          <Backdrop provider={provider} themeId={theme} veil="dense" />
+          {!phone && <Backdrop provider={provider} themeId={theme} veil="dense" />}
           <MissionsPage
             missions={missions.data}
             loadFailed={missions.isError}
             onOpen={openMission}
             onNew={() => setCreating(true)}
             canCreate={connected}
+            phoneBar={
+              <>
+                <ConnectionStatus connection={connection} />
+                {profileMenu}
+              </>
+            }
           />
         </>
       ) : (
@@ -280,73 +297,69 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         </p>
       )}
 
-      <header className={styles.appbar}>
-        <span className={styles.brand}>Trace</span>
-        {mission && !creating && (
-          <>
-            <span className={styles.sep} aria-hidden="true" />
-            <div className={styles.mission}>
-              <MissionSwitcher
-                mission={mission}
-                missions={missions.data ?? []}
-                onSelect={openMission}
-                onShowAll={() => openMission(null)}
-              />
-            </div>
-            <AriaButton
-              className={styles.meta}
-              aria-expanded={joinOpen}
-              aria-label={`קוד הצטרפות ${mission.joinCode}`}
-              onPress={() => {
-                setJoinOpen((open) => !open);
-                setRallyOpen(false);
-                setDetailsOpen(false);
-              }}
-            >
-              קוד {mission.joinCode}
-            </AriaButton>
-            <AriaButton
-              className={styles.meta}
-              aria-expanded={rallyOpen}
-              onPress={() => {
-                setRallyOpen((open) => !open);
-                setJoinOpen(false);
-                setDetailsOpen(false);
-              }}
-            >
-              נקודת כינוס
-            </AriaButton>
-            <AriaButton
-              ref={detailsButton}
-              className={styles.meta}
-              aria-expanded={detailsOpen}
-              onPress={() => {
-                setDetailsOpen((open) => !open);
-                setJoinOpen(false);
-                setRallyOpen(false);
-              }}
-            >
-              פרטי מסע
-            </AriaButton>
-          </>
-        )}
-        <div className={styles.search}>
+      {!phoneList && (
+        <header className={styles.appbar}>
+          <span className={styles.brand}>Trace</span>
           {mission && !creating && (
-            <PlaceSearch
-              provider={provider}
-              onSelect={(place) => setFocus({ center: place.center, bounds: place.bounds })}
-            />
+            <>
+              <span className={styles.sep} aria-hidden="true" />
+              <div className={styles.mission}>
+                <MissionSwitcher
+                  mission={mission}
+                  missions={missions.data ?? []}
+                  onSelect={openMission}
+                  onShowAll={() => openMission(null)}
+                />
+              </div>
+              <AriaButton
+                className={styles.meta}
+                aria-expanded={joinOpen}
+                aria-label={`קוד הצטרפות ${mission.joinCode}`}
+                onPress={() => {
+                  setJoinOpen((open) => !open);
+                  setRallyOpen(false);
+                  setDetailsOpen(false);
+                }}
+              >
+                קוד {mission.joinCode}
+              </AriaButton>
+              <AriaButton
+                className={styles.meta}
+                aria-expanded={rallyOpen}
+                onPress={() => {
+                  setRallyOpen((open) => !open);
+                  setJoinOpen(false);
+                  setDetailsOpen(false);
+                }}
+              >
+                נקודת כינוס
+              </AriaButton>
+              <AriaButton
+                ref={detailsButton}
+                className={styles.meta}
+                aria-expanded={detailsOpen}
+                onPress={() => {
+                  setDetailsOpen((open) => !open);
+                  setJoinOpen(false);
+                  setRallyOpen(false);
+                }}
+              >
+                פרטי מסע
+              </AriaButton>
+            </>
           )}
-        </div>
-        <ConnectionStatus connection={connection} />
-        <ProfileMenu
-          user={user}
-          canSignOut={connected}
-          signingOut={signOut.isPending}
-          signOutFailed={signOut.isError}
-          onSignOut={() => signOut.mutate()}
-        />
-      </header>
+          <div className={styles.search}>
+            {mission && !creating && (
+              <PlaceSearch
+                provider={provider}
+                onSelect={(place) => setFocus({ center: place.center, bounds: place.bounds })}
+              />
+            )}
+          </div>
+          <ConnectionStatus connection={connection} />
+          {profileMenu}
+        </header>
+      )}
     </main>
   );
 }

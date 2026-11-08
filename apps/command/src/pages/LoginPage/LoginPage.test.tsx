@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginPage } from '.';
 
 const respond = (status: number, body: unknown) =>
@@ -22,8 +22,21 @@ const fill = (email: string, password: string) => {
   fireEvent.click(screen.getByRole('button', { name: 'כניסה' }));
 };
 
-describe('LoginPage', () => {
-  afterEach(() => vi.restoreAllMocks());
+const stubPhone = (phone: boolean) =>
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn(() => ({ matches: phone, addEventListener() {}, removeEventListener() {} })),
+  );
+
+describe.each([
+  ['desktop', false],
+  ['phone', true],
+])('LoginPage on the %s', (_layout, phone) => {
+  beforeEach(() => stubPhone(phone));
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
 
   it('signs in with email and password, then reloads the session (UC-C01)', async () => {
     const fetch = respond(200, { token: 't', user: { id: 'u1' } });
@@ -72,4 +85,39 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'כניסה' })).toBeDisabled();
     expect(fetch).not.toHaveBeenCalled();
   });
+
+  if (phone) {
+    it('shows the brand above a sheet that holds only the sign-in form (Cm01)', () => {
+      respond(200, {});
+      renderPage();
+
+      const main = screen.getByRole('main', { name: 'כניסת מנהל' });
+      expect(screen.getAllByRole('main')).toHaveLength(1);
+      expect(within(main).getByRole('heading', { level: 1, name: 'כניסת מנהל' })).toBeTruthy();
+      expect(within(main).getByLabelText(/אימייל/)).toBeTruthy();
+      expect(within(main).getByLabelText(/סיסמה/)).toBeTruthy();
+      expect(screen.getByText('TRACE Command')).toBeTruthy();
+      expect(screen.getByText('ניהול מסע חיפוש והצלה')).toBeTruthy();
+    });
+
+    it('ties the error banner to both fields', async () => {
+      respond(401, { code: 'INVALID_EMAIL_OR_PASSWORD', message: 'Invalid email or password' });
+      renderPage();
+
+      fill('commander@trace.test', 'wrong');
+
+      expect(await screen.findByRole('alert')).toHaveAttribute('id', 'login-error');
+      expect(screen.getByLabelText(/אימייל/)).toHaveAttribute('aria-describedby', 'login-error');
+      expect(screen.getByLabelText(/סיסמה/)).toHaveAttribute('aria-describedby', 'login-error');
+    });
+
+    it('reads "נכנס…" and disables the button while signing in', async () => {
+      vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+      renderPage();
+
+      fill('commander@trace.test', 'secret-password');
+
+      expect(await screen.findByRole('button', { name: 'נכנס…' })).toBeDisabled();
+    });
+  }
 });

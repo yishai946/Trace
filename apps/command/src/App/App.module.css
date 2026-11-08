@@ -144,6 +144,14 @@
   opacity: 0.82;
 }
 
+/* Phone login: the sheet covers the bottom of the map, so the map attribution (required by MapTiler and OSM) moves to the top. */
+@media (width <= 768px) {
+  .screen[data-login] :global(.maplibregl-ctrl-bottom-right) {
+    top: 0;
+    bottom: auto;
+  }
+}
+
 /* Phone (usePhoneLayout, 768px): the inspector and edit bar float above the bottom sheet, full width. */
 @media (width <= 768px) {
   .inspector {

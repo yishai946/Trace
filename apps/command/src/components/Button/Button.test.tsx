@@ -20,4 +20,9 @@ describe('Button', () => {
     fireEvent.click(screen.getByRole('button', { name: 'השהה' }));
     expect(onPress).not.toHaveBeenCalled();
   });
+
+  it('has a large size for phone screens', () => {
+    render(<Button size="lg">כניסה</Button>);
+    expect(screen.getByRole('button', { name: 'כניסה' }).className).toMatch(/lg/);
+  });
 });
