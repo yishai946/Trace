@@ -65,6 +65,8 @@
 .phoneScreen {
   position: absolute;
   inset: 0;
+  /* Above the map's control layer (MapLibre attribution is z-index 2), so the sheet's buttons are never covered. */
+  z-index: 3;
   display: flex;
   flex-direction: column;
 }
@@ -131,8 +133,8 @@
 
 .errorIcon {
   flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
+  width: var(--pending-icon-size);
+  height: var(--pending-icon-size);
   margin-block-start: var(--space-1);
   color: var(--warning);
 }

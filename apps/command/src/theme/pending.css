@@ -14,4 +14,6 @@
   --pending-control-lg-h: 48px;
   /* The brand tile of the phone login screen (wireframe Cm01). */
   --pending-login-mark: 56px;
+  /* The inline icon of a banner (wireframe warning icon, 16px). */
+  --pending-icon-size: 16px;
 }
