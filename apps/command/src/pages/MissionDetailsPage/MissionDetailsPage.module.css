@@ -1,9 +1,12 @@
+/* The veil, panel and join code column sit above the map and its controls (attribution), under the app bar. */
+
 /* Dims the live map behind the details, as in wireframe Cd05 (map-ground at 82%). It also keeps clicks off the map. */
 .veil {
   position: absolute;
   inset: 0;
   background-color: var(--map-ground);
   opacity: 0.82;
+  z-index: 2;
 }
 
 /* The details panel, between the start edge and the join code column (Cd05). */
@@ -20,12 +23,14 @@
   border-radius: var(--radius-xl);
   background-color: var(--surface);
   box-shadow: var(--shadow-panel);
+  z-index: 3;
 }
 
 .side {
   position: absolute;
   top: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-end: var(--space-6);
+  z-index: 3;
 }
 
 @media (width < 900px) {

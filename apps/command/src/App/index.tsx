@@ -12,7 +12,7 @@ import {
   type SessionUser,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
@@ -131,6 +131,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [rallyOpen, setRallyOpen] = useState(false);
   /** The mission details screen (UC-C03). It covers the map and the panels, so no other panel stays open with it. */
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsButton = useRef<HTMLButtonElement>(null);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
   const openMission = (id: string | null) => {
     setOpenId(id);
@@ -212,12 +213,15 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
 
       {mission && !creating && detailsOpen && (
         <MissionDetailsPage
-          key={mission.id}
+          key={`details-${mission.id}`}
           mission={mission}
           commanderName={user.name}
           searcherCount={(participants.data ?? []).filter((p) => p.status !== 'ended').length}
           online={operational}
-          onClose={() => setDetailsOpen(false)}
+          onClose={() => {
+            setDetailsOpen(false);
+            detailsButton.current?.focus();
+          }}
         />
       )}
 
@@ -270,6 +274,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               נקודת כינוס
             </AriaButton>
             <AriaButton
+              ref={detailsButton}
               className={styles.meta}
               aria-expanded={detailsOpen}
               onPress={() => {

@@ -11,7 +11,7 @@ import {
 } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '../api';
+import { ApiRequestError, apiRequest } from '../api';
 
 export const missionKeys = {
   all: ['missions'] as const,
@@ -82,6 +82,11 @@ export function useUpdateMissionDetails(missionId: string) {
       );
       return queryClient.invalidateQueries({ queryKey: missionKeys.all });
     },
+    // The mission ended meanwhile: reload it, so the screen turns read-only.
+    onError: (error) =>
+      error instanceof ApiRequestError && error.code === 'MISSION_ENDED'
+        ? queryClient.invalidateQueries({ queryKey: missionKeys.all })
+        : undefined,
   });
 }
 
