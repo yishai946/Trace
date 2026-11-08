@@ -75,6 +75,8 @@ const second = polygon('33333333-3333-4333-8333-333333333333', 'פוליגון 2
 let serverPolygons: MissionPolygon[];
 /** The mission's Timeline as the server has it, oldest first. */
 let serverTimeline: TimelineEvent[];
+/** Holds back the Timeline fetches, to fire an event while the first one is in flight. */
+let timelineGate: Promise<void>;
 
 function setup() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -86,7 +88,15 @@ function setup() {
     () => ({
       live: useMissionLive(missionId),
       polygons: useQuery({ queryKey: missionKeys.polygons(missionId), queryFn: fetchPolygons }).data,
-      timeline: useQuery({ queryKey: missionKeys.timeline(missionId), queryFn: async () => serverTimeline }).data,
+      timeline: useQuery({
+        queryKey: missionKeys.timeline(missionId),
+        queryFn: async () => {
+          // The server answers with what it has when asked, but the answer arrives once the gate opens.
+          const snapshot = serverTimeline;
+          await timelineGate;
+          return snapshot;
+        },
+      }).data,
     }),
     { wrapper },
   );
@@ -107,6 +117,7 @@ describe('useMissionLive', () => {
     sockets.length = 0;
     serverPolygons = [first];
     serverTimeline = [];
+    timelineGate = Promise.resolve();
   });
 
   it('is connecting until the join succeeds, then live', async () => {
@@ -183,6 +194,21 @@ describe('useMissionLive', () => {
     const tie: TimelineEvent = { ...eventSamples['mission.paused'], missionId, occurredAt: e1.occurredAt };
     act(() => socket.fire('mission:event', recorded(tie)));
     await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, tie, e2]));
+  });
+
+  it('keeps a Timeline event that arrives while the first fetch is in flight', async () => {
+    let open: () => void = () => {};
+    timelineGate = new Promise((resolve) => (open = resolve));
+    const { result } = setup();
+    const socket = sockets[0] as FakeSocket;
+
+    // The first fetch has asked the server and is waiting; then the event is recorded and published.
+    const recorded: TimelineEvent = { ...eventSamples['polygon.created'], missionId };
+    serverTimeline = [recorded];
+    act(() => socket.fire('mission:event', { type: 'timeline.recorded', missionId, event: recorded }));
+    open();
+
+    await waitFor(() => expect(result.current.timeline).toEqual([recorded]));
   });
 
   it('shows down while disconnected, and refetches the latest data after reconnecting', async () => {

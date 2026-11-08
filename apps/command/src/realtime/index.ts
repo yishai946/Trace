@@ -42,15 +42,24 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         ),
       );
       return;
-    case 'timeline.recorded':
-      // With nothing cached, nothing is added: opening the Timeline fetches the whole list. The sort is stable, so
-      // events of the same instant keep their arrival order.
-      queryClient.setQueryData<TimelineEvent[]>(missionKeys.timeline(event.missionId), (list) =>
+    case 'timeline.recorded': {
+      const key = missionKeys.timeline(event.missionId);
+      // Not cached yet: either the Timeline was never opened, or its first fetch is in flight and may have read the
+      // server before this event. Cancel that fetch and fetch again (an in-flight first fetch is otherwise reused),
+      // so it cannot leave the list without the event. Nothing happens if the Timeline was never opened.
+      if (!queryClient.getQueryData(key)) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+        return;
+      }
+      // The sort is stable, so events of the same instant keep their arrival order, as the API orders them by
+      // recording order.
+      queryClient.setQueryData<TimelineEvent[]>(key, (list) =>
         list && !list.some((e) => e.id === event.event.id)
           ? [...list, event.event].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt))
           : list,
       );
       return;
+    }
   }
 }
 
