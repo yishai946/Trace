@@ -14,6 +14,7 @@ import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { lkpPoints, missionPhotos, missions, participations } from '../../db/schema';
 import { AppError, notFound } from '../../errors';
+import { recordEvent } from '../timeline/timeline.service';
 
 /** The request body plus the commander who creates the mission and will manage it. */
 export type CreateMissionInput = z.output<typeof CreateMissionBody> & { commanderId: string };
@@ -154,11 +155,30 @@ export async function createMission(
           })
           .returning({ id: missions.id });
         if (!created) throw new Error('Mission insert returned no row');
+        const actor: Actor = { role: 'commander', userId: input.commanderId };
+        await recordEvent(tx, {
+          missionId: created.id,
+          actor,
+          type: 'mission.created',
+          subject: { kind: 'mission', id: created.id, label: input.name },
+          details: {},
+        });
         if (input.lkp) {
-          await tx.insert(lkpPoints).values({
+          const [lkp] = await tx
+            .insert(lkpPoints)
+            .values({
+              missionId: created.id,
+              position: input.lkp.position,
+              observedAt: new Date(input.lkp.observedAt),
+            })
+            .returning({ id: lkpPoints.id });
+          if (!lkp) throw new Error('LKP insert returned no row');
+          await recordEvent(tx, {
             missionId: created.id,
-            position: input.lkp.position,
-            observedAt: new Date(input.lkp.observedAt),
+            actor,
+            type: 'lkp.changed',
+            subject: { kind: 'lkp', id: lkp.id, label: null },
+            details: { observedAt: new Date(input.lkp.observedAt).toISOString(), previousObservedAt: null },
           });
         }
         return created.id;

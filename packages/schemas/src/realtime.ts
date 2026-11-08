@@ -3,6 +3,7 @@ import { ErrorCode } from './errors';
 import { LngLat, PointGeometry } from './geo';
 import { Mission } from './missions';
 import { MissionPolygon } from './polygons';
+import { TimelineEvent } from './timeline';
 
 /**
  * The realtime channel (Socket.IO) between the API and both apps. A client connects with its session (Command's cookie,
@@ -56,6 +57,9 @@ const ParticipantMoved = z.object({
   positionAt: z.iso.datetime({ offset: true }),
 });
 
+/** An event was added to the mission's Timeline (UC-C19). Only the mission's commander gets it. */
+const TimelineRecorded = z.object({ type: z.literal('timeline.recorded'), missionId: z.uuid(), event: TimelineEvent });
+
 /** Every event the server sends about a mission, on the `mission:event` channel. */
 export const MissionEvent = z.discriminatedUnion('type', [
   PolygonSaved,
@@ -63,6 +67,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   RallyChanged,
   MissionUpdated,
   ParticipantMoved,
+  TimelineRecorded,
 ]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */

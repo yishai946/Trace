@@ -40,6 +40,8 @@ function roomsFor(actor: Actor, missionId: string): string[] {
 
 /** Who gets an event. Positions go only to the commander and the searcher who moved (decision 32). */
 function audienceOf(event: MissionEvent): string[] {
+  // The Timeline is the commander's (UC-C19); searchers do not get it.
+  if (event.type === 'timeline.recorded') return [commanderRoom(event.missionId)];
   if (event.type === 'participant.moved') {
     return [commanderRoom(event.missionId), searcherRoom(event.missionId, event.searcherId)];
   }

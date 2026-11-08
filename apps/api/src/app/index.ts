@@ -23,6 +23,7 @@ import { missionRoutes } from '../modules/missions';
 import { participantRoutes } from '../modules/participants';
 import { polygonRoutes } from '../modules/polygons';
 import { searcherRoutes } from '../modules/searchers';
+import { timelineRoutes } from '../modules/timeline';
 import { createRealtime } from '../realtime';
 
 const VERSION = '0.1.0';
@@ -84,6 +85,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
         await signedIn.register(participantRoutes, { db });
         await signedIn.register(searcherRoutes, { db });
         await signedIn.register(notificationRoutes, { db });
+        await signedIn.register(timelineRoutes, { db });
       });
     },
     { prefix: '/api' },

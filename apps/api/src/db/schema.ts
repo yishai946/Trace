@@ -1,10 +1,19 @@
-import { MISSION_STATUSES, PARTICIPATION_STATUSES, POLYGON_STATUSES, TASK_STATUSES, USER_ROLES } from '@trace/domain';
+import {
+  MISSION_STATUSES,
+  PARTICIPATION_STATUSES,
+  POLYGON_STATUSES,
+  TASK_STATUSES,
+  TIMELINE_EVENT_TYPES,
+  USER_ROLES,
+} from '@trace/domain';
 import { sql } from 'drizzle-orm';
 import {
+  bigserial,
   boolean,
   customType,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -27,6 +36,7 @@ export const polygonStatus = pgEnum('polygon_status', POLYGON_STATUSES);
 export const participationStatus = pgEnum('participation_status', PARTICIPATION_STATUSES);
 export const taskStatus = pgEnum('task_status', TASK_STATUSES);
 export const userRole = pgEnum('user_role', USER_ROLES);
+export const timelineEventType = pgEnum('timeline_event_type', TIMELINE_EVENT_TYPES);
 
 /*
  * Sign-in tables owned by Better Auth (users, sessions, accounts, verifications). Their columns follow its core schema
@@ -214,6 +224,28 @@ export const participations = pgTable(
       .on(t.polygonId)
       .where(sql`${t.status} = 'assigned'`),
   ],
+);
+
+/**
+ * The mission's operational Timeline (UC-C19): significant events only (decision 54), kept after the mission ends.
+ * `actor`, `subject` and `details` are snapshots in the shape of `TimelineEvent` (@trace/schemas), validated on read.
+ */
+export const timelineEvents = pgTable(
+  'timeline_events',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Recording order. Breaks ties between events of the same instant, such as two in one transaction. */
+    seq: bigserial({ mode: 'number' }).notNull().unique(),
+    missionId: uuid('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    type: timelineEventType().notNull(),
+    occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+    actor: jsonb().notNull(),
+    subject: jsonb().notNull(),
+    details: jsonb().notNull().default({}),
+  },
+  (t) => [index('timeline_events_mission_idx').on(t.missionId, t.occurredAt, t.seq)],
 );
 
 /** An Expo push token of a searcher's device, registered by the session signed in on it. Signing out deletes it. */

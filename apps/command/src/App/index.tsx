@@ -29,11 +29,14 @@ import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
+import { MissionLayout } from '../mission/MissionLayout';
+import type { MissionView } from '../mission/MissionNav';
 import {
   useMissions,
   useParticipants,
   usePolygonMutations,
   usePolygons,
+  useTimeline,
   useUpdateRallyPoint,
 } from '../mission/missionQueries';
 import { PhoneMissionScreen } from '../mission/PhoneMissionScreen';
@@ -45,6 +48,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { TimelinePage } from '../pages/TimelinePage';
 import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
 
@@ -137,8 +141,11 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsButton = useRef<HTMLButtonElement>(null);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
+  /** The live map or the Timeline. The Timeline is also open for an ended mission, read-only (UC-C19). */
+  const [view, setView] = useState<MissionView>('map');
   const openMission = (id: string | null) => {
     setOpenId(id);
+    setView('map');
     setJoinOpen(false);
     setRallyOpen(false);
     setDetailsOpen(false);
@@ -147,6 +154,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
+  const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
@@ -180,23 +188,24 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
     />
   );
 
-  const workspace = !mission ? null : polygons.isPending ? (
-    <p className={styles.setup}>טוען מסע…</p>
-  ) : (
-    <MissionWorkspace
-      key={mission.id}
-      provider={provider}
-      focus={focus}
-      mission={mission}
-      polygons={polygons.data ?? []}
-      participants={participants.data ?? []}
-      themeId={theme}
-      online={operational}
-      rallyOpen={rallyOpen}
-      onRallyClose={() => setRallyOpen(false)}
-      onPlaceFound={setFocus}
-    />
-  );
+  const workspace =
+    !mission || (view === 'timeline' && !phone) ? null : polygons.isPending ? (
+      <p className={styles.setup}>טוען מסע…</p>
+    ) : (
+      <MissionWorkspace
+        key={mission.id}
+        provider={provider}
+        focus={focus}
+        mission={mission}
+        polygons={polygons.data ?? []}
+        participants={participants.data ?? []}
+        themeId={theme}
+        online={operational}
+        rallyOpen={rallyOpen}
+        onRallyClose={() => setRallyOpen(false)}
+        onPlaceFound={setFocus}
+      />
+    );
 
   // The phone gets its own mission screen (Cm04). The mission list and login have their own phone screens;
   // new mission stays as on the desktop.
@@ -285,10 +294,22 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         />
       )}
 
-      {mission && !creating && joinOpen && (
-        <div className={styles.join}>
-          <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />
-        </div>
+      {mission && !creating && (
+        <MissionLayout
+          missionName={mission.name}
+          view={view}
+          onNavigate={setView}
+          joinPanel={joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
+        >
+          {view === 'timeline' && (
+            <TimelinePage
+              events={timeline.data}
+              loadFailed={timeline.isError}
+              onRetry={() => void timeline.refetch()}
+              onGoToMap={() => setView('map')}
+            />
+          )}
+        </MissionLayout>
       )}
 
       {mission && !creating && createdNotice && (

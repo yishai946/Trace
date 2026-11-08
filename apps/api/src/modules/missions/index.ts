@@ -71,6 +71,7 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
       },
       preHandler: commandersOnly,
     },
+    // Nothing is published: nobody can have joined a mission that did not exist, so no one is listening for its events.
     async (request, reply) =>
       reply.status(201).send(await createMission(db, { ...request.body, commanderId: actorOf(request).userId })),
   );
