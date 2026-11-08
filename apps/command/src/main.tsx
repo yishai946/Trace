@@ -1,4 +1,5 @@
 import '@trace/design/tokens.css';
+import './theme/pending.css';
 import './global.css';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';

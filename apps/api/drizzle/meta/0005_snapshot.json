@@ -1,5 +1,5 @@
 {
-  "id": "0614fd79-2c4b-4bc3-adb9-6a89f9a1b362",
+  "id": "a65c9750-015b-4f36-a22b-f34272198004",
   "prevId": "4ff41016-1840-4bf2-9f80-073de2f806de",
   "version": "7",
   "dialect": "postgresql",
@@ -625,6 +625,104 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.push_tokens": {
+      "name": "push_tokens",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "searcher_id": {
+          "name": "searcher_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session_id": {
+          "name": "session_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "push_tokens_searcher_idx": {
+          "name": "push_tokens_searcher_idx",
+          "columns": [
+            {
+              "expression": "searcher_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "push_tokens_searcher_id_searchers_id_fk": {
+          "name": "push_tokens_searcher_id_searchers_id_fk",
+          "tableFrom": "push_tokens",
+          "tableTo": "searchers",
+          "columnsFrom": ["searcher_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "push_tokens_session_id_sessions_id_fk": {
+          "name": "push_tokens_session_id_sessions_id_fk",
+          "tableFrom": "push_tokens",
+          "tableTo": "sessions",
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "push_tokens_token_unique": {
+          "name": "push_tokens_token_unique",
+          "nullsNotDistinct": false,
+          "columns": ["token"]
+        },
+        "push_tokens_session_id_unique": {
+          "name": "push_tokens_session_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["session_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.searchers": {
       "name": "searchers",
       "schema": "",
@@ -781,115 +879,6 @@
           "name": "sessions_token_unique",
           "nullsNotDistinct": false,
           "columns": ["token"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.timeline_events": {
-      "name": "timeline_events",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "seq": {
-          "name": "seq",
-          "type": "bigserial",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "mission_id": {
-          "name": "mission_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "type": {
-          "name": "type",
-          "type": "timeline_event_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "occurred_at": {
-          "name": "occurred_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "actor": {
-          "name": "actor",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "subject": {
-          "name": "subject",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "details": {
-          "name": "details",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        }
-      },
-      "indexes": {
-        "timeline_events_mission_idx": {
-          "name": "timeline_events_mission_idx",
-          "columns": [
-            {
-              "expression": "mission_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "occurred_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "seq",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "timeline_events_mission_id_missions_id_fk": {
-          "name": "timeline_events_mission_id_missions_id_fk",
-          "tableFrom": "timeline_events",
-          "tableTo": "missions",
-          "columnsFrom": ["mission_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "timeline_events_seq_unique": {
-          "name": "timeline_events_seq_unique",
-          "nullsNotDistinct": false,
-          "columns": ["seq"]
         }
       },
       "policies": {},
@@ -1075,25 +1064,6 @@
       "name": "task_status",
       "schema": "public",
       "values": ["ready", "searching", "paused", "finished"]
-    },
-    "public.timeline_event_type": {
-      "name": "timeline_event_type",
-      "schema": "public",
-      "values": [
-        "mission.created",
-        "mission.paused",
-        "mission.resumed",
-        "mission.ended",
-        "lkp.changed",
-        "polygon.created",
-        "polygon.boundary_changed",
-        "polygon.deleted",
-        "search.started",
-        "report.submitted",
-        "coverage.threshold_reached",
-        "contact.lost",
-        "sos.activated"
-      ]
     },
     "public.user_role": {
       "name": "user_role",

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
-import { LngLat } from './geo';
+import { LngLat, PointGeometry } from './geo';
+import { Mission } from './missions';
 import { MissionPolygon } from './polygons';
 import { TimelineEvent } from './timeline';
 
@@ -27,6 +28,23 @@ const PolygonSaved = z.object({ type: z.literal('polygon.saved'), missionId: z.u
 const PolygonDeleted = z.object({ type: z.literal('polygon.deleted'), missionId: z.uuid(), polygonId: z.uuid() });
 
 /**
+ * The commander moved the rally point (UC-C05). Every member of the mission gets it; a searcher who is offline gets the
+ * new point from `GET /missions/:id` when they reconnect (decision 92).
+ */
+const RallyChanged = z.object({
+  type: z.literal('rally.changed'),
+  missionId: z.uuid(),
+  rallyPoint: PointGeometry,
+  updatedAt: z.iso.datetime({ offset: true }),
+});
+
+/**
+ * The commander edited the mission or missing-person details, or replaced the photo (UC-C03). Every member of the
+ * mission gets the whole mission; a searcher who is offline gets it from `GET /missions/:id` when they reconnect.
+ */
+const MissionUpdated = z.object({ type: z.literal('mission.updated'), missionId: z.uuid(), mission: Mission });
+
+/**
  * A searcher reported a position. Only the mission's commander and that searcher get it: searchers do not see each
  * other's positions (decision 32).
  */
@@ -46,6 +64,8 @@ const TimelineRecorded = z.object({ type: z.literal('timeline.recorded'), missio
 export const MissionEvent = z.discriminatedUnion('type', [
   PolygonSaved,
   PolygonDeleted,
+  RallyChanged,
+  MissionUpdated,
   ParticipantMoved,
   TimelineRecorded,
 ]);

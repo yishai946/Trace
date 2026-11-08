@@ -146,34 +146,6 @@
   min-width: 0;
 }
 
-.photo {
-  display: flex;
-  flex: 0 0 calc(var(--control-h) * 2.8);
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.photoImage,
-.photoEmpty {
-  width: 100%;
-  min-height: calc(var(--control-h) * 3);
-  flex: 1;
-  border-radius: var(--radius-md);
-}
-
-.photoImage {
-  object-fit: cover;
-}
-
-.photoEmpty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--surface-raised);
-  color: var(--ink-muted);
-  font: var(--text-meta);
-}
-
 .footer {
   display: flex;
   flex-direction: column;
@@ -258,60 +230,6 @@
 
 .badge[data-tone='warn'] .badgeDot {
   background-color: var(--warning);
-}
-
-.seg {
-  display: flex;
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
-  background-color: var(--surface-sunken);
-}
-
-.segTab {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  height: var(--segment-h);
-  border-radius: var(--radius-md);
-  color: var(--ink-secondary);
-  cursor: pointer;
-  outline: none;
-}
-
-.segTab[data-hovered] {
-  background-color: var(--surface-hover);
-}
-
-.segTab[data-selected] {
-  background-color: var(--surface-raised);
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.segTab[data-focus-visible] {
-  outline: 2px solid var(--focus);
-}
-
-.tabPanel {
-  outline: none;
-}
-
-.tabPanel[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.hint {
-  margin: 0;
-  color: var(--ink-muted);
-  font: var(--text-meta);
-}
-
-.coords {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
 }
 
 .coordsRead {

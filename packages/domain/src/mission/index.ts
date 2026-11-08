@@ -10,3 +10,13 @@ export function isMissionEnded(status: MissionStatus): boolean {
 export function canChangePolygons(status: MissionStatus): boolean {
   return status === 'active';
 }
+
+/** The rally point can be moved while the mission runs, active or paused, and not once it ended (UC-C05). */
+export function canChangeRallyPoint(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
+
+/** Mission and missing-person details can be edited while the mission runs, active or paused (UC-C03, decision 94). */
+export function canEditMissionDetails(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}

@@ -16,6 +16,8 @@ const Env = z.object({
   /** The address clients reach the API at; Better Auth builds its callback URLs from it. */
   API_URL: z.url().default('http://localhost:3001'),
   AUTH_SECRET: z.string().min(32).default(DEV_AUTH_SECRET),
+  /** Expo's access token for enhanced push security. Optional: push is sent without it when unset. */
+  EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof Env>;

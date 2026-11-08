@@ -107,6 +107,17 @@ export const verifications = pgTable(
   (t) => [index('verifications_identifier_idx').on(t.identifier)],
 );
 
+/** Sign-in codes requested per phone number, to limit how often one number gets a code (UC-F01). */
+export const otpRequests = pgTable(
+  'otp_requests',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    phone: text().notNull(),
+    requestedAt: timestamp('requested_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('otp_requests_phone_requested_at_idx').on(t.phone, t.requestedAt)],
+);
+
 export const missions = pgTable('missions', {
   id: uuid().primaryKey().defaultRandom(),
   /** The commander who created the mission and the only one who manages it (spec §3). */
@@ -235,4 +246,22 @@ export const timelineEvents = pgTable(
     details: jsonb().notNull().default({}),
   },
   (t) => [index('timeline_events_mission_idx').on(t.missionId, t.occurredAt, t.seq)],
+);
+
+/** An Expo push token of a searcher's device, registered by the session signed in on it. Signing out deletes it. */
+export const pushTokens = pgTable(
+  'push_tokens',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    token: text().notNull().unique(),
+    searcherId: uuid('searcher_id')
+      .notNull()
+      .references(() => searchers.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id')
+      .notNull()
+      .unique()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
+    ...timestamps,
+  },
+  (t) => [index('push_tokens_searcher_idx').on(t.searcherId)],
 );
