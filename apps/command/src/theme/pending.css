@@ -1,0 +1,7 @@
+/* Values the phone layout needs that Trace Console does not define yet; they move to the design system (#106). */
+:root {
+  --pending-touch-target: 44px;
+  --pending-control-lg-h: 48px;
+  --pending-grab-w: 36px;
+  --pending-grab-h: 4px;
+}
