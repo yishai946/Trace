@@ -80,85 +80,9 @@
   white-space: nowrap;
 }
 
-.theme {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.select {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  height: var(--control-h);
-  padding-inline: var(--space-5);
-  border: 1px solid var(--border-field);
-  border-radius: var(--radius-md);
-  background-color: var(--surface-sunken);
-  color: var(--ink);
-  cursor: pointer;
-  outline: none;
-}
-
-.select[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 1px;
-}
-
-.option,
-.item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.option svg,
-.item svg {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-}
-
-.chevron {
-  color: var(--ink-muted);
-}
-
-.listPopover {
-  width: var(--trigger-width);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background-color: var(--surface);
-  box-shadow: var(--shadow-panel);
-}
-
-.list {
-  padding: var(--space-2);
-  outline: none;
-}
-
-.item {
-  height: var(--control-h);
-  padding-inline: var(--space-5);
-  border-radius: var(--radius-sm);
-  color: var(--ink-secondary);
-  cursor: pointer;
-  outline: none;
-}
-
-.item[data-focused],
-.item[data-hovered] {
-  background-color: var(--surface-hover);
-}
-
-.item[data-selected] {
-  background-color: var(--surface-raised);
-  color: var(--ink);
-  font-weight: 600;
-}
-
-/* Trace Console Button `danger-outline`, across the panel with the icon at the start (ProfileMenu guidelines). */
-.signOut {
+/* Trace Console Button `danger-outline`, across the panel with the icon at the start (ProfileMenu guidelines).
+   Doubled class: it must beat Button's own `.button` height and alignment, whatever the stylesheet order. */
+.signOut.signOut {
   justify-content: flex-start;
   width: 100%;
 }
@@ -168,4 +92,56 @@
   margin-inline: 0;
   color: var(--ink-muted);
   font: var(--text-meta);
+}
+
+/* Phone: the profile opens as a bottom sheet (Cm17). */
+.overlay {
+  /* Above the map's controls and attribution. */
+  z-index: 100;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* The scrim: the map ground at 60%, as a layer so only it is translucent. */
+.overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--map-ground);
+  opacity: 0.6;
+}
+
+.sheet {
+  position: relative;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-block-end: 0;
+  border-start-start-radius: var(--radius-xl);
+  border-start-end-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+  padding-block-end: var(--space-7);
+}
+
+.grab {
+  width: var(--pending-grab-w);
+  height: var(--pending-grab-h);
+  margin-block: var(--space-4);
+  margin-inline: auto;
+  border-radius: var(--radius-xl);
+  background-color: var(--border-strong);
+}
+
+@media (width <= 768px) {
+  .avatar {
+    width: var(--pending-touch-target);
+    height: var(--pending-touch-target);
+  }
+
+  .signOut.signOut {
+    justify-content: center;
+    height: var(--pending-control-lg-h);
+  }
 }
