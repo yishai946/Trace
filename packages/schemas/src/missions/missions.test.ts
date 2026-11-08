@@ -63,7 +63,9 @@ describe('UpdateMissionDetailsBody', () => {
   it('requires a mission name and the missing-person details', () => {
     const empty = UpdateMissionDetailsBody.safeParse({});
     expect(empty.success).toBe(false);
-    expect(empty.error?.issues.map((issue) => issue.path[0])).toEqual(expect.arrayContaining(['name', 'missingPerson']));
+    expect(empty.error?.issues.map((issue) => issue.path[0])).toEqual(
+      expect.arrayContaining(['name', 'missingPerson']),
+    );
     const blank = UpdateMissionDetailsBody.safeParse({ name: '  ', missingPerson: {} });
     expect(blank.success).toBe(false);
     expect(blank.error?.issues.map((issue) => issue.path[0])).toContain('name');

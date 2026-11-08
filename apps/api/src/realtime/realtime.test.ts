@@ -15,6 +15,7 @@ import {
   addParticipant,
   createTestApp,
   injectAs,
+  PNG_BYTES,
   resetDb,
   signInCommander,
   signInSearcher,
@@ -251,6 +252,89 @@ describe('realtime', () => {
       expect((await changeAs(commander, mission.id)).statusCode).toBe(409);
       await settle();
       expect(events).toEqual([]);
+    });
+  });
+
+  describe('mission details', () => {
+    const details = {
+      name: 'מסע 0413',
+      missingPerson: { name: 'נועם אברהם', age: 75, description: 'מעיל חום' },
+    };
+    const editAs = (user: TestUser, missionId: string, payload: unknown = details) =>
+      injectAs(ctx, user)({ method: 'PUT', url: `/api/missions/${missionId}/details`, payload: payload as object });
+
+    it('reaches the commander and every joined searcher, and nobody of another mission', async () => {
+      const commander = await signInCommander(ctx);
+      const otherCommander = await signInCommander(ctx);
+      const mission = await createMissionAs(commander);
+      const otherMission = await createMissionAs(otherCommander);
+      const joined = await signInSearcher(ctx);
+      const notJoined = await signInSearcher(ctx);
+      await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: joined.searcherId });
+      await addParticipant(ctx.db, { missionId: otherMission.id, callsign: 1, searcherId: notJoined.searcherId });
+
+      const [commanderSocket, joinedSocket, otherSocket, notJoinedSocket] = [
+        commander,
+        joined,
+        otherCommander,
+        notJoined,
+      ].map(socketFor) as [Client, Client, Client, Client];
+      await Promise.all([commanderSocket, joinedSocket, otherSocket, notJoinedSocket].map(connect));
+      expect(await join(commanderSocket, mission.id)).toEqual({ ok: true });
+      expect(await join(joinedSocket, mission.id)).toEqual({ ok: true });
+      expect(await join(otherSocket, otherMission.id)).toEqual({ ok: true });
+      const missed = [...record(otherSocket), ...record(notJoinedSocket)];
+
+      const toCommander = nextEvent(commanderSocket);
+      const toSearcher = nextEvent(joinedSocket);
+      const res = await editAs(commander, mission.id);
+      expect(res.statusCode).toBe(200);
+      const expected = { type: 'mission.updated', missionId: mission.id, mission: Mission.parse(res.json()) };
+      expect(MissionEvent.parse(await toCommander)).toEqual(expected);
+      expect(MissionEvent.parse(await toSearcher)).toEqual(expected);
+
+      await settle();
+      expect(missed).toEqual([]);
+    });
+
+    it('sends nothing when the edit is rejected', async () => {
+      const commander = await signInCommander(ctx);
+      const mission = await createMissionAs(commander);
+      const socket = socketFor(commander);
+      await connect(socket);
+      expect(await join(socket, mission.id)).toEqual({ ok: true });
+      const events = record(socket);
+
+      expect((await editAs(commander, mission.id, { ...details, name: ' ' })).statusCode).toBe(400);
+      await ctx.db.update(missions).set({ status: 'ended_stopped' }).where(eq(missions.id, mission.id));
+      expect((await editAs(commander, mission.id)).statusCode).toBe(409);
+      await settle();
+      expect(events).toEqual([]);
+    });
+
+    it('sends the new photo address when the photo is replaced', async () => {
+      const commander = await signInCommander(ctx);
+      const mission = await createMissionAs(commander);
+      const socket = socketFor(commander);
+      await connect(socket);
+      expect(await join(socket, mission.id)).toEqual({ ok: true });
+
+      const event = nextEvent(socket);
+      const res = await injectAs(
+        ctx,
+        commander,
+      )({
+        method: 'PUT',
+        url: `/api/missions/${mission.id}/photo`,
+        payload: PNG_BYTES,
+        headers: { 'content-type': 'image/png' },
+      });
+      expect(res.statusCode).toBe(200);
+      const photoUrl = Mission.parse(res.json()).missingPerson.photoUrl;
+      expect(photoUrl).not.toBeNull();
+      const received = MissionEvent.parse(await event);
+      expect(received.type).toBe('mission.updated');
+      if (received.type === 'mission.updated') expect(received.mission.missingPerson.photoUrl).toBe(photoUrl);
     });
   });
 

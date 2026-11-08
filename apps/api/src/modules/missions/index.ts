@@ -1,5 +1,13 @@
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
-import { ApiError, CreateMissionBody, Mission, MissionList, MissionParams, UpdateRallyPointBody } from '@trace/schemas';
+import {
+  ApiError,
+  CreateMissionBody,
+  Mission,
+  MissionList,
+  MissionParams,
+  UpdateMissionDetailsBody,
+  UpdateRallyPointBody,
+} from '@trace/schemas';
 import type { FastifyError } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
@@ -14,6 +22,7 @@ import {
   getMissionPhoto,
   listMissions,
   setMissionPhoto,
+  updateMissionDetails,
   updateRallyPoint,
 } from './missions.service';
 
@@ -109,12 +118,39 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
   );
 
   app.put(
+    '/missions/:missionId/details',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'Edit the mission and missing-person details (UC-C03)',
+        description:
+          'Replaces the mission name and the missing-person details; a field sent empty or null is cleared. ' +
+          'Only the mission commander, while the mission is active or paused (decision 94): 409 MISSION_ENDED once ' +
+          'it ended. Every member of the mission gets the new details at once; the others with the mission when they ' +
+          'reconnect.',
+        params: MissionParams,
+        body: UpdateMissionDetailsBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId } = request.params;
+      const mission = await updateMissionDetails(db, missionId, request.body);
+      realtime.publish({ type: 'mission.updated', missionId, mission });
+      return mission;
+    },
+  );
+
+  app.put(
     '/missions/:missionId/photo',
     {
       schema: {
         tags: ['missions'],
-        summary: "Set or replace the missing person's photo (UC-C02)",
-        description: `The body is the image itself: JPEG, PNG or WebP, at most ${MAX_PHOTO_BYTES / 1024 / 1024} MB.`,
+        summary: "Set or replace the missing person's photo (UC-C02, UC-C03)",
+        description:
+          `The body is the image itself: JPEG, PNG or WebP, at most ${MAX_PHOTO_BYTES / 1024 / 1024} MB.` +
+          ' Every member of the mission gets the new photo address at once.',
         params: MissionParams,
         consumes: [...PHOTO_TYPES],
         response: {
@@ -134,10 +170,12 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
         throw photoUploadError(error);
       },
     },
-    (request) => {
+    async (request) => {
       const body: unknown = request.body;
       if (!Buffer.isBuffer(body)) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'Send the photo as an image');
-      return setMissionPhoto(db, request.params.missionId, body);
+      const mission = await setMissionPhoto(db, request.params.missionId, body);
+      realtime.publish({ type: 'mission.updated', missionId: mission.id, mission });
+      return mission;
     },
   );
 
