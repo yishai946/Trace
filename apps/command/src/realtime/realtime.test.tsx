@@ -1,8 +1,9 @@
-import type { JoinMissionAck, MissionEvent, MissionPolygon } from '@trace/schemas';
+import type { JoinMissionAck, MissionEvent, MissionPolygon, TimelineEvent } from '@trace/schemas';
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { eventSamples } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -72,6 +73,8 @@ const second = polygon('33333333-3333-4333-8333-333333333333', 'פוליגון 2
 
 /** The mission's polygons as the server has them; changes while the console is away. */
 let serverPolygons: MissionPolygon[];
+/** The mission's Timeline as the server has it, oldest first. */
+let serverTimeline: TimelineEvent[];
 
 function setup() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -83,6 +86,7 @@ function setup() {
     () => ({
       live: useMissionLive(missionId),
       polygons: useQuery({ queryKey: missionKeys.polygons(missionId), queryFn: fetchPolygons }).data,
+      timeline: useQuery({ queryKey: missionKeys.timeline(missionId), queryFn: async () => serverTimeline }).data,
     }),
     { wrapper },
   );
@@ -102,6 +106,7 @@ describe('useMissionLive', () => {
   beforeEach(() => {
     sockets.length = 0;
     serverPolygons = [first];
+    serverTimeline = [];
   });
 
   it('is connecting until the join succeeds, then live', async () => {
@@ -149,6 +154,30 @@ describe('useMissionLive', () => {
 
     act(() => socket.fire('mission:event', { type: 'polygon.deleted', missionId, polygonId: first.id }));
     await waitFor(() => expect(result.current.polygons).toEqual([second]));
+  });
+
+  it('adds a recorded event to the cached Timeline once, in time order', async () => {
+    const e1: TimelineEvent = { ...eventSamples['polygon.created'], missionId };
+    serverTimeline = [e1];
+    const { result } = setup();
+    const socket = sockets[0] as FakeSocket;
+    const e2: TimelineEvent = { ...eventSamples['polygon.deleted'], missionId };
+    const earlier: TimelineEvent = {
+      ...eventSamples['lkp.changed'],
+      missionId,
+      occurredAt: '2026-10-03T09:00:00.000Z',
+    };
+    await waitFor(() => expect(result.current.timeline).toEqual([e1]));
+
+    const recorded = (event: TimelineEvent): MissionEvent => ({ type: 'timeline.recorded', missionId, event });
+    act(() => {
+      socket.fire('mission:event', recorded(e2));
+      socket.fire('mission:event', recorded(e2));
+    });
+    await waitFor(() => expect(result.current.timeline).toEqual([e1, e2]));
+
+    act(() => socket.fire('mission:event', recorded(earlier)));
+    await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, e2]));
   });
 
   it('shows down while disconnected, and refetches the latest data after reconnecting', async () => {

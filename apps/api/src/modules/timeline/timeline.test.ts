@@ -206,9 +206,27 @@ describe('timeline', () => {
       const bySearcher = { role: 'searcher', userId: searcher.userId, searcherId: searcher.searcherId } as const;
       const byCommander = { role: 'commander', userId: commander.userId } as const;
       const samples: Record<TimelineEventType, RecordEventInput> = {
-        'mission.created': { missionId, actor: byCommander, type: 'mission.created', subject: subject('mission'), details: {} },
-        'mission.paused': { missionId, actor: byCommander, type: 'mission.paused', subject: subject('mission'), details: {} },
-        'mission.resumed': { missionId, actor: byCommander, type: 'mission.resumed', subject: subject('mission'), details: {} },
+        'mission.created': {
+          missionId,
+          actor: byCommander,
+          type: 'mission.created',
+          subject: subject('mission'),
+          details: {},
+        },
+        'mission.paused': {
+          missionId,
+          actor: byCommander,
+          type: 'mission.paused',
+          subject: subject('mission'),
+          details: {},
+        },
+        'mission.resumed': {
+          missionId,
+          actor: byCommander,
+          type: 'mission.resumed',
+          subject: subject('mission'),
+          details: {},
+        },
         'mission.ended': {
           missionId,
           actor: byCommander,
@@ -223,7 +241,13 @@ describe('timeline', () => {
           subject: subject('lkp', null),
           details: { observedAt: at, previousObservedAt: null },
         },
-        'polygon.created': { missionId, actor: byCommander, type: 'polygon.created', subject: subject('polygon'), details: {} },
+        'polygon.created': {
+          missionId,
+          actor: byCommander,
+          type: 'polygon.created',
+          subject: subject('polygon'),
+          details: {},
+        },
         'polygon.boundary_changed': {
           missionId,
           actor: byCommander,
@@ -231,9 +255,27 @@ describe('timeline', () => {
           subject: subject('polygon'),
           details: { searchersOutside: 0 },
         },
-        'polygon.deleted': { missionId, actor: byCommander, type: 'polygon.deleted', subject: subject('polygon'), details: {} },
-        'search.started': { missionId, actor: bySearcher, type: 'search.started', subject: subject('polygon'), details: {} },
-        'report.submitted': { missionId, actor: bySearcher, type: 'report.submitted', subject: subject('report', 'מפגע'), details: {} },
+        'polygon.deleted': {
+          missionId,
+          actor: byCommander,
+          type: 'polygon.deleted',
+          subject: subject('polygon'),
+          details: {},
+        },
+        'search.started': {
+          missionId,
+          actor: bySearcher,
+          type: 'search.started',
+          subject: subject('polygon'),
+          details: {},
+        },
+        'report.submitted': {
+          missionId,
+          actor: bySearcher,
+          type: 'report.submitted',
+          subject: subject('report', 'מפגע'),
+          details: {},
+        },
         'coverage.threshold_reached': {
           missionId,
           actor: 'system',
@@ -248,7 +290,13 @@ describe('timeline', () => {
           subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
           details: {},
         },
-        'sos.activated': { missionId, actor: bySearcher, type: 'sos.activated', subject: subject('sos', null), details: {} },
+        'sos.activated': {
+          missionId,
+          actor: bySearcher,
+          type: 'sos.activated',
+          subject: subject('sos', null),
+          details: {},
+        },
       };
 
       for (const type of TIMELINE_EVENT_TYPES) {

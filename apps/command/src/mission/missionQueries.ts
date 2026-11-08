@@ -4,6 +4,7 @@ import {
   MissionPolygon,
   MissionPolygonList,
   ParticipantList,
+  TimelineEventList,
   type CreateMissionBody,
   type CreatePolygonBody,
   type UpdatePolygonBody,
@@ -15,6 +16,7 @@ export const missionKeys = {
   all: ['missions'] as const,
   polygons: (missionId: string) => ['missions', missionId, 'polygons'] as const,
   participants: (missionId: string) => ['missions', missionId, 'participants'] as const,
+  timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,
 };
 
 export function useMissions() {
@@ -65,6 +67,15 @@ export function useParticipants(missionId: string | undefined) {
   return useQuery({
     queryKey: missionKeys.participants(missionId ?? ''),
     queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/participants`, { schema: ParticipantList, signal }),
+    enabled: !!missionId,
+  });
+}
+
+/** The mission's Timeline, oldest first (UC-C19). A successful realtime join invalidates it, so a reconnect refetches. */
+export function useTimeline(missionId: string | undefined) {
+  return useQuery({
+    queryKey: missionKeys.timeline(missionId ?? ''),
+    queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/timeline`, { schema: TimelineEventList, signal }),
     enabled: !!missionId,
   });
 }

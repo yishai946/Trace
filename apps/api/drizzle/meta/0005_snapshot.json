@@ -112,12 +112,8 @@
           "name": "accounts_user_id_users_id_fk",
           "tableFrom": "accounts",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -193,12 +189,8 @@
           "name": "lkp_points_mission_id_missions_id_fk",
           "tableFrom": "lkp_points",
           "tableTo": "missions",
-          "columnsFrom": [
-            "mission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mission_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -252,12 +244,8 @@
           "name": "mission_photos_mission_id_missions_id_fk",
           "tableFrom": "mission_photos",
           "tableTo": "missions",
-          "columnsFrom": [
-            "mission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mission_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -362,12 +350,8 @@
           "name": "missions_commander_id_users_id_fk",
           "tableFrom": "missions",
           "tableTo": "users",
-          "columnsFrom": [
-            "commander_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["commander_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -377,9 +361,7 @@
         "missions_join_code_unique": {
           "name": "missions_join_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "join_code"
-          ]
+          "columns": ["join_code"]
         }
       },
       "policies": {},
@@ -521,12 +503,8 @@
           "name": "participations_mission_id_missions_id_fk",
           "tableFrom": "participations",
           "tableTo": "missions",
-          "columnsFrom": [
-            "mission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mission_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -534,12 +512,8 @@
           "name": "participations_searcher_id_searchers_id_fk",
           "tableFrom": "participations",
           "tableTo": "searchers",
-          "columnsFrom": [
-            "searcher_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["searcher_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -547,12 +521,8 @@
           "name": "participations_polygon_id_polygons_id_fk",
           "tableFrom": "participations",
           "tableTo": "polygons",
-          "columnsFrom": [
-            "polygon_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["polygon_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -643,12 +613,8 @@
           "name": "polygons_mission_id_missions_id_fk",
           "tableFrom": "polygons",
           "tableTo": "missions",
-          "columnsFrom": [
-            "mission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mission_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -702,12 +668,8 @@
           "name": "searchers_user_id_users_id_fk",
           "tableFrom": "searchers",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -717,16 +679,12 @@
         "searchers_user_id_unique": {
           "name": "searchers_user_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
+          "columns": ["user_id"]
         },
         "searchers_phone_unique": {
           "name": "searchers_phone_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "phone"
-          ]
+          "columns": ["phone"]
         }
       },
       "policies": {},
@@ -811,12 +769,8 @@
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -826,9 +780,7 @@
         "sessions_token_unique": {
           "name": "sessions_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -926,12 +878,8 @@
           "name": "timeline_events_mission_id_missions_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "missions",
-          "columnsFrom": [
-            "mission_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["mission_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -941,9 +889,7 @@
         "timeline_events_seq_unique": {
           "name": "timeline_events_seq_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "seq"
-          ]
+          "columns": ["seq"]
         }
       },
       "policies": {},
@@ -1028,16 +974,12 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         },
         "users_phone_number_unique": {
           "name": "users_phone_number_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "phone_number"
-          ]
+          "columns": ["phone_number"]
         }
       },
       "policies": {},
@@ -1117,40 +1059,22 @@
     "public.mission_status": {
       "name": "mission_status",
       "schema": "public",
-      "values": [
-        "active",
-        "paused",
-        "ended_located",
-        "ended_stopped"
-      ]
+      "values": ["active", "paused", "ended_located", "ended_stopped"]
     },
     "public.participation_status": {
       "name": "participation_status",
       "schema": "public",
-      "values": [
-        "available",
-        "assigned",
-        "ended"
-      ]
+      "values": ["available", "assigned", "ended"]
     },
     "public.polygon_status": {
       "name": "polygon_status",
       "schema": "public",
-      "values": [
-        "unassigned",
-        "active",
-        "completed"
-      ]
+      "values": ["unassigned", "active", "completed"]
     },
     "public.task_status": {
       "name": "task_status",
       "schema": "public",
-      "values": [
-        "ready",
-        "searching",
-        "paused",
-        "finished"
-      ]
+      "values": ["ready", "searching", "paused", "finished"]
     },
     "public.timeline_event_type": {
       "name": "timeline_event_type",
@@ -1174,10 +1098,7 @@
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "commander",
-        "searcher"
-      ]
+      "values": ["commander", "searcher"]
     }
   },
   "schemas": {},

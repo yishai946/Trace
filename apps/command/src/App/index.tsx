@@ -26,12 +26,14 @@ import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
 import { errorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
-import { useMissions, useParticipants, usePolygonMutations, usePolygons } from '../mission/missionQueries';
+import { MissionNav, type MissionView } from '../mission/MissionNav';
+import { useMissions, useParticipants, usePolygonMutations, usePolygons, useTimeline } from '../mission/missionQueries';
 import { PolygonInspector } from '../mission/PolygonInspector';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { TimelinePage } from '../pages/TimelinePage';
 import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
 
@@ -118,14 +120,18 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   /** The join code, QR and link panel; it opens by itself on a mission just created (UC-C02 step 4). */
   const [joinOpen, setJoinOpen] = useState(false);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
+  /** The live map or the Timeline. The Timeline is also open for an ended mission, read-only (UC-C19). */
+  const [view, setView] = useState<MissionView>('map');
   const openMission = (id: string | null) => {
     setOpenId(id);
+    setView('map');
     setJoinOpen(false);
     setCreatedNotice(null);
   };
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
+  const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
@@ -147,6 +153,14 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             detail: 'העדכונים החיים מהשרת נקטעו. מתחבר מחדש; פעולות חדשות חסומות.',
           }
         : { state: 'up', label: 'זמין', detail: mission ? 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' : 'מחובר לשרת.' };
+
+  // Mission navigation above the join code panel, on the start side of either view.
+  const startColumn = mission && !creating && (
+    <div className={styles.startColumn}>
+      <MissionNav missionName={mission.name} view={view} onNavigate={setView} />
+      {joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
+    </div>
+  );
 
   return (
     <main className={styles.screen}>
@@ -174,25 +188,32 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             canCreate={connected}
           />
         </>
+      ) : view === 'timeline' ? (
+        <div className={styles.page}>
+          {startColumn}
+          <TimelinePage
+            events={timeline.data}
+            loadFailed={timeline.isError}
+            onRetry={() => void timeline.refetch()}
+            onGoToMap={() => setView('map')}
+          />
+        </div>
       ) : polygons.isPending ? (
         <p className={styles.setup}>טוען מסע…</p>
       ) : (
-        <MissionWorkspace
-          key={mission.id}
-          provider={provider}
-          focus={focus}
-          mission={mission}
-          polygons={polygons.data ?? []}
-          participants={participants.data ?? []}
-          themeId={theme}
-          online={operational}
-        />
-      )}
-
-      {mission && !creating && joinOpen && (
-        <div className={styles.join}>
-          <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />
-        </div>
+        <>
+          <MissionWorkspace
+            key={mission.id}
+            provider={provider}
+            focus={focus}
+            mission={mission}
+            polygons={polygons.data ?? []}
+            participants={participants.data ?? []}
+            themeId={theme}
+            online={operational}
+          />
+          <div className={styles.start}>{startColumn}</div>
+        </>
       )}
 
       {mission && !creating && createdNotice && (

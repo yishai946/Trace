@@ -4,8 +4,11 @@ import type { Actor } from '../../auth/auth.plugin';
 import type { Db, Tx } from '../../db';
 import { participations, searchers, timelineEvents, users } from '../../db/schema';
 
-type EventBody =
-  TimelineEvent extends infer E ? (E extends TimelineEvent ? Pick<E, 'type' | 'details'> : never) : never;
+type EventBody = TimelineEvent extends infer E
+  ? E extends TimelineEvent
+    ? Pick<E, 'type' | 'details'>
+    : never
+  : never;
 
 export type RecordEventInput = EventBody & {
   missionId: string;

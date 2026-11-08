@@ -17,9 +17,19 @@ const subject = (kind: string, label: string | null, callsign: number | null = n
 });
 
 const samples: Record<TimelineEventType, unknown> = {
-  'mission.created': { type: 'mission.created', actor: commander, subject: subject('mission', 'מסע 0412'), details: {} },
+  'mission.created': {
+    type: 'mission.created',
+    actor: commander,
+    subject: subject('mission', 'מסע 0412'),
+    details: {},
+  },
   'mission.paused': { type: 'mission.paused', actor: commander, subject: subject('mission', 'מסע 0412'), details: {} },
-  'mission.resumed': { type: 'mission.resumed', actor: commander, subject: subject('mission', 'מסע 0412'), details: {} },
+  'mission.resumed': {
+    type: 'mission.resumed',
+    actor: commander,
+    subject: subject('mission', 'מסע 0412'),
+    details: {},
+  },
   'mission.ended': {
     type: 'mission.ended',
     actor: commander,
@@ -70,9 +80,9 @@ describe('TimelineEvent', () => {
   });
 
   it('rejects an unknown type', () => {
-    expect(TimelineEvent.safeParse(event({ ...(samples['mission.created'] as object), type: 'mission.exploded' })).success).toBe(
-      false,
-    );
+    expect(
+      TimelineEvent.safeParse(event({ ...(samples['mission.created'] as object), type: 'mission.exploded' })).success,
+    ).toBe(false);
   });
 
   it('rejects a Coverage threshold other than 80 or 90', () => {

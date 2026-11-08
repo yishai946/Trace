@@ -5,6 +5,7 @@ import {
   type MissionPolygon,
   type Participant,
   type ServerToClientEvents,
+  type TimelineEvent,
 } from '@trace/schemas';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -39,6 +40,15 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         list?.map((p) =>
           p.id === event.participantId ? { ...p, position: event.position, positionAt: event.positionAt } : p,
         ),
+      );
+      return;
+    case 'timeline.recorded':
+      // With nothing cached, nothing is added: opening the Timeline fetches the whole list. The sort is stable, so
+      // events of the same instant keep their arrival order.
+      queryClient.setQueryData<TimelineEvent[]>(missionKeys.timeline(event.missionId), (list) =>
+        list && !list.some((e) => e.id === event.event.id)
+          ? [...list, event.event].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt))
+          : list,
       );
       return;
   }
