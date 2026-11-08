@@ -10,6 +10,9 @@ import { loadEnv } from '../env';
 import { participations, searchers, users } from '../db/schema';
 import { TEST_DATABASE_URL } from './testing.config';
 
+/** The smallest bytes that pass as a PNG: its signature and a few more. */
+export const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+
 /** A push sender that records what it is asked to send instead of calling Expo. */
 export function createFakePushSender() {
   const sent: Array<{ tokens: string[]; message: PushMessage }> = [];

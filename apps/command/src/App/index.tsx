@@ -12,7 +12,7 @@ import {
   type SessionUser,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button as AriaButton } from 'react-aria-components';
 import styles from './App.module.css';
 import { ApiRequestError, apiRequest } from '../api';
@@ -42,6 +42,7 @@ import { rallyErrorMessage } from '../mission/rallyErrorMessage';
 import { RallyPointPanel } from '../mission/RallyPointPanel';
 import { toMapData } from '../mission/toMapData';
 import { LoginPage } from '../pages/LoginPage';
+import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
 import { useMissionLive } from '../realtime';
@@ -132,11 +133,15 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [joinOpen, setJoinOpen] = useState(false);
   /** The rally point panel (UC-C05). It shares the panel corner with the join code, so only one is open. */
   const [rallyOpen, setRallyOpen] = useState(false);
+  /** The mission details screen (UC-C03). It covers the map and the panels, so no other panel stays open with it. */
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsButton = useRef<HTMLButtonElement>(null);
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
   const openMission = (id: string | null) => {
     setOpenId(id);
     setJoinOpen(false);
     setRallyOpen(false);
+    setDetailsOpen(false);
     setCreatedNotice(null);
   };
   const mission = missions.data?.find((m) => m.id === openId);
@@ -230,6 +235,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
             setOpenId(created.id);
             setJoinOpen(true);
             setRallyOpen(false);
+            setDetailsOpen(false);
             setCreatedNotice(photoFailed ? 'המסע נוצר, אבל התמונה לא נשמרה.' : null);
           }}
         />
@@ -246,6 +252,20 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         </>
       ) : (
         workspace
+      )}
+
+      {mission && !creating && detailsOpen && (
+        <MissionDetailsPage
+          key={`details-${mission.id}`}
+          mission={mission}
+          commanderName={user.name}
+          searcherCount={(participants.data ?? []).filter((p) => p.status !== 'ended').length}
+          online={operational}
+          onClose={() => {
+            setDetailsOpen(false);
+            detailsButton.current?.focus();
+          }}
+        />
       )}
 
       {mission && !creating && joinOpen && (
@@ -280,6 +300,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               onPress={() => {
                 setJoinOpen((open) => !open);
                 setRallyOpen(false);
+                setDetailsOpen(false);
               }}
             >
               קוד {mission.joinCode}
@@ -290,9 +311,22 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               onPress={() => {
                 setRallyOpen((open) => !open);
                 setJoinOpen(false);
+                setDetailsOpen(false);
               }}
             >
               נקודת כינוס
+            </AriaButton>
+            <AriaButton
+              ref={detailsButton}
+              className={styles.meta}
+              aria-expanded={detailsOpen}
+              onPress={() => {
+                setDetailsOpen((open) => !open);
+                setJoinOpen(false);
+                setRallyOpen(false);
+              }}
+            >
+              פרטי מסע
             </AriaButton>
           </>
         )}

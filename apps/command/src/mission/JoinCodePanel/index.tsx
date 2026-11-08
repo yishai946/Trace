@@ -10,7 +10,8 @@ const JOIN_LINK_BASE = import.meta.env.VITE_JOIN_LINK_BASE || 'trace-field://';
 
 interface JoinCodePanelProps {
   mission: Pick<Mission, 'joinCode' | 'status'>;
-  onClose: () => void;
+  /** Shows a close button. Omitted where the panel is part of a screen (mission details, Cd05). */
+  onClose?: () => void;
 }
 
 type Copied = 'code' | 'link' | null;
@@ -39,11 +40,13 @@ export function JoinCodePanel({ mission, onClose }: JoinCodePanelProps) {
           {open && <span className={styles.dot} aria-hidden="true" />}
           {open ? 'הצטרפות פתוחה' : 'הצטרפות חסומה'}
         </span>
-        <Button variant="icon" aria-label="סגור" onPress={onClose}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" />
-          </svg>
-        </Button>
+        {onClose && (
+          <Button variant="icon" aria-label="סגור" onPress={onClose}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </Button>
+        )}
       </div>
       <div className={styles.body}>
         <QrCode value={link} label="קוד QR להצטרפות למסע" />

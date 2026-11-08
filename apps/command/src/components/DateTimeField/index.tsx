@@ -23,6 +23,8 @@ export interface DateTimeFieldProps {
   onChange: (value: string) => void;
   isInvalid?: boolean;
   errorMessage?: string;
+  /** The value is shown and cannot be changed (an ended mission). */
+  isReadOnly?: boolean;
 }
 
 const toValue = (value: string): CalendarDateTime | null => {
@@ -34,7 +36,7 @@ const toValue = (value: string): CalendarDateTime | null => {
 };
 
 /** A date and time typed by segment or picked from a calendar (React Aria DatePicker), in Hebrew with a 24-hour clock. */
-export function DateTimeField({ label, value, onChange, isInvalid, errorMessage }: DateTimeFieldProps) {
+export function DateTimeField({ label, value, onChange, isInvalid, errorMessage, isReadOnly }: DateTimeFieldProps) {
   return (
     <DatePicker
       className={styles.field}
@@ -45,6 +47,7 @@ export function DateTimeField({ label, value, onChange, isInvalid, errorMessage 
       value={toValue(value)}
       onChange={(next) => onChange(next ? next.toString().slice(0, 16) : '')}
       isInvalid={isInvalid}
+      isReadOnly={isReadOnly}
     >
       <Label className={styles.label}>{label}</Label>
       <Group className={styles.group}>

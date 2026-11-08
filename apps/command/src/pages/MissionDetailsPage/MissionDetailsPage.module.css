@@ -1,0 +1,167 @@
+/* The veil, panel and join code column sit above the map and its controls (attribution), under the app bar. */
+
+/* Dims the live map behind the details, as in wireframe Cd05 (map-ground at 82%). It also keeps clicks off the map. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background-color: var(--map-ground);
+  opacity: 0.82;
+  z-index: 2;
+}
+
+/* The details panel, between the start edge and the join code column (Cd05). */
+.panel {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  bottom: var(--space-6);
+  inset-inline-start: var(--space-6);
+  inset-inline-end: calc(var(--space-6) * 2 + var(--panel-end-w));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+  z-index: 3;
+}
+
+.side {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  inset-inline-end: var(--space-6);
+  z-index: 3;
+}
+
+@media (width < 900px) {
+  .panel {
+    inset-inline-end: var(--space-6);
+  }
+
+  .side {
+    display: none;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--text-title);
+}
+
+.scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-7);
+  min-height: 0;
+  padding: var(--space-7);
+  overflow-y: auto;
+}
+
+/* Trace Console .tc-dl in four columns on a sunken card (Cd05). */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-6);
+  margin: 0;
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* The status in a word, with a dot in its state colour (the dot is allowed next to the mission's state). */
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  white-space: nowrap;
+}
+
+.stateDot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-sm);
+  background-color: var(--ink-faint);
+}
+
+.state[data-tone='ok'] .stateDot {
+  background-color: var(--success);
+}
+
+.state[data-tone='warn'] .stateDot {
+  background-color: var(--warning);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+.ageTime {
+  display: grid;
+  grid-template-columns: calc(var(--control-h) * 3.5) 1fr;
+  gap: var(--space-6);
+}
+
+.photoRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.meta {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.error {
+  margin: 0;
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font: var(--text-meta);
+}

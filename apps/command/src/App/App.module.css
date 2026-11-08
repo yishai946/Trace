@@ -16,6 +16,8 @@
   border-radius: var(--radius-xl);
   background-color: var(--surface);
   box-shadow: var(--shadow-panel);
+  /* Above the details screen, which covers the map and its controls. */
+  z-index: 4;
 }
 
 /* Fixed parts keep their size; the mission name, search and status shrink as the window narrows. */

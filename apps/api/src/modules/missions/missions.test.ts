@@ -7,6 +7,7 @@ import {
   addParticipant,
   createTestApp,
   injectAs,
+  PNG_BYTES as PNG,
   resetDb,
   signInCommander,
   signInSearcher,
@@ -18,8 +19,7 @@ import { createMission } from './missions.service';
 const rallyPoint = { type: 'Point', coordinates: [35.1335, 31.7835] };
 const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };
 
-/** The smallest files that pass as each format: their signature and a few more bytes. */
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13]);
+/** The smallest file that passes as a JPEG: its signature and a few more bytes. */
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 16]);
 
 const issuePaths = (body: unknown) => {
@@ -157,6 +157,13 @@ describe('missing person photo', () => {
 
   const upload = (payload: Buffer, contentType: string, as = inject) =>
     as({ method: 'PUT', url: `/api/missions/${missionId}/photo`, payload, headers: { 'content-type': contentType } });
+
+  it('replaces the photo of a paused mission', async () => {
+    await ctx.db.update(missions).set({ status: 'paused' }).where(eq(missions.id, missionId));
+    const res = await upload(PNG, 'image/png');
+    expect(res.statusCode).toBe(200);
+    expect(Mission.parse(res.json()).missingPerson.photoUrl).not.toBeNull();
+  });
 
   it('starts without a photo', async () => {
     const mission = Mission.parse((await inject({ method: 'GET', url: `/api/missions/${missionId}` })).json());
@@ -347,5 +354,177 @@ describe('rally point', () => {
     await change({ rallyPoint: moved });
     const res = await injectAs(ctx, searcher)({ method: 'GET', url: `/api/missions/${missionId}` });
     expect(Mission.parse(res.json()).rallyPoint).toEqual(moved);
+  });
+});
+
+describe('mission details (UC-C03)', () => {
+  let ctx: TestContext;
+  let commander: TestUser;
+  let inject: ReturnType<typeof injectAs>;
+  let missionId: string;
+
+  beforeAll(async () => {
+    ctx = await createTestApp();
+  });
+  beforeEach(async () => {
+    await resetDb(ctx.db);
+    commander = await signInCommander(ctx);
+    inject = injectAs(ctx, commander);
+    const created = await inject({
+      method: 'POST',
+      url: '/api/missions',
+      payload: {
+        name: 'מסע',
+        missingPerson: { name: 'נועם אברהם', age: 74, description: 'מעיל חום' },
+        rallyPoint,
+        lkp,
+      },
+    });
+    missionId = Mission.parse(created.json()).id;
+  });
+  afterAll(() => ctx.close());
+
+  const details = {
+    name: 'מסע 0412',
+    missingPerson: {
+      name: 'נועם אברהם',
+      age: 75,
+      disappearedAt: '2026-10-03T11:20:00+03:00',
+      description: 'מעיל חום, כובע צמר אפור',
+      additionalInfo: 'דמנציה קלה',
+    },
+  };
+  const edit = (payload: unknown, as = inject, id = missionId) =>
+    as({ method: 'PUT', url: `/api/missions/${id}/details`, payload: payload as object });
+  const current = async () =>
+    Mission.parse((await inject({ method: 'GET', url: `/api/missions/${missionId}` })).json());
+
+  it('saves the new details of an active mission and returns them', async () => {
+    const before = await current();
+    const res = await edit(details);
+    expect(res.statusCode).toBe(200);
+    const mission = Mission.parse(res.json());
+    expect(mission.name).toBe('מסע 0412');
+    expect(mission.missingPerson).toMatchObject({
+      name: 'נועם אברהם',
+      age: 75,
+      description: 'מעיל חום, כובע צמר אפור',
+      additionalInfo: 'דמנציה קלה',
+    });
+    expect(mission.missingPerson.disappearedAt).toBe('2026-10-03T08:20:00.000Z');
+    expect(Date.parse(mission.updatedAt)).toBeGreaterThan(Date.parse(before.updatedAt));
+    expect(await current()).toEqual(mission);
+    expect(mission).toMatchObject({
+      status: before.status,
+      joinCode: before.joinCode,
+      rallyPoint: before.rallyPoint,
+      lkp: before.lkp,
+    });
+    expect(mission.missingPerson.photoUrl).toBe(before.missingPerson.photoUrl);
+  });
+
+  it('allows a paused mission', async () => {
+    await ctx.db.update(missions).set({ status: 'paused' }).where(eq(missions.id, missionId));
+    expect((await edit(details)).statusCode).toBe(200);
+    expect((await current()).name).toBe('מסע 0412');
+  });
+
+  it.each(['ended_located', 'ended_stopped'] as const)(
+    'refuses a mission that is %s and keeps its details',
+    async (status) => {
+      await ctx.db.update(missions).set({ status }).where(eq(missions.id, missionId));
+      const before = await current();
+      const res = await edit(details);
+      expect(res.statusCode).toBe(409);
+      expect(ApiError.parse(res.json()).error.code).toBe('MISSION_ENDED');
+      expect(await current()).toEqual(before);
+    },
+  );
+
+  it('clears fields sent empty or null', async () => {
+    const res = await edit({
+      name: 'מסע',
+      missingPerson: { name: '  ', age: null, disappearedAt: null, description: '', additionalInfo: null },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(Mission.parse(res.json()).missingPerson).toEqual({
+      name: null,
+      age: null,
+      disappearedAt: null,
+      description: null,
+      additionalInfo: null,
+      photoUrl: null,
+    });
+  });
+
+  it.each([
+    ['an empty name', { ...details, name: ' ' }],
+    ['a name over 120 characters', { ...details, name: 'א'.repeat(121) }],
+    ['no missing-person details', { name: 'מסע' }],
+    ['an age over 130', { ...details, missingPerson: { ...details.missingPerson, age: 131 } }],
+    ['a negative age', { ...details, missingPerson: { ...details.missingPerson, age: -1 } }],
+    ['a fractional age', { ...details, missingPerson: { ...details.missingPerson, age: 1.5 } }],
+    ['an age as text', { ...details, missingPerson: { ...details.missingPerson, age: '75' } }],
+    [
+      'a time without an offset',
+      { ...details, missingPerson: { ...details.missingPerson, disappearedAt: '2026-10-03T11:20:00' } },
+    ],
+    [
+      'a description over 2000 characters',
+      { ...details, missingPerson: { ...details.missingPerson, description: 'א'.repeat(2001) } },
+    ],
+    ['no body', undefined],
+  ])('rejects %s and keeps the details', async (_name, payload) => {
+    const before = await current();
+    const res = await edit(payload);
+    expect(res.statusCode).toBe(400);
+    expect(ApiError.parse(res.json()).error.code).toBe('VALIDATION_ERROR');
+    expect(await current()).toEqual(before);
+  });
+
+  it('lets only the mission commander edit', async () => {
+    const searcher = await signInSearcher(ctx);
+    const outsider = await signInSearcher(ctx);
+    const other = await signInCommander(ctx);
+    await addParticipant(ctx.db, { missionId, callsign: 1, searcherId: searcher.searcherId });
+    const before = await current();
+
+    expect((await edit(details, injectAs(ctx, searcher))).statusCode).toBe(403);
+    expect((await edit(details, injectAs(ctx, outsider))).statusCode).toBe(404);
+    expect((await edit(details, injectAs(ctx, other))).statusCode).toBe(404);
+    const res = await ctx.app.inject({ method: 'PUT', url: `/api/missions/${missionId}/details`, payload: details });
+    expect(res.statusCode).toBe(401);
+    expect(await current()).toEqual(before);
+  });
+
+  it('answers 400 for a malformed id and 404 for an unknown one', async () => {
+    expect((await edit(details, inject, 'not-a-uuid')).statusCode).toBe(400);
+    const unknown = await edit(details, inject, '00000000-0000-4000-8000-000000000000');
+    expect(unknown.statusCode).toBe(404);
+  });
+
+  it('shows the new details to a searcher who fetches the mission later', async () => {
+    const searcher = await signInSearcher(ctx);
+    await addParticipant(ctx.db, { missionId, callsign: 1, searcherId: searcher.searcherId });
+    expect((await edit(details)).statusCode).toBe(200);
+    const res = await injectAs(ctx, searcher)({ method: 'GET', url: `/api/missions/${missionId}` });
+    const mission = Mission.parse(res.json());
+    expect(mission.name).toBe('מסע 0412');
+    expect(mission.missingPerson.description).toBe('מעיל חום, כובע צמר אפור');
+  });
+
+  it('sends no push notification yet: which changes are significant is still open', async () => {
+    const searcher = await signInSearcher(ctx);
+    await addParticipant(ctx.db, { missionId, callsign: 1, searcherId: searcher.searcherId });
+    const registered = await injectAs(
+      ctx,
+      searcher,
+    )({ method: 'PUT', url: '/api/push-token', payload: { token: 'ExponentPushToken[uc-c03]' } });
+    expect(registered.statusCode).toBeLessThan(300);
+    ctx.pushSender.sent.length = 0;
+
+    expect((await edit(details)).statusCode).toBe(200);
+    // Decision 34: a significant change notifies searchers. Which fields are significant is TBD (issue #7).
+    expect(ctx.pushSender.sent).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NewMissionPage, type NewMissionPageProps } from '.';
 import { mission } from '../../mission/fixtures';
 import { MESSAGES } from './newMissionForm';
-import { PHOTO_ERROR } from './PhotoPicker';
+import { PHOTO_ERROR } from '../../components/PhotoPicker';
 import { COORDS_ERROR } from './PointPicker';
 
 const CLICKED: LngLat = [35.1335, 31.7835];
