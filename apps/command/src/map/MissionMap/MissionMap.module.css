@@ -92,6 +92,10 @@
     left: auto;
     inset-inline-end: var(--space-6);
     transform: none;
+
+    /* Never reach under the expanded bottom sheet (min(sheet height, 45%)); scroll instead. */
+    max-height: calc(100% - var(--space-6) * 2 - var(--header-h) - min(var(--pending-sheet-h), 45%) - var(--space-6));
+    overflow-y: auto;
   }
 
   .zoom,
