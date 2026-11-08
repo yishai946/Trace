@@ -169,3 +169,16 @@
   color: var(--ink-muted);
   font: var(--text-meta);
 }
+
+/* Phone: every touch target is at least 44px (pending token). */
+@media (width <= 768px) {
+  .avatar:not([data-static]) {
+    width: var(--pending-touch-target);
+    height: var(--pending-touch-target);
+  }
+
+  .select,
+  .item {
+    height: var(--pending-touch-target);
+  }
+}
