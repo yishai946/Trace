@@ -11,6 +11,8 @@ export class ApiRequestError extends Error {
     readonly code: ErrorCode | 'NETWORK_ERROR',
     message: string,
     readonly details?: unknown,
+    /** Seconds the server asks to wait before trying again (`Retry-After`). */
+    readonly retryAfter?: number,
   ) {
     super(message);
     this.name = 'ApiRequestError';
@@ -29,6 +31,10 @@ interface RequestOptions<S extends z.ZodType> {
   signal?: AbortSignal;
 }
 
+function parseRetryAfter(value: string | null): number | undefined {
+  return value !== null && /^\d+$/.test(value.trim()) ? Number(value) : undefined;
+}
+
 /** Calls the TRACE API with the searcher's bearer token and validates the response with the shared zod schema. */
 export async function apiRequest<S extends z.ZodType>(
   path: string,
@@ -45,6 +51,8 @@ export async function apiRequest<S extends z.ZodType>(
     res = await fetch(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
       method,
       signal,
+      // The bearer token is the only credential: the sign-in response also sets a cookie that must not outlive sign-out.
+      credentials: 'omit',
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -54,12 +62,13 @@ export async function apiRequest<S extends z.ZodType>(
   }
 
   if (!res.ok) {
+    const retryAfter = parseRetryAfter(res.headers.get('retry-after'));
     const parsed = ApiError.safeParse(await res.json().catch(() => null));
     if (parsed.success) {
       const { code, message, details } = parsed.data.error;
-      throw new ApiRequestError(res.status, code, message, details);
+      throw new ApiRequestError(res.status, code, message, details, retryAfter);
     }
-    throw new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`);
+    throw new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`, undefined, retryAfter);
   }
   return (schema ? schema.parse(await res.json()) : undefined) as z.infer<S>;
 }
