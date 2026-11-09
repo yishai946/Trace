@@ -170,6 +170,7 @@ export async function createMission(
               missionId: created.id,
               position: input.lkp.position,
               observedAt: new Date(input.lkp.observedAt),
+              setBy: input.commanderId,
             })
             .returning({ id: lkpPoints.id });
           if (!lkp) throw new Error('LKP insert returned no row');

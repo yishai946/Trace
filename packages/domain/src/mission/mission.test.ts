@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canChangePolygons, canChangeRallyPoint, canEditMissionDetails, isMissionEnded } from '.';
+import { canChangeLkp, canChangePolygons, canChangeRallyPoint, canEditMissionDetails, isMissionEnded } from '.';
 
 describe('mission rules', () => {
   it('allows polygon changes only while the mission is active', () => {
@@ -7,6 +7,13 @@ describe('mission rules', () => {
     expect(canChangePolygons('paused')).toBe(false);
     expect(canChangePolygons('ended_located')).toBe(false);
     expect(canChangePolygons('ended_stopped')).toBe(false);
+  });
+
+  it('allows LKP changes until the mission ends', () => {
+    expect(canChangeLkp('active')).toBe(true);
+    expect(canChangeLkp('paused')).toBe(true);
+    expect(canChangeLkp('ended_located')).toBe(false);
+    expect(canChangeLkp('ended_stopped')).toBe(false);
   });
 
   it('allows a rally point change while the mission is active or paused', () => {

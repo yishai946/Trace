@@ -1,4 +1,12 @@
-import type { Mission, MissionPolygon, Participant, TimelineEvent, TimelineSubject } from '@trace/schemas';
+import type {
+  LkpPoint,
+  Mission,
+  MissionPolygon,
+  Participant,
+  Sighting,
+  TimelineEvent,
+  TimelineSubject,
+} from '@trace/schemas';
 import type { TimelineEventType } from '@trace/domain';
 
 /** Server data shared by the mission tests. */
@@ -76,6 +84,59 @@ export const participants: Participant[] = [
     positionAt: null,
   },
 ];
+
+/** The mission's LKP history, newest first: the current LKP (13:05 Israel time) and the one it replaced (12:10). */
+export const lkps: LkpPoint[] = [
+  {
+    id: '00000000-0000-4000-8000-0000000001c2',
+    position: { type: 'Point', coordinates: [35.137, 31.769] },
+    observedAt: '2026-10-03T10:05:00.000Z',
+    current: true,
+    sightingId: null,
+    setBy: 'ישי',
+    createdAt: '2026-10-03T10:08:00.000Z',
+  },
+  {
+    id: '00000000-0000-4000-8000-0000000001c1',
+    position: { type: 'Point', coordinates: [35.1398, 31.7398] },
+    observedAt: '2026-10-03T09:10:00.000Z',
+    current: false,
+    sightingId: null,
+    setBy: 'ישי',
+    createdAt: '2026-10-03T10:00:00.000Z',
+  },
+];
+
+const commander = { role: 'commander' as const, name: 'ישי', callsign: null };
+
+/** A witness sighting at 14:22 Israel time, later than the LKP, so TRACE suggests it. */
+export const sightingA: Sighting = {
+  id: '00000000-0000-4000-8000-0000000005a1',
+  missionId: mission.id,
+  number: 1,
+  position: { type: 'Point', coordinates: [35.1412, 31.7745] },
+  observedAt: '2026-10-03T11:22:00.000Z',
+  description: 'מטייל ראה אדם עם כובע אפור',
+  source: 'witness',
+  reportedBy: commander,
+  lkpDecision: null,
+  lkpCandidate: true,
+  createdAt: '2026-10-03T11:30:00.000Z',
+};
+
+/** The commander's own sighting at 16:02 that they rejected as the LKP. */
+export const sightingB: Sighting = {
+  ...sightingA,
+  id: '00000000-0000-4000-8000-0000000005b1',
+  number: 2,
+  position: { type: 'Point', coordinates: [35.1441, 31.7712] },
+  observedAt: '2026-10-03T13:02:00.000Z',
+  description: null,
+  source: 'self',
+  lkpDecision: 'rejected',
+  lkpCandidate: false,
+  createdAt: '2026-10-03T13:10:00.000Z',
+};
 
 const commanderActor = { kind: 'commander', userId: '00000000-0000-4000-8000-000000000201', name: 'מנהל' } as const;
 const searcher07 = {

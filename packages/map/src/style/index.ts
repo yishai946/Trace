@@ -269,7 +269,7 @@ export function buildMapStyle(options: BuildMapStyleOptions): StyleSpecification
     },
   );
 
-  const overlays = missionLayers(themeId, fonts.bold);
+  const overlays = missionLayers(themeId, fonts.bold, fonts.regular);
 
   return {
     version: 8,
@@ -291,7 +291,7 @@ export function buildMapStyle(options: BuildMapStyleOptions): StyleSpecification
 }
 
 /** Mission overlays from the Trace Console MapSymbols guidelines. */
-function missionLayers(themeId: ThemeId, boldFont: string[]): LayerSpecification[] {
+function missionLayers(themeId: ThemeId, boldFont: string[], regularFont: string[]): LayerSpecification[] {
   const c = themes[themeId].color;
   const labelSize = typography.mapLabel.fontSize;
   const status: ExpressionSpecification = ['get', 'status'];
@@ -335,6 +335,19 @@ function missionLayers(themeId: ThemeId, boldFont: string[]): LayerSpecification
         'circle-stroke-color': c.inkFaint,
         'circle-stroke-width': 1.2,
       },
+    },
+    {
+      id: 'mission-lkp-history-label',
+      type: 'symbol',
+      source: SOURCE.lkpHistory,
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-font': regularFont,
+        'text-size': labelSize,
+        'text-anchor': 'left',
+        'text-offset': [0.8, 0],
+      },
+      paint: { 'text-color': c.inkMuted, 'text-halo-color': c.mapHalo, 'text-halo-width': 1.5 },
     },
     {
       id: 'mission-polygon-label',
@@ -401,10 +414,28 @@ function missionLayers(themeId: ThemeId, boldFont: string[]): LayerSpecification
       },
     },
     {
+      id: 'mission-sightings-suggest',
+      type: 'symbol',
+      source: SOURCE.sightings,
+      filter: ['==', ['get', 'suggested'], true],
+      layout: { 'icon-image': iconId(themeId, 'suggest'), 'icon-allow-overlap': true },
+    },
+    {
       id: 'mission-sightings',
       type: 'symbol',
       source: SOURCE.sightings,
-      layout: { 'icon-image': iconId(themeId, 'sighting'), 'icon-allow-overlap': true },
+      layout: {
+        'icon-image': iconId(themeId, 'sighting'),
+        'icon-allow-overlap': true,
+        // The number and time; a suggested sighting also says so under it (MapSymbols tag).
+        'text-field': ['case', ['get', 'suggested'], ['concat', ['get', 'label'], '\n', 'הצעת LKP'], ['get', 'label']],
+        'text-font': boldFont,
+        'text-size': labelSize,
+        'text-anchor': 'right',
+        'text-offset': [-1.2, 0],
+        'text-allow-overlap': true,
+      },
+      paint: { 'text-color': c.ink, 'text-halo-color': c.surface, 'text-halo-width': 2.5 },
     },
     {
       id: 'mission-rally',

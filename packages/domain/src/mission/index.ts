@@ -11,6 +11,11 @@ export function canChangePolygons(status: MissionStatus): boolean {
   return status === 'active';
 }
 
+/** LKP and sightings can change while the mission is active or paused; an ended mission is read-only (spec §6). */
+export function canChangeLkp(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
+
 /** The rally point can be moved while the mission runs, active or paused, and not once it ended (UC-C05). */
 export function canChangeRallyPoint(status: MissionStatus): boolean {
   return !isMissionEnded(status);

@@ -45,6 +45,22 @@ describe.each(themeIds)('map style (%s)', (themeId) => {
     expect(Object.keys(icons)).toContain(iconId(themeId, 'lkp'));
   });
 
+  it('dims past LKPs, highlights the current one and draws sightings between them', () => {
+    const c = themes[themeId].color;
+    const layer = (id: string) => style.layers.find((l) => l.id === id);
+    const ids = style.layers.map((l) => l.id);
+    expect(layer('mission-lkp-history')?.paint).toMatchObject({
+      'circle-stroke-color': c.inkFaint,
+      'circle-opacity': 0,
+    });
+    expect(layer('mission-lkp-history-label')?.paint).toMatchObject({ 'text-color': c.inkMuted });
+    expect(layer('mission-lkp')?.paint).toMatchObject({ 'text-color': c.mapHalo, 'text-halo-color': c.ink });
+    expect(layer('mission-sightings-suggest')).toBeDefined();
+    const order = ['mission-lkp-history', 'mission-sightings-suggest', 'mission-sightings', 'mission-lkp'];
+    expect(order.map((id) => ids.indexOf(id))).toEqual([...order.map((id) => ids.indexOf(id))].sort((a, b) => a - b));
+    expect(order.every((id) => ids.includes(id))).toBe(true);
+  });
+
   it('includes terrain, contours and every mission overlay', () => {
     expect(style.terrain).toBeDefined();
     const sources = Object.keys(style.sources);
