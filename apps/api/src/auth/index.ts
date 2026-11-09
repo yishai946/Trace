@@ -3,6 +3,7 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { bearer, phoneNumber } from 'better-auth/plugins';
+import { OTP_LENGTH } from '@trace/schemas';
 import { asc, eq, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { accounts, otpRequests, sessions, users, verifications } from '../db/schema';
@@ -95,6 +96,7 @@ export function createAuth({ env, db, sendOtp }: AuthOptions) {
     },
     plugins: [
       phoneNumber({
+        otpLength: OTP_LENGTH,
         sendOTP: (message) => sendOtp(message),
         phoneNumberValidator: (phone) => PHONE_NUMBER.test(phone),
         signUpOnVerification: { getTempEmail: placeholderEmail },

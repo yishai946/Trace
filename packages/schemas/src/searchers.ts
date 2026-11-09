@@ -1,11 +1,14 @@
 import { z } from 'zod';
 
+/** Longest searcher name, in characters. */
+export const SEARCHER_NAME_MAX = 60;
+
 /** The name a searcher enters on first sign-in (UC-F01, decision 48). */
 export const SearcherName = z
   .string()
   .trim()
   .min(1, 'Name is required')
-  .max(60)
+  .max(SEARCHER_NAME_MAX)
   .refine((name) => !name.includes('\u0000'), 'Name has an invalid character');
 
 /** The signed-in searcher's own profile. */
