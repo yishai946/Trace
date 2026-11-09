@@ -23,4 +23,18 @@ export const pendingTokens = {
   disabledOpacity: 0.45,
   /** Brand book: pressed primary and danger buttons, `.tc-btn--primary:active`. */
   pressedOpacity: 0.8,
+  /** Fm01 brand mark: ring and dot, 22px with a 2px stroke. */
+  brandMark: 22,
+  brandMarkStroke: 2,
+  /** Fm01 stepper, `.tcx-step__n`: the 20px numbered circle, the 12px check inside a done step, the 16px separator. */
+  stepMarker: 20,
+  stepIcon: 12,
+  stepSeparatorW: 16,
+  /** Fm01 `.tcx-otp` and `.tcx-step__n`: 1.5px border. */
+  strongBorder: 1.5,
+  /** Fm01 `.tcx-otp`: code cell height and digit size. */
+  otpCellH: 60,
+  otpDigitSize: 24,
+  /** Brand book: focus ring, 2px solid with a 2px offset. */
+  focusRing: 2,
 } as const;

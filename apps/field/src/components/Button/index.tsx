@@ -7,8 +7,8 @@ import { Icon, type IconName } from '../Icon';
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
   /** The action as a verb ("שלח דיווח"), also the screen reader name unless `accessibilityLabel` is given. */
   label: string;
-  /** One `primary` per area; `danger` only for SOS. */
-  variant?: 'secondary' | 'primary' | 'danger';
+  /** One `primary` per area; `danger` only for SOS; `ghost` for a quiet secondary action (`.tc-btn--ghost`). */
+  variant?: 'secondary' | 'primary' | 'danger' | 'ghost';
   /** `lg` is the mobile action button (`.tc-btn--lg`). */
   size?: 'md' | 'lg';
   /** Full width of its section (`.tc-btn--block`). */
@@ -28,8 +28,16 @@ export function Button({
   ...props
 }: ButtonProps) {
   const { color } = useTheme().theme;
-  const fill = { secondary: 'transparent', primary: color.primary, danger: color.danger }[variant];
-  const ink = { secondary: color.ink, primary: color.onPrimary, danger: color.onDanger }[variant];
+  const fill = { secondary: 'transparent', ghost: 'transparent', primary: color.primary, danger: color.danger }[
+    variant
+  ];
+  const ink = {
+    secondary: color.ink,
+    ghost: color.inkSecondary,
+    primary: color.onPrimary,
+    danger: color.onDanger,
+  }[variant];
+  const quiet = variant === 'secondary' || variant === 'ghost';
 
   return (
     <Pressable
@@ -43,19 +51,15 @@ export function Button({
         size === 'lg' && styles.lg,
         block && styles.block,
         {
-          backgroundColor: pressed && variant === 'secondary' ? color.surfaceRaised : fill,
+          backgroundColor: pressed && quiet ? color.surfaceRaised : fill,
           borderColor: variant === 'secondary' ? color.borderStrong : 'transparent',
-          opacity: disabled
-            ? pendingTokens.disabledOpacity
-            : pressed && variant !== 'secondary'
-              ? pendingTokens.pressedOpacity
-              : 1,
+          opacity: disabled ? pendingTokens.disabledOpacity : pressed && !quiet ? pendingTokens.pressedOpacity : 1,
         },
       ]}
       {...props}
     >
       {icon ? <Icon name={icon} color={ink} large={size === 'lg'} /> : null}
-      <Text style={[variant === 'secondary' ? typography.body : typography.bodyStrong, { color: ink }]}>{label}</Text>
+      <Text style={[quiet ? typography.body : typography.bodyStrong, { color: ink }]}>{label}</Text>
     </Pressable>
   );
 }
