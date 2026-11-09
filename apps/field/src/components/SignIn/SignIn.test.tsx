@@ -7,16 +7,19 @@ import { secureStoreItems } from '../../test/secureStore';
 
 const SEND = 'https://api.test/api/auth/phone-number/send-otp';
 const VERIFY = 'https://api.test/api/auth/phone-number/verify';
+const ME = 'https://api.test/api/searchers/me';
+const profile = { id: '6f1c5b3e-8d0a-4e57-9a43-0b0f5a1a2c11', phone: '+972501234567', name: 'דנה כהן' };
 const codeLabel = 'קוד אימות, 6 ספרות';
 
 const json = (status: number, body: unknown, headers: Record<string, string> = {}) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', ...headers } });
 
 type Handler = (init: RequestInit) => Response | Promise<Response>;
-function stubApi(handlers: { send?: Handler; verify?: Handler }) {
+function stubApi(handlers: { send?: Handler; verify?: Handler; me?: Handler }) {
   const fetch = vi.fn(async (url: string, init: RequestInit) => {
     if (url === SEND) return (handlers.send ?? (() => json(200, { message: 'code sent' })))(init);
     if (url === VERIFY) return (handlers.verify ?? (() => json(200, {})))(init);
+    if (url === ME) return (handlers.me ?? (() => json(404, { error: { code: 'NOT_FOUND', message: 'x' } })))(init);
     throw new Error(`unexpected ${url}`);
   });
   vi.stubGlobal('fetch', fetch);
@@ -194,6 +197,40 @@ describe('SignIn', () => {
       phoneNumber: '+972501234567',
       code: '123456',
     });
+  });
+
+  it('stays on the code step when the profile cannot be loaded after a right code, until it can', async () => {
+    const onSignedIn = vi.fn();
+    let profileCalls = 0;
+    const fetch = stubApi({
+      verify: () => json(200, { status: true, token: 't1', user: { id: 'u1' } }),
+      me: () => (++profileCalls === 1 ? json(500, {}) : json(404, { error: { code: 'NOT_FOUND', message: 'x' } })),
+    });
+    render(<SignIn onSignedIn={onSignedIn} />, { wrapper: TestProviders });
+    await toCodeStep();
+    typeCode('123456');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('הכניסה הצליחה, אבל טעינת הפרופיל נכשלה');
+    expect(onSignedIn).not.toHaveBeenCalled();
+    expect(useSession.getState().token).toBe('t1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'נסה שוב' }));
+    await waitFor(() => expect(onSignedIn).toHaveBeenCalledOnce());
+    expect(callsTo(fetch, VERIFY)).toHaveLength(1);
+    expect(callsTo(fetch, ME)).toHaveLength(2);
+  });
+
+  it('signs in for a returning searcher whose profile exists', async () => {
+    const onSignedIn = vi.fn();
+    stubApi({
+      verify: () => json(200, { status: true, token: 't1', user: { id: 'u1' } }),
+      me: () => json(200, profile),
+    });
+    render(<SignIn onSignedIn={onSignedIn} />, { wrapper: TestProviders });
+    await toCodeStep();
+    typeCode('123456');
+
+    await waitFor(() => expect(onSignedIn).toHaveBeenCalledOnce());
   });
 
   it("'שנה מספר' returns to the phone step with the number kept", async () => {

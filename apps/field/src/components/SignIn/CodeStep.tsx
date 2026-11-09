@@ -18,6 +18,9 @@ export interface CodeStepProps {
   onCodeChange: (code: string) => void;
   onVerify: (code: string) => void;
   verifyPending: boolean;
+  /** The code was right but the profile failed to load: the primary action retries that instead of verifying. */
+  profileFailed: boolean;
+  onRetryProfile: () => void;
   onResend: () => void;
   resendPending: boolean;
   /** Seconds the server asked to wait before another code; 0 when none. */
@@ -36,6 +39,8 @@ export function CodeStep({
   onCodeChange,
   onVerify,
   verifyPending,
+  profileFailed,
+  onRetryProfile,
   onResend,
   resendPending,
   countdown,
@@ -62,9 +67,9 @@ export function CodeStep({
             variant="primary"
             size="lg"
             block
-            label={verifyPending ? 'מאמת…' : 'אמת והמשך'}
-            disabled={code.length < OTP_LENGTH || verifyPending}
-            onPress={() => onVerify(code)}
+            label={verifyPending ? 'מאמת…' : profileFailed ? 'נסה שוב' : 'אמת והמשך'}
+            disabled={verifyPending || (!profileFailed && code.length < OTP_LENGTH)}
+            onPress={() => (profileFailed ? onRetryProfile() : onVerify(code))}
           />
         </>
       }
