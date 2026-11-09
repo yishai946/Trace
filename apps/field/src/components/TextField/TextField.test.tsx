@@ -25,4 +25,9 @@ describe('TextField', () => {
     expect(screen.getByLabelText('שם מלא')).toHaveAttribute('aria-invalid', 'false');
     expect(screen.queryByRole('alert')).toBeNull();
   });
+
+  it('writes a left-to-right value at the end of the right-to-left field', () => {
+    render(<TextField label="מספר טלפון" ltr value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
+    expect(screen.getByLabelText('מספר טלפון')).toHaveStyle({ textAlign: 'right' });
+  });
 });

@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.radiusMd,
   },
-  ltr: { writingDirection: 'ltr', textAlign: 'left' },
+  // The page is right to left, so the end of the field is its right edge (`.tc-input--ltr`). RN has no `end` alignment.
+  ltr: { writingDirection: 'ltr', textAlign: 'right' },
   disabled: { opacity: pendingTokens.disabledOpacity },
 });
