@@ -59,6 +59,7 @@ export function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
 
   const onVerify = (value: string) => {
     if (verify.isPending) return;
+    resend.reset();
     verify.mutate(
       { phoneNumber, code: value },
       {
@@ -72,6 +73,8 @@ export function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
   };
 
   const onResend = () => {
+    // Only the latest attempt's error is shown.
+    verify.reset();
     resend.mutate(phoneNumber, {
       onSuccess: () => {
         setCode('');

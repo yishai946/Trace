@@ -96,6 +96,35 @@ describe('SignIn', () => {
     expect(screen.getByRole('button', { name: 'שלח קוד חדש' })).not.toHaveAttribute('aria-disabled', 'true');
   });
 
+  it('shows the resend failure, not the earlier wrong-code error', async () => {
+    let sends = 0;
+    stubApi({
+      verify: wrongCode,
+      send: () => (++sends === 1 ? json(200, {}) : json(429, {}, { 'retry-after': '30' })),
+    });
+    render(<SignIn onSignedIn={() => {}} />, { wrapper: TestProviders });
+    await toCodeStep();
+    typeCode('000000');
+    await screen.findByText(/הקוד שגוי או שפג תוקפו/);
+
+    fireEvent.click(screen.getByRole('button', { name: 'שלח קוד חדש' }));
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('ביקשת יותר מדי קודים'));
+  });
+
+  it('shows a wrong code after an earlier resend failure', async () => {
+    let sends = 0;
+    stubApi({ verify: wrongCode, send: () => (++sends === 1 ? json(200, {}) : json(500, {})) });
+    render(<SignIn onSignedIn={() => {}} />, { wrapper: TestProviders });
+    await toCodeStep();
+    fireEvent.click(screen.getByRole('button', { name: 'שלח קוד חדש' }));
+    await screen.findByText('שליחת הקוד נכשלה. נסה שוב.');
+
+    typeCode('000000');
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('הקוד שגוי או שפג תוקפו'));
+  });
+
   it('an expired code shows the same error', async () => {
     stubApi({ verify: () => json(400, { code: 'OTP_EXPIRED', message: 'OTP expired' }) });
     render(<SignIn onSignedIn={() => {}} />, { wrapper: TestProviders });
