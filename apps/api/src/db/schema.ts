@@ -1,7 +1,9 @@
 import {
+  LKP_DECISIONS,
   MISSION_STATUSES,
   PARTICIPATION_STATUSES,
   POLYGON_STATUSES,
+  SIGHTING_SOURCES,
   TASK_STATUSES,
   TIMELINE_EVENT_TYPES,
   USER_ROLES,
@@ -36,6 +38,8 @@ export const polygonStatus = pgEnum('polygon_status', POLYGON_STATUSES);
 export const participationStatus = pgEnum('participation_status', PARTICIPATION_STATUSES);
 export const taskStatus = pgEnum('task_status', TASK_STATUSES);
 export const userRole = pgEnum('user_role', USER_ROLES);
+export const sightingSource = pgEnum('sighting_source', SIGHTING_SOURCES);
+export const lkpDecision = pgEnum('lkp_decision', LKP_DECISIONS);
 export const timelineEventType = pgEnum('timeline_event_type', TIMELINE_EVENT_TYPES);
 
 /*
@@ -151,6 +155,33 @@ export const missionPhotos = pgTable('mission_photos', {
   ...timestamps,
 });
 
+/**
+ * A possible position of the missing person (UC-C04, UC-F10): place, time, short description and source (decision 61).
+ * It never becomes the LKP by itself: when it is later than the current LKP the commander is asked (decisions 59, 63).
+ */
+export const sightings = pgTable(
+  'sightings',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    missionId: uuid('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    /** Who reported it: the commander here, a searcher once UC-F10 exists. */
+    reportedBy: uuid('reported_by')
+      .notNull()
+      .references(() => users.id),
+    source: sightingSource().notNull(),
+    position: pointColumn().notNull(),
+    observedAt: timestamp('observed_at', { withTimezone: true }).notNull(),
+    description: text(),
+    /** The commander's answer to the LKP suggestion; null while undecided or never suggested. */
+    lkpDecision: lkpDecision('lkp_decision'),
+    decidedAt: timestamp('decided_at', { withTimezone: true }),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [index('sightings_mission_idx').on(t.missionId, t.createdAt)],
+);
+
 /** Every LKP the commander set. The newest is the current one; older ones stay as history (UC-C04). */
 export const lkpPoints = pgTable(
   'lkp_points',
@@ -161,6 +192,10 @@ export const lkpPoints = pgTable(
       .references(() => missions.id, { onDelete: 'cascade' }),
     position: pointColumn().notNull(),
     observedAt: timestamp('observed_at', { withTimezone: true }).notNull(),
+    /** The sighting this LKP came from; null for the LKP set when the mission was created. */
+    sightingId: uuid('sighting_id').references(() => sightings.id),
+    /** Who set it; null for points saved before this was recorded. */
+    setBy: uuid('set_by').references(() => users.id),
     createdAt: timestamps.createdAt,
   },
   (t) => [index('lkp_points_mission_idx').on(t.missionId, t.createdAt)],

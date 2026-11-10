@@ -57,6 +57,13 @@
       "when": 1794174166056,
       "tag": "0007_timeline_events",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794176356405,
+      "tag": "0008_sightings",
+      "breakpoints": true
     }
   ]
 }

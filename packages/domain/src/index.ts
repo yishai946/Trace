@@ -5,4 +5,5 @@ export * from './participation';
 export * from './photo';
 export * from './polygon';
 export * from './role';
+export * from './sighting';
 export * from './timeline';

@@ -1,9 +1,9 @@
-import type { JoinMissionAck, Mission, MissionEvent, MissionPolygon, TimelineEvent } from '@trace/schemas';
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import type { JoinMissionAck, Mission, MissionEvent, MissionPolygon, Sighting, TimelineEvent } from '@trace/schemas';
+import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { eventSamples, mission } from '../mission/fixtures';
+import { eventSamples, mission, sightingA } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -100,7 +100,7 @@ function setup() {
     }),
     { wrapper },
   );
-  return { ...view, fetchPolygons };
+  return { ...view, fetchPolygons, queryClient };
 }
 
 /** The socket connects and the server accepts the join. */
@@ -337,5 +337,49 @@ describe('useMissionLive', () => {
     const { unmount } = setup();
     unmount();
     expect(sockets[0]?.disconnected).toBe(true);
+  });
+
+  it('adds a saved sighting to the cached sightings, and replaces it on a second event', async () => {
+    const { queryClient } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await connectAndJoin(socket);
+    queryClient.setQueryData<Sighting[]>(missionKeys.sightings(missionId), []);
+
+    act(() => socket.fire('mission:event', { type: 'sighting.saved', missionId, sighting: sightingA }));
+    expect(queryClient.getQueryData(missionKeys.sightings(missionId))).toEqual([sightingA]);
+
+    const decided = { ...sightingA, lkpDecision: 'rejected' as const, lkpCandidate: false };
+    act(() => socket.fire('mission:event', { type: 'sighting.saved', missionId, sighting: decided }));
+    expect(queryClient.getQueryData(missionKeys.sightings(missionId))).toEqual([decided]);
+  });
+
+  it('updates the mission’s LKP and refetches the history when the LKP changes', async () => {
+    const { queryClient } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await connectAndJoin(socket);
+    const current = { ...mission, id: missionId };
+    queryClient.setQueryData<Mission[]>(missionKeys.all, [current]);
+    queryClient.setQueryData(missionKeys.lkps(missionId), []);
+    queryClient.setQueryData(missionKeys.sightings(missionId), []);
+
+    const lkp = { position: sightingA.position, observedAt: sightingA.observedAt };
+    act(() => socket.fire('mission:event', { type: 'lkp.changed', missionId, lkp }));
+
+    expect(queryClient.getQueryData<Mission[]>(missionKeys.all)?.[0]?.lkp).toEqual(lkp);
+    expect(queryClient.getQueryState(missionKeys.lkps(missionId))?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(missionKeys.sightings(missionId))?.isInvalidated).toBe(true);
+  });
+
+  it('refetches the mission list after every join, for an LKP that changed while away', async () => {
+    const { queryClient } = setup();
+    const socket = sockets[0] as FakeSocket;
+    const fetchMissions = vi.fn(async () => [{ ...mission, id: missionId }]);
+    // The missions list is on screen, so it has an active observer.
+    const observer = new QueryObserver(queryClient, { queryKey: missionKeys.all, queryFn: fetchMissions });
+    const unsubscribe = observer.subscribe(() => undefined);
+    await waitFor(() => expect(fetchMissions).toHaveBeenCalledTimes(1));
+    await connectAndJoin(socket);
+    await waitFor(() => expect(fetchMissions).toHaveBeenCalledTimes(2));
+    unsubscribe();
   });
 });

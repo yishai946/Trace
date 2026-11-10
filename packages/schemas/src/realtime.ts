@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
 import { LngLat, PointGeometry } from './geo';
-import { Mission } from './missions';
+import { Lkp, Mission } from './missions';
 import { MissionPolygon } from './polygons';
+import { Sighting } from './sightings';
 import { TimelineEvent } from './timeline';
 
 /**
@@ -57,6 +58,18 @@ const ParticipantMoved = z.object({
   positionAt: z.iso.datetime({ offset: true }),
 });
 
+/**
+ * A sighting was added or decided. Only the mission's commander gets it: searchers' maps show the LKP, not sightings
+ * (decisions 31, 32).
+ */
+const SightingSaved = z.object({ type: z.literal('sighting.saved'), missionId: z.uuid(), sighting: Sighting });
+
+/**
+ * The current LKP changed. Every member gets it at once; one who was offline gets it by refetching after reconnect
+ * (decision 87).
+ */
+const LkpChanged = z.object({ type: z.literal('lkp.changed'), missionId: z.uuid(), lkp: Lkp });
+
 /** An event was added to the mission's Timeline (UC-C19). Only the mission's commander gets it. */
 const TimelineRecorded = z.object({ type: z.literal('timeline.recorded'), missionId: z.uuid(), event: TimelineEvent });
 
@@ -67,6 +80,8 @@ export const MissionEvent = z.discriminatedUnion('type', [
   RallyChanged,
   MissionUpdated,
   ParticipantMoved,
+  SightingSaved,
+  LkpChanged,
   TimelineRecorded,
 ]);
 

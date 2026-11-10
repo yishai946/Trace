@@ -1,7 +1,7 @@
 import { themes, type ThemeId } from '@trace/design';
 
 /** Map symbols drawn as SVG from the theme's tokens (Trace Console MapSymbols). Rendered at 2x for sharp edges. */
-export type MapIconName = 'lkp' | 'sighting' | 'rally' | 'report' | 'hazard';
+export type MapIconName = 'lkp' | 'sighting' | 'suggest' | 'rally' | 'report' | 'hazard';
 
 export const ICON_PIXEL_RATIO = 2;
 
@@ -37,6 +37,14 @@ export function mapIcons(themeId: ThemeId): Record<string, MapIcon> {
         18,
         `<path d="M9 2l7 7-7 7-7-7z" fill="${c.surface}" stroke="${c.mapHalo}" stroke-width="3.3"/>` +
           `<path d="M9 2l7 7-7 7-7-7z" fill="${c.surface}" stroke="${c.ink}" stroke-width="1.3"/>`,
+      ),
+    },
+    // The dashed ring around a sighting TRACE suggests as the new LKP.
+    suggest: {
+      size: 26,
+      svg: svg(
+        26,
+        `<circle cx="13" cy="13" r="10.5" fill="none" stroke="${c.accent}" stroke-width="1.2" stroke-dasharray="3 2"/>`,
       ),
     },
     rally: {

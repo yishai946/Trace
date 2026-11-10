@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toMapData } from '.';
-import { mission, participants, polygonA, polygonB } from '../fixtures';
+import { lkps, mission, participants, polygonA, polygonB, sightingA, sightingB } from '../fixtures';
 
 describe('toMapData', () => {
   const base = {
@@ -9,6 +9,8 @@ describe('toMapData', () => {
     participants,
     selectedPolygonId: null,
     editingPolygonId: null,
+    sightings: [],
+    lkps: [],
   };
 
   it('shows the rally point and the current LKP in Israel time', () => {
@@ -26,5 +28,24 @@ describe('toMapData', () => {
   it('marks the selected polygon and hides the one being reshaped', () => {
     const data = toMapData({ ...base, selectedPolygonId: polygonA.id, editingPolygonId: polygonB.id });
     expect(data.polygons.map((p) => [p.name, p.selected])).toEqual([['ואדי צפוני', true]]);
+  });
+
+  it('shows past LKPs with their time, and the current one apart', () => {
+    const data = toMapData({ ...base, lkps });
+    expect(data.lkp).toMatchObject({ time: '13:05' });
+    expect(data.lkpHistory).toEqual([{ id: lkps[1]?.id, position: [35.1398, 31.7398], time: '12:10' }]);
+  });
+
+  it('shows sightings with their number and Israel time, marking the suggested ones', () => {
+    const data = toMapData({ ...base, sightings: [sightingA, sightingB] });
+    expect(data.sightings).toEqual([
+      { id: sightingA.id, position: [35.1412, 31.7745], time: '14:22', label: '1 14:22', suggested: true },
+      { id: sightingB.id, position: [35.1441, 31.7712], time: '16:02', label: '2 16:02', suggested: false },
+    ]);
+  });
+
+  it('does not draw an accepted sighting twice, since it is the LKP or a past LKP', () => {
+    const accepted = { ...sightingA, lkpDecision: 'accepted' as const, lkpCandidate: false };
+    expect(toMapData({ ...base, sightings: [accepted, sightingB] }).sightings.map((s) => s.id)).toEqual([sightingB.id]);
   });
 });

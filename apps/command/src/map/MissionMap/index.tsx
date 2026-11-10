@@ -31,6 +31,12 @@ export interface MapFocus {
   bounds?: Bounds;
 }
 
+/** What a click on an LKP or sighting symbol hit. The current LKP has the id `lkp`. */
+export interface PointTarget {
+  kind: 'lkp' | 'sighting';
+  id: string;
+}
+
 interface MissionMapProps {
   provider: MapProvider;
   themeId: ThemeId;
@@ -49,12 +55,21 @@ interface MissionMapProps {
   onEditChange?: (geometry: Polygon) => void;
   /** A click on the map while placing a point, such as the LKP or rally point. Turns off polygon selection. */
   onMapClick?: (point: LngLat) => void;
+  /** A click on an LKP or sighting symbol in selection mode. */
+  onPointSelect?: (target: PointTarget) => void;
+  /** Starts or ends adding a sighting from the toolbar. Without it that tool is disabled. */
+  onSighting?: () => void;
+  sightingActive?: boolean;
   /** Tools, zoom buttons and cursor coordinates. Off for the map behind the login and mission list screens. */
   controls?: boolean;
 }
 
 const DRAW_PREFIX = 'td';
 const POLYGON_FILL_LAYER = 'mission-polygon-fill';
+const SIGHTING_LAYER = 'mission-sightings';
+const LKP_LAYER = 'mission-lkp';
+const LKP_HISTORY_LAYER = 'mission-lkp-history';
+const POINT_LAYERS = [SIGHTING_LAYER, LKP_LAYER, LKP_HISTORY_LAYER];
 /** Screen pixels kept free around a place when zooming to it: camera behavior, not a design value. */
 const FIT_BOUNDS_PADDING_PX = 80;
 
@@ -102,6 +117,9 @@ export function MissionMap({
   editing,
   onEditChange,
   onMapClick,
+  onPointSelect,
+  onSighting,
+  sightingActive,
   controls = true,
 }: MissionMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +131,7 @@ export function MissionMap({
   const onSelectRef = useRef(onPolygonSelect);
   const onEditChangeRef = useRef(onEditChange);
   const onMapClickRef = useRef(onMapClick);
+  const onPointSelectRef = useRef(onPointSelect);
   const editFeatureRef = useRef<string | null>(null);
   const toolRef = useRef<MapTool>('select');
 
@@ -126,6 +145,7 @@ export function MissionMap({
     onSelectRef.current = onPolygonSelect;
     onEditChangeRef.current = onEditChange;
     onMapClickRef.current = onMapClick;
+    onPointSelectRef.current = onPointSelect;
     toolRef.current = tool;
   });
 
@@ -171,6 +191,16 @@ export function MissionMap({
           return;
         }
         if (!selecting()) return;
+        const [point] = created.queryRenderedFeatures(e.point, { layers: POINT_LAYERS });
+        if (point) {
+          const id = point.properties?.id;
+          if (point.layer.id === SIGHTING_LAYER && typeof id === 'string') {
+            onPointSelectRef.current?.({ kind: 'sighting', id });
+          } else {
+            onPointSelectRef.current?.({ kind: 'lkp', id: typeof id === 'string' ? id : 'lkp' });
+          }
+          return;
+        }
         const [hit] = created.queryRenderedFeatures(e.point, { layers: [POLYGON_FILL_LAYER] });
         const id = hit?.properties?.id;
         onSelectRef.current?.(typeof id === 'string' ? id : null);
@@ -181,6 +211,14 @@ export function MissionMap({
       created.on('mouseleave', POLYGON_FILL_LAYER, () => {
         if (selecting()) created.getCanvas().style.cursor = '';
       });
+      for (const layer of POINT_LAYERS) {
+        created.on('mousemove', layer, () => {
+          if (selecting()) created.getCanvas().style.cursor = 'pointer';
+        });
+        created.on('mouseleave', layer, () => {
+          if (selecting()) created.getCanvas().style.cursor = '';
+        });
+      }
 
       created.once('load', () => {
         const draw = new TerraDraw({
@@ -323,7 +361,15 @@ export function MissionMap({
             <MapToolbar
               tool={tool}
               onToolChange={setTool}
-              drawingDisabled={!!editingId || !onPolygonDrawn}
+              drawingDisabled={!!editingId || !onPolygonDrawn || placing}
+              onSighting={
+                onSighting &&
+                (() => {
+                  setTool('select');
+                  onSighting();
+                })
+              }
+              sightingActive={sightingActive}
               terrain={terrain}
               onTerrainChange={setTerrain}
             />

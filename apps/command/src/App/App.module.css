@@ -97,6 +97,10 @@
   width: var(--panel-end-w);
 }
 
+.scrolling {
+  bottom: var(--space-6);
+}
+
 .rallyPanel {
   position: absolute;
   bottom: calc(var(--space-6) * 2 + var(--header-h));
