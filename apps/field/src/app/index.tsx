@@ -1,7 +1,20 @@
 import { Redirect } from 'expo-router';
-import { routes } from '../navigation/routes';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useStartRoute } from '../auth';
+import { useTheme } from '../theme';
 
-// Sign-in (UC-F01) decides where a returning searcher lands; until then every start is at the login screen.
+/** Decides where the app opens (UC-F01): sign-in, the name on first sign-in, or the app. The splash covers the wait. */
 export default function Index() {
-  return <Redirect href={routes.login} />;
+  const href = useStartRoute();
+  const { color } = useTheme().theme;
+  if (href) return <Redirect href={href} />;
+  return (
+    <View style={[styles.wait, { backgroundColor: color.surface }]}>
+      <ActivityIndicator color={color.inkMuted} accessibilityLabel="טוען" />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  wait: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+});

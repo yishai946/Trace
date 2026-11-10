@@ -2,8 +2,12 @@ import type { IconName } from '../../components/Icon';
 
 /** Every screen of the Field app (Trace Wireframes `Fm*`). Files live in `src/app/`. */
 export const routes = {
-  /** Fm01: phone and OTP sign-in (UC-F01). */
+  /** The start gate: where a launch or a fresh sign-in goes (UC-F01). */
+  start: '/',
+  /** Fm01: phone and code sign-in (UC-F01). */
   login: '/login',
+  /** UC-F01: the searcher's name on first sign-in. */
+  name: '/name',
   /** Fm02: join a mission by QR or code (UC-F02). */
   join: '/join',
   /** Fm04 to Fm06: the mission and its map. */

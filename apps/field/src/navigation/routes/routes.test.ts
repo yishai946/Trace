@@ -7,13 +7,15 @@ import { routes, tabs } from '.';
 
 const appDir = fileURLToPath(new URL('../../app/', import.meta.url));
 // Expo Router: a route `/x` is `x.tsx` in the app folder or in a group such as `(mission)`.
-const routeFileExists = (href: string) =>
-  [`${appDir}${href.slice(1)}.tsx`, `${appDir}(mission)/${href.slice(1)}.tsx`].some(existsSync);
+const routeFileExists = (href: string) => {
+  const file = href === '/' ? 'index' : href.slice(1);
+  return [`${appDir}${file}.tsx`, `${appDir}(mission)/${file}.tsx`].some(existsSync);
+};
 
 describe('routes', () => {
   it('has a screen for every route of the Field app', () => {
     expect(Object.keys(routes).sort()).toEqual(
-      ['join', 'login', 'map', 'messages', 'more', 'myMissions', 'report', 'reports', 'sos'].sort(),
+      ['join', 'login', 'map', 'messages', 'more', 'myMissions', 'name', 'report', 'reports', 'sos', 'start'].sort(),
     );
     for (const href of Object.values(routes)) expect(routeFileExists(href), href).toBe(true);
   });

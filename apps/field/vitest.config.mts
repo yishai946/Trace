@@ -20,5 +20,6 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    env: { EXPO_PUBLIC_API_URL: 'https://api.test' },
   },
 });

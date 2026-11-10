@@ -26,4 +26,9 @@ describe('Button', () => {
     fireEvent.click(button);
     expect(onPress).not.toHaveBeenCalled();
   });
+
+  it('a ghost button is named by its label and keeps no border', () => {
+    render(<Button label="שלח קוד חדש" variant="ghost" />, { wrapper: ThemeProvider });
+    expect(screen.getByRole('button', { name: 'שלח קוד חדש' })).toHaveStyle({ borderColor: 'rgba(0, 0, 0, 0)' });
+  });
 });

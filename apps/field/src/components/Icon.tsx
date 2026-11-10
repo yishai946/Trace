@@ -31,14 +31,32 @@ const icons = {
     </>
   ),
   plus: <Path d="M12 5v14M5 12h14" />,
+  check: <Path d="m5 12 5 5 9-10" />,
+  alert: (
+    <>
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M12 7v6M12 16h.01" />
+    </>
+  ),
   close: <Path d="M6 6l12 12M18 6 6 18" />,
 } as const;
 
 export type IconName = keyof typeof icons;
 
 /** Decorative: the label next to it, or the button's accessibility label, names the action. */
-export function Icon({ name, color, large = false }: { name: IconName; color: string; large?: boolean }) {
-  const size = large ? pendingTokens.iconLg : pendingTokens.icon;
+export function Icon({
+  name,
+  color,
+  large = false,
+  size: sizeOverride,
+}: {
+  name: IconName;
+  color: string;
+  large?: boolean;
+  /** Overrides the 16px and 20px sizes, e.g. the 12px check of a done step. */
+  size?: number;
+}) {
+  const size = sizeOverride ?? (large ? pendingTokens.iconLg : pendingTokens.icon);
   return (
     <Svg
       width={size}

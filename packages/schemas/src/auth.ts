@@ -17,3 +17,10 @@ export const SignInBody = z.object({ email: z.email(), password: z.string().min(
 export type SessionUser = z.infer<typeof SessionUser>;
 export type AuthSession = z.infer<typeof AuthSession>;
 export type SignInBody = z.infer<typeof SignInBody>;
+
+/** Digits in a phone sign-in code (UC-F01). Wireframe Fm01 and Better Auth's default; the API passes it to the plugin. */
+export const OTP_LENGTH = 6;
+
+/** POST /api/auth/phone-number/verify: the session token Field sends as `Authorization: Bearer`. Better Auth sends more fields. */
+export const PhoneSignIn = z.object({ token: z.string().min(1), user: z.object({ id: z.string() }) });
+export type PhoneSignIn = z.infer<typeof PhoneSignIn>;

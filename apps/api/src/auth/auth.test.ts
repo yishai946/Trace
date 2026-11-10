@@ -1,4 +1,4 @@
-import { ApiError, AuthSession, Mission, MissionList, MissionPolygon } from '@trace/schemas';
+import { ApiError, AuthSession, OTP_LENGTH, Mission, MissionList, MissionPolygon } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import type { Polygon } from 'geojson';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -110,6 +110,7 @@ describe('auth', () => {
     it('returns a session for the right code', async () => {
       const phoneNumber = '+972541234567';
       expect((await requestOtp(ctx, phoneNumber)).statusCode).toBe(200);
+      expect(ctx.sentCodes.get(phoneNumber)).toMatch(new RegExp(`^\\d{${OTP_LENGTH}}$`));
       const res = await verifyOtp(ctx, phoneNumber, ctx.sentCodes.get(phoneNumber) ?? '');
       expect(res.statusCode).toBe(200);
       const body = res.json<{ token?: string; user?: { id: string } }>();

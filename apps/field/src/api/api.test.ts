@@ -17,7 +17,7 @@ describe('apiRequest', () => {
     ).resolves.toEqual([]);
     expect(fetch).toHaveBeenCalledWith(
       'https://api.test/api/missions/m1/polygons',
-      expect.objectContaining({ method: 'GET', headers: { authorization: 'Bearer t1' } }),
+      expect.objectContaining({ method: 'GET', credentials: 'omit', headers: { authorization: 'Bearer t1' } }),
     );
   });
 
@@ -38,6 +38,29 @@ describe('apiRequest', () => {
     const error = await apiRequest('/missions/x', { baseUrl: 'https://api.test', token: 't1' }).catch((e) => e);
     expect(error).toBeInstanceOf(ApiRequestError);
     expect(error).toMatchObject({ status: 404, code: 'NOT_FOUND' });
+  });
+
+  it('reads Retry-After from a refused request', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ code: 'TOO_MANY_OTP_REQUESTS' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json', 'retry-after': '42' },
+        }),
+      ),
+    );
+
+    const error = await apiRequest('/x', { baseUrl: 'https://api.test', token: null }).catch((e) => e);
+    expect(error).toMatchObject({ status: 429, code: 'INTERNAL_ERROR', retryAfter: 42 });
+  });
+
+  it('never sends cookies', async () => {
+    const fetch = vi.fn().mockResolvedValue(json(200, []));
+    vi.stubGlobal('fetch', fetch);
+
+    await apiRequest('/health', { baseUrl: 'https://api.test', token: null });
+    expect(fetch.mock.calls[0]?.[1]).toMatchObject({ credentials: 'omit' });
   });
 
   it('reports an unreachable server as a network error', async () => {
