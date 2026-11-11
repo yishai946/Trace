@@ -37,15 +37,16 @@ const ownColumns = {
 export interface JoinResult {
   missionId: string;
   participation: OwnParticipation;
-  /** False when the searcher was already in the mission and got their existing participation back. */
-  created: boolean;
+  /** True when the searcher became Available now: a new participation, or one that had ended. */
+  joined: boolean;
 }
 
 /**
  * Adds the searcher to the mission of a join code as Available, with the lowest free callsign (UC-F02). A searcher
- * already in the mission gets the same participation back (decision 69), whatever the mission's status; a new one
- * joins only an active mission (decision 82). The mission row is locked, so two joins never take one callsign and a
- * mission being paused or ended cannot be joined meanwhile.
+ * taking part in the mission gets the same participation back (decision 69), whatever the mission's status. A new
+ * searcher, or one whose participation ended, joins only an active mission (decision 82); the ended participation
+ * returns to Available with its callsign (State and Rules §2), never a second one. The mission row is locked, so two
+ * joins never take one callsign and a mission being paused or ended cannot be joined meanwhile.
  */
 export async function joinMission(db: Db, searcherId: string, code: string): Promise<JoinResult> {
   return db.transaction(async (tx) => {
@@ -60,10 +61,21 @@ export async function joinMission(db: Db, searcherId: string, code: string): Pro
       .select(ownColumns)
       .from(participations)
       .where(and(eq(participations.missionId, mission.id), eq(participations.searcherId, searcherId)));
-    if (existing) return { missionId: mission.id, participation: existing, created: false };
+    if (existing && existing.status !== 'ended') {
+      return { missionId: mission.id, participation: existing, joined: false };
+    }
 
     if (!canJoinMission(mission.status)) {
       throw new AppError(409, 'MISSION_NOT_ACTIVE', 'Only an active mission can be joined');
+    }
+    if (existing) {
+      const [rejoined] = await tx
+        .update(participations)
+        .set({ status: 'available', polygonId: null, taskStatus: null })
+        .where(eq(participations.id, existing.id))
+        .returning(ownColumns);
+      if (!rejoined) throw new Error('Participation update returned no row');
+      return { missionId: mission.id, participation: rejoined, joined: true };
     }
     const taken = await tx
       .select({ callsign: participations.callsign })
@@ -77,7 +89,7 @@ export async function joinMission(db: Db, searcherId: string, code: string): Pro
       .values({ missionId: mission.id, searcherId, callsign })
       .returning(ownColumns);
     if (!participation) throw new Error('Participation insert returned no row');
-    return { missionId: mission.id, participation, created: true };
+    return { missionId: mission.id, participation, joined: true };
   });
 }
 

@@ -62,9 +62,13 @@ describe('toMissionArea', () => {
     expect(area.bounds).toEqual([35.13, 31.769, 35.137, 31.78]);
   });
 
-  it('shows the rally point alone while the mission has no LKP', () => {
+  it('frames the surroundings of a rally point alone, while the mission has no LKP', () => {
     const area = toMissionArea([], { lkp: null, rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] } });
     expect(area.data.lkp).toBeNull();
-    expect(area.bounds).toEqual([35.13, 31.78, 35.13, 31.78]);
+    const [west, south, east, north] = area.bounds ?? [0, 0, 0, 0];
+    expect(west).toBeLessThan(35.13);
+    expect(east).toBeGreaterThan(35.13);
+    expect(south).toBeLessThan(31.78);
+    expect(north).toBeGreaterThan(31.78);
   });
 });

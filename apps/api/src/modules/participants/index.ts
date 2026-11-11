@@ -49,9 +49,10 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
         tags: ['participants'],
         summary: 'Join the mission of a join code as an available searcher (UC-F02)',
         description:
-          'Searchers only. 201 with a new participation, waiting for assignment. 200 with the existing participation ' +
-          'when the searcher is already in the mission (decision 69). 409 MISSION_NOT_ACTIVE for a new searcher when ' +
-          'the mission is paused or ended (decision 82); 409 MISSION_FULL when every callsign is taken.',
+          'Searchers only. 201 when the searcher became available now: a new participation, or one that had ended ' +
+          '(it keeps its callsign). 200 with the unchanged participation when the searcher already takes part ' +
+          '(decision 69). 409 MISSION_NOT_ACTIVE for anyone else when the mission is paused or ended (decision 82); ' +
+          '409 MISSION_FULL when every callsign is taken.',
         params: JoinParams,
         response: {
           200: JoinedMission,
@@ -70,12 +71,12 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { searcherId } = actor;
-      const { missionId, participation, created } = await joinMission(db, searcherId, request.params.code);
-      if (created) {
+      const { missionId, participation, joined } = await joinMission(db, searcherId, request.params.code);
+      if (joined) {
         const participant = (await listParticipants(db, missionId)).find((p) => p.id === participation.id);
         if (participant) realtime.publish({ type: 'participant.joined', missionId, participant });
       }
-      return reply.status(created ? 201 : 200).send({ mission: await getMission(db, missionId), participation });
+      return reply.status(joined ? 201 : 200).send({ mission: await getMission(db, missionId), participation });
     },
   );
 };

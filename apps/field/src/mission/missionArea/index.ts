@@ -9,6 +9,16 @@ export interface MissionArea {
   bounds: Bounds | null;
 }
 
+/** Degrees kept around a lone point (about 500 m), so the map does not zoom in as far as it can. */
+const POINT_MARGIN = 0.005;
+
+function frame(features: Feature[]): Bounds {
+  const [west, south, east, north] = boundsOf({ type: 'FeatureCollection', features });
+  return west === east && south === north
+    ? [west - POINT_MARGIN, south - POINT_MARGIN, east + POINT_MARGIN, north + POINT_MARGIN]
+    : [west, south, east, north];
+}
+
 /** A moment as the hour on the searcher's phone, e.g. `13:05`. */
 export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
@@ -39,6 +49,6 @@ export function toMissionArea(polygons: MissionPolygon[], mission?: Pick<Mission
       lkp: lkp ? { id: 'lkp', position: lkp.position.coordinates as LngLat, time: formatTime(lkp.observedAt) } : null,
       rally: mission ? (mission.rallyPoint.coordinates as LngLat) : null,
     },
-    bounds: features.length ? boundsOf({ type: 'FeatureCollection', features }) : null,
+    bounds: features.length ? frame(features) : null,
   };
 }

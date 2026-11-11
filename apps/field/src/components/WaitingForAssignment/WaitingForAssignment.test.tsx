@@ -73,7 +73,7 @@ describe('WaitingForAssignment', () => {
     ).toBeInTheDocument();
     expect(person.getByText('מעיל חום, כובע צמר אפור, מקל הליכה')).toBeInTheDocument();
     expect(map.getByText(`LKP ${formatTime(mission.lkp!.observedAt)}`)).toBeInTheDocument();
-    expect(map.getByText('נקודת כינוס')).toBeInTheDocument();
+    expect(map.getByText('כינוס')).toBeInTheDocument();
   });
 
   it('copes with a mission that has few details', () => {

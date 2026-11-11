@@ -74,11 +74,8 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
       );
       return;
     case 'participant.joined':
-      queryClient.setQueryData<Participant[]>(missionKeys.participants(event.missionId), (list) =>
-        list && !list.some((p) => p.id === event.participant.id)
-          ? [...list, event.participant].sort((a, b) => a.callsign - b.callsign)
-          : list,
-      );
+      // Refetched, not patched: a fetch in flight may have read the list before the searcher joined.
+      void queryClient.invalidateQueries({ queryKey: missionKeys.participants(event.missionId) });
       return;
     case 'timeline.recorded': {
       const key = missionKeys.timeline(event.missionId);

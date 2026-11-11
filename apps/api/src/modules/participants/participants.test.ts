@@ -135,6 +135,24 @@ describe('joining a mission (UC-F02)', () => {
     expect(ParticipantList.parse(list)).toHaveLength(1);
   });
 
+  it('returns an ended participation to available with its callsign, on an active mission only', async () => {
+    const user = await signInSearcher(ctx);
+    const searcher = injectAs(ctx, user);
+    const id = await addParticipant(ctx.db, {
+      missionId: mission.id,
+      callsign: 5,
+      searcherId: user.searcherId,
+      status: 'ended',
+    });
+    await setStatus('paused');
+    expect((await searcher({ method: 'POST', url: `/api/join/${mission.joinCode}` })).statusCode).toBe(409);
+
+    await setStatus('active');
+    const res = await searcher({ method: 'POST', url: `/api/join/${mission.joinCode}` });
+    expect(res.statusCode).toBe(201);
+    expect(JoinedMission.parse(res.json()).participation).toMatchObject({ id, callsign: 5, status: 'available' });
+  });
+
   it('gives searchers who join at once different callsigns', async () => {
     const users = await Promise.all([signInSearcher(ctx), signInSearcher(ctx), signInSearcher(ctx)]);
     const results = await Promise.all(

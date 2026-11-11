@@ -1,6 +1,6 @@
 import { radius, spacing, typography } from '@trace/design';
 import type { Mission, OwnParticipation } from '@trace/schemas';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { apiBaseUrl } from '../../api';
 import { useSearcherProfile } from '../../auth';
@@ -48,6 +48,7 @@ export interface WaitingForAssignmentProps {
 export function WaitingForAssignment({ mission, participation }: WaitingForAssignmentProps) {
   const { color } = useTheme().theme;
   const profile = useSearcherProfile();
+  const area = useMemo(() => toMissionArea([], mission), [mission]);
   const person = mission.missingPerson;
   const times = [
     person.disappearedAt ? `נעלם ${ltr(formatTime(person.disappearedAt))}` : null,
@@ -68,7 +69,7 @@ export function WaitingForAssignment({ mission, participation }: WaitingForAssig
         <Badge label="זמין" tone="accent" />
       </View>
       <View style={[styles.map, { borderColor: color.border }]}>
-        <MissionMap area={toMissionArea([], mission)} />
+        <MissionMap area={area} />
       </View>
       <View
         accessibilityLabel="פרטי הנעדר"

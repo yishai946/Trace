@@ -25,7 +25,7 @@ export function MissionMap({ area }: MissionMapProps) {
       {area.data.lkp ? (
         <Text style={[typography.body, { color: color.inkSecondary }]}>{`LKP ${area.data.lkp.time ?? ''}`.trim()}</Text>
       ) : null}
-      {area.data.rally ? <Text style={[typography.body, { color: color.inkSecondary }]}>נקודת כינוס</Text> : null}
+      {area.data.rally ? <Text style={[typography.body, { color: color.inkSecondary }]}>כינוס</Text> : null}
       <Text style={[typography.caption, { color: color.inkMuted }]}>המפה מוצגת באפליקציה ב-Android וב-iOS</Text>
     </View>
   );
