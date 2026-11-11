@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPhone, toE164 } from '.';
+import { toE164 } from '.';
 
 describe('toE164', () => {
   it('turns an Israeli mobile number into an international one', () => {
@@ -17,15 +17,5 @@ describe('toE164', () => {
     for (const input of ['', '0501234', '02-1234567', '+972', '05012345678', 'abc']) {
       expect(toE164(input), input).toBeNull();
     }
-  });
-});
-
-describe('formatPhone', () => {
-  it('writes an Israeli mobile number the way people read it', () => {
-    expect(formatPhone('+972523401187')).toBe('052-340-1187');
-  });
-
-  it('leaves other numbers as they are', () => {
-    expect(formatPhone('+14155550123')).toBe('+14155550123');
   });
 });

@@ -12,8 +12,5 @@ export function toE164(input: string): string | null {
   return E164.test(digits) ? digits : null;
 }
 
-/** An Israeli mobile number as `052-340-1187`; any other number as it is. Wrap the result in `ltr()` inside Hebrew text. */
-export function formatPhone(e164: string): string {
-  const match = /^\+972(5\d)(\d{3})(\d{4})$/.exec(e164);
-  return match ? `0${match[1]}-${match[2]}-${match[3]}` : e164;
-}
+// Shared with Command's searcher pool.
+export { formatPhone } from '@trace/domain';

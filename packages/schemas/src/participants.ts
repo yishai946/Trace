@@ -12,6 +12,8 @@ export const Participant = z
     id: z.uuid(),
     searcherId: z.uuid(),
     name: z.string(),
+    /** E.164, e.g. `+972523401187` (decision 48). */
+    phone: z.string(),
     callsign: z.number().int().min(0).max(99),
     status: ParticipationStatus,
     polygonId: z.uuid().nullable(),
