@@ -22,12 +22,18 @@ export function statusLabel(p: Pick<Participant, 'status' | 'taskStatus'>): stri
   return 'משובץ';
 }
 
+/** Waiting searchers first, the candidates for assignment (UC-C08 step 3), then assigned, then those in the field. */
+const GROUP: Record<string, number> = { available: 0, ready: 1, finished: 1, searching: 2, paused: 2 };
+const groupOf = (p: Participant) => (p.status === 'available' ? 0 : (GROUP[p.taskStatus ?? 'ready'] ?? 1));
+
 /**
- * The searcher pool (UC-C08, wireframe Cd08): everyone in the mission by callsign, with name, phone, state, polygon
+ * The searcher pool (UC-C08, wireframe Cd08): everyone in the mission, waiting searchers first, with name, phone, state, polygon
  * and when their position last arrived. A searcher who joins appears without a refresh (`participant.joined`).
  */
 export function SearchersPage({ participants, polygons, loadFailed, onRetry }: SearchersPageProps) {
-  const inMission = participants?.filter((p) => p.status !== 'ended').sort((a, b) => a.callsign - b.callsign);
+  const inMission = participants
+    ?.filter((p) => p.status !== 'ended')
+    .sort((a, b) => groupOf(a) - groupOf(b) || a.callsign - b.callsign);
   const waiting = inMission?.filter((p) => p.status === 'available').length ?? 0;
   const polygonName = (id: string | null) => polygons.find((p) => p.id === id)?.name ?? '—';
 
@@ -71,7 +77,7 @@ export function SearchersPage({ participants, polygons, loadFailed, onRetry }: S
                   <td>
                     <span className={styles.who}>
                       <CallsignChip callsign={p.callsign} state={p.status === 'available' ? 'waiting' : 'normal'} />
-                      <span className={styles.name}>{p.name}</span>
+                      <span>{p.name}</span>
                     </span>
                   </td>
                   <td>
@@ -82,7 +88,7 @@ export function SearchersPage({ participants, polygons, loadFailed, onRetry }: S
                   <td>
                     <span className={styles.badge}>{statusLabel(p)}</span>
                   </td>
-                  <td className={styles.name}>{p.status === 'assigned' ? polygonName(p.polygonId) : '—'}</td>
+                  <td>{p.status === 'assigned' ? polygonName(p.polygonId) : '—'}</td>
                   <td>
                     {p.positionAt ? (
                       <time dateTime={p.positionAt} className={styles.num}>

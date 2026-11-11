@@ -82,11 +82,6 @@ a.num:focus-visible {
   gap: var(--space-5);
 }
 
-.name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .badge {
   display: inline-flex;
   padding-block: var(--space-1);

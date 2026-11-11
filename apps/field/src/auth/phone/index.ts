@@ -11,6 +11,3 @@ export function toE164(input: string): string | null {
   if (local) return `+972${local[1]}`;
   return E164.test(digits) ? digits : null;
 }
-
-// Shared with Command's searcher pool.
-export { formatPhone } from '@trace/domain';

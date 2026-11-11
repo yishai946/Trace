@@ -16,10 +16,10 @@ const rows = () => within(screen.getByRole('table')).getAllByRole('row').slice(1
 const [dana, michal] = participants as [Participant, Participant];
 
 describe('SearchersPage', () => {
-  it('lists the searchers by callsign with name, phone, state, polygon and last update', () => {
-    render(<SearchersPage {...props({ participants: [michal, dana] })} />);
+  it('lists the searchers with name, phone, state, polygon and last update', () => {
+    render(<SearchersPage {...props({ participants: [dana, michal] })} />);
 
-    const [first, second] = rows() as [HTMLElement, HTMLElement];
+    const [second, first] = rows() as [HTMLElement, HTMLElement];
     expect(within(first).getByText('04')).toBeTruthy();
     expect(within(first).getByText('דנה כהן')).toBeTruthy();
     expect(within(first).getByRole('link', { name: '052-611-4085' }).getAttribute('href')).toBe('tel:+972526114085');
@@ -29,6 +29,29 @@ describe('SearchersPage', () => {
     expect(within(second).getByText('זמין')).toBeTruthy();
     expect(within(second).getByText('אין עדיין')).toBeTruthy();
     expect(screen.getByText('2 במסע, 1 ממתינים לשיבוץ')).toBeTruthy();
+  });
+
+  it('puts waiting searchers first, then assigned, then those searching, each by callsign', () => {
+    const at = (callsign: number, status: Participant['status'], taskStatus: Participant['taskStatus']) => ({
+      ...dana,
+      id: `00000000-0000-4000-8000-0000000000${String(callsign).padStart(2, '0')}`,
+      callsign,
+      status,
+      taskStatus,
+    });
+    render(
+      <SearchersPage
+        {...props({
+          participants: [
+            at(2, 'assigned', 'searching'),
+            at(18, 'available', null),
+            at(10, 'assigned', 'ready'),
+            at(13, 'available', null),
+          ],
+        })}
+      />,
+    );
+    expect(rows().map((row) => within(row).getAllByText(/^\d\d$/)[0]?.textContent)).toEqual(['13', '18', '10', '02']);
   });
 
   it('leaves out searchers who ended their activity', () => {
