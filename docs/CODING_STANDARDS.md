@@ -184,15 +184,14 @@ Picking the next task:
 
 Every Pull Request is linked to an issue:
 
-- The Pull Request description names the issue the work started from: `Closes #<N>` when it finishes the issue, `Refs #<N>` when it does part of it. The `Issue dependencies` workflow fails a Pull Request into `dev` that names no issue.
+- The Pull Request description names its issue with `Closes #<N>`. There is no `Refs`: an issue is one task and one Pull Request. The `Issue dependencies` workflow fails a Pull Request into `dev` that has no `Closes #<N>`.
 - No issue for the work yet (a bug found on the way, a refactor, tooling, a docs change): open one first, with labels, milestone, Priority, Size and "Blocked by" set, add it to the board, then link the Pull Request to it. Do not open the Pull Request and create the issue afterwards.
-- One Pull Request serves one issue. Unrelated changes found along the way get their own issue and Pull Request.
+- One Pull Request serves one issue, and one issue gets one Pull Request. If an issue is too big for one Pull Request, split it into issues before starting. Unrelated changes, and work that turned out not to fit, get their own new issue (labels, milestone, Priority, Size, "Blocked by", on the board), listed in the Pull Request description.
 - Release Pull Requests from `dev` into `main` are exempt.
 
 While working and when done:
 
-- Merging a Pull Request with `Closes #<N>` into `dev` closes the issue, moves the card to **Done** and unblocks the issues that waited for it.
-- A Pull Request that does only part of the issue writes `Refs #<N>` and ticks only the checkboxes it implemented in the issue body.
+- Merging the Pull Request into `dev` is the end of the task. The `Issue dependencies` workflow closes the issue (GitHub itself closes issues only on the default branch, `main`), moves the card to **Done** and unblocks the issues that waited for it.
 - Stopping without finishing: unassign yourself and move the card back to **Ready**.
 
 ---
