@@ -15,7 +15,20 @@ const routeFileExists = (href: string) => {
 describe('routes', () => {
   it('has a screen for every route of the Field app', () => {
     expect(Object.keys(routes).sort()).toEqual(
-      ['join', 'login', 'map', 'messages', 'more', 'myMissions', 'name', 'report', 'reports', 'sos', 'start'].sort(),
+      [
+        'join',
+        'login',
+        'map',
+        'messages',
+        'missingPerson',
+        'more',
+        'myMissions',
+        'name',
+        'report',
+        'reports',
+        'sos',
+        'start',
+      ].sort(),
     );
     for (const href of Object.values(routes)) expect(routeFileExists(href), href).toBe(true);
   });

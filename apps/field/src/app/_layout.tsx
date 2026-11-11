@@ -24,6 +24,7 @@ function ThemedStack() {
       >
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.surface } }}>
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="missing-person" options={{ presentation: 'modal' }} />
         </Stack>
       </View>
       {!splashDone && <Splash onDone={() => setSplashDone(true)} />}

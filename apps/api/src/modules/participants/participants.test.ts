@@ -207,3 +207,60 @@ describe('joining a mission (UC-F02)', () => {
     expect((await ctx.app.inject({ method: 'POST', url })).statusCode).toBe(401);
   });
 });
+
+describe('what a searcher sees of other searchers (UC-F04, decisions 31, 32)', () => {
+  let ctx: TestContext;
+
+  beforeAll(async () => {
+    ctx = await createTestApp();
+  });
+  beforeEach(() => resetDb(ctx.db));
+  afterAll(() => ctx.close());
+
+  it('never gets their positions, before an assignment or during one', async () => {
+    const commander = injectAs(ctx, await signInCommander(ctx));
+    const created = await commander({
+      method: 'POST',
+      url: '/api/missions',
+      payload: {
+        name: 'מסע',
+        rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
+        lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' },
+      },
+    });
+    const mission = Mission.parse(created.json());
+    const polygon = await commander({
+      method: 'POST',
+      url: `/api/missions/${mission.id}/polygons`,
+      payload: {
+        name: 'A',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [35.12, 31.77],
+              [35.14, 31.77],
+              [35.14, 31.79],
+              [35.12, 31.77],
+            ],
+          ],
+        },
+      },
+    });
+    const polygonId = (polygon.json() as { id: string }).id;
+    // Another searcher, assigned and with a known position.
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, polygonId, position: [35.131, 31.781] });
+    const searcher = injectAs(ctx, await signInSearcher(ctx));
+    await searcher({ method: 'POST', url: `/api/join/${mission.joinCode}` });
+
+    for (const path of ['participants', 'sightings', 'timeline']) {
+      const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}/${path}` });
+      expect(res.statusCode, path).toBe(403);
+    }
+    for (const path of ['', '/polygons', '/lkps']) {
+      const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}${path}` });
+      expect(res.statusCode, path).toBe(200);
+      expect(res.body, path).not.toContain('35.131');
+    }
+  });
+});

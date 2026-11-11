@@ -28,7 +28,13 @@ export default function MapScreen() {
 
   // Fm04: until the commander assigns a polygon, the searcher waits with the mission's basic information (UC-F02).
   if (mission.data && participation?.status === 'available') {
-    return <WaitingForAssignment mission={mission.data} participation={participation} />;
+    return (
+      <WaitingForAssignment
+        mission={mission.data}
+        participation={participation}
+        onOpenDetails={() => openScreen(router, routes.missingPerson)}
+      />
+    );
   }
 
   const kind = mapStatus({
