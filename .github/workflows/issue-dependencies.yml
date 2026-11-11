@@ -1,7 +1,7 @@
 # Enforces the "Blocked by" relationships between issues:
 # - an issue with open blockers cannot be assigned (the assignment is undone with a comment);
 # - a Pull Request cannot close an issue that still has open blockers (the check fails);
-# - every Pull Request (except a release from dev into main) names its issue with "Closes #N" or "Refs #N";
+# - every Pull Request (except a release from dev into main) names its issue with "Closes #N" (one issue, one Pull Request);
 # - the `blocked` label always matches whether an issue has open blockers. Closing or reopening an issue refreshes
 #   the issues it blocks at once. Actions cannot listen to "Blocked by" links being added or removed, so a scheduled
 #   run re-checks every open issue.
@@ -199,11 +199,10 @@ jobs:
               return;
             }
 
-            const refs = [...body.matchAll(/\bref(?:s|erences)?\s+#(\d+)/gi)];
             const isRelease = pr.base.ref === 'main' && pr.head.ref === 'dev';
-            if (!isRelease && numbers.length === 0 && refs.length === 0) {
+            if (!isRelease && numbers.length === 0) {
               return core.setFailed(
-                'Link this Pull Request to its issue: write "Closes #<N>" (finishes it) or "Refs #<N>" (part of it) in the description. No issue yet? Create one first.',
+                'Link this Pull Request to its issue: write "Closes #<N>" in the description (one issue, one Pull Request; "Refs" is not accepted). No issue yet? Create one first.',
               );
             }
             const problems = [];
