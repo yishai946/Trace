@@ -37,4 +37,23 @@ export const pendingTokens = {
   otpDigitSize: 24,
   /** Brand book: focus ring, 2px solid with a 2px offset. */
   focusRing: 2,
+  /** Fm02 `.tcx-scan`: the QR frame's height and its corner marks (30px, 3px stroke, 18px from the edge). */
+  scanH: 230,
+  scanCorner: 30,
+  scanCornerStroke: 3,
+  scanCornerInset: 18,
+  /** Fm02 join code input: 20px bold, letter-spaced. */
+  joinCodeSize: 20,
+  joinCodeSpacing: 2.4,
+  /** Fm02 and Fm04 `.tcx-ph`: the missing person's photo, 64x76 on the join card and 60x72 on the waiting screen. */
+  photoW: 64,
+  photoH: 76,
+  /** Fm04: height of the general map between the status card and the missing-person card. */
+  waitingMapH: 320,
+  /** Fm04 `.tcx-card` of the status and the join confirmation: 2px border. */
+  cardStrongBorder: 2,
+  /** Wireframe `.tcx-badge`: 20px high. */
+  badgeH: 20,
+  /** Trace Console `.tc-dot`: the 6px state dot inside a badge. */
+  dot: 6,
 } as const;

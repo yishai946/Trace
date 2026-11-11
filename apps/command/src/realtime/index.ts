@@ -73,6 +73,10 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         ),
       );
       return;
+    case 'participant.joined':
+      // Refetched, not patched: a fetch in flight may have read the list before the searcher joined.
+      void queryClient.invalidateQueries({ queryKey: missionKeys.participants(event.missionId) });
+      return;
     case 'timeline.recorded': {
       const key = missionKeys.timeline(event.missionId);
       // Not cached yet: either the Timeline was never opened, or its first fetch is in flight and may have read the

@@ -1,15 +1,41 @@
-import { boundsOf, type Bounds } from '@trace/geo';
+import { boundsOf, type Bounds, type LngLat } from '@trace/geo';
 import { emptyMissionMapData, type MissionMapData } from '@trace/map';
-import type { MissionPolygon } from '@trace/schemas';
+import type { Mission, MissionPolygon } from '@trace/schemas';
+import type { Feature } from 'geojson';
 
 export interface MissionArea {
   data: MissionMapData;
-  /** Frames every polygon; null while the mission has none. */
+  /** Frames every polygon, the LKP and the rally point; null while the mission shows none of them. */
   bounds: Bounds | null;
 }
 
-/** The mission area on the map: its polygons, drawn with the shared Trace Console style. */
-export function toMissionArea(polygons: MissionPolygon[]): MissionArea {
+/** Degrees kept around a lone point (about 500 m), so the map does not zoom in as far as it can. */
+const POINT_MARGIN = 0.005;
+
+function frame(features: Feature[]): Bounds {
+  const [west, south, east, north] = boundsOf({ type: 'FeatureCollection', features });
+  return west === east && south === north
+    ? [west - POINT_MARGIN, south - POINT_MARGIN, east + POINT_MARGIN, north + POINT_MARGIN]
+    : [west, south, east, north];
+}
+
+/** A moment as the hour on the searcher's phone, e.g. `13:05`. */
+export function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+}
+
+/**
+ * The mission area on the map, drawn with the shared Trace Console style: its polygons and, once the mission is
+ * known, its LKP and rally point. Never other searchers' positions (decisions 31, 32).
+ */
+export function toMissionArea(polygons: MissionPolygon[], mission?: Pick<Mission, 'lkp' | 'rallyPoint'>): MissionArea {
+  const lkp = mission?.lkp ?? null;
+  const features: Feature[] = [
+    ...polygons.map((p) => p.geometry),
+    ...(lkp ? [lkp.position] : []),
+    ...(mission ? [mission.rallyPoint] : []),
+  ].map((geometry) => ({ type: 'Feature', geometry, properties: {} }));
+
   return {
     data: {
       ...emptyMissionMapData,
@@ -20,12 +46,9 @@ export function toMissionArea(polygons: MissionPolygon[]): MissionArea {
         coverage: p.coverage,
         geometry: p.geometry,
       })),
+      lkp: lkp ? { id: 'lkp', position: lkp.position.coordinates as LngLat, time: formatTime(lkp.observedAt) } : null,
+      rally: mission ? (mission.rallyPoint.coordinates as LngLat) : null,
     },
-    bounds: polygons.length
-      ? boundsOf({
-          type: 'FeatureCollection',
-          features: polygons.map((p) => ({ type: 'Feature', geometry: p.geometry, properties: {} })),
-        })
-      : null,
+    bounds: features.length ? frame(features) : null,
   };
 }

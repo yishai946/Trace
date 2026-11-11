@@ -370,6 +370,28 @@ describe('useMissionLive', () => {
     expect(queryClient.getQueryState(missionKeys.sightings(missionId))?.isInvalidated).toBe(true);
   });
 
+  it('refetches the searcher pool when a searcher joins the mission', async () => {
+    const { queryClient } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await connectAndJoin(socket);
+    queryClient.setQueryData(missionKeys.participants(missionId), []);
+    const participant = {
+      id: '44444444-4444-4444-8444-444444444444',
+      searcherId: '55555555-5555-4555-8555-555555555555',
+      name: 'דנה כהן',
+      callsign: 2,
+      status: 'available',
+      polygonId: null,
+      taskStatus: null,
+      position: null,
+      positionAt: null,
+    };
+
+    act(() => socket.fire('mission:event', { type: 'participant.joined', missionId, participant }));
+
+    expect(queryClient.getQueryState(missionKeys.participants(missionId))?.isInvalidated).toBe(true);
+  });
+
   it('refetches the mission list after every join, for an LKP that changed while away', async () => {
     const { queryClient } = setup();
     const socket = sockets[0] as FakeSocket;
