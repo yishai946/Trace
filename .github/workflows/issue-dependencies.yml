@@ -7,7 +7,8 @@
 #   run re-checks every open issue.
 # With the PROJECT_TOKEN secret (a token with the `project` and `repo` scopes) it also moves board cards between
 # Backlog (blocked) and Ready, to In progress on assignment, back to Ready when the last assignee leaves, and to In
-# review when a Pull Request that closes the issue opens or leaves draft. The scheduled run also copies each card's
+# review when a Pull Request that closes the issue opens or leaves draft. A Pull Request merged into dev closes the
+# issues it names with "Closes #N" (GitHub only does that for the default branch) and moves their cards to Done. The scheduled run also copies each card's
 # Priority and Size into `priority: <P>` and `size: <S>` labels, for agents that cannot reach the board (it needs
 # GraphQL, which cloud sessions do not have). Without the secret the board is updated by hand.
 name: Issue dependencies
@@ -16,7 +17,7 @@ on:
   issues:
     types: [assigned, unassigned, closed, reopened]
   pull_request:
-    types: [opened, edited, synchronize, reopened, ready_for_review]
+    types: [opened, edited, synchronize, reopened, ready_for_review, closed]
   schedule:
     - cron: '*/30 * * * *'
   workflow_dispatch:
@@ -184,6 +185,20 @@ jobs:
             const body = pr.body ?? '';
             const closing = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
             const numbers = [...new Set([...body.matchAll(closing)].map((m) => Number(m[1])))];
+
+            if (context.payload.action === 'closed') {
+              // Merged into dev: GitHub closes "Closes #N" issues only on the default branch, so close them here.
+              if (!pr.merged || pr.base.ref !== 'dev') return;
+              for (const n of numbers) {
+                const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: n });
+                if (issue.state !== 'open') continue;
+                await github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' });
+                await github.rest.issues.createComment({ owner, repo, issue_number: n, body: `Closed by #${pr.number}, merged into dev.` });
+                await setStatus(n, 'Done');
+              }
+              return;
+            }
+
             const refs = [...body.matchAll(/\bref(?:s|erences)?\s+#(\d+)/gi)];
             const isRelease = pr.base.ref === 'main' && pr.head.ref === 'dev';
             if (!isRelease && numbers.length === 0 && refs.length === 0) {
