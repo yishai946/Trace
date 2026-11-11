@@ -95,6 +95,10 @@ export default function MapScreen() {
           icon="plus"
           onPress={() => openScreen(router, routes.report)}
         />
+        {/* The missing person's details stay one tap away for the whole mission (UC-F04, decision 33). */}
+        {mission.data ? (
+          <Button label="פרטי נעדר מלאים" variant="ghost" onPress={() => openScreen(router, routes.missingPerson)} />
+        ) : null}
       </View>
     </View>
   );
@@ -114,6 +118,7 @@ const styles = StyleSheet.create({
   },
   bannerText: { flex: 1 },
   sheet: {
+    gap: spacing.space4,
     padding: spacing.space6,
     borderTopStartRadius: radius.radiusXl,
     borderTopEndRadius: radius.radiusXl,
