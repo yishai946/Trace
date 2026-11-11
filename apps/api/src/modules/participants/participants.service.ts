@@ -100,6 +100,7 @@ export async function listParticipants(db: Db, missionId: string): Promise<Parti
       id: participations.id,
       searcherId: participations.searcherId,
       name: searchers.name,
+      phone: searchers.phone,
       callsign: participations.callsign,
       status: participations.status,
       polygonId: participations.polygonId,

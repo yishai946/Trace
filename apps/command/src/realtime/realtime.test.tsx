@@ -379,6 +379,7 @@ describe('useMissionLive', () => {
       id: '44444444-4444-4444-8444-444444444444',
       searcherId: '55555555-5555-4555-8555-555555555555',
       name: 'דנה כהן',
+      phone: '+972526114085',
       callsign: 2,
       status: 'available',
       polygonId: null,

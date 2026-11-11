@@ -56,6 +56,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { SearchersPage } from '../pages/SearchersPage';
 import { TimelinePage } from '../pages/TimelinePage';
 import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
@@ -199,7 +200,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   );
 
   const workspace =
-    !mission || (view === 'timeline' && !phone) ? null : polygons.isPending ? (
+    !mission || (view !== 'map' && !phone) ? null : polygons.isPending ? (
       <p className={styles.setup}>טוען מסע…</p>
     ) : (
       <MissionWorkspace
@@ -319,6 +320,14 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           onNavigate={setView}
           joinPanel={joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
         >
+          {view === 'searchers' && (
+            <SearchersPage
+              participants={participants.data}
+              polygons={polygons.data ?? []}
+              loadFailed={participants.isError}
+              onRetry={() => void participants.refetch()}
+            />
+          )}
           {view === 'timeline' && (
             <TimelinePage
               events={timeline.data}

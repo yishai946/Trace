@@ -1,7 +1,7 @@
 import { Link } from 'react-aria-components';
 import styles from './MissionNav.module.css';
 
-export type MissionView = 'map' | 'timeline';
+export type MissionView = 'map' | 'searchers' | 'timeline';
 
 interface MissionNavProps {
   missionName: string;
@@ -17,6 +17,12 @@ const icons: Record<MissionView, React.ReactNode> = {
       <path d="M9 3v18" />
     </>
   ),
+  searchers: (
+    <>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6" />
+    </>
+  ),
   timeline: (
     <>
       <path d="M12 3v18" />
@@ -28,10 +34,11 @@ const icons: Record<MissionView, React.ReactNode> = {
 
 const items: { view: MissionView; label: string }[] = [
   { view: 'map', label: 'לוח מבצעי' },
+  { view: 'searchers', label: 'מחפשים' },
   { view: 'timeline', label: 'ציר זמן' },
 ];
 
-/** Mission navigation (Trace Wireframes Cd14 `tcx-nav`): the live map and the Timeline. More screens join as they are built. */
+/** Mission navigation (Trace Wireframes Cd14 `tcx-nav`): the live map, the searcher pool and the Timeline. More screens join as they are built. */
 export function MissionNav({ missionName, view, onNavigate }: MissionNavProps) {
   return (
     <nav aria-label="ניווט מסע" className={styles.nav}>

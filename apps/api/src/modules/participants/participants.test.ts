@@ -45,6 +45,7 @@ describe('participants', () => {
     );
     expect(list.map((p) => p.callsign)).toEqual([4, 9]);
     expect(list[0]).toMatchObject({ name: 'מחפש 4', status: 'available', position: [35.128, 31.775] });
+    expect(list[0]?.phone).toMatch(/^\+9725\d{8}$/);
     expect(list[1]?.position).toBeNull();
   });
 });

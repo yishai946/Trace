@@ -8,17 +8,17 @@ interface MissionLayoutProps {
   onNavigate: (view: MissionView) => void;
   /** The join code panel, under the navigation, when open. */
   joinPanel: ReactNode;
-  /** The Timeline page; nothing on the map view. */
+  /** The searchers or Timeline page; nothing on the map view. */
   children?: ReactNode;
 }
 
 /**
- * The start-side navigation of a mission, and beside it the Timeline page. One element serves both views, so the
+ * The start-side navigation of a mission, and beside it the searchers or Timeline page. One element serves both views, so the
  * navigation is not remounted when the view changes and keyboard focus stays on the link that was activated.
  */
 export function MissionLayout({ missionName, view, onNavigate, joinPanel, children }: MissionLayoutProps) {
   return (
-    <div className={view === 'timeline' ? styles.page : styles.start}>
+    <div className={view === 'map' ? styles.start : styles.page}>
       <div className={styles.startColumn}>
         <MissionNav missionName={missionName} view={view} onNavigate={onNavigate} />
         {joinPanel}

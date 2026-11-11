@@ -2,7 +2,7 @@ import { typography, radius, spacing } from '@trace/design';
 import { OTP_LENGTH } from '@trace/schemas';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatCountdown } from '../../auth';
-import { formatPhone } from '../../auth/phone';
+import { formatPhone } from '@trace/domain';
 import { ltr } from '../../i18n/rtl';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
