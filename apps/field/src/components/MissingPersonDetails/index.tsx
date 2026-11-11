@@ -3,16 +3,10 @@ import type { Mission } from '@trace/schemas';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
-import { formatTime } from '../../mission/missionArea';
+import { formatDateTime } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
 import { MissingPersonPhoto } from '../MissingPersonPhoto';
 import { Screen } from '../Screen';
-
-/** A moment as its date and hour on the searcher's phone, e.g. `3.10, 11:20`. */
-export function formatDateTime(iso: string): string {
-  const date = new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
-  return `${date}, ${formatTime(iso)}`;
-}
 
 export interface MissingPersonDetailsProps {
   mission: Mission;

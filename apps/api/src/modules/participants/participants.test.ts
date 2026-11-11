@@ -250,17 +250,27 @@ describe('what a searcher sees of other searchers (UC-F04, decisions 31, 32)', (
     const polygonId = (polygon.json() as { id: string }).id;
     // Another searcher, assigned and with a known position.
     await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, polygonId, position: [35.131, 31.781] });
-    const searcher = injectAs(ctx, await signInSearcher(ctx));
-    await searcher({ method: 'POST', url: `/api/join/${mission.joinCode}` });
+    // One searcher waits for an assignment, the other is assigned to the same polygon.
+    const waiting = injectAs(ctx, await signInSearcher(ctx));
+    await waiting({ method: 'POST', url: `/api/join/${mission.joinCode}` });
+    const assignedUser = await signInSearcher(ctx);
+    await addParticipant(ctx.db, {
+      missionId: mission.id,
+      callsign: 3,
+      searcherId: assignedUser.searcherId,
+      polygonId,
+    });
 
-    for (const path of ['participants', 'sightings', 'timeline']) {
-      const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}/${path}` });
-      expect(res.statusCode, path).toBe(403);
-    }
-    for (const path of ['', '/polygons', '/lkps']) {
-      const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}${path}` });
-      expect(res.statusCode, path).toBe(200);
-      expect(res.body, path).not.toContain('35.131');
+    for (const searcher of [waiting, injectAs(ctx, assignedUser)]) {
+      for (const path of ['participants', 'sightings', 'timeline']) {
+        const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}/${path}` });
+        expect(res.statusCode, path).toBe(403);
+      }
+      for (const path of ['', '/polygons', '/lkps']) {
+        const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}${path}` });
+        expect(res.statusCode, path).toBe(200);
+        expect(res.body, path).not.toContain('35.131');
+      }
     }
   });
 });
