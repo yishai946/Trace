@@ -7,9 +7,9 @@
 #   run re-checks every open issue.
 # With the PROJECT_TOKEN secret (a token with the `project` and `repo` scopes) it also moves board cards between
 # Backlog (blocked) and Ready, to In progress on assignment, back to Ready when the last assignee leaves, and to In
-# review when a Pull Request that closes the issue opens or leaves draft. A Pull Request merged into dev closes the
-# issues it names with "Closes #N" (GitHub only does that for the default branch) and moves their cards to Done. The scheduled run also copies each card's
-# Priority and Size into `priority: <P>` and `size: <S>` labels, for agents that cannot reach the board (it needs
+# review when a Pull Request that closes the issue opens or leaves draft, and to Done when it is merged. A Pull
+# Request merged into dev also closes the issues it names with "Closes #N" and unblocks their dependents (GitHub
+# itself does that only for the default branch). The scheduled run also copies each card's Priority and Size into `priority: <P>` and `size: <S>` labels, for agents that cannot reach the board (it needs
 # GraphQL, which cloud sessions do not have). Without the secret the board is updated by hand.
 name: Issue dependencies
 
@@ -164,37 +164,44 @@ jobs:
               return setStatus(issue.number, blockers.length > 0 ? 'Backlog' : 'Ready', ['In progress']);
             }
 
-            if (context.eventName === 'issues') {
-              // An issue was closed or reopened: refresh every issue it blocks.
+            /** Refreshes every open issue that the given issue blocks (after it closed or reopened). */
+            async function refreshDependents(issue_number) {
               const dependents = await github.paginate('GET /repos/{owner}/{repo}/issues/{issue_number}/dependencies/blocking', {
-                owner, repo, issue_number: context.payload.issue.number,
+                owner, repo, issue_number,
               });
               for (const dependent of dependents.filter((d) => d.state === 'open')) {
                 if (await refresh(dependent)) {
                   await github.rest.issues.createComment({
                     owner, repo, issue_number: dependent.number,
-                    body: `כל החסמים נסגרו (האחרון: #${context.payload.issue.number}). המשימה מוכנה לעבודה.`,
+                    body: `כל החסמים נסגרו (האחרון: #${issue_number}). המשימה מוכנה לעבודה.`,
                   });
                 }
               }
-              return;
             }
+
+            if (context.eventName === 'issues') return refreshDependents(context.payload.issue.number);
 
             // Pull Request: it must name its issue, and every issue it closes must have no open blockers.
             const pr = context.payload.pull_request;
-            const body = pr.body ?? '';
+            const body = (pr.body ?? '').replace(/<!--[\s\S]*?-->/g, '');
             const closing = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
             const numbers = [...new Set([...body.matchAll(closing)].map((m) => Number(m[1])))];
 
             if (context.payload.action === 'closed') {
               // Merged into dev: GitHub closes "Closes #N" issues only on the default branch, so close them here.
               if (!pr.merged || pr.base.ref !== 'dev') return;
+              // Issues closed with the default token start no workflow run, so unblock the dependents here too.
               for (const n of numbers) {
-                const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: n });
-                if (issue.state !== 'open') continue;
-                await github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' });
-                await github.rest.issues.createComment({ owner, repo, issue_number: n, body: `Closed by #${pr.number}, merged into dev.` });
-                await setStatus(n, 'Done');
+                try {
+                  const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: n });
+                  if (issue.pull_request || issue.state !== 'open') continue;
+                  await github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' });
+                  await github.rest.issues.createComment({ owner, repo, issue_number: n, body: `Closed by #${pr.number}, merged into dev.` });
+                  await setStatus(n, 'Done');
+                  await refreshDependents(n);
+                } catch (error) {
+                  core.setFailed(`Could not close #${n}: ${error.message}`);
+                }
               }
               return;
             }
