@@ -47,4 +47,12 @@ describe('useSession', () => {
     await useSession.getState().signIn('t1');
     expect(useSession.getState().token).toBe('t1');
   });
+
+  it('enters the joined mission with the participation and drops the join link code', () => {
+    const participation = { id: 'p1', callsign: 7, status: 'available' as const, polygonId: null, taskStatus: null };
+    useSession.getState().setPendingJoinCode('K7-4Q2');
+    useSession.getState().enterMission('m1', participation);
+
+    expect(useSession.getState()).toMatchObject({ missionId: 'm1', participation, pendingJoinCode: null });
+  });
 });

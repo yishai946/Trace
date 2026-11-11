@@ -1,7 +1,9 @@
 import { spacing, typography } from '@trace/design';
-import { buildMapStyle, ISRAEL_BOUNDS, maptilerProvider, type MapProvider } from '@trace/map';
+import type { LngLat } from '@trace/geo';
+import { buildMapStyle, ISRAEL_BOUNDS, mapIcons, maptilerProvider, type MapIcon, type MapProvider } from '@trace/map';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import type { MissionArea } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
 
@@ -59,10 +61,25 @@ export function MissionMap({ area }: MissionMapProps) {
     );
   }
 
-  const { Camera, Map } = mapLibre;
+  const { Camera, Map, Marker } = mapLibre;
+  const icons = mapIcons(themeId);
+  // The style's symbol layers need raster images, which MapLibre Native cannot make from the shared SVG symbols.
+  // The few fixed points a searcher sees are drawn as markers from the same SVG instead.
+  const symbol = (id: string, label: string, lngLat: LngLat, icon: MapIcon | undefined) =>
+    icon ? (
+      <Marker key={id} id={id} lngLat={lngLat}>
+        <View accessibilityRole="image" accessibilityLabel={label}>
+          <SvgXml xml={icon.svg} width={icon.size} height={icon.size} />
+        </View>
+      </Marker>
+    ) : null;
   return (
     <Map style={styles.fill} mapStyle={mapStyle} accessibilityLabel="מפת המסע" logo={false} compass={false}>
       <Camera bounds={area.bounds ?? ISRAEL_BOUNDS} padding={framePadding} duration={0} />
+      {area.data.rally ? symbol('rally', 'נקודת כינוס', area.data.rally, icons.rally) : null}
+      {area.data.lkp
+        ? symbol('lkp', `LKP ${area.data.lkp.time ?? ''}`.trim(), area.data.lkp.position, icons.lkp)
+        : null}
     </Map>
   );
 }

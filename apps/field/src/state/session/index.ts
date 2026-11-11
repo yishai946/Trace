@@ -1,3 +1,4 @@
+import type { OwnParticipation } from '@trace/schemas';
 import { create } from 'zustand';
 import { deleteToken, loadToken, saveToken } from './tokenStore';
 
@@ -6,6 +7,10 @@ interface SessionState {
   token: string | null;
   /** The mission the searcher joined (UC-F02); the mission screens show it. */
   missionId: string | null;
+  /** The searcher's participation in that mission, as the server last answered it. */
+  participation: OwnParticipation | null;
+  /** The code of a join link opened before the join screen could show it, e.g. while signed out (UC-F02). */
+  pendingJoinCode: string | null;
   /** True once the token saved on the device was read at launch; the start screen waits for it. */
   restored: boolean;
   /** Reads the token saved on the device. A token set meanwhile by signing in wins. */
@@ -15,6 +20,9 @@ interface SessionState {
   /** Forgets the token and the mission, on the device too. */
   signOut: () => Promise<void>;
   setMissionId: (missionId: string | null) => void;
+  /** Enters the mission the searcher joined. */
+  enterMission: (missionId: string, participation: OwnParticipation) => void;
+  setPendingJoinCode: (code: string | null) => void;
 }
 
 /**
@@ -24,6 +32,8 @@ interface SessionState {
 export const useSession = create<SessionState>()((set) => ({
   token: null,
   missionId: null,
+  participation: null,
+  pendingJoinCode: null,
   restored: false,
   restore: async () => {
     const stored = await loadToken();
@@ -35,7 +45,9 @@ export const useSession = create<SessionState>()((set) => ({
   },
   signOut: async () => {
     await deleteToken();
-    set({ token: null, missionId: null });
+    set({ token: null, missionId: null, participation: null });
   },
-  setMissionId: (missionId) => set({ missionId }),
+  setMissionId: (missionId) => set({ missionId, participation: null }),
+  enterMission: (missionId, participation) => set({ missionId, participation, pendingJoinCode: null }),
+  setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
 }));

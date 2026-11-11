@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ErrorCode } from './errors';
 import { LngLat, PointGeometry } from './geo';
 import { Lkp, Mission } from './missions';
+import { Participant } from './participants';
 import { MissionPolygon } from './polygons';
 import { Sighting } from './sightings';
 import { TimelineEvent } from './timeline';
@@ -58,6 +59,13 @@ const ParticipantMoved = z.object({
   positionAt: z.iso.datetime({ offset: true }),
 });
 
+/** A searcher joined the mission (UC-F02). Only the mission's commander gets it, for the searcher pool (UC-C08). */
+const ParticipantJoined = z.object({
+  type: z.literal('participant.joined'),
+  missionId: z.uuid(),
+  participant: Participant,
+});
+
 /**
  * A sighting was added or decided. Only the mission's commander gets it: searchers' maps show the LKP, not sightings
  * (decisions 31, 32).
@@ -80,6 +88,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   RallyChanged,
   MissionUpdated,
   ParticipantMoved,
+  ParticipantJoined,
   SightingSaved,
   LkpChanged,
   TimelineRecorded,

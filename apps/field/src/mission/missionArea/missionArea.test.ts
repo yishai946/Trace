@@ -1,6 +1,6 @@
 import type { MissionPolygon } from '@trace/schemas';
 import { describe, expect, it } from 'vitest';
-import { toMissionArea } from '.';
+import { formatTime, toMissionArea } from '.';
 
 const polygon = (id: string, ring: [number, number][], overrides: Partial<MissionPolygon> = {}): MissionPolygon => ({
   id,
@@ -47,5 +47,24 @@ describe('toMissionArea', () => {
       ['b', 'פוליגון b', 'completed'],
     ]);
     expect(area.bounds).toEqual([35, 31.69, 35.03, 31.72]);
+  });
+
+  it('adds the LKP and the rally point of the mission and frames them too', () => {
+    const observedAt = '2026-10-03T13:05:00+03:00';
+    const area = toMissionArea([], {
+      lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt },
+      rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
+    });
+
+    expect(area.data.lkp).toEqual({ id: 'lkp', position: [35.137, 31.769], time: formatTime(observedAt) });
+    expect(area.data.rally).toEqual([35.13, 31.78]);
+    expect(area.data.units).toEqual([]);
+    expect(area.bounds).toEqual([35.13, 31.769, 35.137, 31.78]);
+  });
+
+  it('shows the rally point alone while the mission has no LKP', () => {
+    const area = toMissionArea([], { lkp: null, rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] } });
+    expect(area.data.lkp).toBeNull();
+    expect(area.bounds).toEqual([35.13, 31.78, 35.13, 31.78]);
   });
 });

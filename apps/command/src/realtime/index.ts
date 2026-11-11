@@ -73,6 +73,13 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         ),
       );
       return;
+    case 'participant.joined':
+      queryClient.setQueryData<Participant[]>(missionKeys.participants(event.missionId), (list) =>
+        list && !list.some((p) => p.id === event.participant.id)
+          ? [...list, event.participant].sort((a, b) => a.callsign - b.callsign)
+          : list,
+      );
+      return;
     case 'timeline.recorded': {
       const key = missionKeys.timeline(event.missionId);
       // Not cached yet: either the Timeline was never opened, or its first fetch is in flight and may have read the

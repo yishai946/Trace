@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatCallsign } from '.';
+import { formatCallsign, nextCallsign } from '.';
 
 describe('formatCallsign', () => {
   it('pads single digits with a leading zero', () => {
@@ -15,5 +15,17 @@ describe('formatCallsign', () => {
     expect(() => formatCallsign(100)).toThrow(RangeError);
     expect(() => formatCallsign(-1)).toThrow(RangeError);
     expect(() => formatCallsign(3.5)).toThrow(RangeError);
+  });
+});
+
+describe('nextCallsign', () => {
+  it('starts at 01 and fills the lowest gap', () => {
+    expect(nextCallsign([])).toBe(1);
+    expect(nextCallsign([1, 2, 4])).toBe(3);
+    expect(nextCallsign([0, 2])).toBe(1);
+  });
+
+  it('is null once 01 to 99 are taken', () => {
+    expect(nextCallsign(Array.from({ length: 99 }, (_, i) => i + 1))).toBeNull();
   });
 });

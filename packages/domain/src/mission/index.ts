@@ -6,6 +6,11 @@ export function isMissionEnded(status: MissionStatus): boolean {
   return status === 'ended_located' || status === 'ended_stopped';
 }
 
+/** New searchers join only an active mission, not a paused or ended one (UC-F02, decision 82). */
+export function canJoinMission(status: MissionStatus): boolean {
+  return status === 'active';
+}
+
 /** Polygons are created, edited and deleted only while the mission is active (UC-C06). */
 export function canChangePolygons(status: MissionStatus): boolean {
   return status === 'active';

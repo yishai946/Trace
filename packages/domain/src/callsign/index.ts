@@ -8,3 +8,16 @@ export function formatCallsign(callsign: number): string {
   }
   return String(callsign).padStart(2, '0');
 }
+
+/** Callsigns given to searchers who join: `01` to `99`. */
+const FIRST_CALLSIGN = 1;
+const LAST_CALLSIGN = 99;
+
+/** The lowest callsign no searcher in the mission has, or null when all are taken (UC-F02). */
+export function nextCallsign(taken: Iterable<number>): number | null {
+  const used = new Set(taken);
+  for (let callsign = FIRST_CALLSIGN; callsign <= LAST_CALLSIGN; callsign++) {
+    if (!used.has(callsign)) return callsign;
+  }
+  return null;
+}

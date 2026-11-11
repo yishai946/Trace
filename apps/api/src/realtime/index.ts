@@ -44,6 +44,8 @@ function roomsFor(actor: Actor, missionId: string): string[] {
  */
 function audienceOf(event: MissionEvent): string[] {
   if (event.type === 'sighting.saved') return [commanderRoom(event.missionId)];
+  // The searcher pool is the commander's (UC-C08); searchers do not see who else joined.
+  if (event.type === 'participant.joined') return [commanderRoom(event.missionId)];
   // The Timeline is the commander's (UC-C19); searchers do not get it.
   if (event.type === 'timeline.recorded') return [commanderRoom(event.missionId)];
   if (event.type === 'participant.moved') {

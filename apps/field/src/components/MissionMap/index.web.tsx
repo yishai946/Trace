@@ -22,6 +22,10 @@ export function MissionMap({ area }: MissionMapProps) {
       <Text style={[typography.body, { color: color.inkSecondary }]}>
         {area.data.polygons.length ? area.data.polygons.map((p) => p.name).join(', ') : 'אין עדיין פוליגונים במסע'}
       </Text>
+      {area.data.lkp ? (
+        <Text style={[typography.body, { color: color.inkSecondary }]}>{`LKP ${area.data.lkp.time ?? ''}`.trim()}</Text>
+      ) : null}
+      {area.data.rally ? <Text style={[typography.body, { color: color.inkSecondary }]}>נקודת כינוס</Text> : null}
       <Text style={[typography.caption, { color: color.inkMuted }]}>המפה מוצגת באפליקציה ב-Android וב-iOS</Text>
     </View>
   );

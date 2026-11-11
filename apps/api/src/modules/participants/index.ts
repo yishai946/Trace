@@ -1,10 +1,17 @@
-import { ApiError, MissionParams, ParticipantList } from '@trace/schemas';
+import { ApiError, JoinedMission, JoinParams, JoinPreview, MissionParams, ParticipantList } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
-import { missionAccess } from '../../auth/auth.access';
+import { missionAccess, searchersOnly } from '../../auth/auth.access';
+import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
-import { listParticipants } from './participants.service';
+import { forbidden } from '../../errors';
+import type { Realtime } from '../../realtime';
+import { getMission } from '../missions/missions.service';
+import { joinMission, listParticipants, previewJoin } from './participants.service';
 
-export const participantRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db }) => {
+export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (
+  app,
+  { db, realtime },
+) => {
   app.get(
     '/missions/:missionId/participants',
     {
@@ -18,5 +25,57 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, 
       preHandler: missionAccess(db, 'commander'),
     },
     (request) => listParticipants(db, request.params.missionId),
+  );
+
+  app.get(
+    '/join/:code',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: 'Look up the mission of a join code before joining it (UC-F02)',
+        description: 'Searchers only. The code comes from the QR, the join link or is typed by hand (decision 6).',
+        params: JoinParams,
+        response: { 200: JoinPreview, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
+      },
+      preHandler: searchersOnly,
+    },
+    (request) => previewJoin(db, request.params.code),
+  );
+
+  app.post(
+    '/join/:code',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: 'Join the mission of a join code as an available searcher (UC-F02)',
+        description:
+          'Searchers only. 201 with a new participation, waiting for assignment. 200 with the existing participation ' +
+          'when the searcher is already in the mission (decision 69). 409 MISSION_NOT_ACTIVE for a new searcher when ' +
+          'the mission is paused or ended (decision 82); 409 MISSION_FULL when every callsign is taken.',
+        params: JoinParams,
+        response: {
+          200: JoinedMission,
+          201: JoinedMission,
+          400: ApiError,
+          401: ApiError,
+          403: ApiError,
+          404: ApiError,
+          409: ApiError,
+        },
+      },
+      preHandler: searchersOnly,
+    },
+    async (request, reply) => {
+      const actor = actorOf(request);
+      // `searchersOnly` already refused anyone else; this narrows the type.
+      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { searcherId } = actor;
+      const { missionId, participation, created } = await joinMission(db, searcherId, request.params.code);
+      if (created) {
+        const participant = (await listParticipants(db, missionId)).find((p) => p.id === participation.id);
+        if (participant) realtime.publish({ type: 'participant.joined', missionId, participant });
+      }
+      return reply.status(created ? 201 : 200).send({ mission: await getMission(db, missionId), participation });
+    },
   );
 };

@@ -4,10 +4,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { MissionMap } from '../../components/MissionMap';
+import { WaitingForAssignment } from '../../components/WaitingForAssignment';
 import { toMissionArea } from '../../mission/missionArea';
 import { apiBaseUrl } from '../../api';
 import { mapStatus } from '../../mission/mapStatus';
-import { useMissionPolygons } from '../../mission/queries';
+import { useMission, useMissionPolygons } from '../../mission/queries';
 import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
 import { useSession } from '../../state/session';
@@ -20,8 +21,15 @@ export default function MapScreen() {
   const { color } = theme;
   const signedIn = useSession((s) => !!s.token);
   const missionId = useSession((s) => s.missionId);
+  const participation = useSession((s) => s.participation);
+  const mission = useMission();
   const polygons = useMissionPolygons();
-  const area = toMissionArea(polygons.data ?? []);
+  const area = toMissionArea(polygons.data ?? [], mission.data);
+
+  // Fm04: until the commander assigns a polygon, the searcher waits with the mission's basic information (UC-F02).
+  if (mission.data && participation?.status === 'available') {
+    return <WaitingForAssignment mission={mission.data} participation={participation} />;
+  }
 
   const kind = mapStatus({
     apiConfigured: !!apiBaseUrl,
