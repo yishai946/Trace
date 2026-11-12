@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { toMapData } from '.';
-import { lkps, mission, participants, polygonA, polygonB, sightingA, sightingB } from '../fixtures';
+import { lkps, mission, participants, polygonA, polygonB, sightingA, sightingB, sightingC } from '../fixtures';
 
 describe('toMapData', () => {
   const base = {
@@ -41,6 +41,13 @@ describe('toMapData', () => {
     expect(data.sightings).toEqual([
       { id: sightingA.id, position: [35.1412, 31.7745], time: '14:22', label: '1 14:22', suggested: true },
       { id: sightingB.id, position: [35.1441, 31.7712], time: '16:02', label: '2 16:02', suggested: false },
+    ]);
+  });
+
+  it('shows a searcher’s sighting like the commander’s, suggested while it is later than the LKP', () => {
+    const data = toMapData({ ...base, sightings: [sightingC] });
+    expect(data.sightings).toEqual([
+      { id: sightingC.id, position: [35.1412, 31.7745], time: '16:58', label: '3 16:58', suggested: true },
     ]);
   });
 
