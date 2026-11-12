@@ -11,6 +11,7 @@ import { AppState, Platform } from 'react-native';
 import { flushOutbox } from '../outbox';
 import { useSession } from '../state/session';
 import { noteGps } from './gpsStatus';
+import { reportPhotoSender, reportSender } from '../reports/senders';
 import { LOCATION_TASK, recordFixes, trackPointSender } from './locationTask';
 import type { Fix } from './trackPoints';
 
@@ -29,7 +30,7 @@ if (Platform.OS !== 'web') defineTask<{ locations: Fix[] }>(LOCATION_TASK, recei
 
 /**
  * The background task's handler: saves each batch on the device, then sends what waits (UC-S01). A batch the server
- * cannot take now stays in the outbox and goes out on a later trigger (`useTrackSync`).
+ * cannot take now stays in the outbox and goes out on a later trigger (`useOutboxSync`).
  */
 export async function receiveFixes({ data, error }: { data?: { locations: Fix[] }; error: unknown }): Promise<void> {
   // The phone could not get a location (services off, permission revoked): GPS is lost, also with the app in the
@@ -41,7 +42,7 @@ export async function receiveFixes({ data, error }: { data?: { locations: Fix[] 
   if (!data) return;
   // A failed save is not worth crashing the task: the next fix is saved on its own.
   await recordFixes(data.locations).catch(() => undefined);
-  await syncTrack();
+  await syncOutbox();
 }
 
 /**
@@ -57,25 +58,30 @@ async function stopTrackingIfCurrent(endedMissionId: string): Promise<void> {
 
 const trackSender = trackPointSender((missionId) => void stopTrackingIfCurrent(missionId));
 
-/** Sends the track points that wait in the outbox. Never throws: what fails stays queued for the next trigger. */
-export function syncTrack(): Promise<void> {
-  return flushOutbox({ 'track-point': trackSender }).catch(() => undefined);
+/**
+ * Sends what waits in the outbox: track points, field reports and their photos (UC-S03). Never throws: what fails stays
+ * queued for the next trigger.
+ */
+export function syncOutbox(): Promise<void> {
+  return flushOutbox({ 'track-point': trackSender, report: reportSender, 'report-photo': reportPhotoSender }).catch(
+    () => undefined,
+  );
 }
 
 /**
- * Sends waiting track points when there is a reason to try: the session has a token, the phone gets a connection
+ * Sends what waits in the outbox when there is a reason to try: the session has a token, the phone gets a connection
  * again, or the app comes to the foreground. No timer: after each background delivery `receiveFixes` tries too.
  */
-export function useTrackSync(): void {
+export function useOutboxSync(): void {
   const token = useSession((s) => s.token);
   useEffect(() => {
     if (Platform.OS === 'web' || !token) return;
-    void syncTrack();
+    void syncOutbox();
     const network = addNetworkStateListener((state) => {
-      if (state.isConnected && state.isInternetReachable !== false) void syncTrack();
+      if (state.isConnected && state.isInternetReachable !== false) void syncOutbox();
     });
     const appState = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void syncTrack();
+      if (state === 'active') void syncOutbox();
     });
     return () => {
       network.remove();

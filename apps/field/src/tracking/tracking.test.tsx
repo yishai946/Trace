@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { receiveFixes, useLocationTracking, useTrackSync, type LocationTracker } from '.';
+import { receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker } from '.';
 import { pending } from '../outbox';
 import { useSession } from '../state/session';
 
@@ -127,7 +127,7 @@ describe('receiveFixes, the background task', () => {
       return json(200, { stored: 3, duplicates: 0 });
     });
     vi.stubGlobal('fetch', fetch);
-    const { unmount } = renderHook(() => useTrackSync());
+    const { unmount } = renderHook(() => useOutboxSync());
     fetch.mockClear();
 
     await receiveFixes({ data: { locations: locations(1) }, error: null });
@@ -193,7 +193,7 @@ describe('receiveFixes, the background task', () => {
   });
 });
 
-describe('useTrackSync', () => {
+describe('useOutboxSync', () => {
   const session = {
     token: 't1',
     missionId: '00000000-0000-4000-8000-000000000001',
@@ -233,7 +233,7 @@ describe('useTrackSync', () => {
     await leaveOnePoint();
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
     await vi.waitFor(async () => expect(await pending()).toEqual([]));
     expect(fetch).toHaveBeenCalledTimes(1);
   });
@@ -241,7 +241,7 @@ describe('useTrackSync', () => {
   it('sends when the token becomes available', async () => {
     await leaveOnePoint();
     useSession.setState({ token: null });
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
     useSession.setState({ token: 't1' });
@@ -252,7 +252,7 @@ describe('useTrackSync', () => {
     await leaveOnePoint();
     const fetch = vi.fn(async () => Promise.reject(new TypeError('offline')));
     vi.stubGlobal('fetch', fetch);
-    const { unmount } = renderHook(() => useTrackSync());
+    const { unmount } = renderHook(() => useOutboxSync());
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
     await act(async () => {
@@ -281,10 +281,10 @@ describe('useTrackSync', () => {
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
     useSession.setState({ token: null });
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
     platform.OS = 'web';
     useSession.setState({ token: 't1' });
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
 
     expect(fetch).not.toHaveBeenCalled();
     expect(network.listeners.size).toBe(0);
