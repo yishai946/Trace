@@ -1,9 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('expo-crypto', () => ({
-  getRandomValues: <T extends Uint8Array | Uint16Array>(array: T): T => globalThis.crypto.getRandomValues(array),
-}));
-
 // Each test gets a fresh module, so the last-time state of an earlier test does not leak in.
 const load = async () => {
   vi.resetModules();
