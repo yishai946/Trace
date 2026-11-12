@@ -68,6 +68,33 @@ describe('useSession', () => {
     expect(useSession.getState().assignmentNotice).toBeNull();
   });
 
+  it('tracks from the first Start Search until the activity ends, also after a move', () => {
+    const assigned = {
+      id: 'p1',
+      callsign: 7,
+      status: 'assigned' as const,
+      polygonId: 'a',
+      taskStatus: 'ready' as const,
+    };
+    useSession.getState().enterMission('m1', assigned);
+    useSession.getState().updateParticipation(assigned);
+    expect(useSession.getState().tracking).toBe(false);
+
+    useSession.getState().updateParticipation({ ...assigned, taskStatus: 'searching' });
+    useSession.getState().updateParticipation({ ...assigned, polygonId: 'b', taskStatus: 'ready' });
+    expect(useSession.getState().tracking).toBe(true);
+
+    useSession.getState().updateParticipation({ ...assigned, status: 'ended', taskStatus: null });
+    expect(useSession.getState().tracking).toBe(false);
+  });
+
+  it('tracks a paused searcher who joins again, since the search already started', () => {
+    useSession
+      .getState()
+      .enterMission('m1', { id: 'p1', callsign: 7, status: 'assigned', polygonId: 'a', taskStatus: 'paused' });
+    expect(useSession.getState().tracking).toBe(true);
+  });
+
   it('enters the joined mission with the participation and drops the join link code', () => {
     const participation = { id: 'p1', callsign: 7, status: 'available' as const, polygonId: null, taskStatus: null };
     useSession.getState().setPendingJoinCode('K7-4Q2');
