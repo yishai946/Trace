@@ -1,5 +1,7 @@
 import type {
   LkpPoint,
+  Message,
+  MessageRecipient,
   Mission,
   MissionPolygon,
   Participant,
@@ -302,3 +304,78 @@ export const timelineEvents: TimelineEvent[] = [
   eventSamples['polygon.boundary_changed'],
   eventSamples['sos.activated'],
 ];
+
+const recipientOf = (
+  callsign: number,
+  name: string,
+  times: Pick<MessageRecipient, 'deliveredAt' | 'readAt' | 'acknowledgedAt'>,
+): MessageRecipient => ({
+  participantId: `00000000-0000-4000-8000-00000000000${callsign}`,
+  searcherId: `00000000-0000-4000-8000-00000000010${callsign}`,
+  callsign,
+  name,
+  status: times.acknowledgedAt ? 'acknowledged' : times.readAt ? 'read' : 'sent',
+  ...times,
+});
+
+/** A normal message to polygonA at 16:35 Israel time: one recipient read it, the other has not received it. */
+export const messageNormal: Message = {
+  id: '00000000-0000-4000-8000-0000000007a1',
+  missionId: mission.id,
+  urgency: 'normal',
+  body: 'חזרו לכינוס בנקודת הריכוז',
+  target: { kind: 'polygons', polygons: [{ id: polygonA.id, name: polygonA.name }] },
+  sentAt: '2026-10-03T13:35:00.000Z',
+  recipients: [
+    recipientOf(4, 'דנה כהן', {
+      deliveredAt: '2026-10-03T13:35:05.000Z',
+      readAt: '2026-10-03T13:36:00.000Z',
+      acknowledgedAt: null,
+    }),
+    recipientOf(5, 'רון לוי', { deliveredAt: null, readAt: null, acknowledgedAt: null }),
+  ],
+};
+
+/** A critical message to the whole mission at 17:10: acknowledged, read, and delivered but not read. */
+export const messageCritical: Message = {
+  id: '00000000-0000-4000-8000-0000000007b1',
+  missionId: mission.id,
+  urgency: 'critical',
+  body: 'מזג האוויר מתדרדר, יש לצאת מהשטח',
+  target: { kind: 'mission' },
+  sentAt: '2026-10-03T14:10:00.000Z',
+  recipients: [
+    recipientOf(4, 'דנה כהן', {
+      deliveredAt: '2026-10-03T14:10:05.000Z',
+      readAt: '2026-10-03T14:11:00.000Z',
+      acknowledgedAt: '2026-10-03T14:12:00.000Z',
+    }),
+    recipientOf(7, 'אלון שגיא', {
+      deliveredAt: '2026-10-03T14:10:06.000Z',
+      readAt: '2026-10-03T14:13:00.000Z',
+      acknowledgedAt: null,
+    }),
+    recipientOf(9, 'מיכל פרץ', {
+      deliveredAt: '2026-10-03T14:10:07.000Z',
+      readAt: null,
+      acknowledgedAt: null,
+    }),
+  ],
+};
+
+/** A message to one searcher, read. */
+export const messageToOne: Message = {
+  id: '00000000-0000-4000-8000-0000000007c1',
+  missionId: mission.id,
+  urgency: 'important',
+  body: 'בדקו קשר',
+  target: { kind: 'searcher', participantId: '00000000-0000-4000-8000-000000000009', callsign: 9, name: 'מיכל פרץ' },
+  sentAt: '2026-10-03T12:00:00.000Z',
+  recipients: [
+    recipientOf(9, 'מיכל פרץ', {
+      deliveredAt: '2026-10-03T12:00:05.000Z',
+      readAt: '2026-10-03T12:01:00.000Z',
+      acknowledgedAt: null,
+    }),
+  ],
+};
