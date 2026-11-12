@@ -31,7 +31,7 @@ import { PlaceSearch } from '../map/PlaceSearch';
 import type { PlaceMode } from '../map/PlacePicker';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
-import { assignErrorMessage, errorMessage, sightingErrorMessage } from '../mission/errorMessage';
+import { assignErrorMessage, endErrorMessage, errorMessage, sightingErrorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
 import { LkpPanel } from '../mission/LkpPanel';
 import { MissionLayout } from '../mission/MissionLayout';
@@ -40,6 +40,7 @@ import {
   useLkps,
   useMissions,
   useAssign,
+  useEndParticipation,
   useParticipants,
   usePolygonMutations,
   usePolygons,
@@ -165,6 +166,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
   const assign = useAssign(mission?.id ?? '');
+  const endParticipation = useEndParticipation(mission?.id ?? '');
   const sightings = useSightings(mission?.id);
   const lkps = useLkps(mission?.id);
   const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
@@ -333,10 +335,19 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
                   ? (participantId, polygonId) => assign.mutate({ missionId: mission.id, participantId, polygonId })
                   : undefined
               }
-              assigning={assign.isPending}
+              onEnd={
+                operational && !isMissionEnded(mission.status)
+                  ? (participantId) => endParticipation.mutate({ missionId: mission.id, participantId })
+                  : undefined
+              }
+              assigning={assign.isPending || endParticipation.isPending}
               // The mutation outlives a switch of mission: show only this mission's failure.
               assignError={
-                assign.isError && assign.variables?.missionId === mission.id ? assignErrorMessage(assign.error) : null
+                assign.isError && assign.variables?.missionId === mission.id
+                  ? assignErrorMessage(assign.error)
+                  : endParticipation.isError && endParticipation.variables?.missionId === mission.id
+                    ? endErrorMessage(endParticipation.error)
+                    : null
               }
             />
           )}

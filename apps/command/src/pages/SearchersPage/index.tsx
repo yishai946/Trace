@@ -1,6 +1,6 @@
 import { formatPhone } from '@trace/domain';
 import type { MissionPolygon, Participant } from '@trace/schemas';
-import { Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
+import { Dialog, DialogTrigger, Heading, Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
 import styles from './SearchersPage.module.css';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
@@ -14,6 +14,8 @@ export interface SearchersPageProps {
   onRetry: () => void;
   /** Assigns or moves a searcher (UC-C09). Without it, offline or once the mission ended, the menu is disabled. */
   onAssign?: (participantId: string, polygonId: string) => void;
+  /** Ends a searcher's participation (UC-C18), after the commander confirms. Without it the action is disabled. */
+  onEnd?: (participantId: string) => void;
   /** An assignment is being saved: the menus wait, so two quick choices cannot land out of order. */
   assigning?: boolean;
   /** The last assignment failed, in words. */
@@ -43,6 +45,7 @@ export function SearchersPage({
   loadFailed,
   onRetry,
   onAssign,
+  onEnd,
   assigning = false,
   assignError,
 }: SearchersPageProps) {
@@ -90,7 +93,7 @@ export function SearchersPage({
                 <th scope="col">סטטוס</th>
                 <th scope="col">פוליגון</th>
                 <th scope="col">עדכון אחרון</th>
-                <th scope="col">שיבוץ</th>
+                <th scope="col">פעולות</th>
               </tr>
             </thead>
             <tbody>
@@ -121,7 +124,10 @@ export function SearchersPage({
                     )}
                   </td>
                   <td>
-                    <AssignMenu participant={p} polygons={polygons} onAssign={assigning ? undefined : onAssign} />
+                    <span className={styles.actions}>
+                      <AssignMenu participant={p} polygons={polygons} onAssign={assigning ? undefined : onAssign} />
+                      <EndParticipation participant={p} onEnd={assigning ? undefined : onEnd} />
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -166,5 +172,49 @@ function AssignMenu({
         </Menu>
       </Popover>
     </MenuTrigger>
+  );
+}
+
+/** "סיים השתתפות", confirmed in a popover first: the searcher leaves the activity (UC-C18). */
+function EndParticipation({
+  participant,
+  onEnd,
+}: {
+  participant: Participant;
+  onEnd?: (participantId: string) => void;
+}) {
+  return (
+    <DialogTrigger>
+      <Button size="sm" variant="danger-outline" isDisabled={!onEnd} aria-label={`סיים השתתפות של ${participant.name}`}>
+        סיים השתתפות
+      </Button>
+      <Popover className={styles.popover} placement="bottom end">
+        <Dialog className={styles.confirm} aria-label={`אישור סיום השתתפות של ${participant.name}`}>
+          {({ close }) => (
+            <>
+              <Heading slot="title" className={styles.confirmTitle}>
+                לסיים את ההשתתפות של {participant.name}?
+              </Heading>
+              <p className={styles.meta}>המשימה הפעילה תסתיים והמסלול יישמר. המחפש יוכל להצטרף שוב.</p>
+              <span className={styles.actions}>
+                <Button size="sm" onPress={close}>
+                  ביטול
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onPress={() => {
+                    onEnd?.(participant.id);
+                    close();
+                  }}
+                >
+                  סיים השתתפות
+                </Button>
+              </span>
+            </>
+          )}
+        </Dialog>
+      </Popover>
+    </DialogTrigger>
   );
 }

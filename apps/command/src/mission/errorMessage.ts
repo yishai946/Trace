@@ -28,6 +28,16 @@ const ASSIGN_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
   MISSION_ENDED: 'המסע הסתיים. אי אפשר לשבץ.',
 };
 
+const END_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
+  NETWORK_ERROR: 'אין חיבור לשרת. ההשתתפות לא הסתיימה.',
+  NOT_FOUND: 'המחפש כבר לא במסע. רעננו את הרשימה.',
+};
+
+/** A Hebrew message for a failed end of participation (UC-C18). */
+export function endErrorMessage(error: unknown): string {
+  return (error instanceof ApiRequestError && END_MESSAGES[error.code]) || 'ההשתתפות לא הסתיימה. נסו שוב.';
+}
+
 /** A Hebrew message for a failed assignment (UC-C09). */
 export function assignErrorMessage(error: unknown): string {
   return (error instanceof ApiRequestError && ASSIGN_MESSAGES[error.code]) || 'השיבוץ לא נשמר. נסו שוב.';

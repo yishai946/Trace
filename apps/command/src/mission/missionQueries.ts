@@ -143,6 +143,21 @@ export function useAssign(missionId: string) {
   });
 }
 
+/** UC-C18: ends a searcher's participation. The cached pool takes the answer at once. */
+export function useEndParticipation(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ participantId }: { missionId: string; participantId: string }) =>
+      apiRequest(`/missions/${missionId}/participants/${participantId}/end`, { method: 'POST', schema: Participant }),
+    onSuccess: (participant) => {
+      queryClient.setQueryData<Participant[]>(missionKeys.participants(missionId), (list) =>
+        list?.map((p) => (p.id === participant.id ? participant : p)),
+      );
+      return queryClient.invalidateQueries({ queryKey: missionKeys.polygons(missionId) });
+    },
+  });
+}
+
 /** The mission's Timeline, oldest first (UC-C19). A successful realtime join invalidates it, so a reconnect refetches. */
 export function useTimeline(missionId: string | undefined) {
   return useQuery({

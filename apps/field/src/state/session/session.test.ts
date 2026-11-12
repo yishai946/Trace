@@ -88,6 +88,19 @@ describe('useSession', () => {
     expect(useSession.getState().tracking).toBe(false);
   });
 
+  it('notes when the commander ended the participation, and stops tracking', () => {
+    const searching = {
+      id: 'p1',
+      callsign: 7,
+      status: 'assigned' as const,
+      polygonId: 'a',
+      taskStatus: 'searching' as const,
+    };
+    useSession.getState().enterMission('m1', searching);
+    useSession.getState().updateParticipation({ ...searching, status: 'ended', polygonId: null, taskStatus: null });
+    expect(useSession.getState()).toMatchObject({ tracking: false, assignmentNotice: { kind: 'ended' } });
+  });
+
   it('tracks a paused searcher who joins again, since the search already started', () => {
     useSession
       .getState()
