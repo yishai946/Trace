@@ -118,14 +118,20 @@ export async function listParticipants(db: Db, missionId: string): Promise<Parti
       position: asGeoJson(participations.lastPosition),
       positionAt: participations.lastPositionAt,
       gpsUnavailableSince: participations.gpsUnavailableSince,
+      batteryLevel: participations.batteryLevel,
+      batteryMeasuredAt: participations.batteryMeasuredAt,
     })
     .from(participations)
     .innerJoin(searchers, eq(searchers.id, participations.searcherId))
     .where(eq(participations.missionId, missionId))
     .orderBy(asc(participations.callsign));
 
-  return rows.map((row) => ({
+  return rows.map(({ batteryLevel, batteryMeasuredAt, ...row }) => ({
     ...row,
+    battery:
+      batteryLevel === null || batteryMeasuredAt === null
+        ? null
+        : { level: batteryLevel, measuredAt: batteryMeasuredAt.toISOString() },
     position: row.position ? (PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat) : null,
     positionAt: row.positionAt?.toISOString() ?? null,
     gpsUnavailableSince: row.gpsUnavailableSince?.toISOString() ?? null,

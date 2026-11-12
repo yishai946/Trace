@@ -1,9 +1,16 @@
 import { acceptsTrackPoints } from '@trace/domain';
-import type { TrackPointsBody, TrackPointsResult } from '@trace/schemas';
+import {
+  PointGeometry,
+  type ParticipantTrack,
+  type TrackPoint,
+  type TrackPointsBody,
+  type TrackPointsResult,
+} from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
-import { and, eq, isNull, lt, or } from 'drizzle-orm';
+import { and, asc, eq, isNull, lt, or } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Db } from '../../db';
+import { asGeoJson } from '../../db/geometry';
 import { participations, trackPoints } from '../../db/schema';
 import { AppError, notFound } from '../../errors';
 
@@ -12,10 +19,12 @@ import { AppError, notFound } from '../../errors';
  * ahead would otherwise freeze the commander's view of the searcher until real time catches up.
  * shortcut: a fixed technical tolerance, not a spec value; revisit with the Lost Tracking time (decision 44, TBD).
  */
-const CLOCK_SKEW_MS = 2 * 60 * 1000;
+export const CLOCK_SKEW_MS = 2 * 60 * 1000;
 
 export interface RecordTrackResult extends TrackPointsResult {
   participantId: string;
+  /** The points saved now (not the duplicates), as the commander sees them. */
+  storedPoints: TrackPoint[];
   /** A reported GPS loss ended with this batch: the commander's view of the searcher changed. */
   gpsBack: boolean;
   /** The participation's last position after this batch, when the batch moved it forward. */
@@ -54,7 +63,24 @@ export async function recordTrackPoints(
         })),
       )
       .onConflictDoNothing({ target: [trackPoints.participationId, trackPoints.recordedAt] })
-      .returning({ id: trackPoints.id });
+      .returning({ recordedAt: trackPoints.recordedAt });
+
+    const savedAt = new Set(inserted.map((row) => row.recordedAt.getTime()));
+    const seen = new Set<number>();
+    const storedPoints = body.points
+      .filter((p) => {
+        const at = Date.parse(p.recordedAt);
+        if (!savedAt.has(at) || seen.has(at)) return false;
+        seen.add(at);
+        return true;
+      })
+      .map((p) => ({
+        position: p.position,
+        recordedAt: new Date(p.recordedAt).toISOString(),
+        accuracy: p.accuracy,
+        context: p.context,
+      }))
+      .sort((a, b) => Date.parse(a.recordedAt) - Date.parse(b.recordedAt));
 
     const latest = Date.now() + CLOCK_SKEW_MS;
     const current = body.points.filter((p) => Date.parse(p.recordedAt) <= latest);
@@ -63,6 +89,7 @@ export async function recordTrackPoints(
         participantId: participation.id,
         stored: inserted.length,
         duplicates: body.points.length - inserted.length,
+        storedPoints,
         moved: null,
         gpsBack: false,
       };
@@ -91,7 +118,43 @@ export async function recordTrackPoints(
       participantId: participation.id,
       stored: inserted.length,
       duplicates: body.points.length - inserted.length,
+      storedPoints,
       moved: updated ? { position: newest.position as LngLat, positionAt: newestAt.toISOString() } : null,
     };
   });
+}
+
+/**
+ * The searcher's route, oldest point first (UC-C10). Whatever the participation's or the mission's status, the points
+ * already collected stay readable (decision 70). 404 when the participation is not in this mission.
+ * shortcut: not paginated or sampled; the spec sets no sampling rate or route size yet.
+ */
+export async function getTrack(
+  db: Db,
+  { missionId, participantId }: { missionId: string; participantId: string },
+): Promise<ParticipantTrack> {
+  const [participation] = await db
+    .select({ id: participations.id })
+    .from(participations)
+    .where(and(eq(participations.id, participantId), eq(participations.missionId, missionId)));
+  if (!participation) throw notFound('Searcher');
+  const rows = await db
+    .select({
+      position: asGeoJson(trackPoints.position),
+      recordedAt: trackPoints.recordedAt,
+      accuracy: trackPoints.accuracy,
+      context: trackPoints.context,
+    })
+    .from(trackPoints)
+    .where(eq(trackPoints.participationId, participation.id))
+    .orderBy(asc(trackPoints.recordedAt));
+  return {
+    participantId: participation.id,
+    points: rows.map((row) => ({
+      position: PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat,
+      recordedAt: row.recordedAt.toISOString(),
+      accuracy: row.accuracy,
+      context: row.context,
+    })),
+  };
 }

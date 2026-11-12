@@ -415,9 +415,10 @@ describe('realtime', () => {
     ctx.realtime.publish(move2);
     await settle();
 
+    // Positions are the commander's alone (decision 32): not even the searcher who moved gets them back.
     expect(toCommander).toEqual([move1, move2]);
-    expect(to1).toEqual([move1]);
-    expect(to2).toEqual([move2]);
+    expect(to1).toEqual([]);
+    expect(to2).toEqual([]);
 
     // An assignment goes the same way: to the commander and the searcher it concerns (UC-C09).
     const list = await ctx.app.inject({
@@ -435,6 +436,72 @@ describe('realtime', () => {
     expect(toCommander).toEqual([updated]);
     expect(to1).toEqual([updated]);
     expect(to2).toEqual([]);
+  });
+
+  it('sends positions and new route points of an upload to the mission commander only', async () => {
+    const commander = await signInCommander(ctx);
+    const otherCommander = await signInCommander(ctx);
+    const mission = await createMissionAs(commander);
+    const otherMission = await createMissionAs(otherCommander);
+    const searcher1 = await signInSearcher(ctx);
+    const searcher2 = await signInSearcher(ctx);
+    const participant1 = await addParticipant(ctx.db, {
+      missionId: mission.id,
+      callsign: 1,
+      searcherId: searcher1.searcherId,
+    });
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, searcherId: searcher2.searcherId });
+
+    const sockets = [commander, searcher1, searcher2, otherCommander].map(socketFor) as [
+      Client,
+      Client,
+      Client,
+      Client,
+    ];
+    await Promise.all(sockets.map(connect));
+    expect(await join(sockets[0], mission.id)).toEqual({ ok: true });
+    expect(await join(sockets[1], mission.id)).toEqual({ ok: true });
+    expect(await join(sockets[2], mission.id)).toEqual({ ok: true });
+    expect(await join(sockets[3], otherMission.id)).toEqual({ ok: true });
+    const [toCommander, to1, to2, toOther] = sockets.map(record) as [
+      MissionEvent[],
+      MissionEvent[],
+      MissionEvent[],
+      MissionEvent[],
+    ];
+
+    const upload = (points: object[]) =>
+      injectAs(
+        ctx,
+        searcher1,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/track-points`, payload: { points } });
+    const fix = { position: [35.13, 31.78], recordedAt: '2026-10-03T13:01:00+03:00', context: 'search' };
+    expect((await upload([fix])).statusCode).toBe(200);
+    await settle();
+
+    expect(toCommander.map((e) => e.type)).toEqual(['participant.moved', 'participant.tracked']);
+    expect(toCommander[1]).toEqual({
+      type: 'participant.tracked',
+      missionId: mission.id,
+      participantId: participant1,
+      points: [
+        {
+          position: [35.13, 31.78],
+          recordedAt: new Date(fix.recordedAt).toISOString(),
+          accuracy: null,
+          context: 'search',
+        },
+      ],
+    });
+    expect(to1).toEqual([]);
+    expect(to2).toEqual([]);
+    expect(toOther).toEqual([]);
+
+    // The same batch again stores nothing new, so there is nothing new to tell.
+    toCommander.length = 0;
+    expect((await upload([fix])).statusCode).toBe(200);
+    await settle();
+    expect(toCommander).toEqual([]);
   });
 
   it('stops sending events after the client leaves the mission', async () => {
