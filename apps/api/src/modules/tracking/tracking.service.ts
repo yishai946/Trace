@@ -7,6 +7,13 @@ import type { Db } from '../../db';
 import { participations, trackPoints } from '../../db/schema';
 import { AppError, notFound } from '../../errors';
 
+/**
+ * How far past the server's clock a point may be dated and still move the last position. A phone whose clock runs
+ * ahead would otherwise freeze the commander's view of the searcher until real time catches up.
+ * shortcut: a fixed technical tolerance, not a spec value; revisit with the Lost Tracking time (decision 44, TBD).
+ */
+const CLOCK_SKEW_MS = 2 * 60 * 1000;
+
 export interface RecordTrackResult extends TrackPointsResult {
   participantId: string;
   /** The participation's last position after this batch, when the batch moved it forward. */
@@ -16,7 +23,7 @@ export interface RecordTrackResult extends TrackPointsResult {
 /**
  * Saves a batch of the searcher's own GPS points (UC-S01). A point already saved (same participation and recording
  * time) is left as it was, so an upload repeated after a lost connection adds nothing. The newest point becomes the
- * participation's last position, unless a newer one is already there. A searcher whose activity ended sends nothing.
+ * participation's last position, unless a newer one is already there or it is dated in the future. A searcher whose activity ended sends nothing.
  */
 export async function recordTrackPoints(
   db: Db,
@@ -47,7 +54,17 @@ export async function recordTrackPoints(
       .onConflictDoNothing({ target: [trackPoints.participationId, trackPoints.recordedAt] })
       .returning({ id: trackPoints.id });
 
-    const newest = body.points.reduce((a, b) => (Date.parse(b.recordedAt) > Date.parse(a.recordedAt) ? b : a));
+    const latest = Date.now() + CLOCK_SKEW_MS;
+    const current = body.points.filter((p) => Date.parse(p.recordedAt) <= latest);
+    if (current.length === 0) {
+      return {
+        participantId: participation.id,
+        stored: inserted.length,
+        duplicates: body.points.length - inserted.length,
+        moved: null,
+      };
+    }
+    const newest = current.reduce((a, b) => (Date.parse(b.recordedAt) > Date.parse(a.recordedAt) ? b : a));
     const newestAt = new Date(newest.recordedAt);
     const [updated] = await tx
       .update(participations)

@@ -109,6 +109,20 @@ describe('track points (UC-S01)', () => {
     expect(await saved()).toHaveLength(3);
   });
 
+  it('counts one point for the same instant, in one batch or written with another time offset', async () => {
+    const res = await upload([point(1), point(1), { ...point(1), recordedAt: '2026-10-03T10:01:00Z' }]);
+    expect(TrackPointsResult.parse(res.json())).toEqual({ stored: 1, duplicates: 2 });
+  });
+
+  it('keeps a point dated in the future, but does not let it move the last position', async () => {
+    await upload([point(1)]);
+    const future = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    await upload([{ ...point(5), recordedAt: future }]);
+
+    expect(await saved()).toHaveLength(2);
+    expect((await lastPosition())?.position).toEqual([35.131, 31.78]);
+  });
+
   it('refuses points once the activity ended', async () => {
     const ended = await signInSearcher(ctx);
     await addParticipant(ctx.db, { missionId: mission.id, callsign: 5, searcherId: ended.searcherId, status: 'ended' });

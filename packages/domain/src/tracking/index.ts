@@ -7,7 +7,7 @@ import type { ParticipationStatus, TaskStatus } from '../participation';
 export const TRACK_CONTEXTS = ['search', 'safety'] as const;
 export type TrackContext = (typeof TRACK_CONTEXTS)[number];
 
-/** The context of a point recorded now, from the participation's state. */
+/** The context Field gives a point it records now, from the participation's state (the LocationTracker, #75). */
 export function trackContextOf(taskStatus: TaskStatus | null): TrackContext {
   return taskStatus === 'searching' ? 'search' : 'safety';
 }
