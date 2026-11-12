@@ -1,4 +1,9 @@
-import { Button as AriaButton, type ButtonProps as AriaButtonProps } from 'react-aria-components';
+import {
+  Button as AriaButton,
+  Link as AriaLink,
+  type ButtonProps as AriaButtonProps,
+  type LinkProps as AriaLinkProps,
+} from 'react-aria-components';
 import styles from './Button.module.css';
 
 export type ButtonVariant = 'secondary' | 'primary' | 'danger' | 'danger-ghost' | 'danger-outline' | 'icon';
@@ -13,9 +18,29 @@ export interface ButtonProps extends AriaButtonProps {
   size?: 'md' | 'sm' | 'lg';
 }
 
-export function Button({ variant = 'secondary', size = 'md', className, ...props }: ButtonProps) {
-  const classes = [styles.button, styles[variant], size === 'sm' && styles.sm, size === 'lg' && styles.lg, className]
+interface LookProps {
+  variant?: ButtonVariant;
+  size?: 'md' | 'sm' | 'lg';
+  className?: string;
+}
+
+function buttonClasses({ variant = 'secondary', size = 'md', className }: LookProps) {
+  return [styles.button, styles[variant], size === 'sm' && styles.sm, size === 'lg' && styles.lg, className]
     .filter(Boolean)
     .join(' ');
-  return <AriaButton {...props} className={classes} />;
+}
+
+export function Button({ variant, size, className, ...props }: ButtonProps) {
+  return <AriaButton {...props} className={buttonClasses({ variant, size, className: className as string })} />;
+}
+
+export interface LinkButtonProps extends Omit<AriaLinkProps, 'className'> {
+  variant?: ButtonVariant;
+  size?: 'md' | 'sm' | 'lg';
+  className?: string;
+}
+
+/** A link that looks like a Button, for navigation such as `tel:`. Without an `href` it is disabled. */
+export function LinkButton({ variant, size, className, ...props }: LinkButtonProps) {
+  return <AriaLink {...props} className={buttonClasses({ variant, size, className })} />;
 }
