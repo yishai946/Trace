@@ -1,6 +1,10 @@
+import { useId } from 'react';
 import { telHref } from '@trace/domain';
 import { LinkButton } from '../Button';
 import { PhoneIcon } from '../icons';
+import styles from './CallButton.module.css';
+
+const NO_PHONE_REASON = 'אין מספר טלפון למחפש';
 
 export interface CallButtonProps {
   /** The searcher's number in E.164, as `Participant.phone`. */
@@ -17,17 +21,29 @@ export interface CallButtonProps {
  */
 export function CallButton({ phone, name, display = 'label' }: CallButtonProps) {
   const href = telHref(phone);
+  const reasonId = useId();
   const button = (
     <LinkButton
       variant={display === 'icon' ? 'icon' : 'primary'}
       href={href ?? undefined}
       isDisabled={href === null}
+      aria-describedby={href === null ? reasonId : undefined}
       aria-label={`התקשר ל${name}`}
     >
       <PhoneIcon />
       {display === 'label' ? 'התקשר' : null}
     </LinkButton>
   );
-  // React Aria's Link does not pass `title` to the anchor, so the reason sits on a wrapper.
-  return href === null ? <span title="אין מספר טלפון למחפש">{button}</span> : button;
+  // React Aria's Link does not pass `title` to the anchor, so the reason sits on a wrapper for mouse users,
+  // and in a visually hidden element that the link points to for keyboard and screen reader users.
+  return href === null ? (
+    <span title={NO_PHONE_REASON}>
+      {button}
+      <span id={reasonId} className={styles.reason}>
+        {NO_PHONE_REASON}
+      </span>
+    </span>
+  ) : (
+    button
+  );
 }

@@ -53,6 +53,18 @@ describe('CallButton', () => {
     expect(link.closest('[title]')?.getAttribute('title')).toBe(NO_PHONE);
   });
 
+  it('describes why the call is disabled to assistive technology', () => {
+    render(<CallButton phone="" name="דנה כהן" />);
+    const link = screen.getByRole('link', { name: 'התקשר לדנה כהן' });
+    expect(link).toHaveAccessibleDescription(NO_PHONE);
+  });
+
+  it('has no description when the call is enabled', () => {
+    render(<CallButton phone="+972526114085" name="דנה כהן" />);
+    const link = screen.getByRole('link', { name: 'התקשר לדנה כהן' });
+    expect(link.getAttribute('aria-describedby')).toBeNull();
+  });
+
   it('is enabled with a number', () => {
     render(<CallButton phone="+972526114085" name="דנה כהן" />);
     const link = screen.getByRole('link', { name: 'התקשר לדנה כהן' });
