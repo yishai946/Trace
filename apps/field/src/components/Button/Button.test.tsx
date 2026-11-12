@@ -32,3 +32,10 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'שלח קוד חדש' })).toHaveStyle({ borderColor: 'rgba(0, 0, 0, 0)' });
   });
 });
+
+describe('Button trailing word', () => {
+  it('shows a quiet word at the end, as part of the button', () => {
+    render(<Button label="צרף תמונה" trailing="אופציונלי" />, { wrapper: ThemeProvider });
+    expect(screen.getByRole('button', { name: 'צרף תמונה' })).toHaveTextContent('אופציונלי');
+  });
+});

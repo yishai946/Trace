@@ -1,4 +1,4 @@
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { pendingTokens } from '../theme/pending';
 
 /** Line icons drawn in the Trace Wireframes; the design system has no icon library yet. */
@@ -39,6 +39,27 @@ const icons = {
     </>
   ),
   close: <Path d="M6 6l12 12M18 6 6 18" />,
+  camera: (
+    <>
+      <Path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+      <Circle cx={12} cy={13} r={3.5} />
+    </>
+  ),
+  hazard: (
+    <>
+      <Path d="M12 3l10 18H2z" />
+      <Path d="M12 10v5M12 18h.01" />
+    </>
+  ),
+  lock: (
+    <>
+      <Rect x={5} y={11} width={14} height={9} rx={2} />
+      <Path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  flag: <Path d="M6 21V4M6 4h11l-2.5 4L17 12H6" />,
+  wifiOff: <Path d="M2 8a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 20h.01M3 3l18 18" />,
+  send: <Path d="m3 11 18-8-8 18-2-8z" />,
 } as const;
 
 export type IconName = keyof typeof icons;

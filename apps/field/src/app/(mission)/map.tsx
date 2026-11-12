@@ -3,16 +3,19 @@ import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
+import { PendingReports } from '../../components/PendingReports';
 import { MissionMap } from '../../components/MissionMap';
 import { ActivityEnded } from '../../components/ActivityEnded';
 import { AssignedTask } from '../../components/AssignedTask';
 import { WaitingForAssignment } from '../../components/WaitingForAssignment';
+import { mapWarning } from '../../mission/mapWarning';
 import { toMissionArea } from '../../mission/missionArea';
 import { apiBaseUrl } from '../../api';
 import { mapStatus } from '../../mission/mapStatus';
 import { useMission, useMissionPolygons } from '../../mission/queries';
 import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
+import { usePendingReports } from '../../reports/usePendingReports';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
 
@@ -27,6 +30,7 @@ export default function MapScreen() {
   const notice = useSession((s) => s.assignmentNotice);
   const gpsLost = useSession((s) => s.gpsAvailable === false);
   const dismissNotice = useSession((s) => s.dismissAssignmentNotice);
+  const pendingReports = usePendingReports(missionId);
   const mission = useMission();
   const polygons = useMissionPolygons();
   const assigned = participation?.status === 'assigned' ? participation : null;
@@ -63,9 +67,7 @@ export default function MapScreen() {
     isFetching: polygons.isFetching,
     hasData: !!polygons.data,
   });
-  const gpsWarning = gpsLost
-    ? { text: 'ה-GPS לא זמין: המסלול לא נרשם. הפעל את שירותי המיקום בטלפון.', action: null }
-    : null;
+  const warning = mapWarning({ gpsLost, locatedWaiting: pendingReports.located });
   const status = kind
     ? {
         'no-api': { text: 'כתובת השרת לא מוגדרת: חסר EXPO_PUBLIC_API_URL', action: null },
@@ -85,8 +87,8 @@ export default function MapScreen() {
       }[kind]
     : null;
 
-  // The GPS warning shows when nothing more urgent does.
-  const banner = status ?? gpsWarning;
+  // The warnings show when nothing more urgent does.
+  const banner = status ?? warning;
 
   return (
     <View style={styles.fill}>
@@ -99,7 +101,7 @@ export default function MapScreen() {
               styles.banner,
               {
                 backgroundColor: color.surface,
-                // A lost GPS is a warning (decision 42); the other notices are neutral.
+                // A lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
                 borderColor: status ? color.border : color.warning,
                 boxShadow: theme.shadow.shadowPanel,
               },
@@ -124,6 +126,7 @@ export default function MapScreen() {
             onDismissNotice={dismissNotice}
           />
         ) : null}
+        <PendingReports missionId={missionId} />
         <Button
           label="דיווח"
           // One primary action per area: Start Search while assigned.

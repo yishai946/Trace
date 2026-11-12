@@ -14,6 +14,8 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   /** Full width of its section (`.tc-btn--block`). */
   block?: boolean;
   icon?: IconName;
+  /** A quiet word at the end of the button, such as "אופציונלי" (wireframe `.tcx-meta`). */
+  trailing?: string;
 }
 
 /** Trace Console Button for React Native. At least 44px high: the mobile touch target. */
@@ -23,6 +25,7 @@ export function Button({
   size = 'md',
   block = false,
   icon,
+  trailing,
   disabled,
   accessibilityLabel,
   ...props
@@ -60,6 +63,7 @@ export function Button({
     >
       {icon ? <Icon name={icon} color={ink} large={size === 'lg'} /> : null}
       <Text style={[quiet ? typography.body : typography.bodyStrong, { color: ink }]}>{label}</Text>
+      {trailing ? <Text style={[typography.meta, styles.trailing, { color: color.inkMuted }]}>{trailing}</Text> : null}
     </Pressable>
   );
 }
@@ -77,4 +81,6 @@ const styles = StyleSheet.create({
   },
   lg: { minHeight: pendingTokens.controlHLg, paddingHorizontal: spacing.space7 },
   block: { alignSelf: 'stretch' },
+  // Pushes the word to the end of the button, away from the label.
+  trailing: { marginStart: 'auto' },
 });
