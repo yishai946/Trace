@@ -1,4 +1,4 @@
-import { canJoinMission, isMissionEnded, nextCallsign } from '@trace/domain';
+import { acceptsTrackPoints, canJoinMission, isMissionEnded, nextCallsign } from '@trace/domain';
 import { PointGeometry, type JoinPreview, type OwnParticipation, type Participant } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
 import { and, asc, eq, isNull } from 'drizzle-orm';
@@ -6,6 +6,7 @@ import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { assignments, missions, participations, polygons, searchers } from '../../db/schema';
 import { AppError, notFound } from '../../errors';
+import { CLOCK_SKEW_MS } from '../tracking/tracking.service';
 
 /** The mission behind a join code, as shown before the searcher confirms (UC-F02). 404 for a code no mission has. */
 export async function previewJoin(db: Db, code: string): Promise<JoinPreview> {
@@ -260,4 +261,41 @@ export async function setGpsStatus(
     .set({ gpsUnavailableSince: input.available ? null : new Date() })
     .where(eq(participations.id, participation.id));
   return (await listParticipants(db, input.missionId)).find((p) => p.id === participation.id) ?? null;
+}
+
+/**
+ * Records the phone's battery (UC-C10, decision 13). The newest reading wins, whatever order uploads arrive in; one
+ * dated past the clock-skew tolerance is ignored, like a track point. Returns the participant only when the stored
+ * reading changed. 409 once the searcher's activity ended.
+ */
+export async function setBattery(
+  db: Db,
+  input: { missionId: string; searcherId: string; level: number; measuredAt: string },
+): Promise<Participant | null> {
+  const measuredAt = new Date(input.measuredAt);
+  const participationId = await db.transaction(async (tx) => {
+    const [participation] = await tx
+      .select({
+        id: participations.id,
+        status: participations.status,
+        level: participations.batteryLevel,
+        measuredAt: participations.batteryMeasuredAt,
+      })
+      .from(participations)
+      .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)))
+      .for('update');
+    if (!participation) throw notFound('Mission');
+    if (!acceptsTrackPoints(participation.status)) {
+      throw new AppError(409, 'PARTICIPATION_ENDED', 'The activity in this mission has ended');
+    }
+    if (measuredAt.getTime() > Date.now() + CLOCK_SKEW_MS) return null;
+    if (participation.measuredAt && participation.measuredAt.getTime() >= measuredAt.getTime()) return null;
+    await tx
+      .update(participations)
+      .set({ batteryLevel: input.level, batteryMeasuredAt: measuredAt })
+      .where(eq(participations.id, participation.id));
+    return participation.id;
+  });
+  if (!participationId) return null;
+  return (await listParticipants(db, input.missionId)).find((p) => p.id === participationId) ?? null;
 }
