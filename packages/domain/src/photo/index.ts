@@ -21,3 +21,14 @@ export function detectPhotoType(bytes: Uint8Array): PhotoType | null {
 export function isPhotoType(type: string): type is PhotoType {
   return (PHOTO_TYPES as readonly string[]).includes(type);
 }
+
+/** The long side of a photo after shrinking: sharp on a phone screen, a few hundred KB as JPEG. */
+export const PHOTO_MAX_SIDE = 1600;
+/** The JPEG quality a shrunk photo is encoded with. */
+export const PHOTO_JPEG_QUALITY = 0.85;
+
+/** The size that fits `width`×`height` inside `maxSide` on its long side, keeping the ratio. Never enlarges. */
+export function fitWithin(width: number, height: number, maxSide = PHOTO_MAX_SIDE): { width: number; height: number } {
+  const scale = Math.min(1, maxSide / Math.max(width, height));
+  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
+}
