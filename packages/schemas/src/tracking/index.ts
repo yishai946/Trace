@@ -31,6 +31,23 @@ export const TrackPointsResult = z
   })
   .meta({ id: 'TrackPointsResult' });
 
+/** One stored GPS fix of a searcher, as the commander sees it on the route. */
+export const TrackPoint = z
+  .object({
+    position: LngLat,
+    recordedAt: z.iso.datetime({ offset: true }),
+    accuracy: z.number().nullable(),
+    context: TrackContext,
+  })
+  .meta({ id: 'TrackPoint' });
+
+/** GET /missions/:id/participants/:participantId/track: the searcher's route, oldest point first. */
+export const ParticipantTrack = z
+  .object({ participantId: z.uuid(), points: z.array(TrackPoint) })
+  .meta({ id: 'ParticipantTrack' });
+
+export type TrackPoint = z.infer<typeof TrackPoint>;
+export type ParticipantTrack = z.infer<typeof ParticipantTrack>;
 export type TrackPointInput = z.input<typeof TrackPointInput>;
 export type TrackPointsBody = z.input<typeof TrackPointsBody>;
 export type TrackPointsResult = z.infer<typeof TrackPointsResult>;
