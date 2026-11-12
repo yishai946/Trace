@@ -85,6 +85,13 @@
       "when": 1794450185586,
       "tag": "0011_gps_unavailable",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794466127468,
+      "tag": "0012_searcher_live_state",
+      "breakpoints": true
     }
   ]
 }
