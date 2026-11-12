@@ -64,7 +64,12 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('participant', 'אלון שגיא', 7),
     details: {},
   },
-  'sos.activated': { type: 'sos.activated', actor: searcher, subject: subject('sos', null), details: {} },
+  'sos.activated': {
+    type: 'sos.activated',
+    actor: searcher,
+    subject: subject('sos', null),
+    details: { message: null },
+  },
 };
 
 const event = (sample: unknown) => ({ id: ID, missionId: OTHER_ID, occurredAt: AT, ...(sample as object) });

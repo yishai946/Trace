@@ -295,7 +295,7 @@ describe('timeline', () => {
           actor: bySearcher,
           type: 'sos.activated',
           subject: subject('sos', null),
-          details: {},
+          details: { message: null },
         },
       };
 

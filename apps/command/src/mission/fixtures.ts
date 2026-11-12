@@ -290,7 +290,7 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     type: 'sos.activated',
     actor: searcher07,
     subject: subjectOf('sos', 'חורשת אורנים'),
-    details: {},
+    details: { message: 'נפלתי, כאב ברגל' },
   },
 };
 
