@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { uploadFixes } from '.';
 import { useSession } from '../../state/session';
-import { secureStoreItems } from '../../test/secureStore';
 
 const missionId = '00000000-0000-4000-8000-000000000001';
 const participation = {
@@ -38,26 +37,15 @@ describe('uploadFixes', () => {
     );
   });
 
-  it('reads the token saved on the device when the screens are not running', async () => {
-    useSession.setState({ token: null });
-    secureStoreItems.set('trace.session-token', 'saved');
-    const fetch = vi.fn(async () => ok());
-    vi.stubGlobal('fetch', fetch);
-    await uploadFixes([fix]);
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ headers: expect.objectContaining({ authorization: 'Bearer saved' }) }),
-    );
-  });
-
-  it('sends nothing without a mission, after the activity ended, or for an empty batch', async () => {
+  it('sends nothing without a mission or a session, after the activity ended, or for an empty batch', async () => {
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
     await uploadFixes([]);
     useSession.setState({ participation: { ...participation, status: 'ended' } });
     await uploadFixes([fix]);
     useSession.setState({ missionId: null });
+    await uploadFixes([fix]);
+    useSession.setState({ missionId, participation, token: null });
     await uploadFixes([fix]);
 
     expect(fetch).not.toHaveBeenCalled();

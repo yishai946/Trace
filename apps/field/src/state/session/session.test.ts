@@ -88,6 +88,13 @@ describe('useSession', () => {
     expect(useSession.getState().tracking).toBe(false);
   });
 
+  it('tracks a paused searcher who joins again, since the search already started', () => {
+    useSession
+      .getState()
+      .enterMission('m1', { id: 'p1', callsign: 7, status: 'assigned', polygonId: 'a', taskStatus: 'paused' });
+    expect(useSession.getState().tracking).toBe(true);
+  });
+
   it('enters the joined mission with the participation and drops the join link code', () => {
     const participation = { id: 'p1', callsign: 7, status: 'available' as const, polygonId: null, taskStatus: null };
     useSession.getState().setPendingJoinCode('K7-4Q2');

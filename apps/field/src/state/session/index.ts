@@ -40,6 +40,11 @@ export interface AssignmentNotice {
   polygonId: string;
 }
 
+/** A search that started (searching, paused or finished) is tracked until the activity ends (decision 20). */
+function isTracking(participation: OwnParticipation): boolean {
+  return participation.status !== 'ended' && participation.taskStatus !== null && participation.taskStatus !== 'ready';
+}
+
 /**
  * Who the searcher is and which mission they are in. Signing in saves the token on the device (UC-F01), so
  * reopening the app does not ask to sign in again.
@@ -65,7 +70,8 @@ export const useSession = create<SessionState>()((set) => ({
     set({ token: null, missionId: null, participation: null, tracking: false, assignmentNotice: null });
   },
   setMissionId: (missionId) => set({ missionId, participation: null, tracking: false, assignmentNotice: null }),
-  enterMission: (missionId, participation) => set({ missionId, participation, pendingJoinCode: null }),
+  enterMission: (missionId, participation) =>
+    set({ missionId, participation, tracking: isTracking(participation), pendingJoinCode: null }),
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
   updateParticipation: (participation) =>
     set((s) => {
@@ -75,7 +81,7 @@ export const useSession = create<SessionState>()((set) => ({
         changed && participation.polygonId
           ? { kind: before?.status === 'assigned' ? 'moved' : 'assigned', polygonId: participation.polygonId }
           : s.assignmentNotice;
-      const tracking = participation.status !== 'ended' && (s.tracking || participation.taskStatus === 'searching');
+      const tracking = isTracking(participation) || (s.tracking && participation.status !== 'ended');
       return { participation, tracking, assignmentNotice: notice };
     }),
   dismissAssignmentNotice: () => set({ assignmentNotice: null }),

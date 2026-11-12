@@ -7,6 +7,7 @@ import {
 import { defineTask } from 'expo-task-manager';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { ApiRequestError } from '../api';
 import { useSession } from '../state/session';
 import { LOCATION_TASK, uploadFixes } from './locationTask';
 import type { Fix } from './trackPoints';
@@ -22,16 +23,29 @@ export interface LocationTracker {
 
 // The task must be defined when the bundle loads, outside any component: the phone may start the app in the
 // background to deliver fixes, with no screen mounted (expo-task-manager).
-if (Platform.OS !== 'web') {
-  defineTask<{ locations: Fix[] }>(LOCATION_TASK, async ({ data, error }) => {
-    if (error || !data) return;
-    await uploadFixes(data.locations).catch(() => undefined);
-  });
+if (Platform.OS !== 'web') defineTask<{ locations: Fix[] }>(LOCATION_TASK, receiveFixes);
+
+/**
+ * The background task's handler: uploads each batch. When the server says the activity ended (it may have while the
+ * socket was down), the phone stops tracking instead of sampling GPS for nothing.
+ */
+export async function receiveFixes({ data, error }: { data?: { locations: Fix[] }; error: unknown }): Promise<void> {
+  if (error || !data) return;
+  try {
+    await uploadFixes(data.locations);
+  } catch (failure) {
+    if (failure instanceof ApiRequestError && failure.code === 'PARTICIPATION_ENDED') {
+      const { participation, updateParticipation } = useSession.getState();
+      if (participation) updateParticipation({ ...participation, status: 'ended', taskStatus: null });
+      await expoLocationTracker.stop().catch(() => undefined);
+    }
+  }
 }
 
 /**
  * Background GPS through expo-location. Intervals are left to the phone: the sampling rate is TBD in the spec
- * (UC-S01). The accuracy is the one a search needs (about 10 m).
+ * (UC-S01). shortcut: `Accuracy.High` is a provisional choice; on Android it also sets the default intervals, so
+ * revisit it with the sampling rate.
  */
 export const expoLocationTracker: LocationTracker = {
   start: () =>
@@ -42,6 +56,8 @@ export const expoLocationTracker: LocationTracker = {
       foregroundService: {
         notificationTitle: 'TRACE רושמת את המסלול שלך',
         notificationBody: 'המיקום נשלח למנהל המסע עד סיום הפעילות.',
+        // A force-close ends tracking with the app (UC-S01 allows it); the commander then sees the last update.
+        killServiceOnDestroy: true,
       },
     }),
   stop: async () => {
