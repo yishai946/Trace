@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { newReportId, submitReport } from '.';
+import { REQUEST_TIMEOUT_MS } from '../../api';
+import { syncOutbox } from '../../tracking';
 import { pending } from '../../outbox';
 import { useSession } from '../../state/session';
 
@@ -36,7 +38,10 @@ beforeEach(() => {
   network.state = { isConnected: true, isInternetReachable: true };
   useSession.setState({ ...useSession.getInitialState(), token: 't1', missionId });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('submitReport', () => {
   it('without a connection keeps the report and its photo, the photo after the report, and does not call the server', async () => {
@@ -91,6 +96,30 @@ describe('submitReport', () => {
     const r = report();
 
     await expect(submitReport({ missionId, report: r, photo: null })).resolves.toBe('rejected');
+    expect(await pending()).toEqual([]);
+  });
+
+  it('falls back to pending when the server stalls, and the next flush is not blocked', async () => {
+    vi.useFakeTimers();
+    const r = report();
+    const stalled = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) =>
+          init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))),
+        ),
+    );
+    vi.stubGlobal('fetch', stalled);
+
+    const result = submitReport({ missionId, report: r, photo: null });
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+    await expect(result).resolves.toBe('pending');
+    expect((await pending()).map((i) => i.id)).toEqual([r.id]);
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(201, saved(r))),
+    );
+    await syncOutbox();
     expect(await pending()).toEqual([]);
   });
 });

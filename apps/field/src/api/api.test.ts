@@ -1,11 +1,14 @@
 import { MissionPolygonList } from '@trace/schemas';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { apiRequest, ApiRequestError } from '.';
+import { apiRequest, ApiRequestError, REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS } from '.';
 
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('apiRequest', () => {
   it('calls the API with the searcher token and validates the response', async () => {
@@ -97,5 +100,53 @@ describe('apiRequest', () => {
       code: 'NETWORK_ERROR',
       message: 'EXPO_PUBLIC_API_URL is not set',
     });
+  });
+
+  /** A fetch that never answers but rejects when it is aborted, as the real one does. */
+  const stalled = () =>
+    vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) =>
+          init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))),
+        ),
+    );
+
+  it('turns a stalled request into a network error after the timeout', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', stalled());
+
+    const result = apiRequest('/x', { baseUrl: 'https://api.test', token: null }).catch((e) => e);
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+    expect(await result).toMatchObject({ status: 0, code: 'NETWORK_ERROR' });
+  });
+
+  it('gives an upload more time than a plain request', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', stalled());
+
+    const result = apiRequest('/x', {
+      baseUrl: 'https://api.test',
+      token: null,
+      method: 'PUT',
+      upload: { contentType: 'image/jpeg', data: new Uint8Array([1]) },
+    }).catch((e) => e);
+    await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
+    let settled = false;
+    void result.then(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(UPLOAD_TIMEOUT_MS - REQUEST_TIMEOUT_MS);
+    expect(await result).toMatchObject({ code: 'NETWORK_ERROR' });
+  });
+
+  it('keeps the caller abort as an abort, not a network error', async () => {
+    vi.stubGlobal('fetch', stalled());
+    const controller = new AbortController();
+
+    const result = apiRequest('/x', { baseUrl: 'https://api.test', token: null, signal: controller.signal }).catch(
+      (e) => e,
+    );
+    controller.abort();
+    expect(await result).not.toBeInstanceOf(ApiRequestError);
   });
 });
