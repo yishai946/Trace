@@ -12,6 +12,7 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
+import { forbidden } from '../../errors';
 import type { Db } from '../../db';
 import type { Realtime } from '../../realtime';
 import { createSighting, decideLkp, listLkps, listSightings } from './sightings.service';
@@ -36,19 +37,38 @@ export const sightingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
     {
       schema: {
         tags: ['sightings'],
-        summary: 'Add a sighting (UC-C04)',
-        description: 'A sighting never becomes the LKP by itself. `lkpCandidate` tells whether TRACE suggests it.',
+        summary: 'Add a sighting (UC-C04, UC-F10)',
+        description:
+          'The mission’s commander or a searcher who still takes part in it. A sighting never becomes the LKP by ' +
+          'itself; `lkpCandidate` tells whether TRACE suggests it. Sending the same `id` again returns the saved ' +
+          'sighting with 200. Returns 409 MISSION_ENDED, PARTICIPATION_ENDED or SIGHTING_ID_TAKEN (the id belongs ' +
+          'to another reporter or mission).',
         params: MissionParams,
         body: CreateSightingBody,
-        response: { 201: Sighting, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+        response: {
+          200: Sighting,
+          201: Sighting,
+          400: ApiError,
+          401: ApiError,
+          403: ApiError,
+          404: ApiError,
+          409: ApiError,
+        },
       },
-      preHandler: missionAccess(db, 'commander'),
+      preHandler: missionAccess(db, 'member'),
     },
     async (request, reply) => {
       const { missionId } = request.params;
-      const sighting = await createSighting(db, { ...request.body, missionId, reportedBy: actorOf(request).userId });
-      realtime.publish({ type: 'sighting.saved', missionId, sighting });
-      return reply.status(201).send(sighting);
+      const actor = actorOf(request);
+      if (actor.role === 'searcher' && actor.searcherId === null) throw forbidden();
+      const { sighting, created } = await createSighting(db, {
+        ...request.body,
+        missionId,
+        reportedBy: actor.userId,
+        searcherId: actor.role === 'searcher' ? actor.searcherId : null,
+      });
+      if (created) realtime.publish({ type: 'sighting.saved', missionId, sighting });
+      return reply.status(created ? 201 : 200).send(sighting);
     },
   );
 

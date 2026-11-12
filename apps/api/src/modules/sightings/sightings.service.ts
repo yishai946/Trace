@@ -1,4 +1,4 @@
-import { canChangeLkp, isLkpCandidate } from '@trace/domain';
+import { canChangeLkp, canReportSighting, isLkpCandidate } from '@trace/domain';
 import {
   PointGeometry,
   type CreateSightingBody,
@@ -16,7 +16,12 @@ import { lkpPoints, missions, participations, searchers, sightings, users } from
 import { AppError, notFound } from '../../errors';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
-export type CreateSightingInput = z.output<typeof CreateSightingBody> & { missionId: string; reportedBy: string };
+export type CreateSightingInput = z.output<typeof CreateSightingBody> & {
+  missionId: string;
+  reportedBy: string;
+  /** The reporting searcher's profile; null when the commander reports. */
+  searcherId: string | null;
+};
 
 interface CurrentLkp {
   position: string;
@@ -124,13 +129,32 @@ async function findSighting(tx: Tx, missionId: string, sightingId: string): Prom
   return row;
 }
 
-/** Adds a sighting (UC-C04). It shows on the map at once and never becomes the LKP by itself (decision 59). */
-export async function createSighting(db: Db, input: CreateSightingInput): Promise<Sighting> {
+/**
+ * Adds a sighting (UC-C04 by the commander, UC-F10 by a searcher). It shows on the map at once and never becomes the
+ * LKP by itself (decision 59). A searcher must still take part in the mission (not ended). The phone makes the id, so
+ * the same id again from the same reporter and mission returns the saved sighting with `created: false`; an id that
+ * belongs to another reporter or mission is refused.
+ */
+export async function createSighting(
+  db: Db,
+  input: CreateSightingInput,
+): Promise<{ sighting: Sighting; created: boolean }> {
   return db.transaction(async (tx) => {
     await lockMission(tx, input.missionId);
-    const [created] = await tx
+    if (input.searcherId !== null) {
+      const [participation] = await tx
+        .select({ status: participations.status })
+        .from(participations)
+        .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)));
+      if (!participation) throw notFound('Mission');
+      if (!canReportSighting(participation.status)) {
+        throw new AppError(409, 'PARTICIPATION_ENDED', 'The activity in this mission has ended');
+      }
+    }
+    const [inserted] = await tx
       .insert(sightings)
       .values({
+        id: input.id,
         missionId: input.missionId,
         reportedBy: input.reportedBy,
         source: input.source,
@@ -139,10 +163,23 @@ export async function createSighting(db: Db, input: CreateSightingInput): Promis
         description: input.description,
         createdAt: lockedAt,
       })
+      .onConflictDoNothing({ target: sightings.id })
       .returning({ id: sightings.id });
-    if (!created) throw new Error('Sighting insert returned no row');
-    const row = await findSighting(tx, input.missionId, created.id);
-    return toSighting(row, await currentLkp(tx, input.missionId));
+    if (inserted) {
+      const row = await findSighting(tx, input.missionId, inserted.id);
+      return { sighting: toSighting(row, await currentLkp(tx, input.missionId)), created: true };
+    }
+    const id = input.id;
+    if (!id) throw new Error('Sighting insert returned no row');
+    const [existing] = await tx
+      .select({ missionId: sightings.missionId, reportedBy: sightings.reportedBy })
+      .from(sightings)
+      .where(eq(sightings.id, id));
+    if (!existing || existing.missionId !== input.missionId || existing.reportedBy !== input.reportedBy) {
+      throw new AppError(409, 'SIGHTING_ID_TAKEN', 'This sighting id is already used');
+    }
+    const row = await findSighting(tx, input.missionId, id);
+    return { sighting: toSighting(row, await currentLkp(tx, input.missionId)), created: false };
   });
 }
 
