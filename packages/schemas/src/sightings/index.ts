@@ -10,6 +10,8 @@ export const LkpDecision = z.enum(LKP_DECISIONS).meta({ id: 'LkpDecision' });
 
 /** A new sighting (decision 61). Location, time and source are required; the description may be blank. */
 export const CreateSightingBody = z.object({
+  /** Made on the phone (UUIDv7) so a retry after a lost answer cannot add the sighting twice; Command omits it. */
+  id: z.uuid().optional(),
   position: PointGeometry,
   observedAt: z.iso.datetime({ offset: true }),
   source: SightingSource,

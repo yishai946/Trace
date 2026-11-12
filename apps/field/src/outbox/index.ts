@@ -2,11 +2,11 @@ import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { uuidv7 } from './uuidv7';
 
 /**
- * The outbox: what the phone must tell the server but could not yet (UC-S01, UC-S03). Items wait in a SQLite table on
+ * The outbox: what the phone must tell the server but could not yet (UC-S01, UC-S03, UC-F10). Items wait in a SQLite table on
  * the device, oldest first, and an item is deleted only after the server confirmed it, so a failed or interrupted send
  * loses nothing. Each kind of item has a sender that knows its endpoint; the outbox knows only order and deletion.
  */
-export type OutboxKind = 'track-point';
+export type OutboxKind = 'track-point' | 'sighting';
 
 export interface OutboxItem {
   /** Time-ordered UUID, made on the phone. */
@@ -99,25 +99,55 @@ function toItem(row: Row): OutboxItem | null {
   }
 }
 
-/** Adds items to the end of the queue, in the order given. */
+/** How many dropped ids are remembered; a refused item is looked up right after its send, so a few are enough. */
+const DROPPED_MEMORY = 200;
+/** Ids of items the server refused for good and the outbox deleted, newest last. Kept in memory only. */
+const dropped = new Set<string>();
+
+function rememberDropped(ids: string[]): void {
+  for (const id of ids) {
+    dropped.delete(id);
+    dropped.add(id);
+  }
+  for (const id of dropped) {
+    if (dropped.size <= DROPPED_MEMORY) break;
+    dropped.delete(id);
+  }
+}
+
+/**
+ * Whether the item with this id was deleted because the server refused it for good (`drop-batch`, `drop-mission`), as
+ * opposed to confirmed. Lets a caller tell a rejected sighting from a sent one once the item is no longer pending.
+ */
+export function wasDropped(id: string): boolean {
+  return dropped.has(id);
+}
+
+/**
+ * Adds items to the end of the queue, in the order given. `ids` are the items' ids when the caller made them (a
+ * sighting keeps the id it has on the server); an id already in the queue is left as it was. Otherwise each gets a new
+ * UUIDv7.
+ */
 export async function enqueue({
   kind,
   missionId,
   payloads,
+  ids,
 }: {
   kind: OutboxKind;
   missionId: string;
   payloads: unknown[];
+  ids?: string[];
 }): Promise<void> {
   if (payloads.length === 0) return;
   const db = await database();
   const now = Date.now();
   await serialized(() =>
     db.withTransactionAsync(async () => {
-      for (const payload of payloads) {
+      for (const [i, payload] of payloads.entries()) {
         await db.runAsync(
           'INSERT OR IGNORE INTO outbox (id, kind, mission_id, payload, created_at) VALUES (?, ?, ?, ?, ?)',
-          uuidv7(),
+          ids?.[i] ?? uuidv7(),
           kind,
           missionId,
           JSON.stringify(payload),
@@ -135,6 +165,12 @@ export async function pending(): Promise<OutboxItem[]> {
   return rows.flatMap((row) => toItem(row) ?? []);
 }
 
+/** Whether the item with this id still waits. */
+export async function isPending(id: string): Promise<boolean> {
+  const db = await database();
+  return (await db.getFirstAsync('SELECT 1 FROM outbox WHERE id = ?', id)) !== null;
+}
+
 export async function pendingCount(): Promise<number> {
   const db = await database();
   const row = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) AS n FROM outbox');
@@ -145,6 +181,7 @@ export async function pendingCount(): Promise<number> {
 export async function clearOutbox(): Promise<void> {
   const db = await database();
   await serialized(() => db.runAsync('DELETE FROM outbox'));
+  dropped.clear();
 }
 
 async function deleteIds(db: SQLiteDatabase, ids: string[]): Promise<void> {
@@ -156,7 +193,7 @@ async function deleteIds(db: SQLiteDatabase, ids: string[]): Promise<void> {
 }
 
 /** Sends batches until the outbox is empty or a send fails; a failure stops the flush and leaves the rest. */
-async function flushOnce(senders: Record<OutboxKind, OutboxSender>): Promise<void> {
+async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Promise<void> {
   const db = await database();
   for (;;) {
     // A row of a kind without a sender is kept (a later version may know it) and skipped, not deleted.
@@ -167,6 +204,7 @@ async function flushOnce(senders: Record<OutboxKind, OutboxSender>): Promise<voi
     );
     if (!head) return;
     const sender = senders[head.kind];
+    if (!sender) return;
     const rows = await db.getAllAsync<Row>(
       'SELECT * FROM outbox WHERE kind = ? AND mission_id = ? ORDER BY seq LIMIT ?',
       head.kind,
@@ -191,14 +229,19 @@ async function flushOnce(senders: Record<OutboxKind, OutboxSender>): Promise<voi
       return;
     }
     if (outcome === 'drop-mission') {
+      const ids = await db.getAllAsync<{ id: string }>(
+        'SELECT id FROM outbox WHERE kind = ? AND mission_id = ?',
+        head.kind,
+        head.mission_id,
+      );
+      rememberDropped(ids.map((row) => row.id));
       await serialized(() =>
         db.runAsync('DELETE FROM outbox WHERE kind = ? AND mission_id = ?', head.kind, head.mission_id),
       );
     } else {
-      await deleteIds(
-        db,
-        items.map((item) => item.id),
-      );
+      const ids = items.map((item) => item.id);
+      if (outcome === 'drop-batch') rememberDropped(ids);
+      await deleteIds(db, ids);
     }
   }
 }
@@ -210,7 +253,7 @@ let again = false;
  * Sends what waits, one batch at a time, oldest first within a mission. Safe to call from any trigger: calls while a
  * flush runs do not start a second one; they make it look once more, so items added meanwhile are sent too.
  */
-export function flushOutbox(senders: Record<OutboxKind, OutboxSender>): Promise<void> {
+export function flushOutbox(senders: Partial<Record<OutboxKind, OutboxSender>>): Promise<void> {
   if (running) {
     again = true;
     return running;

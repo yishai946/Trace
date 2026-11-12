@@ -124,15 +124,22 @@ export default function MapScreen() {
             onDismissNotice={dismissNotice}
           />
         ) : null}
-        <Button
-          label="דיווח"
-          // One primary action per area: Start Search while assigned.
-          variant={assigned ? 'secondary' : 'primary'}
-          size="lg"
-          block
-          icon="plus"
-          onPress={() => openScreen(router, routes.report)}
-        />
+        <View style={styles.actions}>
+          <View style={styles.action}>
+            <Button
+              label="דיווח"
+              // One primary action per area: Start Search while assigned.
+              variant={assigned ? 'secondary' : 'primary'}
+              size="lg"
+              block
+              icon="plus"
+              onPress={() => openScreen(router, routes.report)}
+            />
+          </View>
+          <View style={styles.action}>
+            <Button label="תצפית" size="lg" block icon="sighting" onPress={() => openScreen(router, routes.sighting)} />
+          </View>
+        </View>
         {/* The missing person's details stay one tap away for the whole mission (UC-F04, decision 33). */}
         {mission.data ? (
           <Button label="פרטי נעדר מלאים" variant="ghost" onPress={() => openScreen(router, routes.missingPerson)} />
@@ -155,6 +162,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bannerText: { flex: 1 },
+  actions: { flexDirection: 'row', gap: spacing.space4 },
+  action: { flex: 1 },
   sheet: {
     gap: spacing.space4,
     padding: spacing.space6,

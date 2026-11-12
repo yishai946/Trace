@@ -30,4 +30,10 @@ describe('TextField', () => {
     render(<TextField label="מספר טלפון" ltr value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
     expect(screen.getByLabelText('מספר טלפון')).toHaveStyle({ textAlign: 'right' });
   });
+
+  it('makes a multiline field taller than a single line', () => {
+    render(<TextField label="תיאור קצר" multiline value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
+    expect(screen.getByLabelText('תיאור קצר').tagName).toBe('TEXTAREA');
+    expect(screen.getByLabelText('תיאור קצר')).toHaveStyle({ minHeight: '66px' });
+  });
 });

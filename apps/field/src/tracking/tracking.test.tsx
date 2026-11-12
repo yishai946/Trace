@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { receiveFixes, useLocationTracking, useTrackSync, type LocationTracker } from '.';
-import { pending } from '../outbox';
+import { receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker } from '.';
+import { enqueue, pending } from '../outbox';
 import { useSession } from '../state/session';
 
 const platform = vi.hoisted(() => ({ OS: 'ios' }));
@@ -127,7 +127,7 @@ describe('receiveFixes, the background task', () => {
       return json(200, { stored: 3, duplicates: 0 });
     });
     vi.stubGlobal('fetch', fetch);
-    const { unmount } = renderHook(() => useTrackSync());
+    const { unmount } = renderHook(() => useOutboxSync());
     fetch.mockClear();
 
     await receiveFixes({ data: { locations: locations(1) }, error: null });
@@ -193,7 +193,7 @@ describe('receiveFixes, the background task', () => {
   });
 });
 
-describe('useTrackSync', () => {
+describe('useOutboxSync', () => {
   const session = {
     token: 't1',
     missionId: '00000000-0000-4000-8000-000000000001',
@@ -233,15 +233,55 @@ describe('useTrackSync', () => {
     await leaveOnePoint();
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
     await vi.waitFor(async () => expect(await pending()).toEqual([]));
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a queued sighting when the connection returns', async () => {
+    const missionId = session.missionId;
+    useSession.setState({ ...useSession.getInitialState(), ...session });
+    const queued = {
+      id: '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0d',
+      position: { type: 'Point', coordinates: [35.0139, 31.7412] },
+      observedAt: '2026-10-03T13:58:00.000Z',
+      source: 'self',
+      description: null,
+    };
+    await enqueue({ kind: 'sighting', missionId, payloads: [queued], ids: [queued.id] });
+    const fetch = vi.fn(async (_url: string, _init: RequestInit): Promise<Response> => {
+      throw new TypeError('offline');
+    });
+    vi.stubGlobal('fetch', fetch);
+    renderHook(() => useOutboxSync());
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(await pending()).toHaveLength(1);
+
+    fetch.mockImplementation(async () =>
+      Response.json(
+        {
+          ...queued,
+          missionId,
+          number: 1,
+          reportedBy: { role: 'searcher', name: 'אלון', callsign: 4 },
+          lkpDecision: null,
+          lkpCandidate: true,
+          createdAt: '2026-10-03T14:00:00.000Z',
+        },
+        { status: 201 },
+      ),
+    );
+    await act(async () => {
+      for (const listener of network.listeners) listener({ isConnected: true, isInternetReachable: true });
+    });
+    await vi.waitFor(async () => expect(await pending()).toEqual([]));
+    expect(String(fetch.mock.calls.at(-1)![0])).toMatch(new RegExp(`/missions/${missionId}/sightings$`));
   });
 
   it('sends when the token becomes available', async () => {
     await leaveOnePoint();
     useSession.setState({ token: null });
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
     useSession.setState({ token: 't1' });
@@ -252,7 +292,7 @@ describe('useTrackSync', () => {
     await leaveOnePoint();
     const fetch = vi.fn(async () => Promise.reject(new TypeError('offline')));
     vi.stubGlobal('fetch', fetch);
-    const { unmount } = renderHook(() => useTrackSync());
+    const { unmount } = renderHook(() => useOutboxSync());
     await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
     await act(async () => {
@@ -281,10 +321,10 @@ describe('useTrackSync', () => {
     const fetch = vi.fn(async () => ok());
     vi.stubGlobal('fetch', fetch);
     useSession.setState({ token: null });
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
     platform.OS = 'web';
     useSession.setState({ token: 't1' });
-    renderHook(() => useTrackSync());
+    renderHook(() => useOutboxSync());
 
     expect(fetch).not.toHaveBeenCalled();
     expect(network.listeners.size).toBe(0);

@@ -554,6 +554,41 @@ describe('realtime', () => {
     expect(toOther).toEqual([]);
   });
 
+  it('sends a sighting a searcher reports to the commander only, once per id', async () => {
+    const commander = await signInCommander(ctx);
+    const reporter = await signInSearcher(ctx);
+    const other = await signInSearcher(ctx);
+    const mission = await createMissionAs(commander);
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: reporter.searcherId });
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, searcherId: other.searcherId });
+
+    const sockets = [socketFor(commander), socketFor(reporter), socketFor(other)] as const;
+    await Promise.all(sockets.map(connect));
+    for (const socket of sockets) expect(await join(socket, mission.id)).toEqual({ ok: true });
+    const [toCommander, toReporter, toOther] = sockets.map(record) as [MissionEvent[], MissionEvent[], MissionEvent[]];
+
+    const payload = {
+      id: '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0d',
+      position: { type: 'Point', coordinates: [35.14, 31.77] },
+      observedAt: '2026-10-03T14:22:00+03:00',
+      source: 'self',
+    };
+    const send = () =>
+      injectAs(ctx, reporter)({ method: 'POST', url: `/api/missions/${mission.id}/sightings`, payload });
+    const first = await send();
+    expect(first.statusCode).toBe(201);
+    await settle();
+    const sighting = Sighting.parse(first.json());
+    expect(toCommander).toEqual([{ type: 'sighting.saved', missionId: mission.id, sighting }]);
+    expect(sighting.reportedBy.role).toBe('searcher');
+    expect(toReporter).toEqual([]);
+    expect(toOther).toEqual([]);
+
+    expect((await send()).statusCode).toBe(200);
+    await settle();
+    expect(toCommander).toHaveLength(1);
+  });
+
   it('does not announce an LKP change when the suggestion is rejected', async () => {
     const commander = await signInCommander(ctx);
     const searcher = await signInSearcher(ctx);

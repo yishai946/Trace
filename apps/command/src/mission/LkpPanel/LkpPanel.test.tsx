@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { LkpPanel } from '.';
-import { lkps, mission, sightingA, sightingB } from '../fixtures';
+import { lkps, mission, sightingA, sightingB, sightingC } from '../fixtures';
 
 const handlers = () => ({
   onRetry: vi.fn(),
@@ -94,6 +94,23 @@ describe('LkpPanel', () => {
     expect(within(second!).getByText('נדחה')).toBeTruthy();
     expect(within(second!).getByText('מנהל')).toBeTruthy();
     expect(within(second!).queryByRole('button')).toBeNull();
+  });
+
+  it('lists a searcher’s sighting with its callsign and name, and suggests the newest candidate', () => {
+    renderPanel({ sightings: [sightingA, sightingC] });
+    const [, second] = screen.getAllByRole('listitem').filter((li) => li.closest('[aria-label="תצפיות"]'));
+    expect(within(second!).getByText('מחפש')).toBeTruthy();
+    expect(within(second!).getByText('07')).toBeTruthy();
+    expect(within(second!).getByText('אלון שגיא')).toBeTruthy();
+    expect(
+      within(second!).getByText((_, el) => el?.textContent === 'מוצע כ-LKP' && el.tagName === 'SPAN'),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.tagName === 'P' && el.textContent === 'תצפית 3 (מחפש, 16:58) מאוחרת מה-LKP הנוכחי. להפוך אותה ל-LKP?',
+      ),
+    ).toBeTruthy();
   });
 
   it('marks the selected sighting', () => {

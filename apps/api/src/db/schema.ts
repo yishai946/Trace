@@ -169,7 +169,7 @@ export const sightings = pgTable(
     missionId: uuid('mission_id')
       .notNull()
       .references(() => missions.id, { onDelete: 'cascade' }),
-    /** Who reported it: the commander here, a searcher once UC-F10 exists. */
+    /** Who reported it: the commander (UC-C04) or a searcher in the mission (UC-F10). */
     reportedBy: uuid('reported_by')
       .notNull()
       .references(() => users.id),
