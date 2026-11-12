@@ -143,4 +143,26 @@ describe('assigning from the pool (UC-C09)', () => {
     expect(screen.getByRole('button', { name: 'שבץ את מיכל פרץ' })).toBeDisabled();
     expect(screen.getByRole('alert').textContent).toBe('השיבוץ לא נשמר. נסו שוב.');
   });
+
+  it('puts a call link first in each row, before the assign button', () => {
+    render(<SearchersPage {...props({ participants: [dana, michal] })} />);
+    for (const p of [dana, michal]) {
+      const row = rows().find((r) => within(r).queryByText(p.name)) as HTMLElement;
+      const call = within(row).getByRole('link', { name: `התקשר ל${p.name}` });
+      expect(call.getAttribute('href')).toBe(`tel:${p.phone}`);
+      const assign = within(row).getByRole('button', { name: /את / });
+      expect(call.compareDocumentPosition(assign) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(dana.phone).toBe('+972526114085');
+  });
+
+  it('disables the call link of a searcher without a phone only', () => {
+    render(<SearchersPage {...props({ participants: [{ ...dana, phone: '' }, michal] })} />);
+    const noPhone = screen.getByRole('link', { name: `התקשר ל${dana.name}` });
+    expect(noPhone.getAttribute('aria-disabled')).toBe('true');
+    expect(noPhone.getAttribute('href')).toBeNull();
+    const other = screen.getByRole('link', { name: `התקשר ל${michal.name}` });
+    expect(other.getAttribute('aria-disabled')).toBeNull();
+    expect(other.getAttribute('href')).toBe(`tel:${michal.phone}`);
+  });
 });
