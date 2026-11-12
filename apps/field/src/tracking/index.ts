@@ -4,13 +4,14 @@ import {
   startLocationUpdatesAsync,
   stopLocationUpdatesAsync,
 } from 'expo-location';
+import { addNetworkStateListener } from 'expo-network';
 import { defineTask } from 'expo-task-manager';
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
-import { ApiRequestError } from '../api';
+import { AppState, Platform } from 'react-native';
+import { flushOutbox } from '../outbox';
 import { useSession } from '../state/session';
 import { noteGps } from './gpsStatus';
-import { LOCATION_TASK, uploadFixes } from './locationTask';
+import { LOCATION_TASK, recordFixes, trackPointSender } from './locationTask';
 import type { Fix } from './trackPoints';
 
 /**
@@ -27,8 +28,8 @@ export interface LocationTracker {
 if (Platform.OS !== 'web') defineTask<{ locations: Fix[] }>(LOCATION_TASK, receiveFixes);
 
 /**
- * The background task's handler: uploads each batch. When the server says the activity ended (it may have while the
- * socket was down), the phone stops tracking instead of sampling GPS for nothing.
+ * The background task's handler: saves each batch on the device, then sends what waits (UC-S01). A batch the server
+ * cannot take now stays in the outbox and goes out on a later trigger (`useTrackSync`).
  */
 export async function receiveFixes({ data, error }: { data?: { locations: Fix[] }; error: unknown }): Promise<void> {
   // The phone could not get a location (services off, permission revoked): GPS is lost, also with the app in the
@@ -38,15 +39,49 @@ export async function receiveFixes({ data, error }: { data?: { locations: Fix[] 
     return;
   }
   if (!data) return;
-  try {
-    await uploadFixes(data.locations);
-  } catch (failure) {
-    if (failure instanceof ApiRequestError && failure.code === 'PARTICIPATION_ENDED') {
-      const { participation, updateParticipation } = useSession.getState();
-      if (participation) updateParticipation({ ...participation, status: 'ended', taskStatus: null });
-      await expoLocationTracker.stop().catch(() => undefined);
-    }
-  }
+  // A failed save is not worth crashing the task: the next fix is saved on its own.
+  await recordFixes(data.locations).catch(() => undefined);
+  await syncTrack();
+}
+
+/**
+ * When the server says an activity ended (it may have while the socket was down), the phone stops tracking instead of
+ * sampling GPS for nothing. Another mission's answer only drops its stored points.
+ */
+async function stopTrackingIfCurrent(endedMissionId: string): Promise<void> {
+  const { missionId, participation, updateParticipation } = useSession.getState();
+  if (missionId !== endedMissionId) return;
+  if (participation) updateParticipation({ ...participation, status: 'ended', taskStatus: null });
+  await expoLocationTracker.stop().catch(() => undefined);
+}
+
+const trackSender = trackPointSender((missionId) => void stopTrackingIfCurrent(missionId));
+
+/** Sends the track points that wait in the outbox. Never throws: what fails stays queued for the next trigger. */
+export function syncTrack(): Promise<void> {
+  return flushOutbox({ 'track-point': trackSender }).catch(() => undefined);
+}
+
+/**
+ * Sends waiting track points when there is a reason to try: the session has a token, the phone gets a connection
+ * again, or the app comes to the foreground. No timer: after each background delivery `receiveFixes` tries too.
+ */
+export function useTrackSync(): void {
+  const token = useSession((s) => s.token);
+  useEffect(() => {
+    if (Platform.OS === 'web' || !token) return;
+    void syncTrack();
+    const network = addNetworkStateListener((state) => {
+      if (state.isConnected && state.isInternetReachable !== false) void syncTrack();
+    });
+    const appState = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void syncTrack();
+    });
+    return () => {
+      network.remove();
+      appState.remove();
+    };
+  }, [token]);
 }
 
 /**

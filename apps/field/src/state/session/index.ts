@@ -1,5 +1,6 @@
 import type { OwnParticipation } from '@trace/schemas';
 import { create } from 'zustand';
+import { clearOutbox } from '../../outbox';
 import { deleteToken, loadToken, saveToken } from './tokenStore';
 
 interface SessionState {
@@ -27,7 +28,7 @@ interface SessionState {
   restore: () => Promise<void>;
   /** Keeps the token in memory and saves it on the device. */
   signIn: (token: string) => Promise<void>;
-  /** Forgets the token and the mission, on the device too. */
+  /** Forgets the token, the mission and the unsent track points, on the device too. */
   signOut: () => Promise<void>;
   setMissionId: (missionId: string | null) => void;
   /** Enters the mission the searcher joined. */
@@ -71,6 +72,8 @@ export const useSession = create<SessionState>()((set) => ({
   },
   signOut: async () => {
     await deleteToken();
+    // Points kept for a later send belong to this searcher; they must not go out under the next sign-in.
+    await clearOutbox().catch(() => undefined);
     set({ token: null, missionId: null, participation: null, tracking: false, assignmentNotice: null });
   },
   setMissionId: (missionId) => set({ missionId, participation: null, tracking: false, assignmentNotice: null }),

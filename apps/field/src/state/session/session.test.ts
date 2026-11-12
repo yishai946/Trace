@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useSession } from '.';
+import { enqueue, pendingCount } from '../../outbox';
 import { setItemAsync, secureStoreItems } from '../../test/secureStore';
 
 describe('useSession', () => {
@@ -40,6 +41,12 @@ describe('useSession', () => {
     await useSession.getState().signOut();
     expect(useSession.getState()).toMatchObject({ token: null, missionId: null });
     expect(secureStoreItems.has('trace.session-token')).toBe(false);
+  });
+
+  it('empties the outbox at sign-out, so the next person on the phone sends nothing of theirs', async () => {
+    await enqueue({ kind: 'track-point', missionId: 'm1', payloads: [1, 2] });
+    await useSession.getState().signOut();
+    expect(await pendingCount()).toBe(0);
   });
 
   it('still signs in when the device refuses to store the token', async () => {
