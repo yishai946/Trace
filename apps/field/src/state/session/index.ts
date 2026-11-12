@@ -9,6 +9,11 @@ interface SessionState {
   missionId: string | null;
   /** The searcher's participation in that mission, as the server last answered it. */
   participation: OwnParticipation | null;
+  /**
+   * Background GPS runs (UC-S01): on from the first Start Search, and on until the activity ends or the searcher leaves
+   * the mission, also across a move to another polygon (decisions 20, 43, 65).
+   */
+  tracking: boolean;
   /** Set when the commander assigned or moved the searcher while the app was open (UC-F05); cleared once seen. */
   assignmentNotice: AssignmentNotice | null;
   /** The code of a join link opened before the join screen could show it, e.g. while signed out (UC-F02). */
@@ -43,6 +48,7 @@ export const useSession = create<SessionState>()((set) => ({
   token: null,
   missionId: null,
   participation: null,
+  tracking: false,
   assignmentNotice: null,
   pendingJoinCode: null,
   restored: false,
@@ -56,9 +62,9 @@ export const useSession = create<SessionState>()((set) => ({
   },
   signOut: async () => {
     await deleteToken();
-    set({ token: null, missionId: null, participation: null, assignmentNotice: null });
+    set({ token: null, missionId: null, participation: null, tracking: false, assignmentNotice: null });
   },
-  setMissionId: (missionId) => set({ missionId, participation: null, assignmentNotice: null }),
+  setMissionId: (missionId) => set({ missionId, participation: null, tracking: false, assignmentNotice: null }),
   enterMission: (missionId, participation) => set({ missionId, participation, pendingJoinCode: null }),
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
   updateParticipation: (participation) =>
@@ -69,7 +75,8 @@ export const useSession = create<SessionState>()((set) => ({
         changed && participation.polygonId
           ? { kind: before?.status === 'assigned' ? 'moved' : 'assigned', polygonId: participation.polygonId }
           : s.assignmentNotice;
-      return { participation, assignmentNotice: notice };
+      const tracking = participation.status !== 'ended' && (s.tracking || participation.taskStatus === 'searching');
+      return { participation, tracking, assignmentNotice: notice };
     }),
   dismissAssignmentNotice: () => set({ assignmentNotice: null }),
 }));

@@ -42,6 +42,7 @@
         {
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
           "locationAlwaysAndWhenInUsePermission": "TRACE משתמשת במיקום שלך, גם ברקע, כדי לרשום את המסלול ולשלוח SOS.",
           "locationWhenInUsePermission": "TRACE משתמשת במיקום שלך כדי להציג אותך על המפה."
         }

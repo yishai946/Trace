@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabButton } from '../../components/TabButton';
 import { tabs } from '../../navigation/routes';
 import { useMissionLive } from '../../realtime';
+import { useLocationTracking } from '../../tracking';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 
@@ -12,6 +13,7 @@ export default function MissionLayout() {
   const { color } = useTheme().theme;
   const { bottom } = useSafeAreaInsets();
   useMissionLive();
+  useLocationTracking();
 
   return (
     <Tabs style={styles.fill}>
