@@ -47,3 +47,9 @@ export const MissionsListIcon = () => (
     <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
   </svg>
 );
+
+export const PhoneIcon = () => (
+  <svg {...base}>
+    <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
+  </svg>
+);
