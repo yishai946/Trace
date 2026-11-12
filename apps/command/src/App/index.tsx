@@ -330,10 +330,14 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               onRetry={() => void participants.refetch()}
               onAssign={
                 operational && !isMissionEnded(mission.status)
-                  ? (participantId, polygonId) => assign.mutate({ participantId, polygonId })
+                  ? (participantId, polygonId) => assign.mutate({ missionId: mission.id, participantId, polygonId })
                   : undefined
               }
-              assignError={assign.isError ? assignErrorMessage(assign.error) : null}
+              assigning={assign.isPending}
+              // The mutation outlives a switch of mission: show only this mission's failure.
+              assignError={
+                assign.isError && assign.variables?.missionId === mission.id ? assignErrorMessage(assign.error) : null
+              }
             />
           )}
           {view === 'timeline' && (

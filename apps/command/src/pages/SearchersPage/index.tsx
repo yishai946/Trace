@@ -14,6 +14,8 @@ export interface SearchersPageProps {
   onRetry: () => void;
   /** Assigns or moves a searcher (UC-C09). Without it, offline or once the mission ended, the menu is disabled. */
   onAssign?: (participantId: string, polygonId: string) => void;
+  /** An assignment is being saved: the menus wait, so two quick choices cannot land out of order. */
+  assigning?: boolean;
   /** The last assignment failed, in words. */
   assignError?: string | null;
 }
@@ -41,6 +43,7 @@ export function SearchersPage({
   loadFailed,
   onRetry,
   onAssign,
+  assigning = false,
   assignError,
 }: SearchersPageProps) {
   const inMission = participants
@@ -118,7 +121,7 @@ export function SearchersPage({
                     )}
                   </td>
                   <td>
-                    <AssignMenu participant={p} polygons={polygons} onAssign={onAssign} />
+                    <AssignMenu participant={p} polygons={polygons} onAssign={assigning ? undefined : onAssign} />
                   </td>
                 </tr>
               ))}

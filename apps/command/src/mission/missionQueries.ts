@@ -124,12 +124,11 @@ export function useParticipants(missionId: string | undefined) {
   });
 }
 
-/** The mission's Timeline, oldest first (UC-C19). A successful realtime join invalidates it, so a reconnect refetches. */
 /** UC-C09: assigns a searcher to a polygon or moves them. The cached pool takes the answer at once. */
 export function useAssign(missionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ participantId, polygonId }: { participantId: string; polygonId: string }) =>
+    mutationFn: ({ participantId, polygonId }: { missionId: string; participantId: string; polygonId: string }) =>
       apiRequest(`/missions/${missionId}/participants/${participantId}/assignment`, {
         method: 'PUT',
         body: { polygonId },
@@ -144,6 +143,7 @@ export function useAssign(missionId: string) {
   });
 }
 
+/** The mission's Timeline, oldest first (UC-C19). A successful realtime join invalidates it, so a reconnect refetches. */
 export function useTimeline(missionId: string | undefined) {
   return useQuery({
     queryKey: missionKeys.timeline(missionId ?? ''),

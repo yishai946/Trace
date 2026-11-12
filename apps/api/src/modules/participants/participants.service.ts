@@ -138,10 +138,13 @@ export async function assignParticipant(
   input: { missionId: string; participantId: string; polygonId: string; commanderId: string },
 ): Promise<AssignResult> {
   const activatedPolygonId = await db.transaction(async (tx) => {
+    // Shared lock: polygon deletes and boundary changes lock the mission for update, so they wait for this assignment
+    // (and it for them); assignments in parallel do not block one another.
     const [mission] = await tx
       .select({ status: missions.status })
       .from(missions)
-      .where(eq(missions.id, input.missionId));
+      .where(eq(missions.id, input.missionId))
+      .for('share');
     if (!mission) throw notFound('Mission');
     if (isMissionEnded(mission.status)) throw new AppError(409, 'MISSION_ENDED', 'An ended mission is read-only');
 

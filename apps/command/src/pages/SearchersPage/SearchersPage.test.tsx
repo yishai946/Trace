@@ -106,6 +106,11 @@ describe('assigning from the pool (UC-C09)', () => {
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['פוליגון B']);
   });
 
+  it('waits while an assignment is being saved', () => {
+    render(<SearchersPage {...props({ participants: [michal], onAssign: vi.fn(), assigning: true })} />);
+    expect(screen.getByRole('button', { name: 'שבץ את מיכל פרץ' })).toBeDisabled();
+  });
+
   it('disables assigning when it cannot be done, and shows why it failed', () => {
     render(<SearchersPage {...props({ participants: [michal], assignError: 'השיבוץ לא נשמר. נסו שוב.' })} />);
     expect(screen.getByRole('button', { name: 'שבץ את מיכל פרץ' })).toBeDisabled();

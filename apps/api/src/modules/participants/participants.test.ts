@@ -399,7 +399,20 @@ describe('assigning a searcher (UC-C09)', () => {
     expect((await history(id)).filter((r) => r.endedAt === null)).toHaveLength(1);
   });
 
-  it('sends the change to the commander and that searcher only', async () => {
+  it('never leaves a searcher in a polygon deleted at the same moment', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    const [assigned, deleted] = await Promise.all([
+      assign(id, polygonA),
+      commander({ method: 'DELETE', url: `/api/missions/${mission.id}/polygons/${polygonA}` }),
+    ]);
+
+    // One of them wins: the assignment blocks the delete, or the deleted polygon cannot be assigned.
+    expect([assigned.statusCode, deleted.statusCode].sort()).toEqual(
+      assigned.statusCode === 200 ? [200, 409] : [204, 404].sort(),
+    );
+  });
+
+  it('announces the assignment and the polygon that became active', async () => {
     const published: MissionEvent[] = [];
     const publish = ctx.realtime.publish.bind(ctx.realtime);
     ctx.realtime.publish = (event) => {
