@@ -146,6 +146,52 @@ describe('MessagesPage', () => {
       expect(screen.getByRole('status').textContent).toBe('ההודעה נשלחה ל-2 מחפשים.');
     });
 
+    it('C6: sends once when the button is double clicked', () => {
+      const onSend = vi.fn();
+      render(<MessagesPage {...props({ onSend })} />);
+      fireEvent.change(text(), { target: { value: 'שלום' } });
+      fireEvent.click(send());
+      fireEvent.click(send());
+      expect(onSend).toHaveBeenCalledTimes(1);
+    });
+
+    it('C6: announces the missing text as an alert and moves focus to the field', () => {
+      render(<MessagesPage {...props()} />);
+      fireEvent.click(send());
+      expect(screen.getByRole('alert').textContent).toBe('כתבו את ההודעה.');
+      expect(text()).toHaveFocus();
+    });
+
+    it('C6: moves focus to the missing target', () => {
+      render(<MessagesPage {...props()} />);
+      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
+      fireEvent.change(text(), { target: { value: 'שלום' } });
+      fireEvent.click(send());
+      expect(within(screen.getByRole('radiogroup', { name: 'מחפש' })).getAllByRole('radio')[0]).toHaveFocus();
+    });
+
+    it('C9: clears the send error when the text or the target changes', () => {
+      render(<MessagesPage {...props({ sendError: 'אין חיבור לשרת. ההודעה לא נשלחה.' })} />);
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      fireEvent.change(text(), { target: { value: 'ש' } });
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('C9: clears the send error when the target changes', () => {
+      render(<MessagesPage {...props({ sendError: 'אין חיבור לשרת. ההודעה לא נשלחה.' })} />);
+      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('C7: returns focus to the text field after a send', () => {
+      const onSend = vi.fn();
+      render(<MessagesPage {...props({ onSend })} />);
+      fireEvent.change(text(), { target: { value: 'שלום' } });
+      fireEvent.click(send());
+      act(() => (onSend.mock.calls[0]?.[1] as (message: typeof messageNormal) => void)(messageNormal));
+      expect(text()).toHaveFocus();
+    });
+
     it('C8: blocks sending when ended or offline, keeping the history', () => {
       const { rerender } = render(<MessagesPage {...props({ onSend: undefined, ended: true })} />);
       expect(send()).toBeDisabled();

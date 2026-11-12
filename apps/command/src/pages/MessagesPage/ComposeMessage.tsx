@@ -1,6 +1,6 @@
 import { MESSAGE_TARGET_KINDS, MESSAGE_URGENCIES, type MessageTargetKind, type MessageUrgency } from '@trace/domain';
 import type { Message, MissionPolygon, Participant, SendMessageBody } from '@trace/schemas';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Checkbox, CheckboxGroup, Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
@@ -75,10 +75,20 @@ export function ComposeMessage({
   const [form, setForm] = useState<MessageForm>(emptyForm);
   const [errors, setErrors] = useState<MessageFormErrors>({});
   const [announcement, setAnnouncement] = useState('');
+  // The send error the commander already reacted to by editing; a new attempt shows it again.
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Set at once on submit: `sending` only re-renders after a second click could already have passed.
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    if (!sending) inFlight.current = false;
+  }, [sending]);
 
   const change = (patch: Partial<MessageForm>) => {
     setForm((current) => ({ ...current, ...patch }));
     setAnnouncement('');
+    setDismissedError(sendError);
   };
   const pool = participants ?? [];
   const active = activeParticipants(pool);
@@ -87,8 +97,17 @@ export function ComposeMessage({
   const submit = () => {
     const found = validate(form);
     setErrors(found);
-    if (Object.keys(found).length > 0 || !onSend) return;
+    if (Object.keys(found).length > 0) {
+      const first = found.target ? '[data-target-field] input' : 'textarea';
+      formRef.current?.querySelector<HTMLElement>(first)?.focus();
+      return;
+    }
+    if (!onSend || inFlight.current) return;
+    inFlight.current = true;
+    setDismissedError(null);
     onSend(toSendBody(form), (message) => {
+      inFlight.current = false;
+      formRef.current?.querySelector<HTMLElement>('textarea')?.focus();
       setForm((current) => ({ ...current, body: '' }));
       setAnnouncement(`ההודעה נשלחה ל-${message.recipients.length} מחפשים.`);
       onSent(message);
@@ -102,6 +121,7 @@ export function ComposeMessage({
         <span className={styles.meta}>חד-כיוונית: מנהל ← מחפשים</span>
       </div>
       <form
+        ref={formRef}
         aria-label="הודעה חדשה"
         noValidate
         className={styles.formBody}
@@ -135,6 +155,7 @@ export function ComposeMessage({
           ) : (
             <CheckboxGroup
               className={styles.list}
+              data-target-field
               aria-label="פוליגונים"
               value={form.polygonIds}
               onChange={(polygonIds) => {
@@ -158,6 +179,7 @@ export function ComposeMessage({
           ) : (
             <RadioGroup
               className={styles.list}
+              data-target-field
               aria-label="מחפש"
               value={form.participantId}
               onChange={(participantId) => {
@@ -222,7 +244,7 @@ export function ComposeMessage({
           errorMessage={errors.body}
         />
 
-        {sendError && (
+        {sendError && sendError !== dismissedError && (
           <p role="alert" className={styles.error}>
             {sendError}
           </p>
