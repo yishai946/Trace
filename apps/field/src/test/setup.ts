@@ -8,7 +8,7 @@ import * as sqlite from './sqlite';
 vi.mock('expo-secure-store', () => import('./secureStore'));
 // expo-crypto pulls in the native Expo runtime; tests use the platform's Web Crypto.
 vi.mock('expo-crypto', () => ({
-  getRandomValues: <T extends ArrayBufferView>(array: T): T => globalThis.crypto.getRandomValues(array),
+  getRandomValues: <T extends ArrayBufferView<ArrayBuffer>>(array: T): T => globalThis.crypto.getRandomValues(array),
 }));
 // expo-sqlite is native only; tests use an in-memory database on node:sqlite.
 vi.mock('expo-sqlite', () => import('./sqlite'));

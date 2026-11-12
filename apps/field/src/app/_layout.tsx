@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Splash } from '../components/Splash';
 // Defines the background GPS task at load time, before any screen (expo-task-manager).
-import '../tracking';
+import { useTrackSync } from '../tracking';
 import { applyDocumentDirection } from '../i18n/rtl';
 import { useSession } from '../state/session';
 import { ThemeProvider, useTheme } from '../theme';
@@ -35,6 +35,8 @@ function ThemedStack() {
 }
 
 export default function RootLayout() {
+  // Sends the track points kept on the device when the connection or the session allows (UC-S01).
+  useTrackSync();
   useEffect(() => {
     if (Platform.OS === 'web') applyDocumentDirection(document);
     // Reads the session saved on the device; the start screen waits for it (UC-F01).
