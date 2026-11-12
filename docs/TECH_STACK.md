@@ -59,6 +59,7 @@
 | רכיבים        | רכיבים משלנו מעל רכיבי הליבה של React Native                         | מעט מסכים; מבוססים על `@trace/design` (TS tokens) ותכונות הנגישות של React Native            |
 | GPS ברקע      | `expo-location` + `expo-task-manager`, מאחורי ממשק `LocationTracker` | חינמי. אם פיילוט במכשירים אמיתיים יראה בעיות אמינות, מחליפים ל-Transistor בלי לגעת בשאר הקוד |
 | מפה Offline   | MapLibre React Native, offline packs                                 | הורדת אזור המסע מראש (UC-F03)                                                                |
+| זמן אמת       | `socket.io-client`, WebSocket בלבד, הטוקן ב-`auth`                   | אותו ערוץ של השרת ושל Command; ב-React Native אין cookies                                    |
 | אחסון Offline | expo-sqlite + Drizzle, outbox עם מזהי UUIDv7                         | דיווחים ונקודות GPS נשלחים כשיש קליטה, בלי כפילויות (UC-S03)                                 |
 | מצב           | TanStack Query, Zustand                                              | נתוני שרת מול מצב מקומי                                                                      |
 | טפסים         | react-hook-form + zod                                                | אותן סכמות כמו השרת                                                                          |

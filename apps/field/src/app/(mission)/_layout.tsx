@@ -3,13 +3,15 @@ import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabButton } from '../../components/TabButton';
 import { tabs } from '../../navigation/routes';
+import { useMissionLive } from '../../realtime';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 
-/** The mission screens share the bottom tab bar of the wireframes (`.tcx-tabbar`). */
+/** The mission screens share the bottom tab bar of the wireframes (`.tcx-tabbar`) and the live connection. */
 export default function MissionLayout() {
   const { color } = useTheme().theme;
   const { bottom } = useSafeAreaInsets();
+  useMissionLive();
 
   return (
     <Tabs style={styles.fill}>
