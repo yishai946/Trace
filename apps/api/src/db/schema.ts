@@ -3,6 +3,8 @@ import {
   MISSION_STATUSES,
   PARTICIPATION_STATUSES,
   POLYGON_STATUSES,
+  REPORT_STATUSES,
+  REPORT_TYPES,
   SIGHTING_SOURCES,
   TASK_STATUSES,
   TIMELINE_EVENT_TYPES,
@@ -37,6 +39,8 @@ const timestamps = {
 
 export const missionStatus = pgEnum('mission_status', MISSION_STATUSES);
 export const polygonStatus = pgEnum('polygon_status', POLYGON_STATUSES);
+export const reportType = pgEnum('report_type', REPORT_TYPES);
+export const reportStatus = pgEnum('report_status', REPORT_STATUSES);
 export const participationStatus = pgEnum('participation_status', PARTICIPATION_STATUSES);
 export const taskStatus = pgEnum('task_status', TASK_STATUSES);
 export const userRole = pgEnum('user_role', USER_ROLES);
@@ -354,3 +358,43 @@ export const pushTokens = pgTable(
   },
   (t) => [index('push_tokens_searcher_idx').on(t.searcherId)],
 );
+
+/**
+ * A field report from a searcher (UC-F09, decisions 15, 16). The phone makes the id (UUIDv7), so sending a report again
+ * saves it once. `polygon_id` is the searcher's polygon when the server received it: the lists that show reports to the
+ * commander and to the searchers of a polygon filter on it (decision 80, UC-F11, UC-C11).
+ */
+export const reports = pgTable(
+  'reports',
+  {
+    id: uuid().primaryKey(),
+    missionId: uuid('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    reportedBy: uuid('reported_by')
+      .notNull()
+      .references(() => users.id),
+    polygonId: uuid('polygon_id').references(() => polygons.id),
+    type: reportType().notNull(),
+    status: reportStatus().notNull().default('new'),
+    text: text().notNull(),
+    position: pointColumn().notNull(),
+    accuracy: doublePrecision(),
+    /** When the searcher sent it on the phone. An offline report is created later (`created_at`). */
+    reportedAt: timestamp('reported_at', { withTimezone: true }).notNull(),
+    ...timestamps,
+  },
+  (t) => [index('reports_mission_idx').on(t.missionId, t.createdAt), index('reports_polygon_idx').on(t.polygonId)],
+);
+
+/**
+ * A report's photo, at most one. Kept in Postgres like `mission_photos`, until the infrastructure decision (R2 follow-up).
+ */
+export const reportPhotos = pgTable('report_photos', {
+  reportId: uuid('report_id')
+    .primaryKey()
+    .references(() => reports.id, { onDelete: 'cascade' }),
+  contentType: text('content_type').notNull(),
+  data: bytea().notNull(),
+  ...timestamps,
+});

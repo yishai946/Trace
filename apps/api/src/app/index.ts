@@ -22,6 +22,7 @@ import type { PushSender } from '../modules/notifications/pushSender';
 import { missionRoutes } from '../modules/missions';
 import { participantRoutes } from '../modules/participants';
 import { polygonRoutes } from '../modules/polygons';
+import { reportRoutes } from '../modules/reports';
 import { sightingRoutes } from '../modules/sightings';
 import { searcherRoutes } from '../modules/searchers';
 import { timelineRoutes } from '../modules/timeline';
@@ -87,6 +88,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
         await signedIn.register(sightingRoutes, { db, realtime });
         await signedIn.register(participantRoutes, { db, realtime });
         await signedIn.register(trackingRoutes, { db, realtime });
+        await signedIn.register(reportRoutes, { db, realtime });
         await signedIn.register(searcherRoutes, { db });
         await signedIn.register(notificationRoutes, { db });
         await signedIn.register(timelineRoutes, { db });
