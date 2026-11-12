@@ -21,6 +21,27 @@ describe('apiRequest', () => {
     );
   });
 
+  it('uploads raw bytes with the given content type and the token', async () => {
+    const fetch = vi.fn().mockResolvedValue(json(200, []));
+    vi.stubGlobal('fetch', fetch);
+    const data = new Uint8Array([0xff, 0xd8, 0xff]);
+
+    await apiRequest('/missions/m1/reports/r1/photo', {
+      baseUrl: 'https://api.test',
+      token: 't1',
+      method: 'PUT',
+      upload: { contentType: 'image/jpeg', data },
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      'https://api.test/api/missions/m1/reports/r1/photo',
+      expect.objectContaining({
+        method: 'PUT',
+        body: data,
+        headers: { authorization: 'Bearer t1', 'content-type': 'image/jpeg' },
+      }),
+    );
+  });
+
   it('sends no authorization header before sign-in', async () => {
     const fetch = vi.fn().mockResolvedValue(json(200, []));
     vi.stubGlobal('fetch', fetch);

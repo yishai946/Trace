@@ -53,6 +53,13 @@
           "cameraPermission": "TRACE משתמשת במצלמה לסריקת QR ולצילום תמונה לדיווח.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "TRACE משתמשת במצלמה לסריקת QR ולצילום תמונה לדיווח.",
+          "microphonePermission": false
+        }
       ]
     ],
     "scheme": "trace-field"

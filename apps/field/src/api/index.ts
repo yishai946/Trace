@@ -24,8 +24,10 @@ interface RequestOptions<S extends z.ZodType> {
   /** The searcher's session token; null before sign-in. */
   token: string | null;
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  /** Sent as JSON. */
+  /** Sent as JSON. Not together with `upload`. */
   body?: unknown;
+  /** Sent as it is, such as a photo's bytes, with its content type. Not together with `body`. */
+  upload?: { contentType: string; data: Uint8Array<ArrayBuffer> };
   /** Validates the response. Omit for responses without a body. */
   schema?: S;
   signal?: AbortSignal;
@@ -38,13 +40,14 @@ function parseRetryAfter(value: string | null): number | undefined {
 /** Calls the TRACE API with the searcher's bearer token and validates the response with the shared zod schema. */
 export async function apiRequest<S extends z.ZodType>(
   path: string,
-  { baseUrl, token, method = 'GET', body, schema, signal }: RequestOptions<S>,
+  { baseUrl, token, method = 'GET', body, upload, schema, signal }: RequestOptions<S>,
 ): Promise<z.infer<S>> {
   if (!baseUrl) throw new ApiRequestError(0, 'NETWORK_ERROR', 'EXPO_PUBLIC_API_URL is not set');
 
   const headers: Record<string, string> = {};
   if (token) headers.authorization = `Bearer ${token}`;
   if (body !== undefined) headers['content-type'] = 'application/json';
+  if (upload) headers['content-type'] = upload.contentType;
 
   let res: Response;
   try {
@@ -54,7 +57,7 @@ export async function apiRequest<S extends z.ZodType>(
       // The bearer token is the only credential: the sign-in response also sets a cookie that must not outlive sign-out.
       credentials: 'omit',
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: upload ? upload.data : body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (error) {
     if (signal?.aborted) throw error;
