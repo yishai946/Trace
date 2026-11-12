@@ -6,6 +6,7 @@ import {
   SIGHTING_SOURCES,
   TASK_STATUSES,
   TIMELINE_EVENT_TYPES,
+  TRACK_CONTEXTS,
   USER_ROLES,
 } from '@trace/domain';
 import { sql } from 'drizzle-orm';
@@ -13,6 +14,7 @@ import {
   bigserial,
   boolean,
   customType,
+  doublePrecision,
   index,
   integer,
   jsonb,
@@ -41,6 +43,7 @@ export const userRole = pgEnum('user_role', USER_ROLES);
 export const sightingSource = pgEnum('sighting_source', SIGHTING_SOURCES);
 export const lkpDecision = pgEnum('lkp_decision', LKP_DECISIONS);
 export const timelineEventType = pgEnum('timeline_event_type', TIMELINE_EVENT_TYPES);
+export const trackContext = pgEnum('track_context', TRACK_CONTEXTS);
 
 /*
  * Sign-in tables owned by Better Auth (users, sessions, accounts, verifications). Their columns follow its core schema
@@ -259,6 +262,27 @@ export const participations = pgTable(
       .on(t.polygonId)
       .where(sql`${t.status} = 'assigned'`),
   ],
+);
+
+/**
+ * A searcher's GPS route (UC-S01): every fix their phone recorded, with what it was for. Kept after the mission ends
+ * (mission history, UC-C20). The phone may send a batch again after a lost connection: one point per recording time.
+ */
+export const trackPoints = pgTable(
+  'track_points',
+  {
+    id: bigserial({ mode: 'number' }).primaryKey(),
+    participationId: uuid('participation_id')
+      .notNull()
+      .references(() => participations.id, { onDelete: 'cascade' }),
+    position: pointColumn().notNull(),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+    /** Meters, as the phone reported it. */
+    accuracy: doublePrecision(),
+    context: trackContext().notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex('track_points_participation_recorded_idx').on(t.participationId, t.recordedAt)],
 );
 
 /**

@@ -25,6 +25,7 @@ import { polygonRoutes } from '../modules/polygons';
 import { sightingRoutes } from '../modules/sightings';
 import { searcherRoutes } from '../modules/searchers';
 import { timelineRoutes } from '../modules/timeline';
+import { trackingRoutes } from '../modules/tracking';
 import { createRealtime } from '../realtime';
 
 const VERSION = '0.1.0';
@@ -85,6 +86,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
         await signedIn.register(polygonRoutes, { db, realtime });
         await signedIn.register(sightingRoutes, { db, realtime });
         await signedIn.register(participantRoutes, { db, realtime });
+        await signedIn.register(trackingRoutes, { db, realtime });
         await signedIn.register(searcherRoutes, { db });
         await signedIn.register(notificationRoutes, { db });
         await signedIn.register(timelineRoutes, { db });
