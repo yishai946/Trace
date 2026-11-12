@@ -24,6 +24,12 @@ export function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
 }
 
+/** A moment as its date and hour on the searcher's phone, e.g. `3.10, 11:20`. */
+export function formatDateTime(iso: string): string {
+  const date = new Date(iso).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+  return `${date}, ${formatTime(iso)}`;
+}
+
 /**
  * The mission area on the map, drawn with the shared Trace Console style: its polygons and, once the mission is
  * known, its LKP and rally point. Never other searchers' positions (decisions 31, 32).

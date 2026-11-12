@@ -1,6 +1,6 @@
 import { themes } from '@trace/design';
 import type { Mission, OwnParticipation } from '@trace/schemas';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WaitingForAssignment } from '.';
 import { formatTime } from '../../mission/missionArea';
@@ -47,8 +47,11 @@ afterEach(() => {
   usePreferences.setState(usePreferences.getInitialState());
 });
 
+const onOpenDetails = vi.fn();
 const renderScreen = (m: Mission = mission) =>
-  render(<WaitingForAssignment mission={m} participation={participation} />, { wrapper: TestProviders });
+  render(<WaitingForAssignment mission={m} participation={participation} onOpenDetails={onOpenDetails} />, {
+    wrapper: TestProviders,
+  });
 
 describe('WaitingForAssignment', () => {
   it('tells the searcher they wait, with their callsign and name', async () => {
@@ -74,6 +77,12 @@ describe('WaitingForAssignment', () => {
     expect(person.getByText('מעיל חום, כובע צמר אפור, מקל הליכה')).toBeInTheDocument();
     expect(map.getByText(`LKP ${formatTime(mission.lkp!.observedAt)}`)).toBeInTheDocument();
     expect(map.getByText('כינוס')).toBeInTheDocument();
+  });
+
+  it('opens the full details of the missing person', () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole('button', { name: 'פרטי נעדר מלאים' }));
+    expect(onOpenDetails).toHaveBeenCalled();
   });
 
   it('copes with a mission that has few details', () => {
