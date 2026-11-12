@@ -1,4 +1,11 @@
-import { ApiError, MissionParams, TrackPointsBody, TrackPointsResult } from '@trace/schemas';
+import {
+  ApiError,
+  MissionParams,
+  ParticipantParams,
+  ParticipantTrack,
+  TrackPointsBody,
+  TrackPointsResult,
+} from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
@@ -6,7 +13,7 @@ import type { Db } from '../../db';
 import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
 import { listParticipants } from '../participants/participants.service';
-import { recordTrackPoints } from './tracking.service';
+import { getTrack, recordTrackPoints } from './tracking.service';
 
 export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   app.post(
@@ -41,11 +48,36 @@ export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
           ...result.moved,
         });
       }
+      if (result.storedPoints.length > 0) {
+        realtime.publish({
+          type: 'participant.tracked',
+          missionId,
+          participantId: result.participantId,
+          points: result.storedPoints,
+        });
+      }
       if (result.gpsBack) {
         const participant = (await listParticipants(db, missionId)).find((p) => p.id === result.participantId);
         if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
       }
       return { stored: result.stored, duplicates: result.duplicates };
     },
+  );
+
+  app.get(
+    '/missions/:missionId/participants/:participantId/track',
+    {
+      schema: {
+        tags: ['tracking'],
+        summary: "A searcher's route, oldest point first (UC-C10)",
+        description:
+          "The mission's commander only; a searcher, even for their own route, gets 403 (decision 32). The route " +
+          'stays readable after the searcher finished and after the mission ended.',
+        params: ParticipantParams,
+        response: { 200: ParticipantTrack, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => getTrack(db, request.params),
   );
 };

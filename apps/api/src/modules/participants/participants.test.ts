@@ -8,7 +8,7 @@ import {
   type MissionEvent,
 } from '@trace/schemas';
 import { asc, eq } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assignments, missions, participations, trackPoints } from '../../db/schema';
 import {
   addParticipant,
@@ -257,7 +257,12 @@ describe('what a searcher sees of other searchers (UC-F04, decisions 31, 32)', (
     });
     const polygonId = (polygon.json() as { id: string }).id;
     // Another searcher, assigned and with a known position.
-    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, polygonId, position: [35.131, 31.781] });
+    const participantId = await addParticipant(ctx.db, {
+      missionId: mission.id,
+      callsign: 1,
+      polygonId,
+      position: [35.131, 31.781],
+    });
     // One searcher waits for an assignment, the other is assigned to the same polygon.
     const waiting = injectAs(ctx, await signInSearcher(ctx));
     await waiting({ method: 'POST', url: `/api/join/${mission.joinCode}` });
@@ -270,7 +275,7 @@ describe('what a searcher sees of other searchers (UC-F04, decisions 31, 32)', (
     });
 
     for (const searcher of [waiting, injectAs(ctx, assignedUser)]) {
-      for (const path of ['participants', 'sightings', 'timeline']) {
+      for (const path of ['participants', 'sightings', 'timeline', `participants/${participantId}/track`]) {
         const res = await searcher({ method: 'GET', url: `/api/missions/${mission.id}/${path}` });
         expect(res.statusCode, path).toBe(403);
       }
@@ -528,6 +533,106 @@ describe('assigning a searcher (UC-C09)', () => {
         })
       ).statusCode,
     ).toBe(403);
+  });
+
+  describe('battery (UC-C10, decision 13)', () => {
+    const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+    let user: Awaited<ReturnType<typeof signInSearcher>>;
+    let id: string;
+    let published: MissionEvent[];
+    let publish: typeof ctx.realtime.publish;
+
+    beforeEach(async () => {
+      user = await signInSearcher(ctx);
+      id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4, searcherId: user.searcherId });
+      published = [];
+      publish = ctx.realtime.publish.bind(ctx.realtime);
+      ctx.realtime.publish = (event) => {
+        published.push(event);
+        publish(event);
+      };
+    });
+    afterEach(() => {
+      ctx.realtime.publish = publish;
+    });
+
+    const report = (payload: unknown, as: typeof user = user) =>
+      injectAs(
+        ctx,
+        as,
+      )({ method: 'PUT', url: `/api/missions/${mission.id}/participation/battery`, payload: payload as object });
+    const battery = async () =>
+      ParticipantList.parse(
+        (await commander({ method: 'GET', url: `/api/missions/${mission.id}/participants` })).json(),
+      ).find((p) => p.id === id)?.battery;
+
+    it('has no battery before the first report', async () => {
+      expect(await battery()).toBeNull();
+    });
+
+    it('stores the reading for the commander and announces it once', async () => {
+      const measuredAt = minutesAgo(1);
+      expect((await report({ level: 63, measuredAt })).statusCode).toBe(204);
+
+      expect(await battery()).toEqual({ level: 63, measuredAt });
+      expect(published).toMatchObject([
+        { type: 'participant.updated', participant: { id, battery: { level: 63, measuredAt } } },
+      ]);
+    });
+
+    it('announces nothing when the same reading comes again, and keeps the newest reading', async () => {
+      const newest = minutesAgo(1);
+      await report({ level: 63, measuredAt: newest });
+      published.length = 0;
+
+      expect((await report({ level: 63, measuredAt: newest })).statusCode).toBe(204);
+      expect((await report({ level: 80, measuredAt: minutesAgo(10) })).statusCode).toBe(204);
+      expect(await battery()).toEqual({ level: 63, measuredAt: newest });
+      expect(published).toEqual([]);
+
+      expect((await report({ level: 62, measuredAt: minutesAgo(0) })).statusCode).toBe(204);
+      expect((await battery())?.level).toBe(62);
+    });
+
+    it('ignores a reading dated far in the future', async () => {
+      const measuredAt = minutesAgo(1);
+      await report({ level: 63, measuredAt });
+      const future = new Date(Date.now() + 60 * 60_000).toISOString();
+      expect((await report({ level: 10, measuredAt: future })).statusCode).toBe(204);
+      expect(await battery()).toEqual({ level: 63, measuredAt });
+    });
+
+    it('is accepted while the mission is not active, and refused once the activity ended', async () => {
+      for (const status of ['paused', 'ended_located', 'ended_stopped'] as const) {
+        await ctx.db.update(missions).set({ status }).where(eq(missions.id, mission.id));
+        expect((await report({ level: 50, measuredAt: minutesAgo(1) })).statusCode, status).toBe(204);
+        expect((await battery())?.level, status).toBe(50);
+      }
+      await ctx.db.update(participations).set({ status: 'ended' }).where(eq(participations.id, id));
+      published.length = 0;
+      const res = await report({ level: 40, measuredAt: minutesAgo(0) });
+      expect(res.statusCode).toBe(409);
+      expect(res.json()).toMatchObject({ error: { code: 'PARTICIPATION_ENDED' } });
+      expect(published).toEqual([]);
+    });
+
+    it('refuses an invalid reading, the commander and a searcher outside the mission', async () => {
+      const measuredAt = minutesAgo(1);
+      expect((await report({ level: 101, measuredAt })).statusCode).toBe(400);
+      expect((await report({ level: -1, measuredAt })).statusCode).toBe(400);
+      expect((await report({ level: 50 })).statusCode).toBe(400);
+      expect(
+        (
+          await commander({
+            method: 'PUT',
+            url: `/api/missions/${mission.id}/participation/battery`,
+            payload: { level: 50, measuredAt },
+          })
+        ).statusCode,
+      ).toBe(403);
+      expect((await report({ level: 50, measuredAt }, await signInSearcher(ctx))).statusCode).toBe(404);
+      expect(published).toEqual([]);
+    });
   });
 
   it('lets only the commander end a participation', async () => {
