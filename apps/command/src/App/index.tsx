@@ -332,12 +332,19 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               onRetry={() => void participants.refetch()}
               onAssign={
                 operational && !isMissionEnded(mission.status)
-                  ? (participantId, polygonId) => assign.mutate({ missionId: mission.id, participantId, polygonId })
+                  ? (participantId, polygonId) => {
+                      endParticipation.reset();
+                      assign.mutate({ missionId: mission.id, participantId, polygonId });
+                    }
                   : undefined
               }
+              // Tracking continues after the mission ended until Finish Activity, so ending stays possible then.
               onEnd={
-                operational && !isMissionEnded(mission.status)
-                  ? (participantId) => endParticipation.mutate({ missionId: mission.id, participantId })
+                operational
+                  ? (participantId) => {
+                      assign.reset();
+                      endParticipation.mutate({ missionId: mission.id, participantId });
+                    }
                   : undefined
               }
               assigning={assign.isPending || endParticipation.isPending}

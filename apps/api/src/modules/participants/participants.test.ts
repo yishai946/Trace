@@ -453,8 +453,18 @@ describe('assigning a searcher (UC-C09)', () => {
       payload: { points: [{ position: [35.125, 31.775], recordedAt: '2026-10-03T13:05:00+03:00', context: 'search' }] },
     });
     const end = () => commander({ method: 'POST', url: `/api/missions/${mission.id}/participants/${id}/end` });
-
+    const published: MissionEvent[] = [];
+    const publish = ctx.realtime.publish.bind(ctx.realtime);
+    ctx.realtime.publish = (event) => {
+      published.push(event);
+      publish(event);
+    };
     const res = await end();
+    ctx.realtime.publish = publish;
+    expect(published).toMatchObject([
+      { type: 'participant.updated', participant: { id, searcherId: user.searcherId, status: 'ended' } },
+    ]);
+
     expect(res.statusCode).toBe(200);
     expect(Participant.parse(res.json())).toMatchObject({ status: 'ended', polygonId: null, taskStatus: null });
     expect((await history(id)).every((row) => row.endedAt !== null)).toBe(true);
@@ -464,6 +474,13 @@ describe('assigning a searcher (UC-C09)', () => {
     const rejoin = await injectAs(ctx, user)({ method: 'POST', url: `/api/join/${mission.joinCode}` });
     expect(rejoin.statusCode).toBe(201);
     expect(JoinedMission.parse(rejoin.json()).participation).toMatchObject({ id, status: 'available' });
+  });
+
+  it('ends a participation after the mission ended too, since tracking continues until Finish Activity', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    await ctx.db.update(missions).set({ status: 'ended_located' }).where(eq(missions.id, mission.id));
+    const res = await commander({ method: 'POST', url: `/api/missions/${mission.id}/participants/${id}/end` });
+    expect(Participant.parse(res.json()).status).toBe('ended');
   });
 
   it('lets only the commander end a participation', async () => {

@@ -17,27 +17,28 @@ export interface ActivityEndedProps {
 
 /**
  * Fm13 "הוסרת מהפעילות": the participation ended. Tracking stopped, what the searcher collected stays in the history,
- * and they may join the mission again while it is active (UC-C18, decision 70).
+ * and they may join the mission again while it is active (UC-C18, decisions 70, 82).
  */
 export function ActivityEnded({ mission, removed, onJoinAgain, onOpenMyMissions }: ActivityEndedProps) {
   const { color } = useTheme().theme;
   const person = mission?.missingPerson.name;
+  const canJoinAgain = mission?.status === 'active';
+  const lines = [
+    { key: 'מעקב בטיחות', value: 'נפסק' },
+    ...(mission ? [{ key: 'מסע', value: person ? `${mission.name}, ${person}` : mission.name }] : []),
+  ];
   return (
     <Screen
       title="סיום פעילות"
       tabbed
       footer={
-        <View style={styles.buttons}>
-          <View style={styles.grow}>
-            <Button label="המסעות שלי" size="lg" block onPress={onOpenMyMissions} />
-          </View>
-          <View style={styles.grow}>
-            <Button label="הצטרף שוב" variant="primary" size="lg" block onPress={onJoinAgain} />
-          </View>
-        </View>
+        <>
+          <Button label="המסעות שלי" variant="primary" size="lg" block onPress={onOpenMyMissions} />
+          {canJoinAgain ? <Button label="הצטרף שוב" size="lg" block onPress={onJoinAgain} /> : null}
+        </>
       }
     >
-      <View style={[styles.card, { backgroundColor: color.surfaceSunken, borderColor: color.borderStrong }]}>
+      <View style={[styles.card, styles.strong, { backgroundColor: color.surface, borderColor: color.inkMuted }]}>
         <View style={styles.row}>
           <Text accessibilityRole="header" style={[typography.title, styles.grow, { color: color.ink }]}>
             {removed ? 'הוסרת מהפעילות' : 'הפעילות הסתיימה'}
@@ -46,35 +47,26 @@ export function ActivityEnded({ mission, removed, onJoinAgain, onOpenMyMissions 
         </View>
         <Text style={[typography.body, { color: color.inkSecondary }]}>
           {removed
-            ? 'המנהל הסיר אותך מהמסע. ההשתתפות נשמרה בהיסטוריה, ואפשר להצטרף שוב.'
-            : 'ההשתתפות נשמרה בהיסטוריה, ואפשר להצטרף שוב.'}
+            ? `המנהל הסיר אותך מהמסע. ההשתתפות נשמרה בהיסטוריה${canJoinAgain ? ', ואפשר להצטרף שוב' : ''}.`
+            : `ההשתתפות נשמרה בהיסטוריה${canJoinAgain ? ', ואפשר להצטרף שוב' : ''}.`}
         </Text>
       </View>
-      <View style={[styles.line, { borderTopColor: color.borderSubtle }]}>
-        <Text style={[typography.body, styles.grow, { color: color.ink }]}>מעקב בטיחות</Text>
-        <Text style={[typography.meta, { color: color.inkMuted }]}>נפסק</Text>
+      <View style={[styles.card, { backgroundColor: color.surfaceSunken, borderColor: color.border }]}>
+        {lines.map((line, i) => (
+          <View key={line.key} style={[styles.row, i > 0 && [styles.divided, { borderTopColor: color.borderSubtle }]]}>
+            <Text style={[typography.meta, styles.grow, { color: color.inkMuted }]}>{line.key}</Text>
+            <Text style={[typography.body, { color: color.ink }]}>{line.value}</Text>
+          </View>
+        ))}
       </View>
-      {mission ? (
-        <View style={[styles.line, { borderTopColor: color.borderSubtle }]}>
-          <Text style={[typography.body, styles.grow, { color: color.ink }]}>מסע</Text>
-          <Text style={[typography.meta, { color: color.inkMuted }]}>
-            {person ? `${mission.name}, ${person}` : mission.name}
-          </Text>
-        </View>
-      ) : null}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    gap: spacing.space4,
-    padding: spacing.space6,
-    borderWidth: pendingTokens.cardStrongBorder,
-    borderRadius: radius.radiusLg,
-  },
+  card: { gap: spacing.space4, padding: spacing.space6, borderWidth: 1, borderRadius: radius.radiusLg },
+  strong: { borderWidth: pendingTokens.cardStrongBorder },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.space4 },
+  divided: { paddingTop: spacing.space4, borderTopWidth: 1 },
   grow: { flex: 1 },
-  line: { flexDirection: 'row', alignItems: 'center', paddingTop: spacing.space5, borderTopWidth: 1 },
-  buttons: { flexDirection: 'row', gap: spacing.space4 },
 });

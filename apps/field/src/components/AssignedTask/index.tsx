@@ -36,7 +36,7 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice 
           style={[styles.notice, { borderColor: color.accent }]}
         >
           <Text style={[typography.body, styles.grow, { color: color.ink }]}>
-            {notice.kind !== 'assigned'
+            {notice.kind === 'moved'
               ? `הועברת ${to(noticeName)}. המשימה הקודמת נשמרה.`
               : `המנהל שיבץ אותך ${to(noticeName)}.`}
           </Text>

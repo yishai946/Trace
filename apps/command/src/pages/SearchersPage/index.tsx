@@ -185,8 +185,13 @@ function EndParticipation({
 }) {
   return (
     <DialogTrigger>
-      <Button size="sm" variant="danger-outline" isDisabled={!onEnd} aria-label={`סיים השתתפות של ${participant.name}`}>
-        סיים השתתפות
+      <Button
+        size="sm"
+        variant="danger-outline"
+        isDisabled={!onEnd}
+        aria-label={`סיים השתתפות של ${participant.name}…`}
+      >
+        סיים השתתפות…
       </Button>
       <Popover className={styles.popover} placement="bottom end">
         <Dialog className={styles.confirm} aria-label={`אישור סיום השתתפות של ${participant.name}`}>
