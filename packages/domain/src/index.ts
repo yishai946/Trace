@@ -8,3 +8,4 @@ export * from './polygon';
 export * from './role';
 export * from './sighting';
 export * from './timeline';
+export * from './tracking';
