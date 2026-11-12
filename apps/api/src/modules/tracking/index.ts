@@ -5,6 +5,7 @@ import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
+import { listParticipants } from '../participants/participants.service';
 import { recordTrackPoints } from './tracking.service';
 
 export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
@@ -39,6 +40,10 @@ export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
           searcherId: actor.searcherId,
           ...result.moved,
         });
+      }
+      if (result.gpsBack) {
+        const participant = (await listParticipants(db, missionId)).find((p) => p.id === result.participantId);
+        if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
       }
       return { stored: result.stored, duplicates: result.duplicates };
     },

@@ -1,0 +1,1 @@
+ALTER TABLE "participations" ADD COLUMN "gps_unavailable_since" timestamp with time zone;

@@ -115,6 +115,14 @@ export function SearchersPage({
                   </td>
                   <td>{p.status === 'assigned' ? polygonName(p.polygonId) : '—'}</td>
                   <td>
+                    {p.gpsUnavailableSince ? (
+                      <span className={styles.warning}>
+                        GPS לא זמין מ-
+                        <time dateTime={p.gpsUnavailableSince} className={styles.num}>
+                          {timeLabel(p.gpsUnavailableSince)}
+                        </time>{' '}
+                      </span>
+                    ) : null}
                     {p.positionAt ? (
                       <time dateTime={p.positionAt} className={styles.num}>
                         {timeLabel(p.positionAt)}

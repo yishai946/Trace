@@ -117,6 +117,7 @@ export async function listParticipants(db: Db, missionId: string): Promise<Parti
       taskStatus: participations.taskStatus,
       position: asGeoJson(participations.lastPosition),
       positionAt: participations.lastPositionAt,
+      gpsUnavailableSince: participations.gpsUnavailableSince,
     })
     .from(participations)
     .innerJoin(searchers, eq(searchers.id, participations.searcherId))
@@ -127,6 +128,7 @@ export async function listParticipants(db: Db, missionId: string): Promise<Parti
     ...row,
     position: row.position ? (PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat) : null,
     positionAt: row.positionAt?.toISOString() ?? null,
+    gpsUnavailableSince: row.gpsUnavailableSince?.toISOString() ?? null,
   }));
 }
 
@@ -231,4 +233,25 @@ export async function endParticipation(
   const participant = (await listParticipants(db, input.missionId)).find((p) => p.id === input.participantId);
   if (!participant) throw notFound('Searcher');
   return participant;
+}
+
+/**
+ * Records whether the searcher's phone has GPS (UC-S01, decision 42). Losing it keeps the first moment it was lost, so
+ * the commander sees for how long; getting it back clears it. Returns the participant only when the state changed.
+ */
+export async function setGpsStatus(
+  db: Db,
+  input: { missionId: string; searcherId: string; available: boolean },
+): Promise<Participant | null> {
+  const [participation] = await db
+    .select({ id: participations.id, since: participations.gpsUnavailableSince })
+    .from(participations)
+    .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)));
+  if (!participation) throw notFound('Mission');
+  if (input.available === (participation.since === null)) return null;
+  await db
+    .update(participations)
+    .set({ gpsUnavailableSince: input.available ? null : new Date() })
+    .where(eq(participations.id, participation.id));
+  return (await listParticipants(db, input.missionId)).find((p) => p.id === participation.id) ?? null;
 }

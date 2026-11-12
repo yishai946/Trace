@@ -253,6 +253,8 @@ export const participations = pgTable(
     taskStatus: taskStatus('task_status'),
     lastPosition: pointColumn('last_position'),
     lastPositionAt: timestamp('last_position_at', { withTimezone: true }),
+    /** Since when the searcher's phone reports no GPS (decision 42); null while it works. */
+    gpsUnavailableSince: timestamp('gps_unavailable_since', { withTimezone: true }),
     joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
