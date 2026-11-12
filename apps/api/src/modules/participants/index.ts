@@ -1,6 +1,7 @@
 import {
   ApiError,
   AssignBody,
+  GpsStatusBody,
   JoinedMission,
   JoinParams,
   JoinPreview,
@@ -11,6 +12,7 @@ import {
   ParticipantParams,
 } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
+import { z } from 'zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
@@ -25,6 +27,7 @@ import {
   joinMission,
   listParticipants,
   previewJoin,
+  setGpsStatus,
 } from './participants.service';
 
 export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (
@@ -63,6 +66,36 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       return getOwnParticipation(db, request.params.missionId, actor.searcherId);
+    },
+  );
+
+  app.put(
+    '/missions/:missionId/participation/gps',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: "Report whether the searcher's phone has GPS (UC-S01, decision 42)",
+        description:
+          'Searchers in the mission only. The commander sees "GPS unavailable" at once; a track upload clears it. ' +
+          'The time before escalating is TBD and belongs to UC-S04.',
+        params: MissionParams,
+        body: GpsStatusBody,
+        response: { 204: z.null(), 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
+      },
+      preHandler: [searchersOnly, missionAccess(db, 'member')],
+    },
+    async (request, reply) => {
+      const actor = actorOf(request);
+      // `searchersOnly` already refused anyone else; this narrows the type.
+      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { missionId } = request.params;
+      const participant = await setGpsStatus(db, {
+        missionId,
+        searcherId: actor.searcherId,
+        available: request.body.available,
+      });
+      if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+      return reply.status(204).send(null);
     },
   );
 

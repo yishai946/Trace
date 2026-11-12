@@ -483,6 +483,48 @@ describe('assigning a searcher (UC-C09)', () => {
     expect(Participant.parse(res.json()).status).toBe('ended');
   });
 
+  it('records a lost GPS for the commander, and clears it when GPS or a fix comes back (decision 42)', async () => {
+    const user = await signInSearcher(ctx);
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4, searcherId: user.searcherId });
+    const gps = (available: boolean) =>
+      injectAs(
+        ctx,
+        user,
+      )({ method: 'PUT', url: `/api/missions/${mission.id}/participation/gps`, payload: { available } });
+    const since = async () =>
+      ParticipantList.parse(
+        (await commander({ method: 'GET', url: `/api/missions/${mission.id}/participants` })).json(),
+      ).find((p) => p.id === id)?.gpsUnavailableSince;
+
+    expect((await gps(false)).statusCode).toBe(204);
+    const lost = await since();
+    expect(lost).not.toBeNull();
+    await gps(false);
+    expect(await since()).toBe(lost);
+    await gps(true);
+    expect(await since()).toBeNull();
+
+    await gps(false);
+    await injectAs(
+      ctx,
+      user,
+    )({
+      method: 'POST',
+      url: `/api/missions/${mission.id}/track-points`,
+      payload: { points: [{ position: [35.125, 31.775], recordedAt: new Date().toISOString(), context: 'safety' }] },
+    });
+    expect(await since()).toBeNull();
+    expect(
+      (
+        await commander({
+          method: 'PUT',
+          url: `/api/missions/${mission.id}/participation/gps`,
+          payload: { available: false },
+        })
+      ).statusCode,
+    ).toBe(403);
+  });
+
   it('lets only the commander end a participation', async () => {
     const user = await signInSearcher(ctx);
     const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4, searcherId: user.searcherId });

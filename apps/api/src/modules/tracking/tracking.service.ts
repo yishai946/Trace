@@ -68,7 +68,12 @@ export async function recordTrackPoints(
     const newestAt = new Date(newest.recordedAt);
     const [updated] = await tx
       .update(participations)
-      .set({ lastPosition: { type: 'Point', coordinates: newest.position }, lastPositionAt: newestAt })
+      // A fix is GPS: it also clears a reported loss (decision 42).
+      .set({
+        lastPosition: { type: 'Point', coordinates: newest.position },
+        lastPositionAt: newestAt,
+        gpsUnavailableSince: null,
+      })
       .where(
         and(
           eq(participations.id, participation.id),

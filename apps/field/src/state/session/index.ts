@@ -14,6 +14,9 @@ interface SessionState {
    * the mission, also across a move to another polygon (decisions 20, 43, 65).
    */
   tracking: boolean;
+  /** Whether the phone has GPS while tracking (decision 42); null before it was checked. */
+  gpsAvailable: boolean | null;
+  setGpsAvailable: (available: boolean | null) => void;
   /** Set when the commander assigned or moved the searcher while the app was open (UC-F05); cleared once seen. */
   assignmentNotice: AssignmentNotice | null;
   /** The code of a join link opened before the join screen could show it, e.g. while signed out (UC-F02). */
@@ -54,6 +57,7 @@ export const useSession = create<SessionState>()((set) => ({
   missionId: null,
   participation: null,
   tracking: false,
+  gpsAvailable: null,
   assignmentNotice: null,
   pendingJoinCode: null,
   restored: false,
@@ -93,4 +97,5 @@ export const useSession = create<SessionState>()((set) => ({
       return { participation, tracking, assignmentNotice: notice };
     }),
   dismissAssignmentNotice: () => set({ assignmentNotice: null }),
+  setGpsAvailable: (gpsAvailable) => set({ gpsAvailable }),
 }));

@@ -25,6 +25,7 @@ export default function MapScreen() {
   const missionId = useSession((s) => s.missionId);
   const participation = useSession((s) => s.participation);
   const notice = useSession((s) => s.assignmentNotice);
+  const gpsLost = useSession((s) => s.gpsAvailable === false);
   const dismissNotice = useSession((s) => s.dismissAssignmentNotice);
   const mission = useMission();
   const polygons = useMissionPolygons();
@@ -62,6 +63,9 @@ export default function MapScreen() {
     isFetching: polygons.isFetching,
     hasData: !!polygons.data,
   });
+  const gpsWarning = gpsLost
+    ? { text: 'ה-GPS לא זמין: המסלול לא נרשם. הפעל את שירותי המיקום בטלפון.', action: null }
+    : null;
   const status = kind
     ? {
         'no-api': { text: 'כתובת השרת לא מוגדרת: חסר EXPO_PUBLIC_API_URL', action: null },
@@ -81,10 +85,13 @@ export default function MapScreen() {
       }[kind]
     : null;
 
+  // The GPS warning shows when nothing more urgent does.
+  const banner = status ?? gpsWarning;
+
   return (
     <View style={styles.fill}>
       <MissionMap area={area} />
-      {status ? (
+      {banner ? (
         <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
           <View
             accessibilityLiveRegion="polite"
@@ -93,8 +100,8 @@ export default function MapScreen() {
               { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel },
             ]}
           >
-            <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{status.text}</Text>
-            {status.action}
+            <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{banner.text}</Text>
+            {banner.action}
           </View>
         </SafeAreaView>
       ) : null}

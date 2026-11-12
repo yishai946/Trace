@@ -157,3 +157,9 @@ a.num:focus-visible {
   margin: 0;
   font: var(--text-title);
 }
+
+/* GPS lost (decision 42): the word carries it, the color repeats it. */
+.warning {
+  color: var(--warning);
+  font-weight: 600;
+}

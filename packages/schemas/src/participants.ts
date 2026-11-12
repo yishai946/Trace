@@ -21,6 +21,8 @@ export const Participant = z
     /** Last reported position, or null before the first GPS fix. */
     position: LngLat.nullable(),
     positionAt: z.iso.datetime({ offset: true }).nullable(),
+    /** Since when the phone reports no GPS (decision 42); null while it works. */
+    gpsUnavailableSince: z.iso.datetime({ offset: true }).nullable().default(null),
   })
   .meta({ id: 'Participant' });
 
@@ -56,6 +58,9 @@ export const JoinedMission = z
 
 /** PUT /missions/:id/participants/:participantId/assignment: the polygon the commander assigns the searcher to. */
 export const AssignBody = z.object({ polygonId: z.uuid() }).meta({ id: 'AssignBody' });
+
+/** PUT /missions/:id/participation/gps: whether the searcher's phone has GPS now (UC-S01, decision 42). */
+export const GpsStatusBody = z.object({ available: z.boolean() }).meta({ id: 'GpsStatusBody' });
 
 export const ParticipantParams = z.object({ missionId: z.uuid(), participantId: z.uuid() });
 

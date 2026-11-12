@@ -8,6 +8,7 @@ import { routes, tabs } from '../../navigation/routes';
 import { useMissionLive } from '../../realtime';
 import { useSession } from '../../state/session';
 import { useLocationTracking } from '../../tracking';
+import { useGpsStatus } from '../../tracking/gpsStatus';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 
@@ -17,6 +18,7 @@ export default function MissionLayout() {
   const { bottom } = useSafeAreaInsets();
   useMissionLive();
   useLocationTracking();
+  useGpsStatus();
   // The commander ended the participation (UC-C18): from any tab, the searcher is taken to the map, which says so.
   const router = useRouter();
   const removed = useSession((s) => s.assignmentNotice?.kind === 'ended');

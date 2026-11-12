@@ -54,6 +54,14 @@ describe('SearchersPage', () => {
     expect(rows().map((row) => within(row).getAllByText(/^\d\d$/)[0]?.textContent)).toEqual(['13', '18', '10', '02']);
   });
 
+  it('shows when a searcher has no GPS, and since when', () => {
+    const lost = '2026-10-03T12:30:00.000Z';
+    render(<SearchersPage {...props({ participants: [{ ...dana, gpsUnavailableSince: lost }] })} />);
+    expect(within(rows()[0] as HTMLElement).getByText(/GPS לא זמין/).textContent).toBe(
+      `GPS לא זמין מ-${timeLabel(lost)}`,
+    );
+  });
+
   it('leaves out searchers who ended their activity', () => {
     render(<SearchersPage {...props({ participants: [dana, { ...michal, status: 'ended' }] })} />);
     expect(rows()).toHaveLength(1);
