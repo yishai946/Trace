@@ -82,4 +82,15 @@ describe('submitReport', () => {
     await expect(submitReport({ missionId, report: r, photo: null })).resolves.toBe('pending');
     expect((await pending()).map((i) => i.id)).toEqual([r.id]);
   });
+
+  it('says rejected, not sent, when the server refuses the report for good (the mission ended)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(409, { error: { code: 'MISSION_ENDED', message: 'ended' } })),
+    );
+    const r = report();
+
+    await expect(submitReport({ missionId, report: r, photo: null })).resolves.toBe('rejected');
+    expect(await pending()).toEqual([]);
+  });
 });

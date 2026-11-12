@@ -205,6 +205,25 @@ describe('ReportForm', () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
+  it('warns that the report was not accepted when the mission ended, and never calls it sent', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(409, { error: { code: 'MISSION_ENDED', message: 'ended' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill('הנעדר אותר', 'נמצא ליד העץ');
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('לא התקבל');
+    expect(warning).toHaveTextContent('הנעדר אותר');
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.queryByText('דיווח ממתין לשליחה')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
   it('sends the report without a photo when the camera is not allowed', async () => {
     const fetch = stubServer();
     const { onDone } = setup();

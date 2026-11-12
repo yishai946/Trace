@@ -8,6 +8,7 @@ import {
   pending,
   pendingCount,
   pendingOf,
+  wasDropped,
   type OutboxSender,
   type SendOutcome,
 } from '.';
@@ -294,5 +295,24 @@ describe('onOutboxChange', () => {
     off();
     await enqueue({ kind: 'report', missionId: A, payloads: [3] });
     expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('wasDropped', () => {
+  it('remembers items the server refused for good, but not items it confirmed or that still wait', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: [1], ids: ['r-dropped'] });
+    await enqueue({ kind: 'report', missionId: B, payloads: [2], ids: ['r-sent'] });
+    await flushOutbox({ report: sender(async (missionId) => (missionId === A ? 'drop-mission' : 'sent')) });
+    await enqueue({ kind: 'report', missionId: A, payloads: [3], ids: ['r-waits'] });
+
+    expect(wasDropped('r-dropped')).toBe(true);
+    expect(wasDropped('r-sent')).toBe(false);
+    expect(wasDropped('r-waits')).toBe(false);
+  });
+
+  it('remembers the items of a dropped batch', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: [1], ids: ['r-batch'] });
+    await flushOutbox({ report: sender(async () => 'drop-batch') });
+    expect(wasDropped('r-batch')).toBe(true);
   });
 });

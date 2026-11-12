@@ -99,6 +99,30 @@ function toItem(row: Row): OutboxItem | null {
   }
 }
 
+/** How many dropped ids are remembered; a refused report is looked up right after its send, so a few are enough. */
+const DROPPED_MEMORY = 200;
+/** Ids of items the server refused for good and the outbox deleted, newest last. Kept in memory only. */
+const dropped = new Set<string>();
+
+function rememberDropped(ids: string[]): void {
+  for (const id of ids) {
+    dropped.delete(id);
+    dropped.add(id);
+  }
+  for (const id of dropped) {
+    if (dropped.size <= DROPPED_MEMORY) break;
+    dropped.delete(id);
+  }
+}
+
+/**
+ * Whether the item with this id was deleted because the server refused it for good (`drop-batch`, `drop-mission`), as
+ * opposed to confirmed. Lets a caller tell a rejected report from a sent one once the item is no longer pending.
+ */
+export function wasDropped(id: string): boolean {
+  return dropped.has(id);
+}
+
 const listeners = new Set<() => void>();
 
 /** Calls `listener` after every change of what waits (added, sent, dropped, cleared). Returns the unsubscribe function. */
@@ -178,6 +202,7 @@ export async function pendingCount(): Promise<number> {
 export async function clearOutbox(): Promise<void> {
   const db = await database();
   await serialized(() => db.runAsync('DELETE FROM outbox'));
+  dropped.clear();
   notifyChange();
 }
 
@@ -227,15 +252,20 @@ async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Pr
       return;
     }
     if (outcome === 'drop-mission') {
+      const ids = await db.getAllAsync<{ id: string }>(
+        'SELECT id FROM outbox WHERE kind = ? AND mission_id = ?',
+        head.kind,
+        head.mission_id,
+      );
+      rememberDropped(ids.map((row) => row.id));
       await serialized(() =>
         db.runAsync('DELETE FROM outbox WHERE kind = ? AND mission_id = ?', head.kind, head.mission_id),
       );
       notifyChange();
     } else {
-      await deleteIds(
-        db,
-        items.map((item) => item.id),
-      );
+      const ids = items.map((item) => item.id);
+      if (outcome === 'drop-batch') rememberDropped(ids);
+      await deleteIds(db, ids);
     }
   }
 }

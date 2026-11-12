@@ -16,14 +16,18 @@ export interface ReportFormProps {
   /** The searcher's polygon, shown with the location; null for an Available searcher. */
   polygonName: string | null;
   onCancel: () => void;
-  /** The report was sent, or kept on the phone to be sent. */
+  /** The report was sent, kept on the phone to be sent, or the searcher left the screen that says it was not accepted. */
   onDone: () => void;
 }
 
-type Phase = 'editing' | 'sending' | 'located-pending';
+type Phase = 'editing' | 'sending' | 'located-pending' | 'rejected';
 
 const LOCATED_NOT_SENT =
   'הדיווח "הנעדר אותר" לא הגיע למנהל. אין חיבור: הדיווח נשמר במכשיר ויישלח אוטומטית כשהחיבור יחזור. עד אז המנהל לא יודע עליו.';
+
+const REJECTED = 'הדיווח לא התקבל: הפעילות הסתיימה או שהגישה שלך הוסרה. המנהל לא קיבל את הדיווח.';
+const LOCATED_REJECTED =
+  'הדיווח "הנעדר אותר" לא התקבל: הפעילות הסתיימה או שהגישה שלך הוסרה. המנהל לא קיבל את הדיווח, ויש לעדכן אותו בדרך אחרת.';
 
 /**
  * Fm08, a new field report (UC-F09): category, details, an optional photo and the position the phone attaches. The
@@ -68,7 +72,9 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
     setPhase('sending');
     try {
       const delivery = await submitReport({ missionId, report, photo: photo && { base64: photo.base64 } });
-      if (delivery === 'pending' && type === 'located') {
+      if (delivery === 'rejected') {
+        setPhase('rejected');
+      } else if (delivery === 'pending' && type === 'located') {
         setPhase('located-pending');
       } else {
         onDone();
@@ -83,6 +89,19 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
   }
 
   const leading = <Button label="ביטול" icon="close" variant="ghost" onPress={onCancel} />;
+
+  if (phase === 'rejected') {
+    return (
+      <Screen
+        title="דיווח חדש"
+        footer={<Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
+      >
+        <Notice tone="warn" icon="alert" live>
+          {type === 'located' ? LOCATED_REJECTED : REJECTED}
+        </Notice>
+      </Screen>
+    );
+  }
 
   if (phase === 'located-pending') {
     return (

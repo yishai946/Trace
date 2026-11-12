@@ -1,11 +1,14 @@
 import type { CreateReportBody } from '@trace/schemas';
 import { getNetworkStateAsync } from 'expo-network';
-import { enqueue, isPending } from '../../outbox';
+import { enqueue, isPending, wasDropped } from '../../outbox';
 import { uuidv7 } from '../../outbox/uuidv7';
 import { syncOutbox } from '../../tracking';
 
-/** `sent`: the server has the report. `pending`: it waits on the phone and goes out when the connection is back. */
-export type Delivery = 'sent' | 'pending';
+/**
+ * `sent`: the server has the report. `pending`: it waits on the phone and goes out when the connection is back.
+ * `rejected`: the server refused it for good (the mission ended, or access is gone) and the phone dropped it.
+ */
+export type Delivery = 'sent' | 'pending' | 'rejected';
 
 /** A new report's id: a UUIDv7 made on the phone, so a send repeated after a lost answer saves it once. */
 export const newReportId = uuidv7;
@@ -33,5 +36,6 @@ export async function submitReport({
   const network = await getNetworkStateAsync();
   if (!network.isConnected || network.isInternetReachable === false) return 'pending';
   await syncOutbox();
-  return (await isPending(report.id)) ? 'pending' : 'sent';
+  if (await isPending(report.id)) return 'pending';
+  return wasDropped(report.id) ? 'rejected' : 'sent';
 }
