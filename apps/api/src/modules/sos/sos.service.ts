@@ -240,7 +240,9 @@ export async function listSos(db: Db, { missionId, actor }: { missionId: string;
             db
               .select({ one: sql`1` })
               .from(sosAlertRecipients)
-              .where(and(eq(sosAlertRecipients.sosId, sosAlerts.id), eq(sosAlertRecipients.searcherId, actor.searcherId))),
+              .where(
+                and(eq(sosAlertRecipients.sosId, sosAlerts.id), eq(sosAlertRecipients.searcherId, actor.searcherId)),
+              ),
           ),
         );
   const rows = await selectSos(db)

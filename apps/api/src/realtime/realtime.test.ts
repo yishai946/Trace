@@ -684,9 +684,24 @@ describe('realtime', () => {
       const a1 = await signInSearcher(ctx);
       const b1 = await signInSearcher(ctx);
       const waiting = await signInSearcher(ctx);
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: sender.searcherId, polygonId: polygonA.id });
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, searcherId: a1.searcherId, polygonId: polygonA.id });
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 3, searcherId: b1.searcherId, polygonId: polygonB.id });
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 1,
+        searcherId: sender.searcherId,
+        polygonId: polygonA.id,
+      });
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 2,
+        searcherId: a1.searcherId,
+        polygonId: polygonA.id,
+      });
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 3,
+        searcherId: b1.searcherId,
+        polygonId: polygonB.id,
+      });
       await addParticipant(ctx.db, { missionId: mission.id, callsign: 4, searcherId: waiting.searcherId });
       const users = { sender, a1, b1, waiting };
       const sockets = {
@@ -718,31 +733,49 @@ describe('realtime', () => {
         otherCommander: record(sockets.otherCommander),
       };
 
-      const res = await injectAs(ctx, users.sender)({ method: 'POST', url: `/api/missions/${mission.id}/sos`, payload: {} });
+      const res = await injectAs(
+        ctx,
+        users.sender,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/sos`, payload: {} });
       expect(res.statusCode).toBe(201);
       const sos = Sos.parse(res.json());
       await settle();
       const activated = { type: 'sos.saved', missionId: mission.id, sos };
       for (const key of ['commander', 'sender', 'a1'] as const) expect(sosEvents(recorded[key])).toEqual([activated]);
 
-      const closed = await injectAs(ctx, commander)({ method: 'POST', url: `/api/missions/${mission.id}/sos/${sos.id}/close` });
+      const closed = await injectAs(
+        ctx,
+        commander,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/sos/${sos.id}/close` });
       expect(closed.statusCode).toBe(200);
       await settle();
       const closedSos = Sos.parse(closed.json());
       for (const key of ['commander', 'sender', 'a1'] as const) {
-        expect(sosEvents(recorded[key])).toEqual([activated, { type: 'sos.saved', missionId: mission.id, sos: closedSos }]);
+        expect(sosEvents(recorded[key])).toEqual([
+          activated,
+          { type: 'sos.saved', missionId: mission.id, sos: closedSos },
+        ]);
       }
       for (const key of ['b1', 'waiting', 'otherCommander'] as const) expect(sosEvents(recorded[key])).toEqual([]);
     });
 
     it('sends nothing for a refused or a repeated activation', async () => {
       const { mission, users, sockets } = await setup();
-      const first = await injectAs(ctx, users.sender)({ method: 'POST', url: `/api/missions/${mission.id}/sos`, payload: {} });
+      const first = await injectAs(
+        ctx,
+        users.sender,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/sos`, payload: {} });
       expect(first.statusCode).toBe(201);
       await settle();
       const events = record(sockets.commander);
-      const again = await injectAs(ctx, users.sender)({ method: 'POST', url: `/api/missions/${mission.id}/sos`, payload: {} });
-      const refused = await injectAs(ctx, users.sender)({
+      const again = await injectAs(
+        ctx,
+        users.sender,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/sos`, payload: {} });
+      const refused = await injectAs(
+        ctx,
+        users.sender,
+      )({
         method: 'POST',
         url: `/api/missions/${mission.id}/sos`,
         payload: { message: 'x'.repeat(501) },

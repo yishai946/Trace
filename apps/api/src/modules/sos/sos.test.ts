@@ -1,4 +1,12 @@
-import { SOS_MESSAGE_MAX_LENGTH, ApiError, Mission, MissionPolygon, Sos, SosList, TimelineEventList } from '@trace/schemas';
+import {
+  SOS_MESSAGE_MAX_LENGTH,
+  ApiError,
+  Mission,
+  MissionPolygon,
+  Sos,
+  SosList,
+  TimelineEventList,
+} from '@trace/schemas';
 import type { MissionEvent } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import type { Polygon } from 'geojson';
@@ -96,9 +104,19 @@ describe('SOS (UC-F13)', () => {
       position: [35.128, 31.775],
     });
     a1 = await signInSearcher(ctx);
-    await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: a1.searcherId, polygonId: polygonA.id });
+    await addParticipant(ctx.db, {
+      missionId: mission.id,
+      callsign: 1,
+      searcherId: a1.searcherId,
+      polygonId: polygonA.id,
+    });
     b1 = await signInSearcher(ctx);
-    await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, searcherId: b1.searcherId, polygonId: polygonB.id });
+    await addParticipant(ctx.db, {
+      missionId: mission.id,
+      callsign: 2,
+      searcherId: b1.searcherId,
+      polygonId: polygonB.id,
+    });
     available = await signInSearcher(ctx);
     await addParticipant(ctx.db, { missionId: mission.id, callsign: 3, searcherId: available.searcherId });
     published = [];
@@ -107,7 +125,8 @@ describe('SOS (UC-F13)', () => {
   const url = (path = '') => `/api/missions/${mission.id}/sos${path}`;
   const activate = (user: TestUser = sender, payload: unknown = { location }) =>
     injectAs(ctx, user)({ method: 'POST', url: url(), payload: payload as object });
-  const close = (id: string, user: TestUser = sender) => injectAs(ctx, user)({ method: 'POST', url: url(`/${id}/close`) });
+  const close = (id: string, user: TestUser = sender) =>
+    injectAs(ctx, user)({ method: 'POST', url: url(`/${id}/close`) });
   const list = async (user: TestUser = commanderUser) =>
     SosList.parse((await injectAs(ctx, user)({ method: 'GET', url: url() })).json());
   const savedEvents = () => published.filter((p) => p.event.type === 'sos.saved');
@@ -190,7 +209,9 @@ describe('SOS (UC-F13)', () => {
   it('records one activation on the Timeline and publishes it, and none on close', async () => {
     const sos = Sos.parse((await activate(sender, { message: 'עזרה', location })).json());
     await close(sos.id);
-    const timeline = TimelineEventList.parse((await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json());
+    const timeline = TimelineEventList.parse(
+      (await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json(),
+    );
     const events = timeline.filter((e) => e.type === 'sos.activated');
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
@@ -261,7 +282,9 @@ describe('SOS (UC-F13)', () => {
     expect(Sos.parse(res.json())).toEqual(first);
     expect(await ctx.db.select().from(sosAlerts)).toHaveLength(1);
     expect(savedEvents()).toHaveLength(1);
-    const timeline = TimelineEventList.parse((await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json());
+    const timeline = TimelineEventList.parse(
+      (await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json(),
+    );
     expect(timeline.filter((e) => e.type === 'sos.activated')).toHaveLength(1);
 
     await close(first.id);
@@ -296,13 +319,18 @@ describe('SOS (UC-F13)', () => {
     const sos = Sos.parse(res.json());
     expect(sos).toMatchObject({ polygon: null, recipientCount: 0 });
     expect(savedEvents()[0]?.searcherIds).toEqual([available.searcherId]);
-    const timeline = TimelineEventList.parse((await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json());
+    const timeline = TimelineEventList.parse(
+      (await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json(),
+    );
     expect(timeline.find((e) => e.type === 'sos.activated')?.subject.label).toBeNull();
   });
 
   it('uses the last known position without a location, and none when there is none', async () => {
     const withLast = Sos.parse((await activate(sender, {})).json());
-    expect(withLast.location).toMatchObject({ position: { type: 'Point', coordinates: [35.128, 31.775] }, accuracy: null });
+    expect(withLast.location).toMatchObject({
+      position: { type: 'Point', coordinates: [35.128, 31.775] },
+      accuracy: null,
+    });
     const [row] = await ctx.db.select().from(participations).where(eq(participations.id, senderParticipationId));
     expect(new Date(withLast.location?.recordedAt ?? '').getTime()).toBe(row?.lastPositionAt?.getTime());
 
@@ -338,7 +366,10 @@ describe('SOS (UC-F13)', () => {
           payload: {
             name: 'אחר',
             rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
-            lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' },
+            lkp: {
+              position: { type: 'Point', coordinates: [35.137, 31.769] },
+              observedAt: '2026-10-03T13:05:00+03:00',
+            },
           },
         })
       ).json(),
@@ -348,7 +379,9 @@ describe('SOS (UC-F13)', () => {
     expect(ApiError.parse(res.json()).error.code).toBe('NOT_FOUND');
 
     await ctx.db.delete(sosAlerts);
-    expect((await activate(sender, { location: { ...location, recordedAt: '2026-10-03T14:22:00' } })).statusCode).toBe(400);
+    expect((await activate(sender, { location: { ...location, recordedAt: '2026-10-03T14:22:00' } })).statusCode).toBe(
+      400,
+    );
     const badPoint = { ...location, position: { type: 'LineString', coordinates: [[0, 0]] } };
     expect((await activate(sender, { location: badPoint })).statusCode).toBe(400);
   });

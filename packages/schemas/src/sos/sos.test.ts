@@ -28,7 +28,9 @@ describe('CreateSosBody', () => {
 
   it('parses a location and defaults its accuracy to null', () => {
     expect(CreateSosBody.parse({ location }).location).toEqual(location);
-    expect(CreateSosBody.parse({ location: { position, recordedAt: location.recordedAt } }).location?.accuracy).toBeNull();
+    expect(
+      CreateSosBody.parse({ location: { position, recordedAt: location.recordedAt } }).location?.accuracy,
+    ).toBeNull();
   });
 
   it('refuses a time without an offset, a bad accuracy and a position that is not a point', () => {

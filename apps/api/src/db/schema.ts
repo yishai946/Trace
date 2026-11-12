@@ -372,7 +372,10 @@ export const sosAlertRecipients = pgTable(
       .notNull()
       .references(() => searchers.id),
   },
-  (t) => [primaryKey({ columns: [t.sosId, t.searcherId] }), index('sos_alert_recipients_searcher_idx').on(t.searcherId)],
+  (t) => [
+    primaryKey({ columns: [t.sosId, t.searcherId] }),
+    index('sos_alert_recipients_searcher_idx').on(t.searcherId),
+  ],
 );
 
 /**
