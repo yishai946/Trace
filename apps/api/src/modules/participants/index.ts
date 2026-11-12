@@ -5,6 +5,7 @@ import {
   JoinParams,
   JoinPreview,
   MissionParams,
+  OwnParticipation,
   Participant,
   ParticipantList,
   ParticipantParams,
@@ -17,7 +18,13 @@ import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
 import { getMission } from '../missions/missions.service';
 import { listPolygons } from '../polygons/polygons.service';
-import { assignParticipant, joinMission, listParticipants, previewJoin } from './participants.service';
+import {
+  assignParticipant,
+  getOwnParticipation,
+  joinMission,
+  listParticipants,
+  previewJoin,
+} from './participants.service';
 
 export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (
   app,
@@ -36,6 +43,26 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       preHandler: missionAccess(db, 'commander'),
     },
     (request) => listParticipants(db, request.params.missionId),
+  );
+
+  app.get(
+    '/missions/:missionId/participation',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: "The signed-in searcher's own participation: callsign, assignment and task (UC-F05)",
+        description: 'Searchers in the mission only. Field reads it again after a lost connection.',
+        params: MissionParams,
+        response: { 200: OwnParticipation, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
+      },
+      preHandler: [searchersOnly, missionAccess(db, 'member')],
+    },
+    (request) => {
+      const actor = actorOf(request);
+      // `searchersOnly` already refused anyone else; this narrows the type.
+      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      return getOwnParticipation(db, request.params.missionId, actor.searcherId);
+    },
   );
 
   app.put(

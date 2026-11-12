@@ -34,7 +34,12 @@ export function formatDateTime(iso: string): string {
  * The mission area on the map, drawn with the shared Trace Console style: its polygons and, once the mission is
  * known, its LKP and rally point. Never other searchers' positions (decisions 31, 32).
  */
-export function toMissionArea(polygons: MissionPolygon[], mission?: Pick<Mission, 'lkp' | 'rallyPoint'>): MissionArea {
+export function toMissionArea(
+  polygons: MissionPolygon[],
+  mission?: Pick<Mission, 'lkp' | 'rallyPoint'>,
+  /** The searcher's own polygon, drawn selected (UC-F05). */
+  assignedPolygonId?: string | null,
+): MissionArea {
   const lkp = mission?.lkp ?? null;
   const features: Feature[] = [
     ...polygons.map((p) => p.geometry),
@@ -51,6 +56,7 @@ export function toMissionArea(polygons: MissionPolygon[], mission?: Pick<Mission
         status: p.status,
         coverage: p.coverage,
         geometry: p.geometry,
+        selected: p.id === assignedPolygonId,
       })),
       lkp: lkp ? { id: 'lkp', position: lkp.position.coordinates as LngLat, time: formatTime(lkp.observedAt) } : null,
       rally: mission ? (mission.rallyPoint.coordinates as LngLat) : null,

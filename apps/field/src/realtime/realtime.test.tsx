@@ -140,6 +140,43 @@ describe('useMissionLive', () => {
     expect(queryClient.getQueryState(missionKeys.polygons(missionId))?.isInvalidated).toBe(true);
   });
 
+  it("takes the searcher's own assignment, and reads it again after a join", async () => {
+    const own = {
+      id: '00000000-0000-4000-8000-000000000002',
+      callsign: 7,
+      status: 'available' as const,
+      polygonId: null,
+      taskStatus: null,
+    };
+    useSession.setState({ participation: own });
+    const { socket } = setup();
+    const participant = {
+      ...own,
+      searcherId: '00000000-0000-4000-8000-000000000105',
+      name: 'דנה כהן',
+      phone: '+972526114085',
+      status: 'assigned',
+      polygonId: '00000000-0000-4000-8000-0000000000a1',
+      taskStatus: 'ready',
+      position: null,
+      positionAt: null,
+    };
+    act(() => socket?.fire('mission:event', { type: 'participant.updated', missionId, participant }));
+    expect(useSession.getState()).toMatchObject({
+      participation: { status: 'assigned', polygonId: participant.polygonId, taskStatus: 'ready' },
+      assignmentNotice: { kind: 'assigned', polygonId: participant.polygonId },
+    });
+
+    const fetch = vi.fn(
+      async () => new Response(JSON.stringify(own), { headers: { 'content-type': 'application/json' } }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await join(socket as FakeSocket);
+    await vi.waitFor(() => expect(useSession.getState().participation?.status).toBe('available'));
+    expect(fetch).toHaveBeenCalledWith(`https://api.test/api/missions/${missionId}/participation`, expect.anything());
+    vi.unstubAllGlobals();
+  });
+
   it('ignores an event of another mission or with an invalid payload', () => {
     const { socket, queryClient } = setup();
     const other = '00000000-0000-4000-8000-000000000009';

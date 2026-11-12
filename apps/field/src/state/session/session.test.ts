@@ -48,6 +48,26 @@ describe('useSession', () => {
     expect(useSession.getState().token).toBe('t1');
   });
 
+  it('notes an assignment, then a move, and not a change of task in the same polygon', () => {
+    const available = { id: 'p1', callsign: 7, status: 'available' as const, polygonId: null, taskStatus: null };
+    useSession.getState().enterMission('m1', available);
+    useSession
+      .getState()
+      .updateParticipation({ ...available, status: 'assigned', polygonId: 'a', taskStatus: 'ready' });
+    expect(useSession.getState().assignmentNotice).toEqual({ kind: 'assigned', polygonId: 'a' });
+
+    useSession
+      .getState()
+      .updateParticipation({ ...available, status: 'assigned', polygonId: 'b', taskStatus: 'ready' });
+    expect(useSession.getState().assignmentNotice).toEqual({ kind: 'moved', polygonId: 'b' });
+
+    useSession.getState().dismissAssignmentNotice();
+    useSession
+      .getState()
+      .updateParticipation({ ...available, status: 'assigned', polygonId: 'b', taskStatus: 'searching' });
+    expect(useSession.getState().assignmentNotice).toBeNull();
+  });
+
   it('enters the joined mission with the participation and drops the join link code', () => {
     const participation = { id: 'p1', callsign: 7, status: 'available' as const, polygonId: null, taskStatus: null };
     useSession.getState().setPendingJoinCode('K7-4Q2');

@@ -2,13 +2,14 @@ import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
+  OwnParticipation,
   type Mission,
   type ServerToClientEvents,
 } from '@trace/schemas';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { apiBaseUrl } from '../api';
+import { apiBaseUrl, apiRequest } from '../api';
 import { missionKeys } from '../mission/queries';
 import { useSession } from '../state/session';
 
@@ -32,6 +33,12 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
     case 'mission.updated':
       queryClient.setQueryData<Mission>(key, event.mission);
       return;
+    case 'participant.updated': {
+      // Only the searcher's own participation reaches Field (decision 32).
+      const { id, callsign, status, polygonId, taskStatus } = event.participant;
+      useSession.getState().updateParticipation({ id, callsign, status, polygonId, taskStatus });
+      return;
+    }
     case 'polygon.saved':
     case 'polygon.deleted':
       void queryClient.invalidateQueries({ queryKey: missionKeys.polygons(event.missionId) });
@@ -70,6 +77,15 @@ export function useMissionLive(): void {
       socket.emit('mission:join', { missionId }, (result) => {
         if (result.ok) {
           void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+          // An assignment made while away is not replayed either.
+          apiRequest(`/missions/${missionId}/participation`, {
+            baseUrl: apiBaseUrl,
+            token,
+            schema: OwnParticipation,
+          }).then(
+            (own) => useSession.getState().updateParticipation(own),
+            () => undefined,
+          );
         } else if (result.code === 'NOT_FOUND') {
           // The searcher is no longer in this mission: the map then offers to join one.
           useSession.getState().setMissionId(null);
