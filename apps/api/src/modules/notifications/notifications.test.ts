@@ -215,6 +215,19 @@ describe('notifications', () => {
       expect(sentTokens()).toEqual([tokenOf('finished'), tokenOf('other')]);
     });
 
+    it('with searcher ids, sends only to those searchers', async () => {
+      const a = await searcherWithToken(tokenOf('a'), { missionId, callsign: 1 });
+      await searcherWithToken(tokenOf('b'), { missionId, callsign: 2 });
+
+      await ctx.push.notifySearchers({ missionId, searcherIds: [a.searcherId], message });
+      expect(sentTokens()).toEqual([tokenOf('a')]);
+
+      ctx.pushSender.sent.length = 0;
+      const none = await ctx.push.notifySearchers({ missionId, searcherIds: [], message });
+      expect(none).toEqual({ sent: 0, removed: 0 });
+      expect(ctx.pushSender.sent).toHaveLength(0);
+    });
+
     it('skips searchers whose session has expired', async () => {
       await searcherWithToken(tokenOf('live'), { missionId, callsign: 1 });
       const expired = await searcherWithToken(tokenOf('expired'), { missionId, callsign: 2 });
