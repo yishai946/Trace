@@ -1,7 +1,15 @@
-import { JoinedMission, JoinPreview, Mission, ParticipantList, type MissionEvent } from '@trace/schemas';
-import { eq } from 'drizzle-orm';
+import {
+  JoinedMission,
+  JoinPreview,
+  Mission,
+  MissionPolygonList,
+  Participant,
+  ParticipantList,
+  type MissionEvent,
+} from '@trace/schemas';
+import { asc, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { missions } from '../../db/schema';
+import { assignments, missions, participations } from '../../db/schema';
 import {
   addParticipant,
   createTestApp,
@@ -272,5 +280,166 @@ describe('what a searcher sees of other searchers (UC-F04, decisions 31, 32)', (
         expect(res.body, path).not.toContain('35.131');
       }
     }
+  });
+});
+
+describe('assigning a searcher (UC-C09)', () => {
+  let ctx: TestContext;
+  let commander: ReturnType<typeof injectAs>;
+  let mission: Mission;
+  let polygonA: string;
+  let polygonB: string;
+
+  const square = (lng: number) => ({
+    type: 'Polygon',
+    coordinates: [
+      [
+        [lng, 31.77],
+        [lng + 0.01, 31.77],
+        [lng + 0.01, 31.78],
+        [lng, 31.77],
+      ],
+    ],
+  });
+
+  beforeAll(async () => {
+    ctx = await createTestApp();
+  });
+  beforeEach(async () => {
+    await resetDb(ctx.db);
+    commander = injectAs(ctx, await signInCommander(ctx));
+    const res = await commander({
+      method: 'POST',
+      url: '/api/missions',
+      payload: {
+        name: 'מסע',
+        rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
+        lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' },
+      },
+    });
+    mission = Mission.parse(res.json());
+    const create = async (name: string, lng: number) =>
+      (
+        (
+          await commander({
+            method: 'POST',
+            url: `/api/missions/${mission.id}/polygons`,
+            payload: { name, geometry: square(lng) },
+          })
+        ).json() as { id: string }
+      ).id;
+    polygonA = await create('A', 35.12);
+    polygonB = await create('B', 35.14);
+  });
+  afterAll(() => ctx.close());
+
+  const assign = (participantId: string, polygonId: string, as = commander) =>
+    as({
+      method: 'PUT',
+      url: `/api/missions/${mission.id}/participants/${participantId}/assignment`,
+      payload: { polygonId },
+    });
+  const history = (participationId: string) =>
+    ctx.db
+      .select({ polygonId: assignments.polygonId, endedAt: assignments.endedAt })
+      .from(assignments)
+      .where(eq(assignments.participationId, participationId))
+      .orderBy(asc(assignments.assignedAt));
+  const polygonStatus = async (id: string) =>
+    MissionPolygonList.parse(
+      (await commander({ method: 'GET', url: `/api/missions/${mission.id}/polygons` })).json(),
+    ).find((p) => p.id === id)?.status;
+
+  it('assigns an available searcher, who waits at Ready, and activates the polygon', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    const res = await assign(id, polygonA);
+
+    expect(res.statusCode).toBe(200);
+    expect(Participant.parse(res.json())).toMatchObject({
+      status: 'assigned',
+      polygonId: polygonA,
+      taskStatus: 'ready',
+    });
+    expect(await history(id)).toMatchObject([{ polygonId: polygonA, endedAt: null }]);
+    expect(await polygonStatus(polygonA)).toBe('active');
+  });
+
+  it('puts two searchers in one polygon', async () => {
+    const first = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    const second = await addParticipant(ctx.db, { missionId: mission.id, callsign: 5 });
+    expect((await assign(first, polygonA)).statusCode).toBe(200);
+    expect((await assign(second, polygonA)).statusCode).toBe(200);
+  });
+
+  it('moves a searching searcher: the old task ends and stays in the history, the new one starts at Ready', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    await assign(id, polygonA);
+    await ctx.db.update(participations).set({ taskStatus: 'searching' }).where(eq(participations.id, id));
+    const res = await assign(id, polygonB);
+
+    expect(Participant.parse(res.json())).toMatchObject({ polygonId: polygonB, taskStatus: 'ready' });
+    const rows = await history(id);
+    expect(rows.map((r) => r.polygonId)).toEqual([polygonA, polygonB]);
+    expect(rows[0]?.endedAt).not.toBeNull();
+    expect(rows[1]?.endedAt).toBeNull();
+  });
+
+  it('changes nothing when the searcher is assigned to the same polygon again', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    await assign(id, polygonA);
+    await assign(id, polygonA);
+    expect(await history(id)).toHaveLength(1);
+  });
+
+  it('never gives a searcher two open assignments, even when two moves arrive at once', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    const results = await Promise.all([assign(id, polygonA), assign(id, polygonB)]);
+
+    expect(results.map((r) => r.statusCode)).toEqual([200, 200]);
+    expect((await history(id)).filter((r) => r.endedAt === null)).toHaveLength(1);
+  });
+
+  it('never leaves a searcher in a polygon deleted at the same moment', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    const [assigned, deleted] = await Promise.all([
+      assign(id, polygonA),
+      commander({ method: 'DELETE', url: `/api/missions/${mission.id}/polygons/${polygonA}` }),
+    ]);
+
+    // One of them wins: the assignment blocks the delete, or the deleted polygon cannot be assigned.
+    expect([assigned.statusCode, deleted.statusCode].sort()).toEqual(
+      assigned.statusCode === 200 ? [200, 409] : [204, 404].sort(),
+    );
+  });
+
+  it('announces the assignment and the polygon that became active', async () => {
+    const published: MissionEvent[] = [];
+    const publish = ctx.realtime.publish.bind(ctx.realtime);
+    ctx.realtime.publish = (event) => {
+      published.push(event);
+      publish(event);
+    };
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    await assign(id, polygonA);
+    ctx.realtime.publish = publish;
+
+    expect(published.map((e) => e.type)).toEqual(['participant.updated', 'polygon.saved']);
+  });
+
+  it('refuses a polygon off the map, an ended activity, an ended mission and a searcher', async () => {
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
+    const missing = await assign(id, '00000000-0000-4000-8000-000000000999');
+    expect(missing.statusCode).toBe(404);
+    expect(missing.json()).toMatchObject({ error: { code: 'POLYGON_NOT_FOUND' } });
+
+    const ended = await addParticipant(ctx.db, { missionId: mission.id, callsign: 5, status: 'ended' });
+    expect((await assign(ended, polygonA)).json()).toMatchObject({ error: { code: 'PARTICIPATION_ENDED' } });
+
+    const user = await signInSearcher(ctx);
+    await addParticipant(ctx.db, { missionId: mission.id, callsign: 6, searcherId: user.searcherId });
+    expect((await assign(id, polygonA, injectAs(ctx, user))).statusCode).toBe(403);
+
+    await ctx.db.update(missions).set({ status: 'ended_stopped' }).where(eq(missions.id, mission.id));
+    expect((await assign(id, polygonA)).json()).toMatchObject({ error: { code: 'MISSION_ENDED' } });
   });
 });

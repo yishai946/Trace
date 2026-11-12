@@ -48,8 +48,10 @@ function audienceOf(event: MissionEvent): string[] {
   if (event.type === 'participant.joined') return [commanderRoom(event.missionId)];
   // The Timeline is the commander's (UC-C19); searchers do not get it.
   if (event.type === 'timeline.recorded') return [commanderRoom(event.missionId)];
-  if (event.type === 'participant.moved') {
-    return [commanderRoom(event.missionId), searcherRoom(event.missionId, event.searcherId)];
+  // Positions and assignments go only to the commander and the searcher concerned (decision 32).
+  if (event.type === 'participant.moved' || event.type === 'participant.updated') {
+    const searcherId = event.type === 'participant.moved' ? event.searcherId : event.participant.searcherId;
+    return [commanderRoom(event.missionId), searcherRoom(event.missionId, searcherId)];
   }
   return [membersRoom(event.missionId)];
 }

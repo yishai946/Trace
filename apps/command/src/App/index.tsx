@@ -1,5 +1,5 @@
 import type { ThemeId } from '@trace/design';
-import { canChangeLkp, canChangePolygons, canChangeRallyPoint, isActiveInPolygon } from '@trace/domain';
+import { canChangeLkp, canChangePolygons, canChangeRallyPoint, isActiveInPolygon, isMissionEnded } from '@trace/domain';
 import { boundsOf, findOutside, isValidPolygon, type LngLat, type Polygon } from '@trace/geo';
 import { emptyMissionMapData, type MapProvider } from '@trace/map';
 import {
@@ -31,7 +31,7 @@ import { PlaceSearch } from '../map/PlaceSearch';
 import type { PlaceMode } from '../map/PlacePicker';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
-import { errorMessage, sightingErrorMessage } from '../mission/errorMessage';
+import { assignErrorMessage, errorMessage, sightingErrorMessage } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
 import { LkpPanel } from '../mission/LkpPanel';
 import { MissionLayout } from '../mission/MissionLayout';
@@ -39,6 +39,7 @@ import type { MissionView } from '../mission/MissionNav';
 import {
   useLkps,
   useMissions,
+  useAssign,
   useParticipants,
   usePolygonMutations,
   usePolygons,
@@ -163,6 +164,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const mission = missions.data?.find((m) => m.id === openId);
   const polygons = usePolygons(mission?.id);
   const participants = useParticipants(mission?.id);
+  const assign = useAssign(mission?.id ?? '');
   const sightings = useSightings(mission?.id);
   const lkps = useLkps(mission?.id);
   const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
@@ -326,6 +328,16 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               polygons={polygons.data ?? []}
               loadFailed={participants.isError}
               onRetry={() => void participants.refetch()}
+              onAssign={
+                operational && !isMissionEnded(mission.status)
+                  ? (participantId, polygonId) => assign.mutate({ missionId: mission.id, participantId, polygonId })
+                  : undefined
+              }
+              assigning={assign.isPending}
+              // The mutation outlives a switch of mission: show only this mission's failure.
+              assignError={
+                assign.isError && assign.variables?.missionId === mission.id ? assignErrorMessage(assign.error) : null
+              }
             />
           )}
           {view === 'timeline' && (

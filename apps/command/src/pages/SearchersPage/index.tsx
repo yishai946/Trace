@@ -1,5 +1,6 @@
 import { formatPhone } from '@trace/domain';
 import type { MissionPolygon, Participant } from '@trace/schemas';
+import { Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
 import styles from './SearchersPage.module.css';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
@@ -11,6 +12,12 @@ export interface SearchersPageProps {
   polygons: MissionPolygon[];
   loadFailed: boolean;
   onRetry: () => void;
+  /** Assigns or moves a searcher (UC-C09). Without it, offline or once the mission ended, the menu is disabled. */
+  onAssign?: (participantId: string, polygonId: string) => void;
+  /** An assignment is being saved: the menus wait, so two quick choices cannot land out of order. */
+  assigning?: boolean;
+  /** The last assignment failed, in words. */
+  assignError?: string | null;
 }
 
 /** The searcher's state in words, as in wireframe Cd08. */
@@ -30,7 +37,15 @@ const groupOf = (p: Participant) => (p.status === 'available' ? 0 : (GROUP[p.tas
  * The searcher pool (UC-C08, wireframe Cd08): everyone in the mission, waiting searchers first, with name, phone, state, polygon
  * and when their position last arrived. A searcher who joins appears without a refresh (`participant.joined`).
  */
-export function SearchersPage({ participants, polygons, loadFailed, onRetry }: SearchersPageProps) {
+export function SearchersPage({
+  participants,
+  polygons,
+  loadFailed,
+  onRetry,
+  onAssign,
+  assigning = false,
+  assignError,
+}: SearchersPageProps) {
   const inMission = participants
     ?.filter((p) => p.status !== 'ended')
     .sort((a, b) => groupOf(a) - groupOf(b) || a.callsign - b.callsign);
@@ -47,6 +62,12 @@ export function SearchersPage({ participants, polygons, loadFailed, onRetry }: S
           </span>
         )}
       </div>
+
+      {assignError && (
+        <p className={styles.error} role="alert">
+          {assignError}
+        </p>
+      )}
 
       <div className={styles.body}>
         {inMission === undefined ? (
@@ -69,6 +90,7 @@ export function SearchersPage({ participants, polygons, loadFailed, onRetry }: S
                 <th scope="col">סטטוס</th>
                 <th scope="col">פוליגון</th>
                 <th scope="col">עדכון אחרון</th>
+                <th scope="col">שיבוץ</th>
               </tr>
             </thead>
             <tbody>
@@ -98,6 +120,9 @@ export function SearchersPage({ participants, polygons, loadFailed, onRetry }: S
                       <span className={styles.meta}>אין עדיין</span>
                     )}
                   </td>
+                  <td>
+                    <AssignMenu participant={p} polygons={polygons} onAssign={assigning ? undefined : onAssign} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -105,5 +130,41 @@ export function SearchersPage({ participants, polygons, loadFailed, onRetry }: S
         )}
       </div>
     </section>
+  );
+}
+
+/** "שבץ" for a waiting searcher, "העבר" for an assigned one: a menu of the mission's other polygons (Cd08). */
+function AssignMenu({
+  participant,
+  polygons,
+  onAssign,
+}: {
+  participant: Participant;
+  polygons: MissionPolygon[];
+  onAssign?: (participantId: string, polygonId: string) => void;
+}) {
+  const assigned = participant.status === 'assigned';
+  const targets = polygons.filter((p) => !assigned || p.id !== participant.polygonId);
+  const label = assigned ? 'העבר' : 'שבץ';
+  return (
+    <MenuTrigger>
+      <Button size="sm" aria-label={`${label} את ${participant.name}`} isDisabled={!onAssign || targets.length === 0}>
+        {label}
+      </Button>
+      <Popover className={styles.popover} placement="bottom end">
+        <Menu
+          className={styles.menu}
+          aria-label={`פוליגונים לשיבוץ ${participant.name}`}
+          items={targets}
+          onAction={(polygonId) => onAssign?.(participant.id, String(polygonId))}
+        >
+          {(polygon) => (
+            <MenuItem id={polygon.id} className={styles.item}>
+              {polygon.name}
+            </MenuItem>
+          )}
+        </Menu>
+      </Popover>
+    </MenuTrigger>
   );
 }

@@ -1,10 +1,10 @@
-import { canJoinMission, nextCallsign } from '@trace/domain';
+import { canJoinMission, isMissionEnded, nextCallsign } from '@trace/domain';
 import { PointGeometry, type JoinPreview, type OwnParticipation, type Participant } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { missions, participations, searchers } from '../../db/schema';
+import { assignments, missions, participations, polygons, searchers } from '../../db/schema';
 import { AppError, notFound } from '../../errors';
 
 /** The mission behind a join code, as shown before the searcher confirms (UC-F02). 404 for a code no mission has. */
@@ -118,4 +118,76 @@ export async function listParticipants(db: Db, missionId: string): Promise<Parti
     position: row.position ? (PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat) : null,
     positionAt: row.positionAt?.toISOString() ?? null,
   }));
+}
+
+export interface AssignResult {
+  participant: Participant;
+  /** The polygon whose status changed (it became active with its first searcher), to send to the mission. */
+  activatedPolygonId: string | null;
+}
+
+/**
+ * Assigns a searcher to a polygon, or moves them to another one (UC-C09). Only the commander assigns (decision 7).
+ * The searcher has one polygon and one search task at most (decision 40): a move ends the open assignment, which
+ * stays in the history (decision 53), and starts a new task at Ready, so travelling between areas is not searching
+ * and the searcher presses Start Search again (decision 28). An unassigned polygon becomes active. The participation
+ * row is locked, so two assignments at once cannot both win.
+ */
+export async function assignParticipant(
+  db: Db,
+  input: { missionId: string; participantId: string; polygonId: string; commanderId: string },
+): Promise<AssignResult> {
+  const activatedPolygonId = await db.transaction(async (tx) => {
+    // Shared lock: polygon deletes and boundary changes lock the mission for update, so they wait for this assignment
+    // (and it for them); assignments in parallel do not block one another.
+    const [mission] = await tx
+      .select({ status: missions.status })
+      .from(missions)
+      .where(eq(missions.id, input.missionId))
+      .for('share');
+    if (!mission) throw notFound('Mission');
+    if (isMissionEnded(mission.status)) throw new AppError(409, 'MISSION_ENDED', 'An ended mission is read-only');
+
+    const [participation] = await tx
+      .select({ id: participations.id, status: participations.status, polygonId: participations.polygonId })
+      .from(participations)
+      .where(and(eq(participations.id, input.participantId), eq(participations.missionId, input.missionId)))
+      .for('update');
+    if (!participation) throw notFound('Searcher');
+    if (participation.status === 'ended') {
+      throw new AppError(409, 'PARTICIPATION_ENDED', "The searcher's activity in this mission has ended");
+    }
+
+    const [polygon] = await tx
+      .select({ id: polygons.id, status: polygons.status })
+      .from(polygons)
+      .where(
+        and(eq(polygons.id, input.polygonId), eq(polygons.missionId, input.missionId), isNull(polygons.deletedAt)),
+      );
+    if (!polygon) throw new AppError(404, 'POLYGON_NOT_FOUND', 'The polygon is not on the mission map');
+    if (participation.status === 'assigned' && participation.polygonId === polygon.id) return null;
+
+    const now = new Date();
+    await tx
+      .update(assignments)
+      .set({ endedAt: now })
+      .where(and(eq(assignments.participationId, participation.id), isNull(assignments.endedAt)));
+    await tx.insert(assignments).values({
+      participationId: participation.id,
+      polygonId: polygon.id,
+      assignedBy: input.commanderId,
+      assignedAt: now,
+    });
+    await tx
+      .update(participations)
+      .set({ status: 'assigned', polygonId: polygon.id, taskStatus: 'ready' })
+      .where(eq(participations.id, participation.id));
+    if (polygon.status !== 'unassigned') return null;
+    await tx.update(polygons).set({ status: 'active' }).where(eq(polygons.id, polygon.id));
+    return polygon.id;
+  });
+
+  const participant = (await listParticipants(db, input.missionId)).find((p) => p.id === input.participantId);
+  if (!participant) throw notFound('Searcher');
+  return { participant, activatedPolygonId };
 }

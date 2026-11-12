@@ -8,6 +8,7 @@ import {
   type ClientToServerEvents,
   type JoinMissionAck,
   type ServerToClientEvents,
+  ParticipantList,
 } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import { io, type Socket } from 'socket.io-client';
@@ -417,6 +418,23 @@ describe('realtime', () => {
     expect(toCommander).toEqual([move1, move2]);
     expect(to1).toEqual([move1]);
     expect(to2).toEqual([move2]);
+
+    // An assignment goes the same way: to the commander and the searcher it concerns (UC-C09).
+    const list = await ctx.app.inject({
+      method: 'GET',
+      url: `/api/missions/${mission.id}/participants`,
+      headers: commander.headers,
+    });
+    const participant = ParticipantList.parse(list.json()).find((p) => p.id === participant1);
+    if (!participant) throw new Error('participant not listed');
+    for (const events of [toCommander, to1, to2]) events.length = 0;
+    const updated: MissionEvent = { type: 'participant.updated', missionId: mission.id, participant };
+    ctx.realtime.publish(updated);
+    await settle();
+
+    expect(toCommander).toEqual([updated]);
+    expect(to1).toEqual([updated]);
+    expect(to2).toEqual([]);
   });
 
   it('stops sending events after the client leaves the mission', async () => {

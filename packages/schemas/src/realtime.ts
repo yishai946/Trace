@@ -67,6 +67,16 @@ const ParticipantJoined = z.object({
 });
 
 /**
+ * The commander assigned or moved a searcher (UC-C09). The commander and that searcher get it; other searchers do
+ * not see who searches where (decision 32).
+ */
+const ParticipantUpdated = z.object({
+  type: z.literal('participant.updated'),
+  missionId: z.uuid(),
+  participant: Participant,
+});
+
+/**
  * A sighting was added or decided. Only the mission's commander gets it: searchers' maps show the LKP, not sightings
  * (decisions 31, 32).
  */
@@ -89,6 +99,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   MissionUpdated,
   ParticipantMoved,
   ParticipantJoined,
+  ParticipantUpdated,
   SightingSaved,
   LkpChanged,
   TimelineRecorded,

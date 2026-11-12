@@ -5,6 +5,7 @@ import {
   MissionList,
   MissionPolygon,
   MissionPolygonList,
+  Participant,
   ParticipantList,
   Sighting,
   SightingList,
@@ -120,6 +121,25 @@ export function useParticipants(missionId: string | undefined) {
     queryKey: missionKeys.participants(missionId ?? ''),
     queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/participants`, { schema: ParticipantList, signal }),
     enabled: !!missionId,
+  });
+}
+
+/** UC-C09: assigns a searcher to a polygon or moves them. The cached pool takes the answer at once. */
+export function useAssign(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ participantId, polygonId }: { missionId: string; participantId: string; polygonId: string }) =>
+      apiRequest(`/missions/${missionId}/participants/${participantId}/assignment`, {
+        method: 'PUT',
+        body: { polygonId },
+        schema: Participant,
+      }),
+    onSuccess: (participant) => {
+      queryClient.setQueryData<Participant[]>(missionKeys.participants(missionId), (list) =>
+        list?.map((p) => (p.id === participant.id ? participant : p)),
+      );
+      return queryClient.invalidateQueries({ queryKey: missionKeys.polygons(missionId) });
+    },
   });
 }
 
