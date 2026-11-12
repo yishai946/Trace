@@ -23,4 +23,9 @@
   --pending-icon-md: 18px;
   --pending-row-h: 52px;
   --pending-row-lg-h: 60px;
+  /* The messages compose panel (wireframe Cd11 "הודעה חדשה", 380px). */
+  --pending-message-panel-w: 380px;
+  /* A checkbox or radio box in a list (wireframe Cd11 polygon rows, 18px) and its check mark (12px). */
+  --pending-checkbox: 18px;
+  --pending-check-icon: 12px;
 }

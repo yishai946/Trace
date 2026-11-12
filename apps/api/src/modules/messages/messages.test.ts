@@ -103,7 +103,10 @@ describe('messages', () => {
     return OwnMessageList.parse(res.json());
   };
   const receipt = (as: TestUser, messageId: string, value: string, id = missionId) =>
-    injectAs(ctx, as)({
+    injectAs(
+      ctx,
+      as,
+    )({
       method: 'PUT',
       url: `/api/missions/${id}/participation/messages/${messageId}/receipt`,
       payload: { receipt: value },
@@ -177,7 +180,11 @@ describe('messages', () => {
 
   describe('targets', () => {
     it('E1: one searcher', async () => {
-      const message = await sendOk({ target: { kind: 'searcher', participantId: p4 }, urgency: 'normal', body: 'שלום' });
+      const message = await sendOk({
+        target: { kind: 'searcher', participantId: p4 },
+        urgency: 'normal',
+        body: 'שלום',
+      });
       expect(callsigns(message)).toEqual([4]);
       expect(message.target).toEqual({
         kind: 'searcher',
@@ -282,7 +289,10 @@ describe('messages', () => {
       const res = await receipt(commander, message.id, 'read');
       expect(res.statusCode).toBe(403);
       const noProfile = await signInByPhone(ctx);
-      const inboxRes = await injectAs(ctx, noProfile)({ method: 'GET', url: `/api/missions/${missionId}/participation/messages` });
+      const inboxRes = await injectAs(
+        ctx,
+        noProfile,
+      )({ method: 'GET', url: `/api/missions/${missionId}/participation/messages` });
       expect(inboxRes.statusCode).toBe(403);
     });
 

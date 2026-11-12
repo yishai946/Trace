@@ -28,6 +28,7 @@ function renderApp() {
       return Promise.resolve(json({ status: 'ok', version: '1', time: '2026-11-08T00:00:00Z' }));
     if (url.endsWith('/polygons')) return Promise.resolve(json([]));
     if (url.endsWith('/participants')) return Promise.resolve(json(participants));
+    if (url.endsWith('/messages')) return Promise.resolve(json([]));
     return Promise.resolve(json([mission]));
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -72,5 +73,19 @@ describe('App mission details', () => {
     const button = await openDetails();
     fireEvent.click(await screen.findByRole('button', { name: 'בטל' }));
     await waitFor(() => expect(button).toHaveFocus());
+  });
+
+  it('opens the messages screen from the mission navigation', async () => {
+    renderApp();
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('link', { name: 'הודעות' }));
+
+    expect(await screen.findByRole('heading', { name: 'הודעה חדשה' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(vi.mocked(globalThis.fetch).mock.calls.map(([input]) => String(input))).toContain(
+        `/api/missions/${mission.id}/messages`,
+      ),
+    );
+    expect(await screen.findByText('עוד לא נשלחו הודעות במסע הזה.')).toBeInTheDocument();
   });
 });

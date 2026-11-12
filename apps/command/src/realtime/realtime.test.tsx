@@ -239,7 +239,12 @@ describe('useMissionLive', () => {
       const { queryClient, socket } = setupMessages([messageCritical, messageNormal]);
       const waiting = messageNormal.recipients[1];
       if (!waiting) throw new Error('fixture');
-      const read = { ...waiting, status: 'read' as const, deliveredAt: '2026-10-03T13:40:00.000Z', readAt: '2026-10-03T13:41:00.000Z' };
+      const read = {
+        ...waiting,
+        status: 'read' as const,
+        deliveredAt: '2026-10-03T13:40:00.000Z',
+        readAt: '2026-10-03T13:41:00.000Z',
+      };
       act(() =>
         socket.fire('mission:event', {
           type: 'message.receipt',

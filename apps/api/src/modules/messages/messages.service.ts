@@ -104,7 +104,11 @@ async function loadMessages(db: Db | Tx, missionId: string, ids?: string[]): Pro
 }
 
 function targetOf(
-  row: { targetKind: 'mission' | 'polygons' | 'searcher'; targetPolygonIds: string[] | null; targetParticipantId: string | null },
+  row: {
+    targetKind: 'mission' | 'polygons' | 'searcher';
+    targetPolygonIds: string[] | null;
+    targetParticipantId: string | null;
+  },
   recipients: MessageRecipient[],
   polygonNames: Map<string, string>,
 ): MessageTarget {
@@ -299,10 +303,7 @@ export async function recordReceipt(
         .update(messageRecipients)
         .set(next)
         .where(
-          and(
-            eq(messageRecipients.messageId, messageId),
-            eq(messageRecipients.participationId, row.participationId),
-          ),
+          and(eq(messageRecipients.messageId, messageId), eq(messageRecipients.participationId, row.participationId)),
         );
     }
     const [message] = await loadMessages(tx, missionId, [messageId]);

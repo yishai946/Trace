@@ -661,7 +661,10 @@ describe('realtime', () => {
       return Message.parse(res.json());
     };
     const receiptAs = (user: TestUser, missionId: string, messageId: string, receipt: string) =>
-      injectAs(ctx, user)({
+      injectAs(
+        ctx,
+        user,
+      )({
         method: 'PUT',
         url: `/api/missions/${missionId}/participation/messages/${messageId}/receipt`,
         payload: { receipt },
@@ -675,8 +678,18 @@ describe('realtime', () => {
       const mission = await createMissionAs(commander);
       const polygonA = await createPolygonAs(commander, mission.id);
       const polygonB = await createPolygonAs(commander, mission.id);
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, polygonId: polygonA.id, searcherId: a.searcherId });
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, polygonId: polygonB.id, searcherId: b.searcherId });
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 1,
+        polygonId: polygonA.id,
+        searcherId: a.searcherId,
+      });
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 2,
+        polygonId: polygonB.id,
+        searcherId: b.searcherId,
+      });
       const otherMission = await createMissionAs(otherCommander);
 
       const [sc, sa, sb, so] = [commander, a, b, otherCommander].map(socketFor) as [Client, Client, Client, Client];
@@ -729,7 +742,11 @@ describe('realtime', () => {
       expect((await receiptAs(a, mission.id, message.id, 'read')).statusCode).toBe(200);
       await settle();
       expect(toCommander).toHaveLength(1);
-      expect(toCommander[0]).toMatchObject({ type: 'message.receipt', messageId: message.id, recipient: { status: 'read' } });
+      expect(toCommander[0]).toMatchObject({
+        type: 'message.receipt',
+        messageId: message.id,
+        recipient: { status: 'read' },
+      });
       expect(toA).toEqual([]);
 
       await receiptAs(a, mission.id, message.id, 'read');
@@ -757,7 +774,10 @@ describe('realtime', () => {
       const sa = socketFor(a);
       await connect(sa);
       await join(sa, mission.id);
-      const inbox = await injectAs(ctx, a)({ method: 'GET', url: `/api/missions/${mission.id}/participation/messages` });
+      const inbox = await injectAs(
+        ctx,
+        a,
+      )({ method: 'GET', url: `/api/missions/${mission.id}/participation/messages` });
       expect(inbox.json()).toEqual([expect.objectContaining({ id: message.id, deliveredAt: null })]);
 
       await receiptAs(a, mission.id, message.id, 'delivered');

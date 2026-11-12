@@ -1,5 +1,12 @@
 import type { ThemeId } from '@trace/design';
-import { canChangeLkp, canChangePolygons, canChangeRallyPoint, isActiveInPolygon, isMissionEnded } from '@trace/domain';
+import {
+  canChangeLkp,
+  canChangePolygons,
+  canChangeRallyPoint,
+  canSendMessage,
+  isActiveInPolygon,
+  isMissionEnded,
+} from '@trace/domain';
 import { boundsOf, findOutside, isValidPolygon, type LngLat, type Polygon } from '@trace/geo';
 import { emptyMissionMapData, type MapProvider } from '@trace/map';
 import {
@@ -31,7 +38,13 @@ import { PlaceSearch } from '../map/PlaceSearch';
 import type { PlaceMode } from '../map/PlacePicker';
 import { getMapProvider } from '../map/provider';
 import { BoundaryEditBar, type OutsideSearcher } from '../mission/BoundaryEditBar';
-import { assignErrorMessage, endErrorMessage, errorMessage, sightingErrorMessage } from '../mission/errorMessage';
+import {
+  assignErrorMessage,
+  endErrorMessage,
+  errorMessage,
+  messageErrorMessage,
+  sightingErrorMessage,
+} from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
 import { LkpPanel } from '../mission/LkpPanel';
 import { MissionLayout } from '../mission/MissionLayout';
@@ -46,6 +59,8 @@ import {
   usePolygons,
   useSightingMutations,
   useSightings,
+  useMessages,
+  useSendMessage,
   useTimeline,
   useUpdateRallyPoint,
 } from '../mission/missionQueries';
@@ -59,6 +74,7 @@ import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
 import { SearchersPage } from '../pages/SearchersPage';
+import { MessagesPage } from '../pages/MessagesPage';
 import { TimelinePage } from '../pages/TimelinePage';
 import { useMissionLive } from '../realtime';
 import { useTheme } from '../theme/theme';
@@ -170,6 +186,8 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const sightings = useSightings(mission?.id);
   const lkps = useLkps(mission?.id);
   const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
+  const messages = useMessages(mission && view === 'messages' ? mission.id : undefined);
+  const sendMessage = useSendMessage(mission?.id ?? '');
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
@@ -355,6 +373,30 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
                   : endParticipation.isError && endParticipation.variables?.missionId === mission.id
                     ? endErrorMessage(endParticipation.error)
                     : null
+              }
+            />
+          )}
+          {view === 'messages' && (
+            <MessagesPage
+              key={mission.id}
+              messages={messages.data}
+              loadFailed={messages.isError}
+              onRetry={() => void messages.refetch()}
+              participants={participants.data}
+              participantsFailed={participants.isError}
+              polygons={polygons.data ?? []}
+              ended={isMissionEnded(mission.status)}
+              onSend={
+                operational && canSendMessage(mission.status)
+                  ? (body, onSent) => sendMessage.mutate({ missionId: mission.id, body }, { onSuccess: onSent })
+                  : undefined
+              }
+              sending={sendMessage.isPending}
+              // The mutation outlives a switch of mission: show only this mission's failure.
+              sendError={
+                sendMessage.isError && sendMessage.variables?.missionId === mission.id
+                  ? messageErrorMessage(sendMessage.error)
+                  : null
               }
             />
           )}
