@@ -97,7 +97,12 @@ export default function MapScreen() {
             accessibilityLiveRegion="polite"
             style={[
               styles.banner,
-              { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel },
+              {
+                backgroundColor: color.surface,
+                // A lost GPS is a warning (decision 42); the other notices are neutral.
+                borderColor: status ? color.border : color.warning,
+                boxShadow: theme.shadow.shadowPanel,
+              },
             ]}
           >
             <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{banner.text}</Text>

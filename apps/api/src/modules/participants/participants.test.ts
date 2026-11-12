@@ -505,14 +505,19 @@ describe('assigning a searcher (UC-C09)', () => {
     expect(await since()).toBeNull();
 
     await gps(false);
-    await injectAs(
-      ctx,
-      user,
-    )({
-      method: 'POST',
-      url: `/api/missions/${mission.id}/track-points`,
-      payload: { points: [{ position: [35.125, 31.775], recordedAt: new Date().toISOString(), context: 'safety' }] },
-    });
+    const upload = (recordedAt: string) =>
+      injectAs(
+        ctx,
+        user,
+      )({
+        method: 'POST',
+        url: `/api/missions/${mission.id}/track-points`,
+        payload: { points: [{ position: [35.125, 31.775], recordedAt, context: 'safety' }] },
+      });
+    // A batch recorded before the loss and delivered after it does not clear it.
+    await upload(new Date(Date.now() - 60_000).toISOString());
+    expect(await since()).not.toBeNull();
+    await upload(new Date(Date.now() + 1000).toISOString());
     expect(await since()).toBeNull();
     expect(
       (

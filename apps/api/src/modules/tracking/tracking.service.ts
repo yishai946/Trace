@@ -16,6 +16,8 @@ const CLOCK_SKEW_MS = 2 * 60 * 1000;
 
 export interface RecordTrackResult extends TrackPointsResult {
   participantId: string;
+  /** A reported GPS loss ended with this batch: the commander's view of the searcher changed. */
+  gpsBack: boolean;
   /** The participation's last position after this batch, when the batch moved it forward. */
   moved: { position: LngLat; positionAt: string } | null;
 }
@@ -62,18 +64,14 @@ export async function recordTrackPoints(
         stored: inserted.length,
         duplicates: body.points.length - inserted.length,
         moved: null,
+        gpsBack: false,
       };
     }
     const newest = current.reduce((a, b) => (Date.parse(b.recordedAt) > Date.parse(a.recordedAt) ? b : a));
     const newestAt = new Date(newest.recordedAt);
     const [updated] = await tx
       .update(participations)
-      // A fix is GPS: it also clears a reported loss (decision 42).
-      .set({
-        lastPosition: { type: 'Point', coordinates: newest.position },
-        lastPositionAt: newestAt,
-        gpsUnavailableSince: null,
-      })
+      .set({ lastPosition: { type: 'Point', coordinates: newest.position }, lastPositionAt: newestAt })
       .where(
         and(
           eq(participations.id, participation.id),
@@ -81,8 +79,15 @@ export async function recordTrackPoints(
         ),
       )
       .returning({ id: participations.id });
+    // A fix newer than a reported loss means GPS is back (decision 42). An older one, sent late, says nothing about now.
+    const [gpsBack] = await tx
+      .update(participations)
+      .set({ gpsUnavailableSince: null })
+      .where(and(eq(participations.id, participation.id), lt(participations.gpsUnavailableSince, newestAt)))
+      .returning({ id: participations.id });
 
     return {
+      gpsBack: !!gpsBack,
       participantId: participation.id,
       stored: inserted.length,
       duplicates: body.points.length - inserted.length,

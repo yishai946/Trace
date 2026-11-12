@@ -11,6 +11,8 @@ vi.mock('expo-task-manager', () => ({ defineTask: vi.fn() }));
 const location = vi.hoisted(() => ({ stop: vi.fn(), started: vi.fn(async () => true) }));
 vi.mock('expo-location', () => ({
   Accuracy: { High: 4 },
+  hasServicesEnabledAsync: vi.fn(async () => true),
+  getForegroundPermissionsAsync: vi.fn(async () => ({ granted: true })),
   startLocationUpdatesAsync: vi.fn(),
   stopLocationUpdatesAsync: location.stop,
   hasStartedLocationUpdatesAsync: location.started,
@@ -61,13 +63,21 @@ describe('receiveFixes, the background task', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  it('uploads a batch, and ignores an error or an empty delivery', async () => {
+  it('uploads a batch and ignores an empty delivery', async () => {
     const fetch = vi.fn(async () => json(200, { stored: 1, duplicates: 0 }));
     vi.stubGlobal('fetch', fetch);
     await receiveFixes({ data: { locations }, error: null });
     await receiveFixes({ data: undefined, error: null });
-    await receiveFixes({ data: { locations }, error: new Error('denied') });
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes a location error as GPS lost and tells the server', async () => {
+    const fetch = vi.fn(async (_url: string, _init: RequestInit) => new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetch);
+    await receiveFixes({ data: undefined, error: new Error('denied') });
+
+    expect(useSession.getState().gpsAvailable).toBe(false);
+    expect(fetch.mock.calls[0]?.[0]).toMatch(/\/participation\/gps$/);
   });
 
   it('stops tracking when the server says the activity ended', async () => {

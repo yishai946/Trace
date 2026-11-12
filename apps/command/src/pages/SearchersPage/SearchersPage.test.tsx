@@ -57,9 +57,10 @@ describe('SearchersPage', () => {
   it('shows when a searcher has no GPS, and since when', () => {
     const lost = '2026-10-03T12:30:00.000Z';
     render(<SearchersPage {...props({ participants: [{ ...dana, gpsUnavailableSince: lost }] })} />);
-    expect(within(rows()[0] as HTMLElement).getByText(/GPS לא זמין/).textContent).toBe(
-      `GPS לא זמין מ-${timeLabel(lost)}`,
-    );
+    const row = within(rows()[0] as HTMLElement);
+    expect(row.getByText(/GPS לא זמין/).textContent?.trim()).toBe(`GPS לא זמין מ-${timeLabel(lost)}`);
+    // The last update stays: when the searcher was last seen matters most now (decision 44).
+    expect(row.getByText(timeLabel(dana.positionAt ?? ''))).toBeTruthy();
   });
 
   it('leaves out searchers who ended their activity', () => {

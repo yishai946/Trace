@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { ApiRequestError } from '../api';
 import { useSession } from '../state/session';
+import { noteGps } from './gpsStatus';
 import { LOCATION_TASK, uploadFixes } from './locationTask';
 import type { Fix } from './trackPoints';
 
@@ -30,7 +31,13 @@ if (Platform.OS !== 'web') defineTask<{ locations: Fix[] }>(LOCATION_TASK, recei
  * socket was down), the phone stops tracking instead of sampling GPS for nothing.
  */
 export async function receiveFixes({ data, error }: { data?: { locations: Fix[] }; error: unknown }): Promise<void> {
-  if (error || !data) return;
+  // The phone could not get a location (services off, permission revoked): GPS is lost, also with the app in the
+  // background, where the screens' checks do not run (decision 42).
+  if (error) {
+    await noteGps(false);
+    return;
+  }
+  if (!data) return;
   try {
     await uploadFixes(data.locations);
   } catch (failure) {

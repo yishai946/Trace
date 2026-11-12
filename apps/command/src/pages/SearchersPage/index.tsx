@@ -120,9 +120,10 @@ export function SearchersPage({
                         GPS לא זמין מ-
                         <time dateTime={p.gpsUnavailableSince} className={styles.num}>
                           {timeLabel(p.gpsUnavailableSince)}
-                        </time>
+                        </time>{' '}
                       </span>
-                    ) : p.positionAt ? (
+                    ) : null}
+                    {p.positionAt ? (
                       <time dateTime={p.positionAt} className={styles.num}>
                         {timeLabel(p.positionAt)}
                       </time>
