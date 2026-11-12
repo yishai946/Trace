@@ -41,6 +41,12 @@ const terrain = { hillshade: true, contours: false, terrain3d: false };
 
 export interface MissionMapProps {
   area: MissionArea;
+  /** One more point to show, such as the place of a sighting being reported (UC-F10). */
+  marker?: { position: LngLat; label: string } | null;
+  /** Called with the point the searcher taps on the map. */
+  onPressMap?: (position: LngLat) => void;
+  /** The map's name for screen readers. */
+  accessibilityLabel?: string;
 }
 
 /**
@@ -48,7 +54,7 @@ export interface MissionMapProps {
  * from the current theme so day and night switch the map with the rest of the app. Frames the mission area, or
  * Israel before the mission has polygons.
  */
-export function MissionMap({ area }: MissionMapProps) {
+export function MissionMap({ area, marker = null, onPressMap, accessibilityLabel = 'מפת המסע' }: MissionMapProps) {
   const { themeId, theme } = useTheme();
   const mapStyle = useMemo(
     () => (provider ? buildMapStyle({ themeId, provider, terrain, data: area.data }) : null),
@@ -59,7 +65,7 @@ export function MissionMap({ area }: MissionMapProps) {
     return (
       <View
         accessibilityRole="image"
-        accessibilityLabel="מפת המסע"
+        accessibilityLabel={accessibilityLabel}
         style={[styles.fill, styles.notice, { backgroundColor: theme.color.mapGround }]}
       >
         <Text style={[typography.body, { color: theme.color.inkSecondary }]}>
@@ -89,10 +95,18 @@ export function MissionMap({ area }: MissionMapProps) {
     ) : null;
   };
   return (
-    <Map style={styles.fill} mapStyle={mapStyle} accessibilityLabel="מפת המסע" logo={false} compass={false}>
+    <Map
+      style={styles.fill}
+      mapStyle={mapStyle}
+      accessibilityLabel={accessibilityLabel}
+      logo={false}
+      compass={false}
+      onPress={onPressMap ? (event) => onPressMap(event.nativeEvent.lngLat as LngLat) : undefined}
+    >
       <Camera bounds={area.bounds ?? ISRAEL_BOUNDS} padding={framePadding} duration={0} />
       {area.data.rally ? symbol('rally', 'כינוס', area.data.rally) : null}
       {area.data.lkp ? symbol('lkp', `LKP ${area.data.lkp.time ?? ''}`.trim(), area.data.lkp.position) : null}
+      {marker ? symbol('sighting', marker.label, marker.position) : null}
     </Map>
   );
 }

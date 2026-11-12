@@ -39,6 +39,8 @@ const icons = {
     </>
   ),
   close: <Path d="M6 6l12 12M18 6 6 18" />,
+  sighting: <Path d="M12 3l9 9-9 9-9-9z" />,
+  send: <Path d="m3 11 18-8-8 18-2-8z" />,
 } as const;
 
 export type IconName = keyof typeof icons;

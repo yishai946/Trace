@@ -56,4 +56,8 @@ export const pendingTokens = {
   badgeH: 20,
   /** Trace Console `.tc-dot`: the 6px state dot inside a badge. */
   dot: 6,
+  /** Fm09: height of the minimap under "מיקום התצפית". */
+  sightingMapH: 236,
+  /** Fm09: minimum height of the "תיאור קצר" text area (two lines). */
+  textAreaMinH: 66,
 } as const;
