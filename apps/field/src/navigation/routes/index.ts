@@ -14,6 +14,8 @@ export const routes = {
   map: '/map',
   /** Fm10: reports in my polygon. */
   reports: '/reports',
+  /** Fm04 "פרטי נעדר מלאים": the missing person's details, read-only (UC-F04). */
+  missingPerson: '/missing-person',
   /** Fm08: a new report. */
   report: '/report',
   /** Fm11: messages from the commander. */

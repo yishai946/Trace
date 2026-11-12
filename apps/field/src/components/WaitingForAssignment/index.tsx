@@ -1,51 +1,31 @@
 import { radius, spacing, typography } from '@trace/design';
 import type { Mission, OwnParticipation } from '@trace/schemas';
-import { useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { apiBaseUrl } from '../../api';
+import { useMemo } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSearcherProfile } from '../../auth';
 import { ltr } from '../../i18n/rtl';
 import { formatTime, toMissionArea } from '../../mission/missionArea';
-import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
+import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
+import { MissingPersonPhoto } from '../MissingPersonPhoto';
 import { MissionMap } from '../MissionMap';
 import { Screen } from '../Screen';
-
-/** The missing person's photo, sent with the searcher's token; the placeholder of the wireframes when there is none. */
-function Photo({ url }: { url: string | null }) {
-  const { color } = useTheme().theme;
-  const token = useSession((s) => s.token);
-  const [failed, setFailed] = useState(false);
-  if (!url || !apiBaseUrl || !token || failed) {
-    return (
-      <View style={[styles.photo, styles.placeholder, { backgroundColor: color.surfaceRaised }]}>
-        <Text style={[typography.caption, { color: color.inkMuted }]}>תמונה</Text>
-      </View>
-    );
-  }
-  return (
-    <Image
-      accessibilityLabel="תמונת הנעדר"
-      source={{ uri: `${apiBaseUrl.replace(/\/$/, '')}${url}`, headers: { authorization: `Bearer ${token}` } }}
-      onError={() => setFailed(true)}
-      style={styles.photo}
-    />
-  );
-}
 
 export interface WaitingForAssignmentProps {
   mission: Mission;
   participation: OwnParticipation;
+  /** "פרטי נעדר מלאים": opens the missing person's full details. */
+  onOpenDetails: () => void;
 }
 
 /**
  * Fm04: what a searcher sees between joining and being assigned (UC-F02 step 3, decision 31): that they wait, the
  * general map with the LKP and the rally point, and who is missing. No other searcher appears anywhere on it.
  */
-export function WaitingForAssignment({ mission, participation }: WaitingForAssignmentProps) {
+export function WaitingForAssignment({ mission, participation, onOpenDetails }: WaitingForAssignmentProps) {
   const { color } = useTheme().theme;
   const profile = useSearcherProfile();
   const area = useMemo(() => toMissionArea([], mission), [mission]);
@@ -75,7 +55,7 @@ export function WaitingForAssignment({ mission, participation }: WaitingForAssig
         accessibilityLabel="פרטי הנעדר"
         style={[styles.card, styles.person, { backgroundColor: color.surfaceSunken, borderColor: color.border }]}
       >
-        <Photo url={person.photoUrl} />
+        <MissingPersonPhoto url={person.photoUrl} />
         <View style={styles.grow}>
           <Text style={[typography.title, { color: color.ink }]}>
             {person.name ?? 'שם הנעדר לא הוזן'}
@@ -85,6 +65,7 @@ export function WaitingForAssignment({ mission, participation }: WaitingForAssig
           {person.description ? (
             <Text style={[typography.body, { color: color.inkSecondary }]}>{person.description}</Text>
           ) : null}
+          <Button label="פרטי נעדר מלאים" variant="ghost" onPress={onOpenDetails} />
         </View>
       </View>
     </Screen>
@@ -103,6 +84,4 @@ const styles = StyleSheet.create({
   person: { alignItems: 'flex-start' },
   grow: { flex: 1, gap: spacing.space1 },
   map: { height: pendingTokens.waitingMapH, borderWidth: 1, borderRadius: radius.radiusXl, overflow: 'hidden' },
-  photo: { width: pendingTokens.photoW, height: pendingTokens.photoH, borderRadius: radius.radiusMd },
-  placeholder: { alignItems: 'center', justifyContent: 'flex-end', paddingBottom: spacing.space2 },
 });
