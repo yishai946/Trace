@@ -38,6 +38,13 @@ describe('enqueue and pending', () => {
     expect(await pendingCount()).toBe(1);
   });
 
+  it('keeps every item when several enqueues overlap', async () => {
+    await Promise.all(
+      [1, 2, 3, 4].map((n) => enqueue({ kind: 'track-point', missionId: A, payloads: [n * 10, n * 10 + 1] })),
+    );
+    expect(await pendingCount()).toBe(8);
+  });
+
   it('adds nothing for an empty list', async () => {
     await enqueue({ kind: 'track-point', missionId: A, payloads: [] });
     expect(await pendingCount()).toBe(0);
@@ -180,6 +187,37 @@ describe('flushOutbox', () => {
     await flushOutbox({ 'track-point': track });
     expect(vi.mocked(track.send).mock.calls.map(payloadsOf)).toEqual([[1, 2]]);
     expect(await pendingCount()).toBe(0);
+  });
+});
+
+describe('flushOutbox with writes in between', () => {
+  it('keeps every row added while a flush deletes', async () => {
+    await enqueue({ kind: 'track-point', missionId: A, payloads: numbers(0, 3) });
+    let first = true;
+    const s = sender(async () => {
+      if (first) {
+        first = false;
+        await Promise.all([1, 2, 3].map((n) => enqueue({ kind: 'track-point', missionId: A, payloads: [100 + n] })));
+      }
+      return 'sent';
+    }, 3);
+    await flushOutbox({ 'track-point': s });
+    expect((await pending()).map((item) => item.payload)).toEqual([]);
+    expect(payloadsOf(vi.mocked(s.send).mock.calls[1]!)).toEqual([101, 102, 103]);
+  });
+
+  it('keeps and skips a row whose kind has no sender', async () => {
+    const db = await openDatabaseAsync('trace-outbox.db');
+    await db.runAsync(
+      `INSERT INTO outbox (id, kind, mission_id, payload, created_at) VALUES ('x', 'other-kind', ?, '1', 0)`,
+      A,
+    );
+    await enqueue({ kind: 'track-point', missionId: A, payloads: [2] });
+    const s = sender();
+    await flushOutbox({ 'track-point': s } as never);
+    expect(payloadsOf(vi.mocked(s.send).mock.calls[0]!)).toEqual([2]);
+    expect(await pendingCount()).toBe(1);
+    expect((await pending())[0]!.id).toBe('x');
   });
 });
 

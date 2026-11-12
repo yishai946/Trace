@@ -4,7 +4,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Splash } from '../components/Splash';
-// Defines the background GPS task at load time, before any screen (expo-task-manager).
+// Importing the tracking module defines the background GPS task at load time, before any screen
+// (expo-task-manager); `useTrackSync` is the hook that sends the queued points.
 import { useTrackSync } from '../tracking';
 import { applyDocumentDirection } from '../i18n/rtl';
 import { useSession } from '../state/session';

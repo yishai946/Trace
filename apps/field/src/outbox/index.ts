@@ -74,6 +74,17 @@ function database(): Promise<SQLiteDatabase> {
   return opened;
 }
 
+/**
+ * Every write goes through here, one at a time. The connection is shared, and `withTransactionAsync` is not exclusive:
+ * two overlapping transactions fail on BEGIN, and the loser's ROLLBACK also undoes the winner's rows.
+ */
+let writes: Promise<unknown> = Promise.resolve();
+function serialized<T>(task: () => Promise<T>): Promise<T> {
+  const result = writes.then(task, task);
+  writes = result.catch(() => undefined);
+  return result;
+}
+
 function toItem(row: Row): OutboxItem | null {
   try {
     return {
@@ -101,18 +112,20 @@ export async function enqueue({
   if (payloads.length === 0) return;
   const db = await database();
   const now = Date.now();
-  await db.withTransactionAsync(async () => {
-    for (const payload of payloads) {
-      await db.runAsync(
-        'INSERT OR IGNORE INTO outbox (id, kind, mission_id, payload, created_at) VALUES (?, ?, ?, ?, ?)',
-        uuidv7(),
-        kind,
-        missionId,
-        JSON.stringify(payload),
-        now,
-      );
-    }
-  });
+  await serialized(() =>
+    db.withTransactionAsync(async () => {
+      for (const payload of payloads) {
+        await db.runAsync(
+          'INSERT OR IGNORE INTO outbox (id, kind, mission_id, payload, created_at) VALUES (?, ?, ?, ?, ?)',
+          uuidv7(),
+          kind,
+          missionId,
+          JSON.stringify(payload),
+          now,
+        );
+      }
+    }),
+  );
 }
 
 /** Everything that waits, oldest first. */
@@ -131,26 +144,29 @@ export async function pendingCount(): Promise<number> {
 /** Forgets everything that waits, e.g. at sign-out. */
 export async function clearOutbox(): Promise<void> {
   const db = await database();
-  await db.runAsync('DELETE FROM outbox');
+  await serialized(() => db.runAsync('DELETE FROM outbox'));
 }
 
 async function deleteIds(db: SQLiteDatabase, ids: string[]): Promise<void> {
-  await db.withTransactionAsync(async () => {
-    for (const id of ids) await db.runAsync('DELETE FROM outbox WHERE id = ?', id);
-  });
+  await serialized(() =>
+    db.withTransactionAsync(async () => {
+      for (const id of ids) await db.runAsync('DELETE FROM outbox WHERE id = ?', id);
+    }),
+  );
 }
 
 /** Sends batches until the outbox is empty or a send fails; a failure stops the flush and leaves the rest. */
 async function flushOnce(senders: Record<OutboxKind, OutboxSender>): Promise<void> {
   const db = await database();
   for (;;) {
-    const head = await db.getFirstAsync<Row>('SELECT * FROM outbox ORDER BY seq LIMIT 1');
+    // A row of a kind without a sender is kept (a later version may know it) and skipped, not deleted.
+    const kinds = Object.keys(senders);
+    const head = await db.getFirstAsync<Row>(
+      `SELECT * FROM outbox WHERE kind IN (${kinds.map(() => '?').join(', ')}) ORDER BY seq LIMIT 1`,
+      ...kinds,
+    );
     if (!head) return;
     const sender = senders[head.kind];
-    if (!sender) {
-      await deleteIds(db, [head.id]);
-      continue;
-    }
     const rows = await db.getAllAsync<Row>(
       'SELECT * FROM outbox WHERE kind = ? AND mission_id = ? ORDER BY seq LIMIT ?',
       head.kind,
@@ -175,7 +191,9 @@ async function flushOnce(senders: Record<OutboxKind, OutboxSender>): Promise<voi
       return;
     }
     if (outcome === 'drop-mission') {
-      await db.runAsync('DELETE FROM outbox WHERE kind = ? AND mission_id = ?', head.kind, head.mission_id);
+      await serialized(() =>
+        db.runAsync('DELETE FROM outbox WHERE kind = ? AND mission_id = ?', head.kind, head.mission_id),
+      );
     } else {
       await deleteIds(
         db,
