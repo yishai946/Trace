@@ -4,6 +4,7 @@ import {
   PARTICIPATION_STATUSES,
   POLYGON_STATUSES,
   SIGHTING_SOURCES,
+  SOS_STATUSES,
   TASK_STATUSES,
   TIMELINE_EVENT_TYPES,
   TRACK_CONTEXTS,
@@ -20,6 +21,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -44,6 +46,7 @@ export const sightingSource = pgEnum('sighting_source', SIGHTING_SOURCES);
 export const lkpDecision = pgEnum('lkp_decision', LKP_DECISIONS);
 export const timelineEventType = pgEnum('timeline_event_type', TIMELINE_EVENT_TYPES);
 export const trackContext = pgEnum('track_context', TRACK_CONTEXTS);
+export const sosStatus = pgEnum('sos_status', SOS_STATUSES);
 
 /*
  * Sign-in tables owned by Better Auth (users, sessions, accounts, verifications). Their columns follow its core schema
@@ -317,6 +320,59 @@ export const trackPoints = pgTable(
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [uniqueIndex('track_points_participation_recorded_idx').on(t.participationId, t.recordedAt)],
+);
+
+/**
+ * An SOS a searcher activated (UC-F13). It goes to the commander and to the searchers assigned to the sender's polygon
+ * (decision 98), and the commander or the sender closes it (decision 99). The location is the sender's position when it
+ * was sent (decision 24); it stays null when the phone gave none and no position was known. At most one SOS is active
+ * per participation.
+ */
+export const sosAlerts = pgTable(
+  'sos_alerts',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    missionId: uuid('mission_id')
+      .notNull()
+      .references(() => missions.id, { onDelete: 'cascade' }),
+    participationId: uuid('participation_id')
+      .notNull()
+      .references(() => participations.id, { onDelete: 'cascade' }),
+    /** The sender's polygon when it was sent; null for a searcher who had none. */
+    polygonId: uuid('polygon_id').references(() => polygons.id),
+    message: text(),
+    position: pointColumn(),
+    positionRecordedAt: timestamp('position_recorded_at', { withTimezone: true }),
+    /** Meters, as the phone reported it. */
+    positionAccuracy: doublePrecision('position_accuracy'),
+    status: sosStatus().notNull().default('active'),
+    activatedAt: timestamp('activated_at', { withTimezone: true }).notNull().defaultNow(),
+    closedAt: timestamp('closed_at', { withTimezone: true }),
+    closedBy: uuid('closed_by').references(() => users.id),
+  },
+  (t) => [
+    index('sos_alerts_mission_idx').on(t.missionId, t.activatedAt),
+    uniqueIndex('sos_alerts_active_idx')
+      .on(t.participationId)
+      .where(sql`${t.status} = 'active'`),
+  ],
+);
+
+/**
+ * The searchers an SOS was sent to when it was activated. Fixed at that moment: closing the SOS sends the update to
+ * the same searchers (decision 99), even if they were moved to another polygon since.
+ */
+export const sosAlertRecipients = pgTable(
+  'sos_alert_recipients',
+  {
+    sosId: uuid('sos_id')
+      .notNull()
+      .references(() => sosAlerts.id, { onDelete: 'cascade' }),
+    searcherId: uuid('searcher_id')
+      .notNull()
+      .references(() => searchers.id),
+  },
+  (t) => [primaryKey({ columns: [t.sosId, t.searcherId] }), index('sos_alert_recipients_searcher_idx').on(t.searcherId)],
 );
 
 /**
