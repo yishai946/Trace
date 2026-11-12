@@ -7,6 +7,7 @@ export * from './notifications';
 export * from './participants';
 export * from './polygons';
 export * from './realtime';
+export * from './reports';
 export * from './sightings';
 export * from './searchers';
 export * from './timeline';

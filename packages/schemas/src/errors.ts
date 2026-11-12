@@ -16,6 +16,8 @@ export const ERROR_CODES = [
   'UNSUPPORTED_PHOTO',
   'PHOTO_TOO_LARGE',
   'SIGHTING_NOT_LKP_CANDIDATE',
+  /** The report id belongs to a report of another searcher or mission. */
+  'REPORT_ID_TAKEN',
   'INTERNAL_ERROR',
 ] as const;
 
