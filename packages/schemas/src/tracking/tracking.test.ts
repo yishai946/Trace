@@ -27,7 +27,8 @@ describe('ParticipantTrack', () => {
   it('refuses a point without accuracy or with an unknown context', () => {
     expect(ParticipantTrack.safeParse({ participantId: id, points: [point] }).success).toBe(false);
     expect(
-      ParticipantTrack.safeParse({ participantId: id, points: [{ ...point, accuracy: 1, context: 'driving' }] }).success,
+      ParticipantTrack.safeParse({ participantId: id, points: [{ ...point, accuracy: 1, context: 'driving' }] })
+        .success,
     ).toBe(false);
   });
 });
