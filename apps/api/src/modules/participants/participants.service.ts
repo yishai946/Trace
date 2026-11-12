@@ -201,3 +201,34 @@ export async function assignParticipant(
   if (!participant) throw notFound('Searcher');
   return { participant, activatedPolygonId };
 }
+
+/**
+ * Ends a searcher's participation (UC-C18): Activity Ended. An active task and the open assignment end with it; the
+ * route, reports and Coverage already collected stay (decision 70). Ending twice changes nothing. The searcher may
+ * join the active mission again later and return as Available with the same participation.
+ */
+export async function endParticipation(
+  db: Db,
+  input: { missionId: string; participantId: string },
+): Promise<Participant> {
+  await db.transaction(async (tx) => {
+    const [participation] = await tx
+      .select({ id: participations.id, status: participations.status })
+      .from(participations)
+      .where(and(eq(participations.id, input.participantId), eq(participations.missionId, input.missionId)))
+      .for('update');
+    if (!participation) throw notFound('Searcher');
+    if (participation.status === 'ended') return;
+    await tx
+      .update(assignments)
+      .set({ endedAt: new Date() })
+      .where(and(eq(assignments.participationId, participation.id), isNull(assignments.endedAt)));
+    await tx
+      .update(participations)
+      .set({ status: 'ended', polygonId: null, taskStatus: null })
+      .where(eq(participations.id, participation.id));
+  });
+  const participant = (await listParticipants(db, input.missionId)).find((p) => p.id === input.participantId);
+  if (!participant) throw notFound('Searcher');
+  return participant;
+}

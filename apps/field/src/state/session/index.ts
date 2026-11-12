@@ -36,8 +36,8 @@ interface SessionState {
 }
 
 export interface AssignmentNotice {
-  kind: 'assigned' | 'moved';
-  polygonId: string;
+  kind: 'assigned' | 'moved' | 'ended';
+  polygonId: string | null;
 }
 
 /** A search that started (searching, paused or finished) is tracked until the activity ends (decision 20). */
@@ -71,14 +71,22 @@ export const useSession = create<SessionState>()((set) => ({
   },
   setMissionId: (missionId) => set({ missionId, participation: null, tracking: false, assignmentNotice: null }),
   enterMission: (missionId, participation) =>
-    set({ missionId, participation, tracking: isTracking(participation), pendingJoinCode: null }),
+    set({
+      missionId,
+      participation,
+      tracking: isTracking(participation),
+      assignmentNotice: null,
+      pendingJoinCode: null,
+    }),
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
   updateParticipation: (participation) =>
     set((s) => {
       const before = s.participation;
       const changed = participation.status === 'assigned' && participation.polygonId !== before?.polygonId;
-      const notice: AssignmentNotice | null =
-        changed && participation.polygonId
+      const ended = participation.status === 'ended' && before !== null && before.status !== 'ended';
+      const notice: AssignmentNotice | null = ended
+        ? { kind: 'ended', polygonId: null }
+        : changed && participation.polygonId
           ? { kind: before?.status === 'assigned' ? 'moved' : 'assigned', polygonId: participation.polygonId }
           : s.assignmentNotice;
       const tracking = isTracking(participation) || (s.tracking && participation.status !== 'ended');

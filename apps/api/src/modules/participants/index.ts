@@ -20,6 +20,7 @@ import { getMission } from '../missions/missions.service';
 import { listPolygons } from '../polygons/polygons.service';
 import {
   assignParticipant,
+  endParticipation,
   getOwnParticipation,
   joinMission,
   listParticipants,
@@ -94,6 +95,28 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       const polygon =
         activatedPolygonId && (await listPolygons(db, missionId)).find((p) => p.id === activatedPolygonId);
       if (polygon) realtime.publish({ type: 'polygon.saved', missionId, polygon });
+      return participant;
+    },
+  );
+
+  app.post(
+    '/missions/:missionId/participants/:participantId/end',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: "End a searcher's participation: Activity Ended (UC-C18)",
+        description:
+          'The mission commander only. An active search task and the open assignment end; the route and what the ' +
+          'searcher collected stay. The searcher is told at once and may join the active mission again later.',
+        params: ParticipantParams,
+        response: { 200: Participant, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId } = request.params;
+      const participant = await endParticipation(db, request.params);
+      realtime.publish({ type: 'participant.updated', missionId, participant });
       return participant;
     },
   );

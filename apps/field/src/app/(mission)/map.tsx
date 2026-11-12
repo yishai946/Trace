@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../../components/Button';
 import { MissionMap } from '../../components/MissionMap';
+import { ActivityEnded } from '../../components/ActivityEnded';
 import { AssignedTask } from '../../components/AssignedTask';
 import { WaitingForAssignment } from '../../components/WaitingForAssignment';
 import { toMissionArea } from '../../mission/missionArea';
@@ -29,6 +30,18 @@ export default function MapScreen() {
   const polygons = useMissionPolygons();
   const assigned = participation?.status === 'assigned' ? participation : null;
   const area = toMissionArea(polygons.data ?? [], mission.data, assigned?.polygonId);
+
+  // Fm13: the participation ended (UC-C18); tracking already stopped with it.
+  if (participation?.status === 'ended') {
+    return (
+      <ActivityEnded
+        mission={mission.data}
+        removed={notice?.kind === 'ended'}
+        onJoinAgain={() => openScreen(router, routes.join)}
+        onOpenMyMissions={() => openScreen(router, routes.myMissions)}
+      />
+    );
+  }
 
   // Fm04: until the commander assigns a polygon, the searcher waits with the mission's basic information (UC-F02).
   if (mission.data && participation?.status === 'available') {

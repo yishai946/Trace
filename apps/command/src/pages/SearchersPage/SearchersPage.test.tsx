@@ -76,6 +76,24 @@ describe('SearchersPage', () => {
   });
 });
 
+describe('ending a participation (UC-C18)', () => {
+  it('asks to confirm, then ends it', () => {
+    const onEnd = vi.fn();
+    render(<SearchersPage {...props({ participants: [dana], onEnd })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'סיים השתתפות של דנה כהן…' }));
+    expect(onEnd).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('dialog', { name: 'אישור סיום השתתפות של דנה כהן' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'סיים השתתפות' }));
+    expect(onEnd).toHaveBeenCalledWith(dana.id);
+  });
+
+  it('is disabled when it cannot be done', () => {
+    render(<SearchersPage {...props({ participants: [dana] })} />);
+    expect(screen.getByRole('button', { name: 'סיים השתתפות של דנה כהן…' })).toBeDisabled();
+  });
+});
+
 describe('statusLabel', () => {
   it('words every participation and task state', () => {
     expect(statusLabel({ status: 'available', taskStatus: null })).toBe('זמין');

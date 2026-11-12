@@ -1,9 +1,12 @@
+import { useRouter } from 'expo-router';
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
+import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabButton } from '../../components/TabButton';
-import { tabs } from '../../navigation/routes';
+import { routes, tabs } from '../../navigation/routes';
 import { useMissionLive } from '../../realtime';
+import { useSession } from '../../state/session';
 import { useLocationTracking } from '../../tracking';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
@@ -14,6 +17,12 @@ export default function MissionLayout() {
   const { bottom } = useSafeAreaInsets();
   useMissionLive();
   useLocationTracking();
+  // The commander ended the participation (UC-C18): from any tab, the searcher is taken to the map, which says so.
+  const router = useRouter();
+  const removed = useSession((s) => s.assignmentNotice?.kind === 'ended');
+  useEffect(() => {
+    if (removed) router.navigate(routes.map);
+  }, [removed, router]);
 
   return (
     <Tabs style={styles.fill}>
