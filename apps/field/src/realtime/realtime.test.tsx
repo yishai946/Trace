@@ -88,7 +88,10 @@ const join = (socket: FakeSocket) =>
 const cached = (queryClient: QueryClient) => queryClient.getQueryData<Mission>(missionKeys.mission(missionId));
 
 describe('useMissionLive', () => {
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
   beforeEach(() => {
     sockets.length = 0;
     useSession.setState({ ...useSession.getInitialState(), token: 't1', restored: true, missionId });
@@ -174,7 +177,50 @@ describe('useMissionLive', () => {
     await join(socket as FakeSocket);
     await vi.waitFor(() => expect(useSession.getState().participation?.status).toBe('available'));
     expect(fetch).toHaveBeenCalledWith(`https://api.test/api/missions/${missionId}/participation`, expect.anything());
-    vi.unstubAllGlobals();
+  });
+
+  it('drops a refetch that answers after a live event or after the screen closed', async () => {
+    const own = {
+      id: '00000000-0000-4000-8000-000000000002',
+      callsign: 7,
+      status: 'available' as const,
+      polygonId: null,
+      taskStatus: null,
+    };
+    let answer: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => (answer = resolve))),
+    );
+    const assigned = {
+      ...own,
+      status: 'assigned' as const,
+      polygonId: '00000000-0000-4000-8000-0000000000a1',
+      taskStatus: 'ready' as const,
+    };
+    useSession.setState({ participation: own });
+    const { socket, unmount } = setup();
+    await join(socket as FakeSocket);
+    act(() =>
+      socket?.fire('mission:event', {
+        type: 'participant.updated',
+        missionId,
+        participant: {
+          ...assigned,
+          searcherId: own.id,
+          name: 'דנה',
+          phone: '+972526114085',
+          position: null,
+          positionAt: null,
+        },
+      }),
+    );
+    unmount();
+    await act(async () =>
+      answer(new Response(JSON.stringify(own), { headers: { 'content-type': 'application/json' } })),
+    );
+
+    expect(useSession.getState().participation?.status).toBe('assigned');
   });
 
   it('ignores an event of another mission or with an invalid payload', () => {

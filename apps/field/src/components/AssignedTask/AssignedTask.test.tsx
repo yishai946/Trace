@@ -74,6 +74,12 @@ describe('AssignedTask', () => {
     expect(onDismissNotice).toHaveBeenCalled();
   });
 
+  it('says it without a name while the polygons load', () => {
+    renderTask({ polygons: [], notice: { kind: 'moved', polygonId: participation.polygonId ?? '' } });
+    expect(screen.getByText('שובצת לפוליגון')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('הועברת לפוליגון. המשימה הקודמת נשמרה.');
+  });
+
   it.each(['night', 'day'] as const)('works in %s', (id) => {
     usePreferences.setState({ themePreference: id });
     renderTask({ notice: { kind: 'assigned', polygonId: polygons[0]?.id ?? '' } });

@@ -22,8 +22,10 @@ export interface AssignedTaskProps {
 export function AssignedTask({ participation, polygons, notice, onDismissNotice }: AssignedTaskProps) {
   const { color } = useTheme().theme;
   const polygon = polygons.find((p) => p.id === participation.polygonId);
-  const name = polygon?.name ?? 'הפוליגון';
-  const noticeName = polygons.find((p) => p.id === notice?.polygonId)?.name ?? name;
+  // Right after an assignment the polygon list may still be loading: say it without a name rather than a wrong one.
+  const name = polygon?.name;
+  const noticeName = polygons.find((p) => p.id === notice?.polygonId)?.name;
+  const to = (polygonName: string | undefined) => (polygonName ? `לפוליגון ${polygonName}` : 'לפוליגון');
 
   return (
     <View style={styles.task} accessibilityLabel="המשימה שלי">
@@ -35,8 +37,8 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice 
         >
           <Text style={[typography.body, styles.grow, { color: color.ink }]}>
             {notice.kind === 'moved'
-              ? `הועברת לפוליגון ${noticeName}. המשימה הקודמת נשמרה.`
-              : `המנהל שיבץ אותך לפוליגון ${noticeName}.`}
+              ? `הועברת ${to(noticeName)}. המשימה הקודמת נשמרה.`
+              : `המנהל שיבץ אותך ${to(noticeName)}.`}
           </Text>
           <Button label="הבנתי" variant="ghost" onPress={onDismissNotice} />
         </View>
@@ -44,7 +46,7 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice 
       <View style={styles.row}>
         <CallsignChip callsign={participation.callsign} />
         <View style={styles.grow}>
-          <Text style={[typography.title, { color: color.ink }]}>{`שובצת לפוליגון ${name}`}</Text>
+          <Text style={[typography.title, { color: color.ink }]}>{`שובצת ${to(name)}`}</Text>
           {polygon ? (
             <Text style={[typography.meta, { color: color.inkMuted }]}>
               {polygon.activeSearchers === 1 ? 'מחפש אחד בפוליגון' : `${polygon.activeSearchers} מחפשים בפוליגון`}
