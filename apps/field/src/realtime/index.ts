@@ -14,6 +14,9 @@ import { useSession } from '../state/session';
 
 type MissionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
+/** Wait before trying again after the server refused a connection or a join for a passing reason. */
+export const RETRY_MS = 5_000;
+
 /** Applies a mission event to the cached data, so the screens and the map change at once. */
 export function applyEvent(queryClient: QueryClient, event: MissionEvent): void {
   const key = missionKeys.mission(event.missionId);
@@ -42,7 +45,8 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
 /**
  * Keeps the searcher's mission live over the realtime channel (UC-C04, UC-C05): joins it with the session token, and
  * applies the commander's changes to the LKP, the rally point, the details and the polygons. After every join,
- * including after a lost connection, it refetches the mission, since events sent while away are not replayed.
+ * including after a lost connection, it refetches the mission, since events sent while away are not replayed. An
+ * expired session signs the searcher out; other refusals are tried again.
  */
 export function useMissionLive(): void {
   const queryClient = useQueryClient();
@@ -57,10 +61,27 @@ export function useMissionLive(): void {
       // React Native has no cookies to share: the token is the session, and WebSocket needs no long-polling fallback.
       transports: ['websocket'],
     });
-    socket.on('connect', () => {
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const later = (action: () => void) => {
+      clearTimeout(retry);
+      retry = setTimeout(action, RETRY_MS);
+    };
+    const join = () =>
       socket.emit('mission:join', { missionId }, (result) => {
-        if (result.ok) void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+        if (result.ok) {
+          void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+        } else if (result.code === 'NOT_FOUND') {
+          // The searcher is no longer in this mission: the map then offers to join one.
+          useSession.getState().setMissionId(null);
+        } else {
+          later(join);
+        }
       });
+    socket.on('connect', join);
+    // A refusal from the server is not retried by Socket.IO itself.
+    socket.on('connect_error', (error) => {
+      if (error.message === 'UNAUTHENTICATED') void useSession.getState().signOut();
+      else later(() => socket.connect());
     });
     socket.on('mission:event', (raw) => {
       const event = MissionEvent.safeParse(raw);
@@ -71,6 +92,7 @@ export function useMissionLive(): void {
       if (reason === 'io server disconnect') socket.connect();
     });
     return () => {
+      clearTimeout(retry);
       socket.disconnect();
     };
   }, [token, missionId, queryClient]);

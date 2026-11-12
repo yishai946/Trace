@@ -2,8 +2,8 @@ import type { JoinMissionAck, Mission } from '@trace/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useMissionLive } from '.';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RETRY_MS, useMissionLive } from '.';
 import { missionKeys } from '../mission/queries';
 import { useSession } from '../state/session';
 
@@ -88,6 +88,7 @@ const join = (socket: FakeSocket) =>
 const cached = (queryClient: QueryClient) => queryClient.getQueryData<Mission>(missionKeys.mission(missionId));
 
 describe('useMissionLive', () => {
+  afterEach(() => vi.useRealTimers());
   beforeEach(() => {
     sockets.length = 0;
     useSession.setState({ ...useSession.getInitialState(), token: 't1', restored: true, missionId });
@@ -147,6 +148,36 @@ describe('useMissionLive', () => {
     );
     act(() => socket?.fire('mission:event', { type: 'lkp.changed', missionId, lkp: 'nonsense' }));
     expect(cached(queryClient)).toEqual(mission);
+  });
+
+  it('signs out when the server refuses the session', async () => {
+    const { socket } = setup();
+    await act(async () => socket?.fire('connect_error', new Error('UNAUTHENTICATED')));
+    expect(useSession.getState().token).toBeNull();
+  });
+
+  it('tries the connection and the join again after a passing refusal', () => {
+    vi.useFakeTimers();
+    const { socket } = setup();
+    act(() => socket?.fire('connect_error', new Error('INTERNAL_ERROR')));
+    act(() => vi.advanceTimersByTime(RETRY_MS));
+    expect(socket?.connects).toBe(1);
+
+    act(() => {
+      socket?.fire('connect');
+      socket?.joins.at(-1)?.ack({ ok: false, code: 'INTERNAL_ERROR' });
+    });
+    act(() => vi.advanceTimersByTime(RETRY_MS));
+    expect(socket?.joins).toHaveLength(2);
+  });
+
+  it('leaves the mission when the server no longer counts the searcher in it', () => {
+    const { socket } = setup();
+    act(() => {
+      socket?.fire('connect');
+      socket?.joins.at(-1)?.ack({ ok: false, code: 'NOT_FOUND' });
+    });
+    expect(useSession.getState().missionId).toBeNull();
   });
 
   it('connects again after the server closed the connection, and disconnects when the mission closes', () => {
