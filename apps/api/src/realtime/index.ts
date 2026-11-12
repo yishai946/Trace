@@ -39,7 +39,7 @@ function roomsFor(actor: Actor, missionId: string): string[] {
 }
 
 /**
- * Who gets an event. Positions go only to the commander and the searcher who moved (decision 32). Sightings go only to
+ * Who gets an event. Positions and routes go only to the commander (decision 32). Sightings go only to
  * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
  */
 function audienceOf(event: MissionEvent): string[] {
@@ -48,10 +48,12 @@ function audienceOf(event: MissionEvent): string[] {
   if (event.type === 'participant.joined') return [commanderRoom(event.missionId)];
   // The Timeline is the commander's (UC-C19); searchers do not get it.
   if (event.type === 'timeline.recorded') return [commanderRoom(event.missionId)];
-  // Positions and assignments go only to the commander and the searcher concerned (decision 32).
-  if (event.type === 'participant.moved' || event.type === 'participant.updated') {
-    const searcherId = event.type === 'participant.moved' ? event.searcherId : event.participant.searcherId;
-    return [commanderRoom(event.missionId), searcherRoom(event.missionId, searcherId)];
+  // Positions and route points are the commander's alone (decision 32).
+  if (event.type === 'participant.moved' || event.type === 'participant.tracked')
+    return [commanderRoom(event.missionId)];
+  // Assignments go to the commander and the searcher concerned (decision 32).
+  if (event.type === 'participant.updated') {
+    return [commanderRoom(event.missionId), searcherRoom(event.missionId, event.participant.searcherId)];
   }
   return [membersRoom(event.missionId)];
 }

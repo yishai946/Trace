@@ -6,6 +6,7 @@ import { Participant } from './participants';
 import { MissionPolygon } from './polygons';
 import { Sighting } from './sightings';
 import { TimelineEvent } from './timeline';
+import { TrackPoint } from './tracking';
 
 /**
  * The realtime channel (Socket.IO) between the API and both apps. A client connects with its session (Command's cookie,
@@ -46,10 +47,7 @@ const RallyChanged = z.object({
  */
 const MissionUpdated = z.object({ type: z.literal('mission.updated'), missionId: z.uuid(), mission: Mission });
 
-/**
- * A searcher reported a position. Only the mission's commander and that searcher get it: searchers do not see each
- * other's positions (decision 32).
- */
+/** A searcher reported a position. Only the mission's commander gets it: searchers do not see positions (decision 32). */
 const ParticipantMoved = z.object({
   type: z.literal('participant.moved'),
   missionId: z.uuid(),
@@ -57,6 +55,17 @@ const ParticipantMoved = z.object({
   searcherId: z.uuid(),
   position: LngLat,
   positionAt: z.iso.datetime({ offset: true }),
+});
+
+/**
+ * New points were added to a searcher's route (UC-C10): only the points stored by that upload, oldest first. Only the
+ * mission's commander gets it (decision 32).
+ */
+const ParticipantTracked = z.object({
+  type: z.literal('participant.tracked'),
+  missionId: z.uuid(),
+  participantId: z.uuid(),
+  points: z.array(TrackPoint),
 });
 
 /** A searcher joined the mission (UC-F02). Only the mission's commander gets it, for the searcher pool (UC-C08). */
@@ -98,6 +107,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   RallyChanged,
   MissionUpdated,
   ParticipantMoved,
+  ParticipantTracked,
   ParticipantJoined,
   ParticipantUpdated,
   SightingSaved,

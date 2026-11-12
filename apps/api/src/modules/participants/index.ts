@@ -1,6 +1,7 @@
 import {
   ApiError,
   AssignBody,
+  BatteryBody,
   GpsStatusBody,
   JoinedMission,
   JoinParams,
@@ -27,6 +28,7 @@ import {
   joinMission,
   listParticipants,
   previewJoin,
+  setBattery,
   setGpsStatus,
 } from './participants.service';
 
@@ -94,6 +96,33 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
         searcherId: actor.searcherId,
         available: request.body.available,
       });
+      if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+      return reply.status(204).send(null);
+    },
+  );
+
+  app.put(
+    '/missions/:missionId/participation/battery',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: "Report the searcher's phone battery (UC-C10, decision 13)",
+        description:
+          'Searchers in the mission only. `level` is a whole percent and `measuredAt` when the phone read it: the ' +
+          'newest reading wins, so an older one arriving late changes nothing. The commander sees the change at once. ' +
+          '409 PARTICIPATION_ENDED after Finish Activity. The low-battery threshold is TBD (decision 45).',
+        params: MissionParams,
+        body: BatteryBody,
+        response: { 204: z.null(), 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: [searchersOnly, missionAccess(db, 'member')],
+    },
+    async (request, reply) => {
+      const actor = actorOf(request);
+      // `searchersOnly` already refused anyone else; this narrows the type.
+      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { missionId } = request.params;
+      const participant = await setBattery(db, { missionId, searcherId: actor.searcherId, ...request.body });
       if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
       return reply.status(204).send(null);
     },

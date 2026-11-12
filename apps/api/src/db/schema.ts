@@ -255,6 +255,10 @@ export const participations = pgTable(
     lastPositionAt: timestamp('last_position_at', { withTimezone: true }),
     /** Since when the searcher's phone reports no GPS (decision 42); null while it works. */
     gpsUnavailableSince: timestamp('gps_unavailable_since', { withTimezone: true }),
+    /** The phone's last reported battery level, in percent (decision 13); null before the first report. */
+    batteryLevel: integer('battery_level'),
+    /** When the phone measured `batteryLevel`: the newest reading wins, whatever order uploads arrive in. */
+    batteryMeasuredAt: timestamp('battery_measured_at', { withTimezone: true }),
     joinedAt: timestamp('joined_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
