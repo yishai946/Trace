@@ -73,6 +73,11 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         ),
       );
       return;
+    case 'participant.updated':
+      queryClient.setQueryData<Participant[]>(missionKeys.participants(event.missionId), (list) =>
+        list?.map((p) => (p.id === event.participant.id ? event.participant : p)),
+      );
+      return;
     case 'participant.joined':
       // Refetched, not patched: a fetch in flight may have read the list before the searcher joined.
       void queryClient.invalidateQueries({ queryKey: missionKeys.participants(event.missionId) });

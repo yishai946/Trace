@@ -265,6 +265,34 @@ export const participations = pgTable(
 );
 
 /**
+ * Every assignment a searcher had (UC-C09, decision 53). The open one (`ended_at` null) is the participation's current
+ * polygon; moving the searcher ends it and opens another, so the history of who searched where stays.
+ */
+export const assignments = pgTable(
+  'assignments',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    participationId: uuid('participation_id')
+      .notNull()
+      .references(() => participations.id, { onDelete: 'cascade' }),
+    polygonId: uuid('polygon_id')
+      .notNull()
+      .references(() => polygons.id),
+    assignedBy: uuid('assigned_by')
+      .notNull()
+      .references(() => users.id),
+    assignedAt: timestamp('assigned_at', { withTimezone: true }).notNull().defaultNow(),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('assignments_participation_idx').on(t.participationId, t.assignedAt),
+    uniqueIndex('assignments_open_idx')
+      .on(t.participationId)
+      .where(sql`${t.endedAt} is null`),
+  ],
+);
+
+/**
  * A searcher's GPS route (UC-S01): every fix their phone recorded, with what it was for. Kept after the mission ends
  * (mission history, UC-C20). The phone may send a batch again after a lost connection: one point per recording time.
  */

@@ -54,7 +54,13 @@ export const JoinedMission = z
   .object({ mission: Mission, participation: OwnParticipation })
   .meta({ id: 'JoinedMission' });
 
+/** PUT /missions/:id/participants/:participantId/assignment: the polygon the commander assigns the searcher to. */
+export const AssignBody = z.object({ polygonId: z.uuid() }).meta({ id: 'AssignBody' });
+
+export const ParticipantParams = z.object({ missionId: z.uuid(), participantId: z.uuid() });
+
 export type Participant = z.infer<typeof Participant>;
+export type AssignBody = z.infer<typeof AssignBody>;
 export type JoinPreview = z.infer<typeof JoinPreview>;
 export type OwnParticipation = z.infer<typeof OwnParticipation>;
 export type JoinedMission = z.infer<typeof JoinedMission>;

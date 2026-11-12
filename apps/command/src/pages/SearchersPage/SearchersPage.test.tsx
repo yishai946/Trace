@@ -86,3 +86,29 @@ describe('statusLabel', () => {
     expect(statusLabel({ status: 'ended', taskStatus: null })).toBe('סיים');
   });
 });
+
+describe('assigning from the pool (UC-C09)', () => {
+  const polygonB = { ...polygonA, id: '00000000-0000-4000-8000-0000000000b2', name: 'פוליגון B' };
+
+  it('assigns a waiting searcher to a polygon chosen from the menu', () => {
+    const onAssign = vi.fn();
+    render(<SearchersPage {...props({ participants: [michal], polygons: [polygonA, polygonB], onAssign })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'שבץ את מיכל פרץ' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'פוליגון B' }));
+    expect(onAssign).toHaveBeenCalledWith(michal.id, polygonB.id);
+  });
+
+  it('offers to move an assigned searcher to the other polygons only', () => {
+    render(<SearchersPage {...props({ participants: [dana], polygons: [polygonA, polygonB], onAssign: vi.fn() })} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'העבר את דנה כהן' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['פוליגון B']);
+  });
+
+  it('disables assigning when it cannot be done, and shows why it failed', () => {
+    render(<SearchersPage {...props({ participants: [michal], assignError: 'השיבוץ לא נשמר. נסו שוב.' })} />);
+    expect(screen.getByRole('button', { name: 'שבץ את מיכל פרץ' })).toBeDisabled();
+    expect(screen.getByRole('alert').textContent).toBe('השיבוץ לא נשמר. נסו שוב.');
+  });
+});

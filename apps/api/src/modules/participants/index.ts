@@ -1,4 +1,14 @@
-import { ApiError, JoinedMission, JoinParams, JoinPreview, MissionParams, ParticipantList } from '@trace/schemas';
+import {
+  ApiError,
+  AssignBody,
+  JoinedMission,
+  JoinParams,
+  JoinPreview,
+  MissionParams,
+  Participant,
+  ParticipantList,
+  ParticipantParams,
+} from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
@@ -6,7 +16,8 @@ import type { Db } from '../../db';
 import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
 import { getMission } from '../missions/missions.service';
-import { joinMission, listParticipants, previewJoin } from './participants.service';
+import { listPolygons } from '../polygons/polygons.service';
+import { assignParticipant, joinMission, listParticipants, previewJoin } from './participants.service';
 
 export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (
   app,
@@ -25,6 +36,39 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       preHandler: missionAccess(db, 'commander'),
     },
     (request) => listParticipants(db, request.params.missionId),
+  );
+
+  app.put(
+    '/missions/:missionId/participants/:participantId/assignment',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: 'Assign a searcher to a polygon, or move them to another one (UC-C09)',
+        description:
+          'The mission commander only (decision 7). A move ends the previous assignment, kept in the history, and ' +
+          'starts a new search task at Ready (decision 28). Assigning to the same polygon again changes nothing. ' +
+          'An unassigned polygon becomes active. 404 POLYGON_NOT_FOUND for a polygon not on the map; 409 ' +
+          'MISSION_ENDED or PARTICIPATION_ENDED.',
+        params: ParticipantParams,
+        body: AssignBody,
+        response: { 200: Participant, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId, participantId } = request.params;
+      const { participant, activatedPolygonId } = await assignParticipant(db, {
+        missionId,
+        participantId,
+        polygonId: request.body.polygonId,
+        commanderId: actorOf(request).userId,
+      });
+      realtime.publish({ type: 'participant.updated', missionId, participant });
+      const polygon =
+        activatedPolygonId && (await listPolygons(db, missionId)).find((p) => p.id === activatedPolygonId);
+      if (polygon) realtime.publish({ type: 'polygon.saved', missionId, polygon });
+      return participant;
+    },
   );
 
   app.get(
