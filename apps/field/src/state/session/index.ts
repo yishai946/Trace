@@ -9,6 +9,8 @@ interface SessionState {
   missionId: string | null;
   /** The searcher's participation in that mission, as the server last answered it. */
   participation: OwnParticipation | null;
+  /** Set when the commander assigned or moved the searcher while the app was open (UC-F05); cleared once seen. */
+  assignmentNotice: AssignmentNotice | null;
   /** The code of a join link opened before the join screen could show it, e.g. while signed out (UC-F02). */
   pendingJoinCode: string | null;
   /** True once the token saved on the device was read at launch; the start screen waits for it. */
@@ -23,6 +25,14 @@ interface SessionState {
   /** Enters the mission the searcher joined. */
   enterMission: (missionId: string, participation: OwnParticipation) => void;
   setPendingJoinCode: (code: string | null) => void;
+  /** The participation as the server sent it now; notes an assignment or a move. */
+  updateParticipation: (participation: OwnParticipation) => void;
+  dismissAssignmentNotice: () => void;
+}
+
+export interface AssignmentNotice {
+  kind: 'assigned' | 'moved';
+  polygonId: string;
 }
 
 /**
@@ -33,6 +43,7 @@ export const useSession = create<SessionState>()((set) => ({
   token: null,
   missionId: null,
   participation: null,
+  assignmentNotice: null,
   pendingJoinCode: null,
   restored: false,
   restore: async () => {
@@ -45,9 +56,20 @@ export const useSession = create<SessionState>()((set) => ({
   },
   signOut: async () => {
     await deleteToken();
-    set({ token: null, missionId: null, participation: null });
+    set({ token: null, missionId: null, participation: null, assignmentNotice: null });
   },
-  setMissionId: (missionId) => set({ missionId, participation: null }),
+  setMissionId: (missionId) => set({ missionId, participation: null, assignmentNotice: null }),
   enterMission: (missionId, participation) => set({ missionId, participation, pendingJoinCode: null }),
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
+  updateParticipation: (participation) =>
+    set((s) => {
+      const before = s.participation;
+      const changed = participation.status === 'assigned' && participation.polygonId !== before?.polygonId;
+      const notice: AssignmentNotice | null =
+        changed && participation.polygonId
+          ? { kind: before?.status === 'assigned' ? 'moved' : 'assigned', polygonId: participation.polygonId }
+          : s.assignmentNotice;
+      return { participation, assignmentNotice: notice };
+    }),
+  dismissAssignmentNotice: () => set({ assignmentNotice: null }),
 }));

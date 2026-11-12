@@ -49,6 +49,17 @@ describe('toMissionArea', () => {
     expect(area.bounds).toEqual([35, 31.69, 35.03, 31.72]);
   });
 
+  it("draws the searcher's own polygon selected", () => {
+    const ring: [number, number][] = [
+      [35, 31.7],
+      [35.01, 31.7],
+      [35.01, 31.71],
+      [35, 31.7],
+    ];
+    const area = toMissionArea([polygon('a', ring), polygon('b', ring)], undefined, 'b');
+    expect(area.data.polygons.map((p) => p.selected)).toEqual([false, true]);
+  });
+
   it('adds the LKP and the rally point of the mission and frames them too', () => {
     const observedAt = '2026-10-03T13:05:00+03:00';
     const area = toMissionArea([], {

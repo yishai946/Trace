@@ -2,13 +2,14 @@ import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
+  OwnParticipation,
   type Mission,
   type ServerToClientEvents,
 } from '@trace/schemas';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { apiBaseUrl } from '../api';
+import { apiBaseUrl, apiRequest } from '../api';
 import { missionKeys } from '../mission/queries';
 import { useSession } from '../state/session';
 
@@ -16,6 +17,12 @@ type MissionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 /** Wait before trying again after the server refused a connection or a join for a passing reason. */
 export const RETRY_MS = 5_000;
+
+/**
+ * How many own-participation events arrived. A refetch that started before one of them answers with older data, so it
+ * is dropped.
+ */
+let participationEvents = 0;
 
 /** Applies a mission event to the cached data, so the screens and the map change at once. */
 export function applyEvent(queryClient: QueryClient, event: MissionEvent): void {
@@ -32,6 +39,13 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
     case 'mission.updated':
       queryClient.setQueryData<Mission>(key, event.mission);
       return;
+    case 'participant.updated': {
+      // Only the searcher's own participation reaches Field (decision 32).
+      const { id, callsign, status, polygonId, taskStatus } = event.participant;
+      participationEvents += 1;
+      useSession.getState().updateParticipation({ id, callsign, status, polygonId, taskStatus });
+      return;
+    }
     case 'polygon.saved':
     case 'polygon.deleted':
       void queryClient.invalidateQueries({ queryKey: missionKeys.polygons(event.missionId) });
@@ -61,6 +75,7 @@ export function useMissionLive(): void {
       // React Native has no cookies to share: the token is the session, and WebSocket needs no long-polling fallback.
       transports: ['websocket'],
     });
+    let closed = false;
     let retry: ReturnType<typeof setTimeout> | undefined;
     const later = (action: () => void) => {
       clearTimeout(retry);
@@ -70,6 +85,20 @@ export function useMissionLive(): void {
       socket.emit('mission:join', { missionId }, (result) => {
         if (result.ok) {
           void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+          // An assignment made while away is not replayed either. The answer is dropped if the screen closed, the
+          // mission changed or a live event came first (it is newer). A failure waits for the next reconnect.
+          const seen = participationEvents;
+          apiRequest(`/missions/${missionId}/participation`, {
+            baseUrl: apiBaseUrl,
+            token,
+            schema: OwnParticipation,
+          }).then(
+            (own) => {
+              const current = !closed && seen === participationEvents && useSession.getState().missionId === missionId;
+              if (current) useSession.getState().updateParticipation(own);
+            },
+            () => undefined,
+          );
         } else if (result.code === 'NOT_FOUND') {
           // The searcher is no longer in this mission: the map then offers to join one.
           useSession.getState().setMissionId(null);
@@ -92,6 +121,7 @@ export function useMissionLive(): void {
       if (reason === 'io server disconnect') socket.connect();
     });
     return () => {
+      closed = true;
       clearTimeout(retry);
       socket.disconnect();
     };

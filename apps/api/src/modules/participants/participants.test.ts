@@ -364,6 +364,19 @@ describe('assigning a searcher (UC-C09)', () => {
     expect(await polygonStatus(polygonA)).toBe('active');
   });
 
+  it('lets the searcher read their own participation, and only theirs', async () => {
+    const user = await signInSearcher(ctx);
+    const id = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4, searcherId: user.searcherId });
+    await assign(id, polygonA);
+    const res = await injectAs(ctx, user)({ method: 'GET', url: `/api/missions/${mission.id}/participation` });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ id, callsign: 4, status: 'assigned', polygonId: polygonA, taskStatus: 'ready' });
+    expect((await commander({ method: 'GET', url: `/api/missions/${mission.id}/participation` })).statusCode).toBe(403);
+    const outsider = injectAs(ctx, await signInSearcher(ctx));
+    expect((await outsider({ method: 'GET', url: `/api/missions/${mission.id}/participation` })).statusCode).toBe(404);
+  });
+
   it('puts two searchers in one polygon', async () => {
     const first = await addParticipant(ctx.db, { missionId: mission.id, callsign: 4 });
     const second = await addParticipant(ctx.db, { missionId: mission.id, callsign: 5 });

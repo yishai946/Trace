@@ -34,6 +34,16 @@ const ownColumns = {
   taskStatus: participations.taskStatus,
 };
 
+/** The signed-in searcher's own participation in the mission (UC-F05). The route's access check found the mission. */
+export async function getOwnParticipation(db: Db, missionId: string, searcherId: string): Promise<OwnParticipation> {
+  const [participation] = await db
+    .select(ownColumns)
+    .from(participations)
+    .where(and(eq(participations.missionId, missionId), eq(participations.searcherId, searcherId)));
+  if (!participation) throw notFound('Mission');
+  return participation;
+}
+
 export interface JoinResult {
   missionId: string;
   participation: OwnParticipation;
