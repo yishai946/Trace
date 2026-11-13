@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ErrorCode } from './errors';
 import { LngLat, PointGeometry } from './geo';
+import { Message, MessageRecipient, OwnMessage } from './messages';
 import { Lkp, Mission } from './missions';
 import { Participant } from './participants';
 import { MissionPolygon } from './polygons';
@@ -101,6 +102,28 @@ const LkpChanged = z.object({ type: z.literal('lkp.changed'), missionId: z.uuid(
 /** An event was added to the mission's Timeline (UC-C19). Only the mission's commander gets it. */
 const TimelineRecorded = z.object({ type: z.literal('timeline.recorded'), missionId: z.uuid(), event: TimelineEvent });
 
+/** The commander sent a message (UC-C12). Only the mission's commander gets the whole message with its recipients. */
+const MessageSent = z.object({ type: z.literal('message.sent'), missionId: z.uuid(), message: Message });
+
+/**
+ * A message reached one of its recipients' live connections. Only that searcher gets it, without the other recipients
+ * (decision 32). One who was offline reads it from GET /missions/:id/participation/messages after reconnecting (decision 77).
+ */
+const MessageReceived = z.object({
+  type: z.literal('message.received'),
+  missionId: z.uuid(),
+  searcherId: z.uuid(),
+  message: OwnMessage,
+});
+
+/** A recipient's app reported delivery, reading or acknowledging. Only the mission's commander gets it. */
+const MessageReceiptRecorded = z.object({
+  type: z.literal('message.receipt'),
+  missionId: z.uuid(),
+  messageId: z.uuid(),
+  recipient: MessageRecipient,
+});
+
 /**
  * An SOS was activated or closed (UC-F13, UC-C14). The whole SOS is sent. The commander, the sender and the searchers
  * it was sent to get it: those assigned to the sender's polygon at activation, and the same ones when it is closed
@@ -121,6 +144,9 @@ export const MissionEvent = z.discriminatedUnion('type', [
   SightingSaved,
   LkpChanged,
   TimelineRecorded,
+  MessageSent,
+  MessageReceived,
+  MessageReceiptRecorded,
   SosSaved,
 ]);
 

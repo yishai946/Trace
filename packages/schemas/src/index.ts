@@ -2,6 +2,7 @@ export * from './auth';
 export * from './errors';
 export * from './geo';
 export * from './health';
+export * from './messages';
 export * from './missions';
 export * from './notifications';
 export * from './participants';

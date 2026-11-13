@@ -45,6 +45,7 @@ function roomsFor(actor: Actor, missionId: string): string[] {
 /**
  * Who gets an event. Positions and routes go only to the commander (decision 32). Sightings go only to
  * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
+ * A message and its receipts go to the commander; each recipient gets only their own copy (decision 32).
  */
 function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): string[] {
   // An SOS goes to the commander, the sender and the searchers it was sent to: an exception to decision 32, made on
@@ -67,6 +68,9 @@ function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): s
   if (event.type === 'participant.updated') {
     return [commanderRoom(event.missionId), searcherRoom(event.missionId, event.participant.searcherId)];
   }
+  // A message with its recipients is the commander's; each recipient gets only their own copy (decision 32).
+  if (event.type === 'message.sent' || event.type === 'message.receipt') return [commanderRoom(event.missionId)];
+  if (event.type === 'message.received') return [searcherRoom(event.missionId, event.searcherId)];
   return [membersRoom(event.missionId)];
 }
 

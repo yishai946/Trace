@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tans
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { eventSamples, mission, sightingA, sightingC } from '../mission/fixtures';
+import type { Message } from '@trace/schemas';
+import { eventSamples, messageCritical, messageNormal, mission, sightingA, sightingC } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -209,6 +210,66 @@ describe('useMissionLive', () => {
     open();
 
     await waitFor(() => expect(result.current.timeline).toEqual([recorded]));
+  });
+
+  describe('messages', () => {
+    const key = missionKeys.messages(messageNormal.missionId);
+
+    function setupMessages(initial?: Message[]) {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      if (initial) queryClient.setQueryData(key, initial);
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      renderHook(() => useMissionLive(messageNormal.missionId), { wrapper });
+      return { queryClient, socket: sockets[0] as FakeSocket };
+    }
+
+    it('puts a sent message first in the cached list and ignores a duplicate', () => {
+      const { queryClient, socket } = setupMessages([messageNormal]);
+      const sent: MissionEvent = { type: 'message.sent', missionId: messageNormal.missionId, message: messageCritical };
+      act(() => {
+        socket.fire('mission:event', sent);
+        socket.fire('mission:event', sent);
+      });
+      expect(queryClient.getQueryData(key)).toEqual([messageCritical, messageNormal]);
+    });
+
+    it('replaces only the recipient of that message in a receipt', () => {
+      const { queryClient, socket } = setupMessages([messageCritical, messageNormal]);
+      const waiting = messageNormal.recipients[1];
+      if (!waiting) throw new Error('fixture');
+      const read = {
+        ...waiting,
+        status: 'read' as const,
+        deliveredAt: '2026-10-03T13:40:00.000Z',
+        readAt: '2026-10-03T13:41:00.000Z',
+      };
+      act(() =>
+        socket.fire('mission:event', {
+          type: 'message.receipt',
+          missionId: messageNormal.missionId,
+          messageId: messageNormal.id,
+          recipient: read,
+        } satisfies MissionEvent),
+      );
+      expect(queryClient.getQueryData(key)).toEqual([
+        messageCritical,
+        { ...messageNormal, recipients: [messageNormal.recipients[0], read] },
+      ]);
+    });
+
+    it('caches nothing for a sent message when the list was never opened', () => {
+      const { queryClient, socket } = setupMessages();
+      act(() =>
+        socket.fire('mission:event', {
+          type: 'message.sent',
+          missionId: messageNormal.missionId,
+          message: messageCritical,
+        } satisfies MissionEvent),
+      );
+      expect(queryClient.getQueryData(key)).toBeUndefined();
+    });
   });
 
   describe('rally point', () => {

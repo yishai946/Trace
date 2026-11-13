@@ -1,6 +1,8 @@
 import {
   LkpDecisionResult,
   LkpPointList,
+  Message,
+  MessageList,
   Mission,
   MissionList,
   MissionPolygon,
@@ -14,6 +16,7 @@ import {
   type CreatePolygonBody,
   type CreateSightingBody,
   type LkpDecision,
+  type SendMessageBody,
   type UpdateMissionDetailsBody,
   type UpdatePolygonBody,
 } from '@trace/schemas';
@@ -35,6 +38,7 @@ export const missionKeys = {
   sightings: (missionId: string) => ['missions', missionId, 'sightings'] as const,
   lkps: (missionId: string) => ['missions', missionId, 'lkps'] as const,
   timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,
+  messages: (missionId: string) => ['missions', missionId, 'messages'] as const,
 };
 
 export function useMissions() {
@@ -164,6 +168,34 @@ export function useTimeline(missionId: string | undefined) {
     queryKey: missionKeys.timeline(missionId ?? ''),
     queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/timeline`, { schema: TimelineEventList, signal }),
     enabled: !!missionId,
+  });
+}
+
+/** The mission's messages with their recipients, newest first (UC-C12). Realtime keeps the cached list current. */
+export function useMessages(missionId: string | undefined) {
+  return useQuery({
+    queryKey: missionKeys.messages(missionId ?? ''),
+    queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/messages`, { schema: MessageList, signal }),
+    enabled: !!missionId,
+  });
+}
+
+/** UC-C12: sends a message. The cached list takes it at once, unless realtime already added it. */
+export function useSendMessage(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ body }: { missionId: string; body: SendMessageBody }) =>
+      apiRequest(`/missions/${missionId}/messages`, { method: 'POST', body, schema: Message }),
+    onSuccess: (message) => {
+      queryClient.setQueryData<Message[]>(missionKeys.messages(missionId), (list) =>
+        list && !list.some((m) => m.id === message.id) ? [message, ...list] : list,
+      );
+    },
+    // The mission ended meanwhile: reload it, so the screen turns read-only.
+    onError: (error) =>
+      error instanceof ApiRequestError && error.code === 'MISSION_ENDED'
+        ? queryClient.invalidateQueries({ queryKey: missionKeys.all })
+        : undefined,
   });
 }
 

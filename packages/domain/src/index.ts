@@ -1,5 +1,6 @@
 export * from './callsign';
 export * from './joinCode';
+export * from './message';
 export * from './mission';
 export * from './participation';
 export * from './phone';

@@ -20,6 +20,10 @@ export const ERROR_CODES = [
   'REPORT_ID_TAKEN',
   /** The id belongs to a sighting of another reporter or mission. */
   'SIGHTING_ID_TAKEN',
+  /** No active searcher matches the message's target. */
+  'NO_RECIPIENTS',
+  /** Only a critical message can be acknowledged (decision 27). */
+  'MESSAGE_NOT_CRITICAL',
   'INTERNAL_ERROR',
 ] as const;
 

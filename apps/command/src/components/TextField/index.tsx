@@ -52,7 +52,7 @@ export function TextField({
           {description}
         </Text>
       )}
-      <FieldError className={styles.error}>{errorMessage}</FieldError>
+      <FieldError className={styles.error}>{errorMessage ? <span role="alert">{errorMessage}</span> : null}</FieldError>
     </AriaTextField>
   );
 }

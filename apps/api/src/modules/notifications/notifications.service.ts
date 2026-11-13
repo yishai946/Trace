@@ -33,6 +33,8 @@ export interface PushRecipients {
   polygonId?: string;
   /** Searchers who must not be notified, such as the one who raised the alarm. */
   excludeSearcherIds?: string[];
+  /** Only these searchers, such as a message's recipients. */
+  searcherIds?: string[];
 }
 
 /**
@@ -41,7 +43,7 @@ export interface PushRecipients {
  */
 export async function pushTokensOfActiveSearchers(
   db: Db,
-  { missionId, polygonId, excludeSearcherIds }: PushRecipients,
+  { missionId, polygonId, excludeSearcherIds, searcherIds }: PushRecipients,
 ) {
   const rows = await db
     .selectDistinct({ token: pushTokens.token })
@@ -56,6 +58,7 @@ export async function pushTokensOfActiveSearchers(
           ? and(eq(participations.status, 'assigned'), eq(participations.polygonId, polygonId))
           : ne(participations.status, 'ended'),
         excludeSearcherIds?.length ? notInArray(pushTokens.searcherId, excludeSearcherIds) : undefined,
+        searcherIds ? inArray(pushTokens.searcherId, searcherIds) : undefined,
       ),
     );
   return rows.map((row) => row.token);
@@ -76,6 +79,7 @@ export function createPushNotifier({ db, sender, log }: { db: Db; sender: PushSe
       message,
       ...recipients
     }: PushRecipients & { message: PushMessage }): Promise<{ sent: number; removed: number }> {
+      if (recipients.searcherIds?.length === 0) return { sent: 0, removed: 0 };
       try {
         const tokens = await pushTokensOfActiveSearchers(db, recipients);
         if (tokens.length === 0) return { sent: 0, removed: 0 };
