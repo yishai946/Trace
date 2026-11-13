@@ -3,8 +3,18 @@ import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tans
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Message } from '@trace/schemas';
-import { eventSamples, messageCritical, messageNormal, mission, sightingA, sightingC } from '../mission/fixtures';
+import type { Message, Report } from '@trace/schemas';
+import {
+  eventSamples,
+  messageCritical,
+  messageNormal,
+  mission,
+  reportFinding,
+  reportHazard,
+  reportLocated,
+  sightingA,
+  sightingC,
+} from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -269,6 +279,92 @@ describe('useMissionLive', () => {
         } satisfies MissionEvent),
       );
       expect(queryClient.getQueryData(key)).toBeUndefined();
+    });
+  });
+
+  describe('reports', () => {
+    const key = missionKeys.reports(mission.id);
+    const saved = (report: Report): MissionEvent => ({ type: 'report.saved', missionId: mission.id, report });
+
+    function setupReports(initial?: Report[]) {
+      const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      if (initial) queryClient.setQueryData(key, initial);
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      );
+      renderHook(() => useMissionLive(mission.id), { wrapper });
+      return { queryClient, socket: sockets[0] as FakeSocket };
+    }
+
+    it('RT1: adds a saved report to the cached list, newest first, without a refetch', () => {
+      const { queryClient, socket } = setupReports([reportFinding, reportHazard]);
+      act(() => socket.fire('mission:event', saved(reportLocated)));
+      expect(queryClient.getQueryData(key)).toEqual([reportLocated, reportFinding, reportHazard]);
+      expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
+      act(() =>
+        socket.fire(
+          'mission:event',
+          saved({
+            ...reportHazard,
+            id: '00000000-0000-4000-8000-0000000007b9',
+            reportedAt: '2026-10-03T13:40:00.000Z',
+          }),
+        ),
+      );
+      expect((queryClient.getQueryData(key) as Report[]).map((r) => r.reportedAt)).toEqual([
+        reportLocated.reportedAt,
+        reportFinding.reportedAt,
+        '2026-10-03T13:40:00.000Z',
+        reportHazard.reportedAt,
+      ]);
+    });
+
+    it('RT2: replaces a report that is saved again with its new status and photo', () => {
+      const { queryClient, socket } = setupReports([reportLocated, reportFinding]);
+      const handled = { ...reportLocated, status: 'handled' as const, hasPhoto: true, photoUrl: '/p?v=2' };
+      act(() => socket.fire('mission:event', saved(handled)));
+      expect(queryClient.getQueryData(key)).toEqual([handled, reportFinding]);
+    });
+
+    it('RT3: removes a deleted report', () => {
+      const { queryClient, socket } = setupReports([reportLocated, reportFinding]);
+      act(() =>
+        socket.fire('mission:event', {
+          type: 'report.deleted',
+          missionId: mission.id,
+          reportId: reportLocated.id,
+        } satisfies MissionEvent),
+      );
+      expect(queryClient.getQueryData(key)).toEqual([reportFinding]);
+    });
+
+    it('RT4: refetches instead of patching a list that is not cached', async () => {
+      const { queryClient, socket } = setupReports();
+      const fetchReports = vi.fn(async () => [reportLocated]);
+      // The list is being fetched for the first time and has no data yet when the event arrives.
+      const observer = new QueryObserver(queryClient, { queryKey: key, queryFn: fetchReports });
+      const unsubscribe = observer.subscribe(() => undefined);
+      expect(queryClient.getQueryData(key)).toBeUndefined();
+      act(() => socket.fire('mission:event', saved(reportLocated)));
+      expect(queryClient.getQueryData(key)).toBeUndefined();
+      await waitFor(() => expect(fetchReports).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(queryClient.getQueryData(key)).toEqual([reportLocated]));
+      unsubscribe();
+    });
+    it('RT5: refetches a list that is not cached yet when a report is deleted', async () => {
+      const { queryClient, socket } = setupReports();
+      const fetchReports = vi.fn(async () => [reportFinding]);
+      const observer = new QueryObserver(queryClient, { queryKey: key, queryFn: fetchReports });
+      const unsubscribe = observer.subscribe(() => undefined);
+      act(() =>
+        socket.fire('mission:event', {
+          type: 'report.deleted',
+          missionId: mission.id,
+          reportId: reportLocated.id,
+        } satisfies MissionEvent),
+      );
+      await waitFor(() => expect(fetchReports).toHaveBeenCalledTimes(2));
+      unsubscribe();
     });
   });
 

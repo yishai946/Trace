@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { toMapData } from '.';
-import { lkps, mission, participants, polygonA, polygonB, sightingA, sightingB, sightingC } from '../fixtures';
+import {
+  lkps,
+  mission,
+  participants,
+  polygonA,
+  polygonB,
+  reportFinding,
+  reportHazard,
+  reportLocated,
+  sightingA,
+  sightingB,
+  sightingC,
+} from '../fixtures';
 
 describe('toMapData', () => {
   const base = {
@@ -11,6 +23,7 @@ describe('toMapData', () => {
     editingPolygonId: null,
     sightings: [],
     lkps: [],
+    reports: [],
   };
 
   it('shows the rally point and the current LKP in Israel time', () => {
@@ -54,5 +67,14 @@ describe('toMapData', () => {
   it('does not draw an accepted sighting twice, since it is the LKP or a past LKP', () => {
     const accepted = { ...sightingA, lkpDecision: 'accepted' as const, lkpCandidate: false };
     expect(toMapData({ ...base, sightings: [accepted, sightingB] }).sightings.map((s) => s.id)).toEqual([sightingB.id]);
+  });
+
+  it('draws every report, New and Handled, marking hazards and located ones', () => {
+    const data = toMapData({ ...base, reports: [reportLocated, reportFinding, reportHazard] });
+    expect(data.reports).toEqual([
+      { id: reportLocated.id, position: [35.1318, 31.7752], time: '16:51', hazard: false, located: true },
+      { id: reportFinding.id, position: [35.1301, 31.7742], time: '16:44', hazard: false, located: false },
+      { id: reportHazard.id, position: [35.1252, 31.7721], time: '16:31', hazard: true, located: false },
+    ]);
   });
 });

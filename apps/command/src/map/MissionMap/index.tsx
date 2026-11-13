@@ -31,9 +31,9 @@ export interface MapFocus {
   bounds?: Bounds;
 }
 
-/** What a click on an LKP or sighting symbol hit. The current LKP has the id `lkp`. */
+/** What a click on an LKP, sighting or report symbol hit. The current LKP has the id `lkp`. */
 export interface PointTarget {
-  kind: 'lkp' | 'sighting';
+  kind: 'lkp' | 'sighting' | 'report';
   id: string;
 }
 
@@ -67,9 +67,10 @@ interface MissionMapProps {
 const DRAW_PREFIX = 'td';
 const POLYGON_FILL_LAYER = 'mission-polygon-fill';
 const SIGHTING_LAYER = 'mission-sightings';
+const REPORT_LAYER = 'mission-reports';
 const LKP_LAYER = 'mission-lkp';
 const LKP_HISTORY_LAYER = 'mission-lkp-history';
-const POINT_LAYERS = [SIGHTING_LAYER, LKP_LAYER, LKP_HISTORY_LAYER];
+const POINT_LAYERS = [SIGHTING_LAYER, REPORT_LAYER, LKP_LAYER, LKP_HISTORY_LAYER];
 /** Screen pixels kept free around a place when zooming to it: camera behavior, not a design value. */
 const FIT_BOUNDS_PADDING_PX = 80;
 
@@ -196,6 +197,8 @@ export function MissionMap({
           const id = point.properties?.id;
           if (point.layer.id === SIGHTING_LAYER && typeof id === 'string') {
             onPointSelectRef.current?.({ kind: 'sighting', id });
+          } else if (point.layer.id === REPORT_LAYER && typeof id === 'string') {
+            onPointSelectRef.current?.({ kind: 'report', id });
           } else {
             onPointSelectRef.current?.({ kind: 'lkp', id: typeof id === 'string' ? id : 'lkp' });
           }

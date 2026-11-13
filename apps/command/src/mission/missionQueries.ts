@@ -9,6 +9,8 @@ import {
   MissionPolygonList,
   Participant,
   ParticipantList,
+  Report,
+  ReportList,
   Sighting,
   SightingList,
   TimelineEventList,
@@ -19,6 +21,7 @@ import {
   type SendMessageBody,
   type UpdateMissionDetailsBody,
   type UpdatePolygonBody,
+  type UpdateReportBody,
 } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
 import {
@@ -39,6 +42,7 @@ export const missionKeys = {
   lkps: (missionId: string) => ['missions', missionId, 'lkps'] as const,
   timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,
   messages: (missionId: string) => ['missions', missionId, 'messages'] as const,
+  reports: (missionId: string) => ['missions', missionId, 'reports'] as const,
 };
 
 export function useMissions() {
@@ -310,4 +314,51 @@ export function useUpdateRallyPoint(missionId: string) {
       return queryClient.invalidateQueries({ queryKey: missionKeys.all });
     },
   });
+}
+
+/** The mission's reports, newest first (UC-C11). Realtime keeps the cached list current. */
+export function useReports(missionId: string | undefined) {
+  return useQuery({
+    queryKey: missionKeys.reports(missionId ?? ''),
+    queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/reports`, { schema: ReportList, signal }),
+    enabled: !!missionId,
+  });
+}
+
+/**
+ * Mark Handled, edit and delete a report (UC-C11). The cached list takes each answer at once. An ended mission reloads
+ * the missions, so the screen turns read-only; a report that is already gone reloads the list.
+ */
+export function useReportMutations(missionId: string) {
+  const queryClient = useQueryClient();
+  const key = missionKeys.reports(missionId);
+  const base = `/missions/${missionId}/reports`;
+  const replace = (report: Report) =>
+    queryClient.setQueryData<Report[]>(key, (list) => list?.map((r) => (r.id === report.id ? report : r)));
+  const onError = (error: unknown) => {
+    if (!(error instanceof ApiRequestError)) return undefined;
+    if (error.code === 'MISSION_ENDED') return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    if (error.code === 'NOT_FOUND') return queryClient.invalidateQueries({ queryKey: key });
+    return undefined;
+  };
+
+  return {
+    handle: useMutation({
+      mutationFn: (reportId: string) => apiRequest(`${base}/${reportId}/handle`, { method: 'POST', schema: Report }),
+      onSuccess: replace,
+      onError,
+    }),
+    update: useMutation({
+      mutationFn: ({ reportId, ...body }: UpdateReportBody & { reportId: string }) =>
+        apiRequest(`${base}/${reportId}`, { method: 'PATCH', body, schema: Report }),
+      onSuccess: replace,
+      onError,
+    }),
+    remove: useMutation({
+      mutationFn: (reportId: string) => apiRequest(`${base}/${reportId}`, { method: 'DELETE' }),
+      onSuccess: (_, reportId) =>
+        queryClient.setQueryData<Report[]>(key, (list) => list?.filter((r) => r.id !== reportId)),
+      onError,
+    }),
+  };
 }

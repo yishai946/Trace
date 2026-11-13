@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CreateReportBody, REPORT_TEXT_MAX } from '.';
+import { CreateReportBody, REPORT_TEXT_MAX, UpdateReportBody } from '.';
 
 const valid = {
   id: '0190a3b2-7c4e-7a10-8a5e-3f2d1c0b9a87',
@@ -47,5 +47,27 @@ describe('CreateReportBody', () => {
   it.each(['id', 'type', 'text', 'position', 'reportedAt'])('requires %s', (key) => {
     const { [key]: _removed, ...body } = valid as Record<string, unknown>;
     expect(failingPaths(body)).toContain(`/${key}`);
+  });
+});
+
+describe('UpdateReportBody', () => {
+  it('accepts the type only, the text only, or both', () => {
+    expect(UpdateReportBody.parse({ type: 'general' })).toEqual({ type: 'general' });
+    expect(UpdateReportBody.parse({ text: 'חדש' })).toEqual({ text: 'חדש' });
+    expect(UpdateReportBody.parse({ type: 'hazard', text: 'חדש' })).toEqual({ type: 'hazard', text: 'חדש' });
+  });
+
+  it('trims the text', () => {
+    expect(UpdateReportBody.parse({ text: '  חדש ' }).text).toBe('חדש');
+  });
+
+  it('refuses an empty body', () => {
+    expect(UpdateReportBody.safeParse({}).success).toBe(false);
+  });
+
+  it('refuses blank text, text over the maximum and an unknown type', () => {
+    expect(UpdateReportBody.safeParse({ text: '   ' }).success).toBe(false);
+    expect(UpdateReportBody.safeParse({ text: 'א'.repeat(REPORT_TEXT_MAX + 1) }).success).toBe(false);
+    expect(UpdateReportBody.safeParse({ type: 'nope' }).success).toBe(false);
   });
 });

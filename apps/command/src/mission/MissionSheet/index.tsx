@@ -16,9 +16,10 @@ export interface MissionSheetProps {
   polygons: MissionPolygon[];
 }
 
-/** Alerts, SOS and reports have no data or API yet (UC-C14, UC-C15): their tabs show a truthful empty state. */
-const ALERTS_COUNT = 0;
-const REPORTS_COUNT = 0;
+/**
+ * Alerts and reports have no phone screen yet (UC-C14, UC-C15, and UC-C11 on the phone): their tabs show no count
+ * and say so, instead of a false zero while New reports or a located alert exist.
+ */
 
 /**
  * The bottom sheet of the phone mission screen (Console "Command בטלפון", wireframe Cm04): alerts, searchers and
@@ -74,23 +75,23 @@ export function MissionSheet({
         <Tabs selectedKey={tab} onSelectionChange={(key) => onTabChange(key as SheetTab)} className={styles.tabsRoot}>
           <TabList className={styles.tabs} aria-label="תצוגה">
             <Tab id="alerts" className={styles.tab}>
-              התראות <span className={styles.count}>{ALERTS_COUNT}</span>
+              התראות
             </Tab>
             <Tab id="searchers" className={styles.tab}>
               מחפשים {searchers && <span className={styles.count}>{searchers.length}</span>}
             </Tab>
             <Tab id="reports" className={styles.tab}>
-              דיווחים <span className={styles.count}>{REPORTS_COUNT}</span>
+              דיווחים
             </Tab>
           </TabList>
           <TabPanel id="alerts" className={styles.body}>
-            <p className={styles.empty}>אין התראות פתוחות.</p>
+            <p className={styles.empty}>ההתראות יוצגו כאן בקרוב.</p>
           </TabPanel>
           <TabPanel id="searchers" className={styles.body}>
             {searchersBody()}
           </TabPanel>
           <TabPanel id="reports" className={styles.body}>
-            <p className={styles.empty}>אין דיווחים עדיין.</p>
+            <p className={styles.empty}>הדיווחים יוצגו כאן בקרוב. אפשר לראות אותם במחשב.</p>
           </TabPanel>
         </Tabs>
       )}

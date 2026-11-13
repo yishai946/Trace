@@ -25,10 +25,10 @@ function renderSheet(props: Partial<Parameters<typeof MissionSheet>[0]> = {}) {
 describe('MissionSheet', () => {
   it('shows the three tabs with their counts, on alerts, with a truthful empty state', () => {
     renderSheet();
-    expect(screen.getByRole('tab', { name: 'התראות 0', selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'התראות', selected: true })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'מחפשים 2' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'דיווחים 0' })).toBeInTheDocument();
-    expect(screen.getByText('אין התראות פתוחות.')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'דיווחים' })).toBeInTheDocument();
+    expect(screen.getByText('ההתראות יוצגו כאן בקרוב.')).toBeInTheDocument();
   });
 
   it('lists the searchers by callsign with their status and polygon', () => {
@@ -77,12 +77,12 @@ describe('MissionSheet', () => {
 
   it('shows the reports empty state', () => {
     renderSheet({ tab: 'reports' });
-    expect(screen.getByText('אין דיווחים עדיין.')).toBeInTheDocument();
+    expect(screen.getByText('הדיווחים יוצגו כאן בקרוב. אפשר לראות אותם במחשב.')).toBeInTheDocument();
   });
 
   it('reports a tab change', () => {
     const { onTabChange } = renderSheet();
-    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים 0' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים' }));
     expect(onTabChange).toHaveBeenCalledWith('reports');
   });
 

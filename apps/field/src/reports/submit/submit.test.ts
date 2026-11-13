@@ -31,6 +31,7 @@ const saved = (r: ReturnType<typeof report>) => ({
   status: 'new',
   reportedBy: { role: 'searcher', name: 'דנה', callsign: 4 },
   hasPhoto: false,
+  photoUrl: null,
   createdAt: '2026-10-03T10:02:00.000Z',
 });
 
@@ -72,7 +73,7 @@ describe('submitReport', () => {
   it('sends the photo after the report', async () => {
     const r = report();
     const fetch = vi.fn(async (_url: string, init: RequestInit) =>
-      init.method === 'POST' ? json(201, saved(r)) : json(200, { ...saved(r), hasPhoto: true }),
+      init.method === 'POST' ? json(201, saved(r)) : json(200, { ...saved(r), hasPhoto: true, photoUrl: '/photo' }),
     );
     vi.stubGlobal('fetch', fetch);
 

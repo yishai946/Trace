@@ -20,6 +20,7 @@ const saved = {
   status: 'new',
   reportedBy: { role: 'searcher', name: 'דנה', callsign: 4 },
   hasPhoto: false,
+  photoUrl: null,
   createdAt: '2026-10-03T10:02:00.000Z',
 };
 const item = (kind: OutboxItem['kind'], body: unknown): OutboxItem => ({
@@ -98,7 +99,7 @@ describe('reportPhotoSender', () => {
   const photo = { reportId, base64: btoa(String.fromCharCode(0xff, 0xd8, 0xff, 0xe0)) };
 
   it('puts the decoded JPEG bytes on the report', async () => {
-    const fetch = stubFetch(json(200, { ...saved, hasPhoto: true }));
+    const fetch = stubFetch(json(200, { ...saved, hasPhoto: true, photoUrl: '/photo' }));
     await expect(reportPhotoSender.send(missionId, [item('report-photo', photo)])).resolves.toBe('sent');
 
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];

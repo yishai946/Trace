@@ -28,4 +28,17 @@
   /* A checkbox or radio box in a list (wireframe Cd11 polygon rows, 18px) and its check mark (12px). */
   --pending-checkbox: 18px;
   --pending-check-icon: 12px;
+  /* The reports list panel (wireframe Cd10, 400px). */
+  --pending-report-list-w: 400px;
+  /* A list row with a type glyph (wireframe Cd10 tcx-item, 56px) and the glyph (tcx-glyph, 28px). */
+  --pending-list-item-h: 56px;
+  --pending-glyph: 28px;
+  /* A filter chip (wireframe Cd10 tcx-chipbtn, 26px). */
+  --pending-chip-h: 26px;
+  /* A badge (wireframe tcx-badge, 20px). */
+  --pending-badge-h: 20px;
+  /* The report photo in the Inspector (wireframe Cd10, 150px). */
+  --pending-report-photo-h: 150px;
+  /* The floating critical-report alert, as wide as the SOS alert (wireframe Cd04 tc-alert, 560px). */
+  --pending-alert-w: 560px;
 }

@@ -1,4 +1,4 @@
-import { validateStyleMin } from '@maplibre/maplibre-gl-style-spec';
+import { validateStyleMin, type SymbolLayerSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { themeIds, themes } from '@trace/design';
 import { describe, expect, it } from 'vitest';
 import { buildMapStyle } from '.';
@@ -59,6 +59,26 @@ describe.each(themeIds)('map style (%s)', (themeId) => {
     const order = ['mission-lkp-history', 'mission-sightings-suggest', 'mission-sightings', 'mission-lkp'];
     expect(order.map((id) => ids.indexOf(id))).toEqual([...order.map((id) => ids.indexOf(id))].sort((a, b) => a - b));
     expect(order.every((id) => ids.includes(id))).toBe(true);
+  });
+
+  it('draws reports with the located, hazard or plain symbol and a flag for a located one', () => {
+    const c = themes[themeId].color;
+    const layer = style.layers.find((l) => l.id === 'mission-reports') as SymbolLayerSpecification | undefined;
+    expect(layer?.type).toBe('symbol');
+    const layout = layer?.layout;
+    expect(layout?.['icon-image']).toEqual([
+      'case',
+      ['get', 'located'],
+      iconId(themeId, 'located'),
+      ['get', 'hazard'],
+      iconId(themeId, 'hazard'),
+      iconId(themeId, 'report'),
+    ]);
+    expect(layout?.['text-field']).toEqual(['get', 'label']);
+    expect(layer?.paint).toMatchObject({
+      'text-color': c.mapHalo,
+      'text-halo-color': c.ink,
+    });
   });
 
   it('includes terrain, contours and every mission overlay', () => {

@@ -42,9 +42,23 @@ export const Report = z
       callsign: z.number().int().nullable(),
     }),
     hasPhoto: z.boolean(),
+    /** The photo's address with its version (`?v=`), null without one. */
+    photoUrl: z.string().nullable(),
     createdAt: z.iso.datetime({ offset: true }),
   })
   .meta({ id: 'Report' });
+
+export const ReportList = z.array(Report).meta({ id: 'ReportList' });
+
+/** The commander or the author edits the category or the text; the position and the photo stay (UC-C11, decision 88). */
+export const UpdateReportBody = z
+  .object({
+    type: ReportType.optional(),
+    text: z.string().trim().min(1).max(REPORT_TEXT_MAX).optional(),
+  })
+  .refine((body) => body.type !== undefined || body.text !== undefined, {
+    message: 'Nothing to update: send type or text',
+  });
 
 export const ReportParams = z.object({ missionId: z.uuid(), reportId: z.uuid() });
 
@@ -52,3 +66,5 @@ export type ReportType = z.infer<typeof ReportType>;
 export type ReportStatus = z.infer<typeof ReportStatus>;
 export type CreateReportBody = z.input<typeof CreateReportBody>;
 export type Report = z.infer<typeof Report>;
+export type ReportList = z.infer<typeof ReportList>;
+export type UpdateReportBody = z.input<typeof UpdateReportBody>;

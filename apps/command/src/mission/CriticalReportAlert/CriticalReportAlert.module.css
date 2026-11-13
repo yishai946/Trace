@@ -1,0 +1,51 @@
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Floating at the top centre of the live map, in the slot of the SOS alert. */
+.alert[data-floating] {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  left: 50%;
+  z-index: 3;
+  width: var(--pending-alert-w);
+  max-width: calc(100% - var(--space-6) * 2);
+  transform: translateX(-50%);
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--pending-badge-h);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--primary);
+  color: var(--on-primary);
+  font: var(--text-caption);
+  font-weight: 600;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.meta {
+  display: block;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

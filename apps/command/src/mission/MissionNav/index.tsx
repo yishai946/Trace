@@ -1,12 +1,14 @@
 import { Link } from 'react-aria-components';
 import styles from './MissionNav.module.css';
 
-export type MissionView = 'map' | 'searchers' | 'messages' | 'timeline';
+export type MissionView = 'map' | 'searchers' | 'reports' | 'messages' | 'timeline';
 
 interface MissionNavProps {
   missionName: string;
   view: MissionView;
   onNavigate: (view: MissionView) => void;
+  /** A number after a label, e.g. the New reports; shown only above zero. */
+  counts?: Partial<Record<MissionView, number>>;
 }
 
 /** Icons of Trace Wireframes Cd14: 16px line icons in `currentColor`. */
@@ -23,6 +25,12 @@ const icons: Record<MissionView, React.ReactNode> = {
       <path d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6" />
     </>
   ),
+  reports: (
+    <>
+      <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </>
+  ),
   messages: <path d="M4 5h16v11H9l-5 4z" />,
   timeline: (
     <>
@@ -36,36 +44,42 @@ const icons: Record<MissionView, React.ReactNode> = {
 const items: { view: MissionView; label: string }[] = [
   { view: 'map', label: 'לוח מבצעי' },
   { view: 'searchers', label: 'מחפשים' },
+  { view: 'reports', label: 'דיווחים' },
   { view: 'messages', label: 'הודעות' },
   { view: 'timeline', label: 'ציר זמן' },
 ];
 
-/** Mission navigation (Trace Wireframes Cd14 `tcx-nav`): the live map, the searcher pool, messages and the Timeline. More screens join as they are built. */
-export function MissionNav({ missionName, view, onNavigate }: MissionNavProps) {
+/** Mission navigation (Trace Wireframes Cd14, Cd10 `tcx-nav`): the live map, the searcher pool, reports, messages and the Timeline. More screens join as they are built. */
+export function MissionNav({ missionName, view, onNavigate, counts }: MissionNavProps) {
   return (
     <nav aria-label="ניווט מסע" className={styles.nav}>
       <div className={styles.label}>{missionName}</div>
-      {items.map((item) => (
-        <Link
-          key={item.view}
-          className={styles.item}
-          aria-current={item.view === view ? 'page' : undefined}
-          onPress={() => onNavigate(item.view)}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+      {items.map((item) => {
+        const count = counts?.[item.view] ?? 0;
+        return (
+          <Link
+            key={item.view}
+            className={styles.item}
+            aria-current={item.view === view ? 'page' : undefined}
+            aria-label={count > 0 ? `${item.label}, ${count} חדשים` : undefined}
+            onPress={() => onNavigate(item.view)}
           >
-            {icons[item.view]}
-          </svg>
-          {item.label}
-        </Link>
-      ))}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              {icons[item.view]}
+            </svg>
+            {item.label}
+            {count > 0 && <span className={styles.count}>{count}</span>}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

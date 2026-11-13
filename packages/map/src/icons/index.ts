@@ -1,7 +1,7 @@
 import { themes, type ThemeId } from '@trace/design';
 
 /** Map symbols drawn as SVG from the theme's tokens (Trace Console MapSymbols). Rendered at 2x for sharp edges. */
-export type MapIconName = 'lkp' | 'sighting' | 'suggest' | 'rally' | 'report' | 'hazard';
+export type MapIconName = 'lkp' | 'sighting' | 'suggest' | 'rally' | 'report' | 'hazard' | 'located';
 
 export const ICON_PIXEL_RATIO = 2;
 
@@ -70,6 +70,15 @@ export function mapIcons(themeId: ThemeId): Record<string, MapIcon> {
         18,
         `<path d="M9 2.5l7 12H2z" fill="${c.surface}" stroke="${c.mapHalo}" stroke-width="3.4" stroke-linejoin="round"/>` +
           `<path d="M9 2.5l7 12H2z" fill="${c.surface}" stroke="${c.warning}" stroke-width="1.4" stroke-linejoin="round"/>`,
+      ),
+    },
+    // The missing person was located (decision 18, wireframe Cd10): an accent ring around a filled dot.
+    located: {
+      size: 34,
+      svg: svg(
+        34,
+        `<circle cx="17" cy="17" r="15" fill="none" stroke="${c.accent}" stroke-width="2"/>` +
+          `<circle cx="17" cy="17" r="8" fill="${c.ink}" stroke="${c.mapHalo}" stroke-width="2"/>`,
       ),
     },
   };

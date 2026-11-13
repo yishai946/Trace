@@ -32,3 +32,24 @@ export function acceptsReports(status: ParticipationStatus): boolean {
 export function reportSummary(report: { type: ReportType; text: string }): string {
   return `${REPORT_TYPE_LABELS[report.type]}, ${report.text}`;
 }
+
+/** The Hebrew status word (wireframe Cd10: "חדש", "טופל"). */
+export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = { new: 'חדש', handled: 'טופל' };
+
+/** An active or paused mission lets the commander and the author change its reports; an ended one is read-only (State and Rules §6). */
+export function canChangeReport(missionStatus: MissionStatus): boolean {
+  return !isMissionEnded(missionStatus);
+}
+
+/** A "located" report is a critical alert to the commander until it is marked Handled; it never ends the mission (decision 18). */
+export function isCriticalReport(report: { type: ReportType; status: ReportStatus }): boolean {
+  return report.type === 'located' && report.status === 'new';
+}
+
+/** Newest first by when it was sent, then by arrival (wireframe Cd10). Compares the instants, so offsets do not matter. */
+export function compareReportsNewestFirst(
+  a: { reportedAt: string; createdAt: string },
+  b: { reportedAt: string; createdAt: string },
+): number {
+  return Date.parse(b.reportedAt) - Date.parse(a.reportedAt) || Date.parse(b.createdAt) - Date.parse(a.createdAt);
+}

@@ -409,9 +409,24 @@ function missionLayers(themeId: ThemeId, boldFont: string[], regularFont: string
       type: 'symbol',
       source: SOURCE.reports,
       layout: {
-        'icon-image': ['case', ['get', 'hazard'], iconId(themeId, 'hazard'), iconId(themeId, 'report')],
+        'icon-image': [
+          'case',
+          ['get', 'located'],
+          iconId(themeId, 'located'),
+          ['get', 'hazard'],
+          iconId(themeId, 'hazard'),
+          iconId(themeId, 'report'),
+        ],
         'icon-allow-overlap': true,
+        // The flag of a located report: its time, like the LKP label.
+        'text-field': ['get', 'label'],
+        'text-font': boldFont,
+        'text-size': labelSize,
+        'text-anchor': 'bottom',
+        'text-offset': [0, -1.6],
+        'text-allow-overlap': true,
       },
+      paint: { 'text-color': c.mapHalo, 'text-halo-color': c.ink, 'text-halo-width': 3 },
     },
     {
       id: 'mission-sightings-suggest',

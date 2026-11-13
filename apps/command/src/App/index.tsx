@@ -1,6 +1,7 @@
 import type { ThemeId } from '@trace/design';
 import {
   canChangeLkp,
+  canChangeReport,
   canChangePolygons,
   canChangeRallyPoint,
   canSendMessage,
@@ -19,6 +20,7 @@ import {
   type Mission,
   type MissionPolygon,
   type Participant,
+  type Report,
   type Sighting,
   type SessionUser,
 } from '@trace/schemas';
@@ -43,9 +45,11 @@ import {
   endErrorMessage,
   errorMessage,
   messageErrorMessage,
+  reportErrorMessage,
   sightingErrorMessage,
 } from '../mission/errorMessage';
 import { JoinCodePanel } from '../mission/JoinCodePanel';
+import { CriticalReportAlert } from '../mission/CriticalReportAlert';
 import { LkpPanel } from '../mission/LkpPanel';
 import { MissionLayout } from '../mission/MissionLayout';
 import type { MissionView } from '../mission/MissionNav';
@@ -60,6 +64,8 @@ import {
   useSightingMutations,
   useSightings,
   useMessages,
+  useReportMutations,
+  useReports,
   useSendMessage,
   useTimeline,
   useUpdateRallyPoint,
@@ -73,6 +79,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { ReportsPage } from '../pages/ReportsPage';
 import { SearchersPage } from '../pages/SearchersPage';
 import { MessagesPage } from '../pages/MessagesPage';
 import { TimelinePage } from '../pages/TimelinePage';
@@ -170,9 +177,12 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const [createdNotice, setCreatedNotice] = useState<string | null>(null);
   /** The live map or the Timeline. The Timeline is also open for an ended mission, read-only (UC-C19). */
   const [view, setView] = useState<MissionView>('map');
+  /** The report open in the Reports page; the alert and the map symbols open it. */
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const openMission = (id: string | null) => {
     setOpenId(id);
     setView('map');
+    setSelectedReportId(null);
     setJoinOpen(false);
     setRallyOpen(false);
     setDetailsOpen(false);
@@ -188,10 +198,25 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
   const timeline = useTimeline(mission && view === 'timeline' ? mission.id : undefined);
   const messages = useMessages(mission && view === 'messages' ? mission.id : undefined);
   const sendMessage = useSendMessage(mission?.id ?? '');
+  // Always loaded: the map draws them, the navigation counts the New ones and the alert needs the located one.
+  const reports = useReports(mission?.id);
+  const reportMutations = useReportMutations(mission?.id ?? '');
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
   const [focus, setFocus] = useState<MapFocus | null>(null);
+  const openReport = (id: string) => {
+    setSelectedReportId(id);
+    setView('reports');
+  };
+  // A mutation's own `isPending` lags a render behind a click: one change at a time runs, a second press is dropped.
+  const reportInFlight = useRef(false);
+  const runReportChange = (start: (options: { onSettled: () => void }) => void) => {
+    if (reportInFlight.current) return;
+    reportInFlight.current = true;
+    start({ onSettled: () => (reportInFlight.current = false) });
+  };
+  const reportMutation = [reportMutations.handle, reportMutations.update, reportMutations.remove];
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
   const connection: Connection = !connected
@@ -234,6 +259,9 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         participants={participants.data ?? []}
         sightings={sightings.data}
         lkps={lkps.data}
+        reports={reports.data ?? []}
+        // The phone has no Reports screen yet, so the alert would lead nowhere there.
+        onOpenReport={phone ? undefined : openReport}
         sightingsLoading={sightings.isPending || lkps.isPending}
         sightingsFailed={sightings.isError || lkps.isError}
         onRetrySightings={() => {
@@ -340,6 +368,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           missionName={mission.name}
           view={view}
           onNavigate={setView}
+          counts={{ reports: reports.data?.filter((r) => r.status === 'new').length ?? 0 }}
           joinPanel={joinOpen && <JoinCodePanel mission={mission} onClose={() => setJoinOpen(false)} />}
         >
           {view === 'searchers' && (
@@ -374,6 +403,57 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
                     ? endErrorMessage(endParticipation.error)
                     : null
               }
+            />
+          )}
+          {view === 'reports' && (
+            <ReportsPage
+              key={mission.id}
+              reports={reports.data}
+              loadFailed={reports.isError}
+              onRetry={() => void reports.refetch()}
+              mission={mission}
+              polygons={polygons.data ?? []}
+              participants={participants.data ?? []}
+              sightings={sightings.data}
+              lkps={lkps.data}
+              provider={provider}
+              themeId={theme}
+              selectedId={selectedReportId}
+              onSelect={setSelectedReportId}
+              onHandle={
+                operational && canChangeReport(mission.status)
+                  ? (id) => {
+                      reportMutations.update.reset();
+                      reportMutations.remove.reset();
+                      runReportChange((options) => reportMutations.handle.mutate(id, options));
+                    }
+                  : undefined
+              }
+              onUpdate={
+                operational && canChangeReport(mission.status)
+                  ? (id, body) => {
+                      reportMutations.handle.reset();
+                      reportMutations.remove.reset();
+                      runReportChange((options) => reportMutations.update.mutate({ reportId: id, ...body }, options));
+                    }
+                  : undefined
+              }
+              onDelete={
+                operational && canChangeReport(mission.status)
+                  ? (id) => {
+                      reportMutations.handle.reset();
+                      reportMutations.update.reset();
+                      runReportChange((options) => reportMutations.remove.mutate(id, options));
+                    }
+                  : undefined
+              }
+              busy={reportMutation.some((m) => m.isPending)}
+              error={
+                reportMutation.find((m) => m.isError)
+                  ? reportErrorMessage(reportMutation.find((m) => m.isError)?.error)
+                  : null
+              }
+              ended={isMissionEnded(mission.status)}
             />
           )}
           {view === 'messages' && (
@@ -494,6 +574,10 @@ interface MissionWorkspaceProps {
   sightings: Sighting[] | undefined;
   /** The LKP history, newest first. */
   lkps: LkpPoint[] | undefined;
+  /** Newest first. */
+  reports: Report[];
+  /** Opens a report in the Reports page. Absent where that page does not exist (the phone). */
+  onOpenReport?: (id: string) => void;
   sightingsLoading: boolean;
   sightingsFailed: boolean;
   onRetrySightings: () => void;
@@ -516,6 +600,8 @@ function MissionWorkspace({
   participants,
   sightings,
   lkps,
+  reports,
+  onOpenReport,
   sightingsLoading,
   sightingsFailed,
   onRetrySightings,
@@ -564,10 +650,11 @@ function MissionWorkspace({
         participants,
         sightings: sightings ?? [],
         lkps: lkps ?? [],
+        reports,
         selectedPolygonId: selectedId,
         editingPolygonId: edit?.polygonId ?? null,
       }),
-    [mission, polygons, participants, sightings, lkps, selectedId, edit?.polygonId],
+    [mission, polygons, participants, sightings, lkps, reports, selectedId, edit?.polygonId],
   );
   // The spot chosen for a new sighting shows on the map before it is saved.
   const draftPosition = adding?.position ?? null;
@@ -642,7 +729,10 @@ function MissionWorkspace({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [adding]);
 
-  const selectPoint = (target: PointTarget) => openLkpPanel(target.kind === 'sighting' ? target.id : null);
+  const selectPoint = (target: PointTarget) => {
+    if (target.kind === 'report') onOpenReport?.(target.id);
+    else openLkpPanel(target.kind === 'sighting' ? target.id : null);
+  };
 
   const submitSighting = (body: CreateSightingBody) => {
     sightingMutations.create(body, {
@@ -740,6 +830,8 @@ function MissionWorkspace({
           if (draft.success) setEdit((e) => (e ? { ...e, draft: draft.data, serverOutside: null } : e));
         }}
       />
+
+      {onOpenReport && <CriticalReportAlert floating reports={reports} onOpen={onOpenReport} />}
 
       {rallyOpen && (
         <div className={styles.rallyPanel}>
