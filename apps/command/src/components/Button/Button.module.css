@@ -12,6 +12,7 @@
   background-color: transparent;
   color: var(--ink);
   white-space: nowrap;
+  text-decoration: none;
   cursor: pointer;
   outline: none;
 }

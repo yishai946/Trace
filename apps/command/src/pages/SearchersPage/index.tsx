@@ -3,6 +3,7 @@ import type { MissionPolygon, Participant } from '@trace/schemas';
 import { Dialog, DialogTrigger, Heading, Menu, MenuItem, MenuTrigger, Popover } from 'react-aria-components';
 import styles from './SearchersPage.module.css';
 import { Button } from '../../components/Button';
+import { CallButton } from '../../components/CallButton';
 import { CallsignChip } from '../../components/CallsignChip';
 import { timeLabel } from '../../mission/timeLabel';
 
@@ -133,6 +134,7 @@ export function SearchersPage({
                   </td>
                   <td>
                     <span className={styles.actions}>
+                      <CallButton phone={p.phone} name={p.name} display="icon" />
                       <AssignMenu participant={p} polygons={polygons} onAssign={assigning ? undefined : onAssign} />
                       <EndParticipation participant={p} onEnd={assigning ? undefined : onEnd} />
                     </span>
