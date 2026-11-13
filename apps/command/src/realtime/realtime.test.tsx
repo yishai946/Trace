@@ -351,6 +351,21 @@ describe('useMissionLive', () => {
       await waitFor(() => expect(queryClient.getQueryData(key)).toEqual([reportLocated]));
       unsubscribe();
     });
+    it('RT5: refetches a list that is not cached yet when a report is deleted', async () => {
+      const { queryClient, socket } = setupReports();
+      const fetchReports = vi.fn(async () => [reportFinding]);
+      const observer = new QueryObserver(queryClient, { queryKey: key, queryFn: fetchReports });
+      const unsubscribe = observer.subscribe(() => undefined);
+      act(() =>
+        socket.fire('mission:event', {
+          type: 'report.deleted',
+          missionId: mission.id,
+          reportId: reportLocated.id,
+        } satisfies MissionEvent),
+      );
+      await waitFor(() => expect(fetchReports).toHaveBeenCalledTimes(2));
+      unsubscribe();
+    });
   });
 
   describe('rally point', () => {

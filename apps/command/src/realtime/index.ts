@@ -147,11 +147,16 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
       );
       return;
     }
-    case 'report.deleted':
-      queryClient.setQueryData<Report[]>(missionKeys.reports(event.missionId), (list) =>
-        list?.filter((r) => r.id !== event.reportId),
-      );
+    case 'report.deleted': {
+      const key = missionKeys.reports(event.missionId);
+      // Not cached: a first fetch in flight may still return the list from before the delete.
+      if (!queryClient.getQueryData(key)) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+        return;
+      }
+      queryClient.setQueryData<Report[]>(key, (list) => list?.filter((r) => r.id !== event.reportId));
       return;
+    }
     case 'message.received':
       // Searchers only; Command never joins a searcher's room.
       return;
