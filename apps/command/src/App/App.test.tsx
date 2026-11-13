@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mission, participants } from '../mission/fixtures';
+import { mission, participants, reportFinding } from '../mission/fixtures';
 import { ThemeProvider } from '../theme/theme';
 import { App } from '.';
 
@@ -102,5 +102,29 @@ describe('App mission details', () => {
       ),
     );
     expect(await screen.findByText('עוד לא התקבלו דיווחים במסע הזה.')).toBeInTheDocument();
+  });
+
+  it('N1: sends one delete request when the confirmation is pressed twice at once', async () => {
+    renderApp();
+    const calls = () => vi.mocked(globalThis.fetch).mock.calls;
+    vi.mocked(globalThis.fetch).mockImplementation(((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith(`/reports/${reportFinding.id}`) && init?.method === 'DELETE') {
+        return Promise.resolve(new Response(null, { status: 204 }));
+      }
+      if (url.endsWith('/reports')) return Promise.resolve(json([reportFinding]));
+      if (url.endsWith('/health'))
+        return Promise.resolve(json({ status: 'ok', version: '1', time: '2026-11-08T00:00:00Z' }));
+      if (url.endsWith('/polygons')) return Promise.resolve(json([]));
+      if (url.endsWith('/participants')) return Promise.resolve(json(participants));
+      return Promise.resolve(json([mission]));
+    }) as never);
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('link', { name: /דיווחים/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'מחק' }));
+    const confirm = await screen.findByRole('button', { name: 'מחק דיווח' });
+    fireEvent.click(confirm);
+    fireEvent.click(confirm);
+    await waitFor(() => expect(calls().filter(([, init]) => init?.method === 'DELETE')).toHaveLength(1));
   });
 });

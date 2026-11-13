@@ -209,6 +209,13 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
     setSelectedReportId(id);
     setView('reports');
   };
+  // A mutation's own `isPending` lags a render behind a click: one change at a time runs, a second press is dropped.
+  const reportInFlight = useRef(false);
+  const runReportChange = (start: (options: { onSettled: () => void }) => void) => {
+    if (reportInFlight.current) return;
+    reportInFlight.current = true;
+    start({ onSettled: () => (reportInFlight.current = false) });
+  };
   const reportMutation = [reportMutations.handle, reportMutations.update, reportMutations.remove];
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
@@ -418,7 +425,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
                   ? (id) => {
                       reportMutations.update.reset();
                       reportMutations.remove.reset();
-                      reportMutations.handle.mutate(id);
+                      runReportChange((options) => reportMutations.handle.mutate(id, options));
                     }
                   : undefined
               }
@@ -427,7 +434,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
                   ? (id, body) => {
                       reportMutations.handle.reset();
                       reportMutations.remove.reset();
-                      reportMutations.update.mutate({ reportId: id, ...body });
+                      runReportChange((options) => reportMutations.update.mutate({ reportId: id, ...body }, options));
                     }
                   : undefined
               }
@@ -436,7 +443,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
                   ? (id) => {
                       reportMutations.handle.reset();
                       reportMutations.update.reset();
-                      reportMutations.remove.mutate(id);
+                      runReportChange((options) => reportMutations.remove.mutate(id, options));
                     }
                   : undefined
               }

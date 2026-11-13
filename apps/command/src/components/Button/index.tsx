@@ -16,6 +16,8 @@ export interface ButtonProps extends AriaButtonProps {
   variant?: ButtonVariant;
   /** `lg` is the large phone control (48px), for login and the main action of a phone screen. */
   size?: 'md' | 'sm' | 'lg';
+  /** The button element, for moving focus to it. */
+  ref?: React.Ref<HTMLButtonElement>;
 }
 
 interface LookProps {

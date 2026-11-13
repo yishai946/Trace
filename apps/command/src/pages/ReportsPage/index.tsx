@@ -11,7 +11,7 @@ import type {
   UpdateReportBody,
 } from '@trace/schemas';
 import type { ThemeId } from '@trace/design';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ReportTypeIcon } from '../../components/icons';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { CriticalReportAlert } from '../../mission/CriticalReportAlert';
@@ -73,6 +73,7 @@ export function ReportsPage({
   /** The commander closed the Inspector; choosing a report opens it again. */
   const [closed, setClosed] = useState(false);
   const [focus, setFocus] = useState<MapFocus | null>(null);
+  const listRef = useRef<HTMLElement>(null);
 
   const all = reports ?? [];
   const visible = filterReports(all, status, type);
@@ -124,6 +125,7 @@ export function ReportsPage({
           onTypeChange={setType}
           selectedId={shown?.id ?? null}
           onSelect={select}
+          sectionRef={listRef}
         />
         <section className={`${styles.panel} ${styles.mapPanel}`} aria-label="מפת דיווחים">
           <div className={styles.section}>
@@ -157,7 +159,14 @@ export function ReportsPage({
             polygons={polygons}
             onHandle={onHandle}
             onUpdate={onUpdate}
-            onDelete={onDelete}
+            onDelete={
+              onDelete &&
+              ((id) => {
+                // The Inspector of this report goes away: focus moves to the list.
+                onDelete(id);
+                listRef.current?.focus();
+              })
+            }
             busy={busy}
             error={error}
             ended={ended}

@@ -1,7 +1,7 @@
 import { REPORT_TEXT_MAX } from '@trace/schemas';
 import { REPORT_TYPE_LABELS, REPORT_TYPES } from '@trace/domain';
 import type { Report, ReportType, UpdateReportBody } from '@trace/schemas';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
@@ -20,6 +20,9 @@ export function ReportEditForm({ report, onSave, onCancel, busy }: ReportEditFor
   const [type, setType] = useState<ReportType>(report.type);
   const [text, setText] = useState(report.text);
   const [blank, setBlank] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
+  // Opening the form puts the cursor in the description.
+  useEffect(() => form.current?.querySelector('textarea')?.focus(), []);
 
   const submit = () => {
     const trimmed = text.trim();
@@ -37,15 +40,13 @@ export function ReportEditForm({ report, onSave, onCancel, busy }: ReportEditFor
 
   return (
     <form
+      ref={form}
       className={styles.editForm}
       aria-label="עריכת דיווח"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
         submit();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onCancel();
       }}
     >
       <RadioGroup className={styles.editField} aria-label="סוג" value={type} onChange={(v) => setType(v as ReportType)}>

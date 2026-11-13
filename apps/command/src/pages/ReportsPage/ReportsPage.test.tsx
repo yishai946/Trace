@@ -240,4 +240,48 @@ describe('ReportsPage', () => {
       expect(within(panel).getByRole('button', { name }).hasAttribute('disabled')).toBe(true);
     }
   });
+
+  describe('keyboard focus', () => {
+    it('B2: moves focus into the edit field, and back to "ערוך" after cancel and after save', () => {
+      renderPage({ selectedId: reportFinding.id });
+      fireEvent.click(within(inspector()).getByRole('button', { name: 'ערוך' }));
+      expect(screen.getByRole('textbox', { name: 'תיאור' })).toHaveFocus();
+      fireEvent.click(screen.getByRole('button', { name: 'בטל' }));
+      expect(within(inspector()).getByRole('button', { name: 'ערוך' })).toHaveFocus();
+
+      fireEvent.click(within(inspector()).getByRole('button', { name: 'ערוך' }));
+      fireEvent.change(screen.getByRole('textbox', { name: 'תיאור' }), { target: { value: 'חדש' } });
+      fireEvent.click(screen.getByRole('button', { name: 'שמור' }));
+      expect(within(inspector()).getByRole('button', { name: 'ערוך' })).toHaveFocus();
+    });
+
+    it('B2: moves focus into the delete confirmation, and back to "מחק" after cancel', () => {
+      renderPage({ selectedId: reportFinding.id });
+      fireEvent.click(within(inspector()).getByRole('button', { name: 'מחק' }));
+      const confirm = screen.getByRole('group', { name: 'אישור מחיקה' });
+      expect(confirm.contains(document.activeElement)).toBe(true);
+      fireEvent.click(within(confirm).getByRole('button', { name: 'בטל' }));
+      expect(within(inspector()).getByRole('button', { name: 'מחק' })).toHaveFocus();
+    });
+
+    it('B2: moves focus to the list when the report is deleted', () => {
+      renderPage({ selectedId: reportFinding.id });
+      fireEvent.click(within(inspector()).getByRole('button', { name: 'מחק' }));
+      fireEvent.click(screen.getByRole('button', { name: 'מחק דיווח' }));
+      expect(list()).toHaveFocus();
+    });
+
+    it('B3: Escape cancels the edit form and the delete confirmation, returning focus to the trigger', () => {
+      renderPage({ selectedId: reportFinding.id });
+      fireEvent.click(within(inspector()).getByRole('button', { name: 'ערוך' }));
+      fireEvent.keyDown(screen.getByRole('textbox', { name: 'תיאור' }), { key: 'Escape' });
+      expect(screen.queryByRole('textbox', { name: 'תיאור' })).toBeNull();
+      expect(within(inspector()).getByRole('button', { name: 'ערוך' })).toHaveFocus();
+
+      fireEvent.click(within(inspector()).getByRole('button', { name: 'מחק' }));
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+      expect(screen.queryByRole('group', { name: 'אישור מחיקה' })).toBeNull();
+      expect(within(inspector()).getByRole('button', { name: 'מחק' })).toHaveFocus();
+    });
+  });
 });

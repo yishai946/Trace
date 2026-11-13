@@ -1,6 +1,6 @@
 import { REPORT_STATUS_LABELS, REPORT_TYPE_LABELS } from '@trace/domain';
 import type { MissionPolygon, Report, UpdateReportBody } from '@trace/schemas';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
 import { CloseIcon, InfoIcon, ReportTypeIcon } from '../../components/icons';
@@ -36,11 +36,41 @@ export function ReportInspector({
 }: ReportInspectorProps) {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // After a form or confirmation closes, focus goes back to the button that opened it (not to the page).
+  const editButton = useRef<HTMLButtonElement>(null);
+  const deleteButton = useRef<HTMLButtonElement>(null);
+  const cancelDelete = useRef<HTMLButtonElement>(null);
+  const returnTo = useRef<'edit' | 'delete' | null>(null);
+  useEffect(() => {
+    if (confirmingDelete) {
+      cancelDelete.current?.focus();
+      return;
+    }
+    if (editing) return;
+    (returnTo.current === 'edit' ? editButton : returnTo.current === 'delete' ? deleteButton : null)?.current?.focus();
+    returnTo.current = null;
+  }, [editing, confirmingDelete]);
+  const closeEdit = () => {
+    returnTo.current = 'edit';
+    setEditing(false);
+  };
+  const closeConfirm = () => {
+    returnTo.current = 'delete';
+    setConfirmingDelete(false);
+  };
   const { callsign, name } = report.reportedBy;
   const canChange = !!(onHandle && onUpdate && onDelete);
 
   return (
-    <aside className={`${styles.panel} ${styles.inspector}`} aria-label="פרטי דיווח">
+    <aside
+      className={`${styles.panel} ${styles.inspector}`}
+      aria-label="פרטי דיווח"
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape' || e.defaultPrevented) return;
+        if (editing) closeEdit();
+        else if (confirmingDelete) closeConfirm();
+      }}
+    >
       <div className={styles.section}>
         <span className={styles.glyph} data-type={report.type}>
           <ReportTypeIcon type={report.type} />
@@ -64,10 +94,10 @@ export function ReportInspector({
           <ReportEditForm
             report={report}
             busy={busy}
-            onCancel={() => setEditing(false)}
+            onCancel={closeEdit}
             onSave={(body) => {
               onUpdate(report.id, body);
-              setEditing(false);
+              closeEdit();
             }}
           />
         ) : (
@@ -115,7 +145,7 @@ export function ReportInspector({
               <div role="group" aria-label="אישור מחיקה" className={styles.confirm}>
                 <p className={styles.hint}>למחוק את הדיווח? אי אפשר לבטל.</p>
                 <div className={styles.actions}>
-                  <Button onPress={() => setConfirmingDelete(false)} isDisabled={busy}>
+                  <Button ref={cancelDelete} onPress={closeConfirm} isDisabled={busy}>
                     בטל
                   </Button>
                   <Button variant="danger" onPress={() => onDelete(report.id)} isDisabled={busy}>
@@ -131,10 +161,15 @@ export function ReportInspector({
                   סמן כטופל
                 </Button>
               )}
-              <Button onPress={() => setEditing(true)} isDisabled={busy}>
+              <Button ref={editButton} onPress={() => setEditing(true)} isDisabled={busy}>
                 ערוך
               </Button>
-              <Button variant="danger-outline" onPress={() => setConfirmingDelete(true)} isDisabled={busy}>
+              <Button
+                ref={deleteButton}
+                variant="danger-outline"
+                onPress={() => setConfirmingDelete(true)}
+                isDisabled={busy}
+              >
                 מחק
               </Button>
             </div>

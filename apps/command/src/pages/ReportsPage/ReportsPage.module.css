@@ -169,6 +169,7 @@
   padding-inline: var(--space-5);
   border: 1px solid var(--border);
   border-radius: calc(var(--pending-chip-h) / 2);
+  background-color: transparent;
   color: var(--ink-secondary);
   font: var(--text-meta);
   white-space: nowrap;

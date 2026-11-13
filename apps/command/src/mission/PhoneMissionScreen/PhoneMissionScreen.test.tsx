@@ -47,7 +47,7 @@ describe('PhoneMissionScreen', () => {
 
   it('follows a tab chosen in the sheet in the tab bar', () => {
     renderScreen();
-    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים 0' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים' }));
     expect(screen.getByRole('link', { name: 'דיווחים' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'לוח' })).not.toHaveAttribute('aria-current');
   });
@@ -57,7 +57,7 @@ describe('PhoneMissionScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'הקטנת הגיליון' }));
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
-    expect(screen.getByRole('tab', { name: 'התראות 0', selected: true })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'התראות', selected: true })).toBeInTheDocument();
   });
 
   it('opens the place search and the join code one at a time', () => {

@@ -32,6 +32,8 @@ export interface ReportListProps {
   onTypeChange: (type: TypeFilter) => void;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** The panel itself, so the page can move focus here when the open report is deleted. */
+  sectionRef?: React.Ref<HTMLElement>;
 }
 
 /** The reports of the mission (wireframe Cd10 "רשימת דיווחים"): filter by status and category, one row per report. */
@@ -46,6 +48,7 @@ export function ReportList({
   onTypeChange,
   selectedId,
   onSelect,
+  sectionRef,
 }: ReportListProps) {
   const all = reports ?? [];
   const byStatus = statusCounts(all);
@@ -93,7 +96,7 @@ export function ReportList({
     );
 
   return (
-    <section className={`${styles.panel} ${styles.list}`} aria-label="רשימת דיווחים">
+    <section ref={sectionRef} tabIndex={-1} className={`${styles.panel} ${styles.list}`} aria-label="רשימת דיווחים">
       <div className={styles.section}>
         <h2 className={`${styles.title} ${styles.grow}`}>דיווחים</h2>
         <span className={styles.meta}>{`${byStatus.all} דיווחים`}</span>
