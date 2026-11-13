@@ -1,5 +1,5 @@
 import { emptyMissionMapData, type MissionMapData } from '@trace/map';
-import type { LkpPoint, Mission, MissionPolygon, Participant, Sighting } from '@trace/schemas';
+import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
 import { timeLabel } from '../timeLabel';
 
@@ -8,6 +8,7 @@ interface MapDataSource {
   polygons: MissionPolygon[];
   participants: Participant[];
   sightings: Sighting[];
+  reports: Report[];
   /** The LKP history, newest first. */
   lkps: LkpPoint[];
   selectedPolygonId: string | null;
@@ -21,6 +22,7 @@ export function toMapData({
   polygons,
   participants,
   sightings,
+  reports,
   lkps,
   selectedPolygonId,
   editingPolygonId,
@@ -71,5 +73,13 @@ export function toMapData({
         };
       }),
     rally: mission.rallyPoint.coordinates as LngLat,
+    // New and Handled reports both stay on the map (decision 81).
+    reports: reports.map((r) => ({
+      id: r.id,
+      position: r.position.coordinates as LngLat,
+      time: timeLabel(r.reportedAt),
+      hazard: r.type === 'hazard',
+      located: r.type === 'located',
+    })),
   };
 }

@@ -5,6 +5,7 @@ import type {
   Mission,
   MissionPolygon,
   Participant,
+  Report,
   Sighting,
   TimelineEvent,
   TimelineSubject,
@@ -379,3 +380,59 @@ export const messageToOne: Message = {
     }),
   ],
 };
+
+const searcherReporter = (name: string, callsign: number) => ({ role: 'searcher' as const, name, callsign });
+
+/** A finding at 16:44 Israel time with a photo: New. */
+export const reportFinding: Report = {
+  id: '00000000-0000-4000-8000-0000000007a1',
+  missionId: mission.id,
+  polygonId: polygonA.id,
+  type: 'finding',
+  status: 'new',
+  text: 'כפפה אפורה ליד השביל',
+  position: { type: 'Point', coordinates: [35.1301, 31.7742] },
+  accuracy: 5.4,
+  reportedAt: '2026-10-03T13:44:00.000Z',
+  reportedBy: searcherReporter('דנה כהן', 4),
+  hasPhoto: true,
+  photoUrl: `/api/missions/${mission.id}/reports/00000000-0000-4000-8000-0000000007a1/photo?v=1`,
+  createdAt: '2026-10-03T13:44:05.000Z',
+};
+
+/** A hazard at 16:31 Israel time without a photo: Handled. */
+export const reportHazard: Report = {
+  id: '00000000-0000-4000-8000-0000000007a2',
+  missionId: mission.id,
+  polygonId: null,
+  type: 'hazard',
+  status: 'handled',
+  text: 'מדרון חלק',
+  position: { type: 'Point', coordinates: [35.1252, 31.7721] },
+  accuracy: null,
+  reportedAt: '2026-10-03T13:31:00.000Z',
+  reportedBy: searcherReporter('מיכל פרץ', 9),
+  hasPhoto: false,
+  photoUrl: null,
+  createdAt: '2026-10-03T13:31:05.000Z',
+};
+
+/** "The missing person was located" at 16:51 Israel time: New, so a critical alert. */
+export const reportLocated: Report = {
+  id: '00000000-0000-4000-8000-0000000007a3',
+  missionId: mission.id,
+  polygonId: polygonA.id,
+  type: 'located',
+  status: 'new',
+  text: 'אדם במעיל חום יושב ליד הנחל',
+  position: { type: 'Point', coordinates: [35.1318, 31.7752] },
+  accuracy: 5,
+  reportedAt: '2026-10-03T13:51:00.000Z',
+  reportedBy: searcherReporter('שחר מור', 2),
+  hasPhoto: false,
+  photoUrl: null,
+  createdAt: '2026-10-03T13:51:04.000Z',
+};
+
+/** The mission's reports, newest first. */
+export const reports: Report[] = [reportLocated, reportFinding, reportHazard];

@@ -1,3 +1,4 @@
+import { compareReportsNewestFirst } from '@trace/domain';
 import {
   MissionEvent,
   REALTIME_PATH,
@@ -6,6 +7,7 @@ import {
   type Mission,
   type MissionPolygon,
   type Participant,
+  type Report,
   type ServerToClientEvents,
   type Sighting,
   type TimelineEvent,
@@ -125,6 +127,27 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
                 ),
               },
         ),
+      );
+      return;
+    case 'report.saved': {
+      const { report } = event;
+      const key = missionKeys.reports(event.missionId);
+      // Same as the Timeline: not cached means never opened, or a first fetch in flight that may miss it.
+      if (!queryClient.getQueryData(key)) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+        return;
+      }
+      queryClient.setQueryData<Report[]>(key, (list) =>
+        list &&
+        (list.some((r) => r.id === report.id)
+          ? list.map((r) => (r.id === report.id ? report : r))
+          : [...list, report].sort(compareReportsNewestFirst)),
+      );
+      return;
+    }
+    case 'report.deleted':
+      queryClient.setQueryData<Report[]>(missionKeys.reports(event.missionId), (list) =>
+        list?.filter((r) => r.id !== event.reportId),
       );
       return;
     case 'message.received':
