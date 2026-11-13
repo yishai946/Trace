@@ -5,6 +5,7 @@ import { Message, MessageRecipient, OwnMessage } from './messages';
 import { Lkp, Mission } from './missions';
 import { Participant } from './participants';
 import { MissionPolygon } from './polygons';
+import { Report } from './reports';
 import { Sighting } from './sightings';
 import { Sos } from './sos';
 import { TimelineEvent } from './timeline';
@@ -131,6 +132,15 @@ const MessageReceiptRecorded = z.object({
  */
 const SosSaved = z.object({ type: z.literal('sos.saved'), missionId: z.uuid(), sos: Sos });
 
+/**
+ * A report was received, got its photo, was marked Handled or edited (UC-F09, UC-C11). Only the mission's commander
+ * gets it for now; UC-F11 adds the polygon's searchers (decision 80).
+ */
+const ReportSaved = z.object({ type: z.literal('report.saved'), missionId: z.uuid(), report: Report });
+
+/** The commander deleted a report (UC-C11, decision 89). Only the mission's commander gets it. */
+const ReportDeleted = z.object({ type: z.literal('report.deleted'), missionId: z.uuid(), reportId: z.uuid() });
+
 /** Every event the server sends about a mission, on the `mission:event` channel. */
 export const MissionEvent = z.discriminatedUnion('type', [
   PolygonSaved,
@@ -148,6 +158,8 @@ export const MissionEvent = z.discriminatedUnion('type', [
   MessageReceived,
   MessageReceiptRecorded,
   SosSaved,
+  ReportSaved,
+  ReportDeleted,
 ]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */

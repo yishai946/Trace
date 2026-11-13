@@ -60,6 +60,7 @@ const saved = (body: Record<string, unknown>) => ({
   status: 'new',
   reportedBy: { role: 'searcher', name: 'דנה', callsign: 4 },
   hasPhoto: false,
+  photoUrl: null,
   createdAt: '2026-10-03T10:02:00.000Z',
 });
 /** A server that saves what it is sent; the calls are recorded. */
