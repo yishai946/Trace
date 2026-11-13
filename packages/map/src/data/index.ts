@@ -46,6 +46,8 @@ export interface MapSighting extends MapPoint {
 
 export interface MapReport extends MapPoint {
   hazard: boolean;
+  /** A "located" report (decision 18): an accent ring and a flag with its time. */
+  located?: boolean;
 }
 
 /** Everything a mission shows on the map. */
@@ -141,6 +143,15 @@ export function toMissionSources(data: MissionMapData): Record<SourceId, Feature
       data.sightings.map((p) => point(p.position, { id: p.id, label: p.label, suggested: p.suggested ?? false })),
     ),
     [SOURCE.rally]: collection(data.rally ? [point(data.rally, {})] : []),
-    [SOURCE.reports]: collection(data.reports.map((r) => point(r.position, { id: r.id, hazard: r.hazard }))),
+    [SOURCE.reports]: collection(
+      data.reports.map((r) =>
+        point(r.position, {
+          id: r.id,
+          hazard: r.hazard,
+          located: r.located ?? false,
+          label: r.located ? `אותר ${r.time ?? ''}`.trim() : '',
+        }),
+      ),
+    ),
   };
 }

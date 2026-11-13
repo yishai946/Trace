@@ -38,5 +38,8 @@ export const sampleData: MissionMapData = {
     { id: 's2', position: [35.003, 31.704], time: '14:22', label: '2 14:22' },
   ],
   rally: [34.999, 31.699],
-  reports: [{ id: 'r1', position: [35.007, 31.707], hazard: true }],
+  reports: [
+    { id: 'r1', position: [35.007, 31.707], hazard: true },
+    { id: 'r2', position: [35.012, 31.712], hazard: false, located: true, time: '16:51' },
+  ],
 };

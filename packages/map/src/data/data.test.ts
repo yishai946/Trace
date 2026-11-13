@@ -27,4 +27,20 @@ describe('mission sources', () => {
     expect(plain[SOURCE.polygons].features[0]?.properties?.selected).toBe(false);
     expect(selected[SOURCE.polygons].features[0]?.properties?.selected).toBe(true);
   });
+
+  it('marks a located report with a flag label and leaves the others unlabelled', () => {
+    const sources = toMissionSources({
+      ...sampleData,
+      reports: [
+        { id: 'plain', position: [35.1, 31.7], hazard: false },
+        { id: 'haz', position: [35.1, 31.7], hazard: true, time: '16:40' },
+        { id: 'found', position: [35.1, 31.7], hazard: false, located: true, time: '16:51' },
+      ],
+    });
+    expect(sources[SOURCE.reports].features.map((f) => f.properties)).toEqual([
+      { id: 'plain', hazard: false, located: false, label: '' },
+      { id: 'haz', hazard: true, located: false, label: '' },
+      { id: 'found', hazard: false, located: true, label: 'אותר 16:51' },
+    ]);
+  });
 });
