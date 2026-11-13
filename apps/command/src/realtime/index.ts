@@ -2,6 +2,7 @@ import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
+  type Message,
   type Mission,
   type MissionPolygon,
   type Participant,
@@ -100,6 +101,35 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
       );
       return;
     }
+    case 'message.sent': {
+      const key = missionKeys.messages(event.missionId);
+      // Same as the Timeline: not cached means never opened, or a first fetch in flight that may miss it.
+      if (!queryClient.getQueryData(key)) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+        return;
+      }
+      queryClient.setQueryData<Message[]>(key, (list) =>
+        list && !list.some((m) => m.id === event.message.id) ? [event.message, ...list] : list,
+      );
+      return;
+    }
+    case 'message.receipt':
+      queryClient.setQueryData<Message[]>(missionKeys.messages(event.missionId), (list) =>
+        list?.map((m) =>
+          m.id !== event.messageId
+            ? m
+            : {
+                ...m,
+                recipients: m.recipients.map((r) =>
+                  r.participantId === event.recipient.participantId ? event.recipient : r,
+                ),
+              },
+        ),
+      );
+      return;
+    case 'message.received':
+      // Searchers only; Command never joins a searcher's room.
+      return;
   }
 }
 

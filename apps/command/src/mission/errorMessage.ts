@@ -47,3 +47,17 @@ export function assignErrorMessage(error: unknown): string {
 export function sightingErrorMessage(error: unknown): string {
   return (error instanceof ApiRequestError && SIGHTING_MESSAGES[error.code]) || 'השינוי לא נשמר. נסו שוב.';
 }
+
+const MESSAGE_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
+  NETWORK_ERROR: 'אין חיבור לשרת. ההודעה לא נשלחה.',
+  MISSION_ENDED: 'המסע הסתיים. אי אפשר לשלוח הודעות.',
+  NO_RECIPIENTS: 'אין מחפשים פעילים ביעד שנבחר.',
+  POLYGON_NOT_FOUND: 'הפוליגון כבר לא במפה.',
+  PARTICIPATION_ENDED: 'המחפש סיים את הפעילות במסע.',
+  NOT_FOUND: 'המחפש כבר לא במסע. רעננו את הרשימה.',
+};
+
+/** A Hebrew message for a failed send (UC-C12). */
+export function messageErrorMessage(error: unknown): string {
+  return (error instanceof ApiRequestError && MESSAGE_MESSAGES[error.code]) || 'ההודעה לא נשלחה. נסו שוב.';
+}
