@@ -121,7 +121,9 @@ describe('useReportMutations', () => {
   });
 
   it('reloads the reports when the report is already gone', async () => {
-    const { queryClient, result } = setup(Response.json({ error: { code: 'NOT_FOUND', message: 'x' } }, { status: 404 }));
+    const { queryClient, result } = setup(
+      Response.json({ error: { code: 'NOT_FOUND', message: 'x' } }, { status: 404 }),
+    );
     await act(() => result.current.remove.mutateAsync(reportFinding.id).catch(() => undefined));
     expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
   });

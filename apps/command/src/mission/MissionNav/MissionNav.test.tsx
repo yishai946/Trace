@@ -32,4 +32,23 @@ describe('MissionNav', () => {
     rerender(<MissionNav missionName="מסע 0412" view="messages" onNavigate={onNavigate} />);
     expect(screen.getByRole('link', { name: 'הודעות' }).getAttribute('aria-current')).toBe('page');
   });
+
+  it('shows דיווחים between the searchers and the messages, and opens it', () => {
+    const onNavigate = vi.fn();
+    render(<MissionNav missionName="מסע 0412" view="map" onNavigate={onNavigate} />);
+    const names = screen.getAllByRole('link').map((link) => link.textContent);
+    expect(names).toEqual(['לוח מבצעי', 'מחפשים', 'דיווחים', 'הודעות', 'ציר זמן']);
+    fireEvent.click(screen.getByRole('link', { name: 'דיווחים' }));
+    expect(onNavigate).toHaveBeenLastCalledWith('reports');
+  });
+
+  it('shows a count only when it is above zero, and names it for screen readers', () => {
+    const { rerender } = render(
+      <MissionNav missionName="מסע 0412" view="map" onNavigate={vi.fn()} counts={{ reports: 3 }} />,
+    );
+    const link = screen.getByRole('link', { name: 'דיווחים, 3 חדשים' });
+    expect(link.textContent).toContain('3');
+    rerender(<MissionNav missionName="מסע 0412" view="map" onNavigate={vi.fn()} counts={{ reports: 0 }} />);
+    expect(screen.getByRole('link', { name: 'דיווחים' }).textContent).toBe('דיווחים');
+  });
 });

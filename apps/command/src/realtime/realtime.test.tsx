@@ -301,7 +301,16 @@ describe('useMissionLive', () => {
       act(() => socket.fire('mission:event', saved(reportLocated)));
       expect(queryClient.getQueryData(key)).toEqual([reportLocated, reportFinding, reportHazard]);
       expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
-      act(() => socket.fire('mission:event', saved({ ...reportHazard, id: '00000000-0000-4000-8000-0000000007b9', reportedAt: '2026-10-03T13:40:00.000Z' })));
+      act(() =>
+        socket.fire(
+          'mission:event',
+          saved({
+            ...reportHazard,
+            id: '00000000-0000-4000-8000-0000000007b9',
+            reportedAt: '2026-10-03T13:40:00.000Z',
+          }),
+        ),
+      );
       expect((queryClient.getQueryData(key) as Report[]).map((r) => r.reportedAt)).toEqual([
         reportLocated.reportedAt,
         reportFinding.reportedAt,

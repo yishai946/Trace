@@ -29,6 +29,7 @@ function renderApp() {
     if (url.endsWith('/polygons')) return Promise.resolve(json([]));
     if (url.endsWith('/participants')) return Promise.resolve(json(participants));
     if (url.endsWith('/messages')) return Promise.resolve(json([]));
+    if (url.endsWith('/reports')) return Promise.resolve(json([]));
     return Promise.resolve(json([mission]));
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -87,5 +88,19 @@ describe('App mission details', () => {
       ),
     );
     expect(await screen.findByText('עוד לא נשלחו הודעות במסע הזה.')).toBeInTheDocument();
+  });
+
+  it('opens the reports screen from the mission navigation', async () => {
+    renderApp();
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('link', { name: 'דיווחים' }));
+
+    expect(await screen.findByRole('heading', { name: 'דיווחים' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(vi.mocked(globalThis.fetch).mock.calls.map(([input]) => String(input))).toContain(
+        `/api/missions/${mission.id}/reports`,
+      ),
+    );
+    expect(await screen.findByText('עוד לא התקבלו דיווחים במסע הזה.')).toBeInTheDocument();
   });
 });

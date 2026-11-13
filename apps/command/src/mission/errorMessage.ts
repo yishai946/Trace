@@ -61,3 +61,16 @@ const MESSAGE_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
 export function messageErrorMessage(error: unknown): string {
   return (error instanceof ApiRequestError && MESSAGE_MESSAGES[error.code]) || 'ההודעה לא נשלחה. נסו שוב.';
 }
+
+const REPORT_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
+  NETWORK_ERROR: 'אין חיבור לשרת. השינוי לא נשמר.',
+  NOT_FOUND: 'הדיווח כבר לא קיים. רעננו את הרשימה.',
+  MISSION_ENDED: 'המסע הסתיים. אי אפשר לשנות דיווחים.',
+  FORBIDDEN: 'אין הרשאה לשנות את הדיווח.',
+  VALIDATION_ERROR: 'הדיווח אינו תקין. בדקו את הסוג והתיאור.',
+};
+
+/** A Hebrew message for a failed report change: Handled, edit or delete (UC-C11). */
+export function reportErrorMessage(error: unknown): string {
+  return (error instanceof ApiRequestError && REPORT_MESSAGES[error.code]) || 'השינוי לא נשמר. נסו שוב.';
+}

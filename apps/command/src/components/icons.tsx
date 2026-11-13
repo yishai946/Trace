@@ -1,3 +1,5 @@
+import type { ReportType } from '@trace/domain';
+
 // Line icons for the profile menu and the "עוד" page, drawn like the rest of Trace Console's icons (24 grid, 1.8 stroke).
 
 const base = {
@@ -53,3 +55,50 @@ export const PhoneIcon = () => (
     <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />
   </svg>
 );
+
+export const CloseIcon = () => (
+  <svg {...base}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);
+
+export const CheckIcon = () => (
+  <svg {...base}>
+    <path d="m5 12 5 5 9-10" />
+  </svg>
+);
+
+export const InfoIcon = () => (
+  <svg {...base}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v6M12 7.5h.01" />
+  </svg>
+);
+
+/** The glyph of a report category (wireframe Cd10): a diamond, a triangle, a lock, an info circle, a flag. */
+export function ReportTypeIcon({ type }: { type: ReportType }) {
+  return <svg {...base}>{REPORT_TYPE_PATHS[type]}</svg>;
+}
+
+const REPORT_TYPE_PATHS: Record<ReportType, React.ReactNode> = {
+  finding: <path d="M12 3l9 9-9 9-9-9z" />,
+  hazard: (
+    <>
+      <path d="M12 3l10 18H2z" />
+      <path d="M12 10v5M12 18h.01" />
+    </>
+  ),
+  inaccessible: (
+    <>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  general: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v6M12 7.5h.01" />
+    </>
+  ),
+  located: <path d="M6 21V4M6 4h11l-2.5 4L17 12H6" />,
+};

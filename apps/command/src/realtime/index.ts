@@ -137,11 +137,13 @@ function applyEvent(queryClient: QueryClient, event: MissionEvent) {
         void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
         return;
       }
-      queryClient.setQueryData<Report[]>(key, (list) =>
-        list &&
-        (list.some((r) => r.id === report.id)
-          ? list.map((r) => (r.id === report.id ? report : r))
-          : [...list, report].sort(compareReportsNewestFirst)),
+      queryClient.setQueryData<Report[]>(
+        key,
+        (list) =>
+          list &&
+          (list.some((r) => r.id === report.id)
+            ? list.map((r) => (r.id === report.id ? report : r))
+            : [...list, report].sort(compareReportsNewestFirst)),
       );
       return;
     }

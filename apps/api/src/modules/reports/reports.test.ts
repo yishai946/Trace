@@ -475,7 +475,11 @@ describe('field reports (UC-F09)', () => {
       const events = await capture(() => putPhoto(JPEG));
       const saved = reportEvents(events);
       expect(saved).toHaveLength(1);
-      expect(saved[0]).toMatchObject({ type: 'report.saved', missionId: mission.id, report: { id: ID, hasPhoto: true } });
+      expect(saved[0]).toMatchObject({
+        type: 'report.saved',
+        missionId: mission.id,
+        report: { id: ID, hasPhoto: true },
+      });
     });
   });
 
@@ -549,7 +553,9 @@ describe('field reports (UC-F09)', () => {
         expect(Report.parse(res.json())).toMatchObject({ text: 'מדרון חלק מאוד', type: 'hazard' });
       });
       expect(await rows()).toHaveLength(1);
-      expect(reportEvents(events)).toMatchObject([{ type: 'report.saved', report: { id: ID, text: 'מדרון חלק מאוד' } }]);
+      expect(reportEvents(events)).toMatchObject([
+        { type: 'report.saved', report: { id: ID, text: 'מדרון חלק מאוד' } },
+      ]);
     });
 
     it('lets the commander edit the type and the text', async () => {
@@ -636,7 +642,8 @@ describe('field reports (UC-F09)', () => {
 
   describe('a "located" report (decision 18)', () => {
     const sendLocated = () => send(body({ type: 'located', text: 'הנעדר אותר' }));
-    const missionOf = async () => Mission.parse((await asCommander({ method: 'GET', url: `/api/missions/${mission.id}` })).json());
+    const missionOf = async () =>
+      Mission.parse((await asCommander({ method: 'GET', url: `/api/missions/${mission.id}` })).json());
 
     it('is a critical report for the commander and leaves the mission Active', async () => {
       const events = await capture(async () => {

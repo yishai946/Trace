@@ -50,3 +50,11 @@
   width: 16px;
   height: 16px;
 }
+
+/* The number of New items (wireframe Cd10 tcx-nav__count), at the end of the row. */
+.count {
+  margin-inline-start: auto;
+  color: var(--ink-muted);
+  font: var(--text-caption);
+  font-variant-numeric: tabular-nums;
+}
