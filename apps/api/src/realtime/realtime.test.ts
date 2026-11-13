@@ -5,6 +5,7 @@ import {
   MissionEvent,
   MissionPolygon,
   REALTIME_PATH,
+  Report,
   Sighting,
   Sos,
   type ClientToServerEvents,
@@ -925,6 +926,88 @@ describe('realtime', () => {
       const receipts = toCommander.filter((e) => e.type === 'message.receipt');
       expect(receipts).toHaveLength(2);
       expect(receipts[1]).toMatchObject({ recipient: { status: 'read' } });
+    });
+  });
+
+  describe('reports', () => {
+    const REPORT_ID = '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0e';
+    const report = {
+      id: REPORT_ID,
+      type: 'hazard',
+      text: 'מדרון חלק',
+      position: { type: 'Point', coordinates: [35.131, 31.775] },
+      reportedAt: '2026-10-03T13:20:00+03:00',
+    };
+
+    const setup = async () => {
+      const commander = await signInCommander(ctx);
+      const reporter = await signInSearcher(ctx);
+      const other = await signInSearcher(ctx);
+      const mission = await createMissionAs(commander);
+      await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: reporter.searcherId });
+      await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, searcherId: other.searcherId });
+      const sockets = [socketFor(commander), socketFor(reporter), socketFor(other)] as const;
+      await Promise.all(sockets.map(connect));
+      for (const socket of sockets) expect(await join(socket, mission.id)).toEqual({ ok: true });
+      const [toCommander, toReporter, toOther] = sockets.map(record) as [
+        MissionEvent[],
+        MissionEvent[],
+        MissionEvent[],
+      ];
+      return { commander, reporter, other, mission, toCommander, toReporter, toOther };
+    };
+    const reportEvents = (events: MissionEvent[]) => events.filter((e) => e.type.startsWith('report.'));
+
+    it('R1: sends a report a searcher sends to the commander only, once per id', async () => {
+      const { reporter, mission, toCommander, toReporter, toOther } = await setup();
+      const send = () =>
+        injectAs(ctx, reporter)({ method: 'POST', url: `/api/missions/${mission.id}/reports`, payload: report });
+      const first = await send();
+      expect(first.statusCode).toBe(201);
+      await settle();
+      expect(reportEvents(toCommander)).toEqual([
+        { type: 'report.saved', missionId: mission.id, report: Report.parse(first.json()) },
+      ]);
+      expect(toCommander.some((e) => e.type === 'timeline.recorded')).toBe(true);
+      expect(reportEvents(toReporter)).toEqual([]);
+      expect(reportEvents(toOther)).toEqual([]);
+
+      expect((await send()).statusCode).toBe(200);
+      await settle();
+      expect(reportEvents(toCommander)).toHaveLength(1);
+    });
+
+    it('R2: sends handling and deletion to the commander only, and nothing for a refused handling', async () => {
+      const { commander, reporter, mission, toCommander, toReporter, toOther } = await setup();
+      await injectAs(ctx, reporter)({ method: 'POST', url: `/api/missions/${mission.id}/reports`, payload: report });
+      await settle();
+      toCommander.length = 0;
+
+      const refused = await injectAs(
+        ctx,
+        reporter,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/reports/${REPORT_ID}/handle` });
+      expect(refused.statusCode).toBe(403);
+      await settle();
+      expect(reportEvents(toCommander)).toEqual([]);
+
+      const handled = await injectAs(
+        ctx,
+        commander,
+      )({ method: 'POST', url: `/api/missions/${mission.id}/reports/${REPORT_ID}/handle` });
+      expect(handled.statusCode).toBe(200);
+      const deleted = await injectAs(
+        ctx,
+        commander,
+      )({ method: 'DELETE', url: `/api/missions/${mission.id}/reports/${REPORT_ID}` });
+      expect(deleted.statusCode).toBe(204);
+      await settle();
+      expect(reportEvents(toCommander)).toEqual([
+        { type: 'report.saved', missionId: mission.id, report: Report.parse(handled.json()) },
+        { type: 'report.deleted', missionId: mission.id, reportId: REPORT_ID },
+      ]);
+      expect(reportEvents(toReporter)).toEqual([]);
+      expect(reportEvents(toOther)).toEqual([]);
     });
   });
 });

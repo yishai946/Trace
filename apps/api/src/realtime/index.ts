@@ -45,7 +45,8 @@ function roomsFor(actor: Actor, missionId: string): string[] {
 /**
  * Who gets an event. Positions and routes go only to the commander (decision 32). Sightings go only to
  * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
- * A message and its receipts go to the commander; each recipient gets only their own copy (decision 32).
+ * A message and its receipts go to the commander; each recipient gets only their own copy (decision 32). Reports go
+ * to the commander (UC-C11).
  */
 function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): string[] {
   // An SOS goes to the commander, the sender and the searchers it was sent to: an exception to decision 32, made on
@@ -57,6 +58,8 @@ function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): s
     ];
   }
   if (event.type === 'sighting.saved') return [commanderRoom(event.missionId)];
+  // Reports are the commander's for now; UC-F11 adds the polygon's searchers and the author (decision 80).
+  if (event.type === 'report.saved' || event.type === 'report.deleted') return [commanderRoom(event.missionId)];
   // The searcher pool is the commander's (UC-C08); searchers do not see who else joined.
   if (event.type === 'participant.joined') return [commanderRoom(event.missionId)];
   // The Timeline is the commander's (UC-C19); searchers do not get it.

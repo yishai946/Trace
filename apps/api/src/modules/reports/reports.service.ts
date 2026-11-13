@@ -1,12 +1,18 @@
-import { acceptsReports, canSubmitReport, detectPhotoType, reportSummary } from '@trace/domain';
-import { PointGeometry, type CreateReportBody, type Report, type TimelineEvent } from '@trace/schemas';
-import { and, eq, sql } from 'drizzle-orm';
+import { acceptsReports, canChangeReport, canSubmitReport, detectPhotoType, reportSummary } from '@trace/domain';
+import {
+  PointGeometry,
+  type CreateReportBody,
+  type Report,
+  type TimelineEvent,
+  type UpdateReportBody,
+} from '@trace/schemas';
+import { and, desc, eq } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { missions, participations, reportPhotos, reports, searchers, users } from '../../db/schema';
-import { AppError, notFound } from '../../errors';
+import { AppError, forbidden, notFound } from '../../errors';
 import { recordEvent } from '../timeline/timeline.service';
 
 const reportColumns = {
@@ -22,7 +28,7 @@ const reportColumns = {
   reporterRole: users.role,
   reporterName: users.name,
   callsign: participations.callsign,
-  hasPhoto: sql<boolean>`exists (select 1 from ${reportPhotos} where ${reportPhotos.reportId} = ${reports.id})`,
+  photoUpdatedAt: reportPhotos.updatedAt,
   createdAt: reports.createdAt,
 };
 
@@ -32,6 +38,7 @@ const selectReports = (db: Db | Tx) =>
     .select(reportColumns)
     .from(reports)
     .innerJoin(users, eq(users.id, reports.reportedBy))
+    .leftJoin(reportPhotos, eq(reportPhotos.reportId, reports.id))
     .leftJoin(searchers, eq(searchers.userId, reports.reportedBy))
     .leftJoin(
       participations,
@@ -39,6 +46,10 @@ const selectReports = (db: Db | Tx) =>
     )
     .$dynamic();
 type ReportRow = Awaited<ReturnType<typeof selectReports>>[number];
+
+/** The photo's address, with its version so a replaced photo is not served from a cache. */
+const reportPhotoUrl = (missionId: string, reportId: string, updatedAt: Date) =>
+  `/api/missions/${missionId}/reports/${reportId}/photo?v=${updatedAt.getTime()}`;
 
 function toReport(row: ReportRow): Report {
   return {
@@ -52,7 +63,8 @@ function toReport(row: ReportRow): Report {
     accuracy: row.accuracy,
     reportedAt: row.reportedAt.toISOString(),
     reportedBy: { role: row.reporterRole, name: row.reporterName, callsign: row.callsign },
-    hasPhoto: row.hasPhoto,
+    hasPhoto: row.photoUpdatedAt !== null,
+    photoUrl: row.photoUpdatedAt ? reportPhotoUrl(row.missionId, row.id, row.photoUpdatedAt) : null,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -162,4 +174,105 @@ export async function setReportPhoto(
     .values({ reportId, contentType, data })
     .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data, updatedAt: new Date() } });
   return findReport(db, reportId);
+}
+
+/** The mission's reports, newest first (UC-C11, wireframe Cd10). */
+export async function listReports(db: Db, missionId: string): Promise<Report[]> {
+  const rows = await selectReports(db)
+    .where(eq(reports.missionId, missionId))
+    .orderBy(desc(reports.reportedAt), desc(reports.createdAt));
+  return rows.map(toReport);
+}
+
+/** The photo of a report, for its mission's commander or its author. Anyone else gets 404, as the photo upload does. */
+export async function getReportPhoto(
+  db: Db,
+  { missionId, reportId, actor }: { missionId: string; reportId: string; actor: Actor },
+): Promise<{ contentType: string; data: Buffer; updatedAt: Date }> {
+  const [row] = await db
+    .select({
+      reportedBy: reports.reportedBy,
+      contentType: reportPhotos.contentType,
+      data: reportPhotos.data,
+      updatedAt: reportPhotos.updatedAt,
+    })
+    .from(reports)
+    .leftJoin(reportPhotos, eq(reportPhotos.reportId, reports.id))
+    .where(and(eq(reports.id, reportId), eq(reports.missionId, missionId)));
+  if (!row || (actor.role !== 'commander' && row.reportedBy !== actor.userId)) throw notFound('Photo');
+  if (!row.contentType || !row.data || !row.updatedAt) throw notFound('Photo');
+  return { contentType: row.contentType, data: row.data, updatedAt: row.updatedAt };
+}
+
+/**
+ * Locks the report of this mission, so two changes to it do not interleave. A report of another mission is not found.
+ */
+async function lockReport(tx: Tx, missionId: string, reportId: string) {
+  const [row] = await tx
+    .select({ reportedBy: reports.reportedBy, missionStatus: missions.status })
+    .from(reports)
+    .innerJoin(missions, eq(missions.id, reports.missionId))
+    .where(and(eq(reports.id, reportId), eq(reports.missionId, missionId)))
+    .for('update', { of: reports });
+  if (!row) throw notFound('Report');
+  return row;
+}
+
+const missionEnded = () => new AppError(409, 'MISSION_ENDED', 'The reports of an ended mission cannot be changed');
+
+/**
+ * The commander marks a report Handled, one way (decision 17). Marking a handled report again returns it as it is;
+ * `changed` tells the route whether to publish.
+ */
+export async function markReportHandled(
+  db: Db,
+  { missionId, reportId }: { missionId: string; reportId: string },
+): Promise<{ report: Report; changed: boolean }> {
+  return db.transaction(async (tx) => {
+    const row = await lockReport(tx, missionId, reportId);
+    if (!canChangeReport(row.missionStatus)) throw missionEnded();
+    const updated = await tx
+      .update(reports)
+      .set({ status: 'handled' })
+      .where(and(eq(reports.id, reportId), eq(reports.status, 'new')))
+      .returning({ id: reports.id });
+    return { report: await findReport(tx, reportId), changed: updated.length > 0 };
+  });
+}
+
+/** The commander or the author edits the category or the text; there is no version history (decision 88). */
+export async function updateReport(
+  db: Db,
+  {
+    missionId,
+    reportId,
+    actor,
+    body,
+  }: { missionId: string; reportId: string; actor: Actor; body: z.output<typeof UpdateReportBody> },
+): Promise<Report> {
+  return db.transaction(async (tx) => {
+    const row = await lockReport(tx, missionId, reportId);
+    if (actor.role !== 'commander' && row.reportedBy !== actor.userId) throw forbidden();
+    if (!canChangeReport(row.missionStatus)) throw missionEnded();
+    await tx
+      .update(reports)
+      .set({
+        ...(body.type !== undefined && { type: body.type }),
+        ...(body.text !== undefined && { text: body.text }),
+      })
+      .where(eq(reports.id, reportId));
+    return findReport(tx, reportId);
+  });
+}
+
+/** The commander deletes a report; its photo goes with it (decision 89). */
+export async function deleteReport(
+  db: Db,
+  { missionId, reportId }: { missionId: string; reportId: string },
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    const row = await lockReport(tx, missionId, reportId);
+    if (!canChangeReport(row.missionStatus)) throw missionEnded();
+    await tx.delete(reports).where(eq(reports.id, reportId));
+  });
 }
