@@ -249,7 +249,9 @@ describe('ReportForm', () => {
     fireEvent.click(send());
 
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce(), { timeout: 4000 });
-    expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST', 'PUT']);
+    await waitFor(() =>
+      expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST', 'PUT']),
+    );
     expect(fetch.mock.calls[1]?.[0]).toMatch(/\/reports\/[0-9a-f-]+\/photo$/);
   });
 
