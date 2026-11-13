@@ -56,6 +56,15 @@ export const pendingTokens = {
   badgeH: 20,
   /** Trace Console `.tc-dot`: the 6px state dot inside a badge. */
   dot: 6,
+  /** Fm08 `.tcx-opt`: a report category option, 56px high with a 2px border and 14px text; its icon is 18px (`svg`). */
+  reportOptionH: 56,
+  reportOptionBorder: 2,
+  reportOptionText: 14,
+  iconMd: 18,
+  /** Fm08: the report text area, 124px high at least. */
+  reportTextMinH: 124,
+  /** Fm10 `.tcx-ph`: the report photo's thumbnail, 84x84. */
+  reportThumb: 84,
   /** Fm09: height of the minimap under "מיקום התצפית". */
   sightingMapH: 236,
   /** Fm09: minimum height of the "תיאור קצר" text area (two lines). */

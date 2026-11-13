@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TextField } from '.';
 import { ThemeProvider } from '../../theme';
+import { pendingTokens } from '../../theme/pending';
 
 describe('TextField', () => {
   it('labels the input and reports typing', () => {
@@ -35,5 +36,9 @@ describe('TextField', () => {
     render(<TextField label="תיאור קצר" multiline value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
     expect(screen.getByLabelText('תיאור קצר').tagName).toBe('TEXTAREA');
     expect(screen.getByLabelText('תיאור קצר')).toHaveStyle({ minHeight: '66px' });
+  });
+  it('is a taller report text area when tall', () => {
+    render(<TextField label="פירוט" multiline tall value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
+    expect(screen.getByLabelText('פירוט')).toHaveStyle({ minHeight: `${pendingTokens.reportTextMinH}px` });
   });
 });

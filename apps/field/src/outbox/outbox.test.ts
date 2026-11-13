@@ -4,8 +4,10 @@ import {
   enqueue,
   flushOutbox,
   isPending,
+  onOutboxChange,
   pending,
   pendingCount,
+  pendingOf,
   wasDropped,
   type OutboxSender,
   type SendOutcome,
@@ -283,5 +285,81 @@ describe('clearOutbox', () => {
     await enqueue({ kind: 'track-point', missionId: A, payloads: [1, 2] });
     await clearOutbox();
     expect(await pendingCount()).toBe(0);
+  });
+});
+
+describe('items with their own id', () => {
+  it('uses the given ids as the rows ids, and keeps one row when the same id is added twice', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: ['r1', 'r2'], ids: ['id-1', 'id-2'] });
+    await enqueue({ kind: 'report', missionId: A, payloads: ['r1 again'], ids: ['id-1'] });
+
+    const items = await pending();
+    expect(items.map((item) => item.id)).toEqual(['id-1', 'id-2']);
+    expect(items.map((item) => item.payload)).toEqual(['r1', 'r2']);
+  });
+
+  it('knows whether an id still waits', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: ['r1'], ids: ['id-1'] });
+    expect(await isPending('id-1')).toBe(true);
+    expect(await isPending('id-2')).toBe(false);
+    await flushOutbox({ report: sender() });
+    expect(await isPending('id-1')).toBe(false);
+  });
+});
+
+describe('pendingOf', () => {
+  it('lists the items of one kind and mission, oldest first', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: [1] });
+    await enqueue({ kind: 'track-point', missionId: A, payloads: [2] });
+    await enqueue({ kind: 'report', missionId: B, payloads: [3] });
+    await enqueue({ kind: 'report', missionId: A, payloads: [4] });
+
+    expect((await pendingOf('report', A)).map((item) => item.payload)).toEqual([1, 4]);
+    expect(await pendingOf('report-photo', A)).toEqual([]);
+  });
+});
+
+describe('onOutboxChange', () => {
+  it('tells listeners about an enqueue, a confirmed send, a dropped mission and a clear, until unsubscribed', async () => {
+    const listener = vi.fn();
+    const off = onOutboxChange(listener);
+
+    await enqueue({ kind: 'report', missionId: A, payloads: [1] });
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    await flushOutbox({ report: sender() });
+    expect(listener).toHaveBeenCalledTimes(2);
+
+    await enqueue({ kind: 'report', missionId: A, payloads: [2] });
+    listener.mockClear();
+    await flushOutbox({ report: sender(async () => 'drop-mission') });
+    expect(listener).toHaveBeenCalled();
+
+    listener.mockClear();
+    await clearOutbox();
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    off();
+    await enqueue({ kind: 'report', missionId: A, payloads: [3] });
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('wasDropped', () => {
+  it('remembers items the server refused for good, but not items it confirmed or that still wait', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: [1], ids: ['r-dropped'] });
+    await enqueue({ kind: 'report', missionId: B, payloads: [2], ids: ['r-sent'] });
+    await flushOutbox({ report: sender(async (missionId) => (missionId === A ? 'drop-mission' : 'sent')) });
+    await enqueue({ kind: 'report', missionId: A, payloads: [3], ids: ['r-waits'] });
+
+    expect(wasDropped('r-dropped')).toBe(true);
+    expect(wasDropped('r-sent')).toBe(false);
+    expect(wasDropped('r-waits')).toBe(false);
+  });
+
+  it('remembers the items of a dropped batch', async () => {
+    await enqueue({ kind: 'report', missionId: A, payloads: [1], ids: ['r-batch'] });
+    await flushOutbox({ report: sender(async () => 'drop-batch') });
+    expect(wasDropped('r-batch')).toBe(true);
   });
 });

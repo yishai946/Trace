@@ -8,7 +8,6 @@ import {
   UpdateMissionDetailsBody,
   UpdateRallyPointBody,
 } from '@trace/schemas';
-import type { FastifyError } from 'fastify';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { commandersOnly, missionAccess } from '../../auth/auth.access';
@@ -16,6 +15,7 @@ import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { AppError } from '../../errors';
 import type { Realtime } from '../../realtime';
+import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import {
   createMission,
   getMission,
@@ -26,26 +26,8 @@ import {
   updateRallyPoint,
 } from './missions.service';
 
-/** Fastify's own errors for a photo upload, in the API's error codes. Anything else goes to the app's handler. */
-function photoUploadError(error: FastifyError): Error {
-  if (error.code === 'FST_ERR_CTP_BODY_TOO_LARGE') {
-    return new AppError(413, 'PHOTO_TOO_LARGE', `The photo must be at most ${MAX_PHOTO_BYTES / 1024 / 1024} MB`, {
-      maxBytes: MAX_PHOTO_BYTES,
-    });
-  }
-  if (error.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
-    return new AppError(415, 'UNSUPPORTED_PHOTO', 'The photo must be a JPEG, PNG or WebP image');
-  }
-  return error;
-}
-
 export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
-  // Photos arrive as the raw image bytes, so a phone or browser can send the file as is.
-  app.addContentTypeParser(
-    [...PHOTO_TYPES],
-    { parseAs: 'buffer', bodyLimit: MAX_PHOTO_BYTES },
-    (_request, body, done) => done(null, body),
-  );
+  acceptPhotoBodies(app);
 
   app.get(
     '/missions',

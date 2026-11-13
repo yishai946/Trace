@@ -37,7 +37,7 @@ function ThemedStack() {
 }
 
 export default function RootLayout() {
-  // Sends the track points and sightings kept on the device when the connection or the session allows (UC-S01).
+  // Sends the track points, sightings and reports kept on the device when the connection or the session allows (UC-S01).
   useOutboxSync();
   useEffect(() => {
     if (Platform.OS === 'web') applyDocumentDirection(document);

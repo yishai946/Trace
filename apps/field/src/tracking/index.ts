@@ -12,6 +12,7 @@ import { flushOutbox } from '../outbox';
 import { useSession } from '../state/session';
 import { sightingSender } from '../sightings/sender';
 import { noteGps } from './gpsStatus';
+import { reportPhotoSender, reportSender } from '../reports/senders';
 import { LOCATION_TASK, recordFixes, trackPointSender } from './locationTask';
 import type { Fix } from './trackPoints';
 
@@ -59,11 +60,16 @@ async function stopTrackingIfCurrent(endedMissionId: string): Promise<void> {
 const trackSender = trackPointSender((missionId) => void stopTrackingIfCurrent(missionId));
 
 /**
- * Sends what waits in the outbox: track points and sightings (UC-S01, UC-F10). Never throws: what fails stays queued
- * for the next trigger.
+ * Sends what waits in the outbox: track points, sightings, field reports and their photos (UC-S01, UC-F10, UC-F09, UC-S03).
+ * Never throws: what fails stays queued for the next trigger.
  */
 export function syncOutbox(): Promise<void> {
-  return flushOutbox({ 'track-point': trackSender, sighting: sightingSender }).catch(() => undefined);
+  return flushOutbox({
+    'track-point': trackSender,
+    sighting: sightingSender,
+    report: reportSender,
+    'report-photo': reportPhotoSender,
+  }).catch(() => undefined);
 }
 
 /**

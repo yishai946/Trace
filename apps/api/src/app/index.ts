@@ -23,6 +23,7 @@ import { missionRoutes } from '../modules/missions';
 import { participantRoutes } from '../modules/participants';
 import { polygonRoutes } from '../modules/polygons';
 import { messageRoutes } from '../modules/messages';
+import { reportRoutes } from '../modules/reports';
 import { sightingRoutes } from '../modules/sightings';
 import { sosRoutes } from '../modules/sos';
 import { searcherRoutes } from '../modules/searchers';
@@ -91,6 +92,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
         await signedIn.register(sosRoutes, { db, realtime });
         await signedIn.register(participantRoutes, { db, realtime });
         await signedIn.register(trackingRoutes, { db, realtime });
+        await signedIn.register(reportRoutes, { db, realtime });
         await signedIn.register(searcherRoutes, { db });
         await signedIn.register(notificationRoutes, { db });
         await signedIn.register(timelineRoutes, { db });

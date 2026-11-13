@@ -13,10 +13,12 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'accessib
   error?: string | null;
   /** Latin values such as a phone number: written left to right (`.tc-input--ltr`). */
   ltr?: boolean;
+  /** The taller text area of the field report (Fm08). Only with `multiline`. */
+  tall?: boolean;
 }
 
 /** Trace Console TextField for React Native: a label above an input, with its error under it. */
-export function TextField({ label, error, ltr = false, editable, multiline, ...props }: TextFieldProps) {
+export function TextField({ label, error, ltr = false, tall = false, editable, multiline, ...props }: TextFieldProps) {
   const { color } = useTheme().theme;
   return (
     <View style={styles.field}>
@@ -38,6 +40,7 @@ export function TextField({ label, error, ltr = false, editable, multiline, ...p
             borderColor: error ? color.warning : color.borderField,
           },
           multiline && styles.multiline,
+          multiline && tall && styles.tall,
           ltr && styles.ltr,
           editable === false && styles.disabled,
         ]}
@@ -58,6 +61,8 @@ const styles = StyleSheet.create({
   },
   // A text area (Fm09): taller than a single line, text from the top.
   multiline: { minHeight: pendingTokens.textAreaMinH, paddingVertical: spacing.space4, textAlignVertical: 'top' },
+  // The report's text area (Fm08) is taller than the sighting's (Fm09).
+  tall: { minHeight: pendingTokens.reportTextMinH },
   // The page is right to left, so the end of the field is its right edge (`.tc-input--ltr`). RN has no `end` alignment.
   ltr: { writingDirection: 'ltr', textAlign: 'right' },
   disabled: { opacity: pendingTokens.disabledOpacity },

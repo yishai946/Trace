@@ -6,6 +6,7 @@ export * from './participation';
 export * from './phone';
 export * from './photo';
 export * from './polygon';
+export * from './report';
 export * from './role';
 export * from './sos';
 export * from './sighting';
