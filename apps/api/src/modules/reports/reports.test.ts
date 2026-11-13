@@ -10,7 +10,7 @@ import {
 } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { missions, reportPhotos, reports, timelineEvents } from '../../db/schema';
+import { missions, participations, reportPhotos, reports, timelineEvents } from '../../db/schema';
 import {
   addParticipant,
   createTestApp,
@@ -166,6 +166,29 @@ describe('field reports (UC-F09)', () => {
             lkp: {
               position: { type: 'Point', coordinates: [35.137, 31.769] },
               observedAt: '2026-10-03T13:05:00+03:00',
+            },
+          },
+        })
+      ).json(),
+    );
+  const makePolygonB = async () =>
+    MissionPolygon.parse(
+      (
+        await commander({
+          method: 'POST',
+          url: `/api/missions/${mission.id}/polygons`,
+          payload: {
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [35.15, 31.79],
+                  [35.16, 31.79],
+                  [35.16, 31.8],
+                  [35.15, 31.8],
+                  [35.15, 31.79],
+                ],
+              ],
             },
           },
         })
@@ -405,10 +428,7 @@ describe('field reports (UC-F09)', () => {
       expect(res.json()).toEqual([]);
     });
 
-    it('is the commander’s: 403 for a searcher in the mission, 404 for outsiders, 401 without a session', async () => {
-      const forbidden = await list(user);
-      expect(forbidden.statusCode).toBe(403);
-      expect(ApiError.parse(forbidden.json()).error.code).toBe('FORBIDDEN');
+    it('answers 404 to outsiders and other commanders, and 401 without a session', async () => {
       expect((await list(await signInSearcher(ctx))).statusCode).toBe(404);
       expect((await list(await signInCommander(ctx))).statusCode).toBe(404);
       expect((await list(null)).statusCode).toBe(401);
@@ -428,6 +448,156 @@ describe('field reports (UC-F09)', () => {
       const res = await list();
       expect(res.statusCode).toBe(200);
       expect(ReportList.parse(res.json())).toHaveLength(1);
+    });
+  });
+
+  describe('reports in the polygon (UC-F11, decision 80)', () => {
+    const IDS = {
+      mine: '0190a3b2-7c4e-7a10-8a5e-3f2d1c0b9b01',
+      mate: '0190a3b2-7c4e-7a10-8a5e-3f2d1c0b9b02',
+      far: '0190a3b2-7c4e-7a10-8a5e-3f2d1c0b9b03',
+    };
+    let polygonB: MissionPolygon;
+    let mate: TestUser & { searcherId: string };
+    let far: TestUser & { searcherId: string };
+    let mateParticipationId: string;
+    const join = async (callsign: number, polygonId?: string) => {
+      const as = await signInSearcher(ctx);
+      const participationId = await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign,
+        searcherId: as.searcherId,
+        polygonId,
+      });
+      return { as, participationId };
+    };
+    const ids = (res: { json: () => unknown }) => ReportList.parse(res.json()).map((r) => r.id);
+    const move = (participantId: string, polygonId: string) =>
+      commander({
+        method: 'PUT',
+        url: `/api/missions/${mission.id}/participants/${participantId}/assignment`,
+        payload: { polygonId },
+      });
+
+    beforeEach(async () => {
+      polygonB = await makePolygonB();
+      const m = await join(5, polygon.id);
+      mate = m.as;
+      mateParticipationId = m.participationId;
+      far = (await join(6, polygonB.id)).as;
+    });
+
+    const sendAll = async () => {
+      expect((await send(body({ id: IDS.mine, reportedAt: '2026-10-03T13:20:00+03:00' }), user)).statusCode).toBe(201);
+      expect((await send(body({ id: IDS.mate, reportedAt: '2026-10-03T13:30:00+03:00' }), mate)).statusCode).toBe(201);
+      expect((await send(body({ id: IDS.far, reportedAt: '2026-10-03T13:40:00+03:00' }), far)).statusCode).toBe(201);
+    };
+
+    it('lists the polygon’s reports and the searcher’s own, not another polygon’s', async () => {
+      await sendAll();
+      const res = await list(user);
+      expect(res.statusCode).toBe(200);
+      expect(ids(res)).toEqual([IDS.mate, IDS.mine]);
+    });
+
+    it('shows the author’s name and callsign to a searcher of the polygon', async () => {
+      await sendAll();
+      const mateReport = ReportList.parse((await list(user)).json()).find((r) => r.id === IDS.mate);
+      expect(mateReport?.reportedBy).toMatchObject({ role: 'searcher', callsign: 5 });
+      expect(mateReport?.reportedBy.name).toEqual(expect.any(String));
+    });
+
+    it('gives the commander every report', async () => {
+      await sendAll();
+      expect(ids(await list(commanderUser))).toEqual([IDS.far, IDS.mate, IDS.mine]);
+    });
+
+    it('keeps the own reports from the old polygon and shows the new polygon’s after a move', async () => {
+      await sendAll();
+      expect(ids(await list(user))).toEqual([IDS.mate, IDS.mine]);
+      expect((await move(await participationOf(user), polygonB.id)).statusCode).toBe(200);
+      expect(ids(await list(user))).toEqual([IDS.far, IDS.mine]);
+    });
+
+    it('lists the old polygon’s reports for a searcher moved into it', async () => {
+      await sendAll();
+      expect((await move(mateParticipationId, polygonB.id)).statusCode).toBe(200);
+      expect(ids(await list(mate))).toEqual([IDS.far, IDS.mate]);
+    });
+
+    const participationOf = async (as: TestUser & { searcherId: string }) => {
+      const [row] = await ctx.db.select().from(participations).where(eq(participations.searcherId, as.searcherId));
+      if (!row) throw new Error('no participation');
+      return row.id;
+    };
+
+    it('shows an Available searcher only their own reports', async () => {
+      await sendAll();
+      await ctx.db
+        .update(participations)
+        .set({ status: 'available', polygonId: null, taskStatus: null })
+        .where(eq(participations.searcherId, user.searcherId));
+      expect(ids(await list(user))).toEqual([IDS.mine]);
+      const idle = (await join(8)).as;
+      expect(ids(await list(idle))).toEqual([]);
+    });
+
+    it('shows a report sent while Available only to its author and the commander', async () => {
+      const idle = (await join(8)).as;
+      expect((await send(body({ id: IDS.far }), idle)).statusCode).toBe(201);
+      expect(ids(await list(idle))).toEqual([IDS.far]);
+      expect(ids(await list(user))).toEqual([]);
+      expect(ids(await list(commanderUser))).toEqual([IDS.far]);
+    });
+
+    it('shows a searcher who finished only their own reports', async () => {
+      await sendAll();
+      await ctx.db
+        .update(participations)
+        .set({ status: 'ended' })
+        .where(eq(participations.searcherId, user.searcherId));
+      expect(ids(await list(user))).toEqual([IDS.mine]);
+    });
+
+    it('answers 200 with an empty list for a polygon without reports', async () => {
+      const res = await list(user);
+      expect(res.statusCode).toBe(200);
+      expect(res.json()).toEqual([]);
+    });
+
+    it('never lists the reports of another mission', async () => {
+      await sendAll();
+      const other = await createOtherMission();
+      await addParticipant(ctx.db, {
+        missionId: other.id,
+        callsign: 4,
+        searcherId: user.searcherId,
+        polygonId: undefined,
+      });
+      expect(ids(await list(user, other.id))).toEqual([]);
+    });
+
+    it('lists in a paused and in an ended mission, and an ended mission takes no new report', async () => {
+      await sendAll();
+      await setStatus('paused');
+      expect(ids(await list(user))).toEqual([IDS.mate, IDS.mine]);
+      await setStatus('ended_stopped');
+      expect(ids(await list(user))).toEqual([IDS.mate, IDS.mine]);
+      expect((await send(body({ id: ID2 }), user)).statusCode).toBe(409);
+    });
+
+    it('shows a searcher of the polygon the report after it was handled or edited', async () => {
+      await sendAll();
+      await handle(commanderUser, IDS.mate, mission.id);
+      await patch({ text: 'עודכן' }, commanderUser, IDS.mate);
+      const updated = ReportList.parse((await list(user)).json()).find((r) => r.id === IDS.mate);
+      expect(updated).toMatchObject({ status: 'handled', text: 'עודכן' });
+    });
+
+    it('answers 404 to an outsider, 404 to another commander and 401 without a session', async () => {
+      expect((await list(await signInSearcher(ctx))).statusCode).toBe(404);
+      expect((await list(await signInCommander(ctx))).statusCode).toBe(404);
+      expect((await list(null)).statusCode).toBe(401);
     });
   });
 
@@ -451,11 +621,33 @@ describe('field reports (UC-F09)', () => {
       expect(unversioned.headers['cache-control']).toBe('private, no-cache');
     });
 
-    it('lets the author read it and hides it from other searchers and outsiders', async () => {
+    it('lets the author read it and hides it from Available searchers and outsiders', async () => {
       await putPhoto(JPEG);
       expect((await getPhoto(user)).statusCode).toBe(200);
       expect((await getPhoto(await otherSearcher())).statusCode).toBe(404);
       expect((await getPhoto(await signInSearcher(ctx))).statusCode).toBe(404);
+    });
+
+    it('serves it to a searcher in the report’s polygon and hides it from another polygon (decision 80)', async () => {
+      await putPhoto(JPEG);
+      const mate = await signInSearcher(ctx);
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 6,
+        searcherId: mate.searcherId,
+        polygonId: polygon.id,
+      });
+      expect((await getPhoto(mate)).statusCode).toBe(200);
+      const elsewhere = await signInSearcher(ctx);
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 7,
+        searcherId: elsewhere.searcherId,
+        polygonId: (await makePolygonB()).id,
+      });
+      const res = await getPhoto(elsewhere);
+      expect(res.statusCode).toBe(404);
+      expect(ApiError.parse(res.json()).error.code).toBe('NOT_FOUND');
     });
 
     it('answers 404 without a photo and for an unknown report', async () => {

@@ -939,49 +939,109 @@ describe('realtime', () => {
       reportedAt: '2026-10-03T13:20:00+03:00',
     };
 
+    const areaB = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [35.15, 31.79],
+          [35.16, 31.79],
+          [35.16, 31.8],
+          [35.15, 31.8],
+          [35.15, 31.79],
+        ],
+      ],
+    };
+
     const setup = async () => {
       const commander = await signInCommander(ctx);
       const reporter = await signInSearcher(ctx);
+      const mate = await signInSearcher(ctx);
       const other = await signInSearcher(ctx);
+      const idle = await signInSearcher(ctx);
       const mission = await createMissionAs(commander);
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 1, searcherId: reporter.searcherId });
-      await addParticipant(ctx.db, { missionId: mission.id, callsign: 2, searcherId: other.searcherId });
-      const sockets = [socketFor(commander), socketFor(reporter), socketFor(other)] as const;
+      const polygonA = await createPolygonAs(commander, mission.id);
+      const polygonB = MissionPolygon.parse(
+        (
+          await injectAs(
+            ctx,
+            commander,
+          )({ method: 'POST', url: `/api/missions/${mission.id}/polygons`, payload: { geometry: areaB } })
+        ).json(),
+      );
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 1,
+        searcherId: reporter.searcherId,
+        polygonId: polygonA.id,
+      });
+      const mateParticipationId = await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 2,
+        searcherId: mate.searcherId,
+        polygonId: polygonA.id,
+      });
+      await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 3,
+        searcherId: other.searcherId,
+        polygonId: polygonB.id,
+      });
+      await addParticipant(ctx.db, { missionId: mission.id, callsign: 4, searcherId: idle.searcherId });
+      const sockets = [socketFor(commander), socketFor(reporter), socketFor(mate), socketFor(other), socketFor(idle)];
       await Promise.all(sockets.map(connect));
       for (const socket of sockets) expect(await join(socket, mission.id)).toEqual({ ok: true });
-      const [toCommander, toReporter, toOther] = sockets.map(record) as [
+      const [toCommander, toReporter, toMate, toOther, toIdle] = sockets.map(record) as [
+        MissionEvent[],
+        MissionEvent[],
         MissionEvent[],
         MissionEvent[],
         MissionEvent[],
       ];
-      return { commander, reporter, other, mission, toCommander, toReporter, toOther };
+      return {
+        commander,
+        reporter,
+        other,
+        idle,
+        mission,
+        polygonA,
+        polygonB,
+        mateParticipationId,
+        toCommander,
+        toReporter,
+        toMate,
+        toOther,
+        toIdle,
+      };
     };
     const reportEvents = (events: MissionEvent[]) => events.filter((e) => e.type.startsWith('report.'));
+    const sendReport = (user: TestUser, missionId: string, payload: object = report) =>
+      injectAs(ctx, user)({ method: 'POST', url: `/api/missions/${missionId}/reports`, payload });
 
-    it('R1: sends a report a searcher sends to the commander only, once per id', async () => {
-      const { reporter, mission, toCommander, toReporter, toOther } = await setup();
-      const send = () =>
-        injectAs(ctx, reporter)({ method: 'POST', url: `/api/missions/${mission.id}/reports`, payload: report });
-      const first = await send();
+    it('R1: a new report goes to the commander, the author and the polygon’s searchers only, once per id', async () => {
+      const { reporter, mission, toCommander, toReporter, toMate, toOther, toIdle } = await setup();
+      const first = await sendReport(reporter, mission.id);
       expect(first.statusCode).toBe(201);
       await settle();
-      expect(reportEvents(toCommander)).toEqual([
-        { type: 'report.saved', missionId: mission.id, report: Report.parse(first.json()) },
-      ]);
+      const saved = { type: 'report.saved', missionId: mission.id, report: Report.parse(first.json()) };
+      expect(reportEvents(toCommander)).toEqual([saved]);
+      expect(reportEvents(toReporter)).toEqual([saved]);
+      expect(reportEvents(toMate)).toEqual([saved]);
       expect(toCommander.some((e) => e.type === 'timeline.recorded')).toBe(true);
-      expect(reportEvents(toReporter)).toEqual([]);
+      expect(toMate.some((e) => e.type === 'timeline.recorded')).toBe(false);
       expect(reportEvents(toOther)).toEqual([]);
+      expect(reportEvents(toIdle)).toEqual([]);
 
-      expect((await send()).statusCode).toBe(200);
+      expect((await sendReport(reporter, mission.id)).statusCode).toBe(200);
       await settle();
       expect(reportEvents(toCommander)).toHaveLength(1);
+      expect(reportEvents(toMate)).toHaveLength(1);
     });
 
-    it('R2: sends handling and deletion to the commander only, and nothing for a refused handling', async () => {
-      const { commander, reporter, mission, toCommander, toReporter, toOther } = await setup();
-      await injectAs(ctx, reporter)({ method: 'POST', url: `/api/missions/${mission.id}/reports`, payload: report });
+    it('R2: handling and editing reach the same audience, a refused handling nothing', async () => {
+      const { commander, reporter, mission, toCommander, toReporter, toMate, toOther, toIdle } = await setup();
+      await sendReport(reporter, mission.id);
       await settle();
-      toCommander.length = 0;
+      for (const events of [toCommander, toReporter, toMate]) events.length = 0;
 
       const refused = await injectAs(
         ctx,
@@ -990,24 +1050,118 @@ describe('realtime', () => {
       expect(refused.statusCode).toBe(403);
       await settle();
       expect(reportEvents(toCommander)).toEqual([]);
+      expect(reportEvents(toMate)).toEqual([]);
 
       const handled = await injectAs(
         ctx,
         commander,
       )({ method: 'POST', url: `/api/missions/${mission.id}/reports/${REPORT_ID}/handle` });
       expect(handled.statusCode).toBe(200);
+      const edited = await injectAs(
+        ctx,
+        reporter,
+      )({ method: 'PATCH', url: `/api/missions/${mission.id}/reports/${REPORT_ID}`, payload: { text: 'עודכן' } });
+      expect(edited.statusCode).toBe(200);
+      await settle();
+      const expected = [
+        { type: 'report.saved', missionId: mission.id, report: Report.parse(handled.json()) },
+        { type: 'report.saved', missionId: mission.id, report: Report.parse(edited.json()) },
+      ];
+      expect(reportEvents(toCommander)).toEqual(expected);
+      expect(reportEvents(toReporter)).toEqual(expected);
+      expect(reportEvents(toMate)).toEqual(expected);
+      expect(reportEvents(toOther)).toEqual([]);
+      expect(reportEvents(toIdle)).toEqual([]);
+    });
+
+    it('R3: deletion reaches the commander, the author and the polygon’s searchers', async () => {
+      const { commander, reporter, mission, toCommander, toReporter, toMate, toOther, toIdle } = await setup();
+      await sendReport(reporter, mission.id);
+      await settle();
+      for (const events of [toCommander, toReporter, toMate]) events.length = 0;
       const deleted = await injectAs(
         ctx,
         commander,
       )({ method: 'DELETE', url: `/api/missions/${mission.id}/reports/${REPORT_ID}` });
       expect(deleted.statusCode).toBe(204);
       await settle();
-      expect(reportEvents(toCommander)).toEqual([
-        { type: 'report.saved', missionId: mission.id, report: Report.parse(handled.json()) },
-        { type: 'report.deleted', missionId: mission.id, reportId: REPORT_ID },
-      ]);
-      expect(reportEvents(toReporter)).toEqual([]);
+      const event = { type: 'report.deleted', missionId: mission.id, reportId: REPORT_ID };
+      expect(reportEvents(toCommander)).toEqual([event]);
+      expect(reportEvents(toReporter)).toEqual([event]);
+      expect(reportEvents(toMate)).toEqual([event]);
       expect(reportEvents(toOther)).toEqual([]);
+      expect(reportEvents(toIdle)).toEqual([]);
+    });
+
+    it('R4: a report with no polygon goes to the commander and the author only', async () => {
+      const { idle, mission, toCommander, toReporter, toMate, toIdle } = await setup();
+      expect((await sendReport(idle, mission.id)).statusCode).toBe(201);
+      await settle();
+      expect(reportEvents(toCommander)).toHaveLength(1);
+      expect(reportEvents(toIdle)).toHaveLength(1);
+      expect(reportEvents(toReporter)).toEqual([]);
+      expect(reportEvents(toMate)).toEqual([]);
+    });
+
+    it('R5: a searcher moved to another polygon no longer gets the old polygon’s events', async () => {
+      const { commander, reporter, mission, polygonB, mateParticipationId, toCommander, toReporter, toMate } =
+        await setup();
+      const moved = await injectAs(
+        ctx,
+        commander,
+      )({
+        method: 'PUT',
+        url: `/api/missions/${mission.id}/participants/${mateParticipationId}/assignment`,
+        payload: { polygonId: polygonB.id },
+      });
+      expect(moved.statusCode).toBe(200);
+      await settle();
+      for (const events of [toCommander, toReporter, toMate]) events.length = 0;
+
+      expect((await sendReport(reporter, mission.id)).statusCode).toBe(201);
+      await settle();
+      expect(reportEvents(toCommander)).toHaveLength(1);
+      expect(reportEvents(toReporter)).toHaveLength(1);
+      expect(reportEvents(toMate)).toEqual([]);
+    });
+
+    it('R6: a searcher moved to another polygon gets the new polygon’s events', async () => {
+      const { commander, other, mission, polygonB, mateParticipationId, toMate, toOther } = await setup();
+      await injectAs(
+        ctx,
+        commander,
+      )({
+        method: 'PUT',
+        url: `/api/missions/${mission.id}/participants/${mateParticipationId}/assignment`,
+        payload: { polygonId: polygonB.id },
+      });
+      await settle();
+      toMate.length = 0;
+      expect((await sendReport(other, mission.id)).statusCode).toBe(201);
+      await settle();
+      expect(reportEvents(toMate)).toHaveLength(1);
+      expect(reportEvents(toOther)).toHaveLength(1);
+    });
+
+    it('R7: a photo upload goes to the same audience', async () => {
+      const { reporter, mission, toCommander, toReporter, toMate, toOther, toIdle } = await setup();
+      await sendReport(reporter, mission.id);
+      await settle();
+      for (const events of [toCommander, toReporter, toMate]) events.length = 0;
+      const res = await injectAs(
+        ctx,
+        reporter,
+      )({
+        method: 'PUT',
+        url: `/api/missions/${mission.id}/reports/${REPORT_ID}/photo`,
+        payload: PNG_BYTES,
+        headers: { 'content-type': 'image/png' },
+      });
+      expect(res.statusCode).toBe(200);
+      await settle();
+      for (const events of [toCommander, toReporter, toMate]) expect(reportEvents(events)).toHaveLength(1);
+      expect(reportEvents(toOther)).toEqual([]);
+      expect(reportEvents(toIdle)).toEqual([]);
     });
   });
 });
