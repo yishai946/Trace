@@ -16,6 +16,8 @@ export interface ScreenProps {
   footer?: ReactNode;
   /** A mission screen above the tab bar, which already keeps clear of the home indicator. */
   tabbed?: boolean;
+  /** False for a screen whose content fills the space itself, such as a map, instead of scrolling (Fm10 map view). */
+  scroll?: boolean;
 }
 
 /**
@@ -23,7 +25,7 @@ export interface ScreenProps {
  * indicator. Right to left comes from the app: forced RTL on Android and iOS (expo-localization), `dir="rtl"` on
  * the web document.
  */
-export function Screen({ title, leading, action, children, footer, tabbed = false }: ScreenProps) {
+export function Screen({ title, leading, action, children, footer, tabbed = false, scroll = true }: ScreenProps) {
   const { color } = useTheme().theme;
   const insets = useSafeAreaInsets();
   const bottom = tabbed ? 0 : insets.bottom;
@@ -41,9 +43,13 @@ export function Screen({ title, leading, action, children, footer, tabbed = fals
         </Text>
         {action}
       </View>
-      <ScrollView contentContainerStyle={[styles.content, !footer && { paddingBottom: spacing.space7 + bottom }]}>
-        {children}
-      </ScrollView>
+      {scroll ? (
+        <ScrollView contentContainerStyle={[styles.content, !footer && { paddingBottom: spacing.space7 + bottom }]}>
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={styles.fill}>{children}</View>
+      )}
       {footer ? (
         <View
           testID="screen-footer"
@@ -58,6 +64,7 @@ export function Screen({ title, leading, action, children, footer, tabbed = fals
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
+  fill: { flex: 1 },
   bar: {
     height: size.headerH,
     flexDirection: 'row',

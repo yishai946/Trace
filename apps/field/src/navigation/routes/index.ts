@@ -12,7 +12,7 @@ export const routes = {
   join: '/join',
   /** Fm04 to Fm06: the mission and its map. */
   map: '/map',
-  /** Fm10: reports in my polygon. */
+  /** Fm10: reports in my polygon, as a list and on the map (UC-F11). */
   reports: '/reports',
   /** Fm04 "פרטי נעדר מלאים": the missing person's details, read-only (UC-F04). */
   missingPerson: '/missing-person',
