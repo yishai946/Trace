@@ -80,7 +80,7 @@ export type TestContext = Awaited<ReturnType<typeof createTestApp>>;
 /** Empties every table between tests. */
 export async function resetDb(db: Db) {
   await db.execute(
-    sql`truncate missions, lkp_points, sightings, timeline_events, track_points, assignments, polygons, searchers, participations, push_tokens, users, sessions, accounts, verifications, otp_requests restart identity cascade`,
+    sql`truncate missions, lkp_points, sightings, sos_alerts, sos_alert_recipients, timeline_events, track_points, assignments, polygons, searchers, participations, push_tokens, users, sessions, accounts, verifications, otp_requests restart identity cascade`,
   );
 }
 

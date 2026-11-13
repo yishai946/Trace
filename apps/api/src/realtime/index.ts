@@ -18,7 +18,11 @@ import { AppError } from '../errors';
 
 /** Sends live updates to the users connected to a mission. */
 export interface Realtime {
-  publish(event: MissionEvent): void;
+  /**
+   * `searcherIds` names the searchers who get a `sos.saved` event besides the commander. Other events ignore it; an
+   * event that needs it and gets none reaches the commander only.
+   */
+  publish(event: MissionEvent, options?: { searcherIds?: readonly string[] }): void;
 }
 
 interface SocketData {
@@ -39,19 +43,29 @@ function roomsFor(actor: Actor, missionId: string): string[] {
 }
 
 /**
- * Who gets an event. Positions go only to the commander and the searcher who moved (decision 32). Sightings go only to
+ * Who gets an event. Positions and routes go only to the commander (decision 32). Sightings go only to
  * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
  */
-function audienceOf(event: MissionEvent): string[] {
+function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): string[] {
+  // An SOS goes to the commander, the sender and the searchers it was sent to: an exception to decision 32, made on
+  // purpose (decisions 98, 99). The route passes the sender and the recipients stored at activation.
+  if (event.type === 'sos.saved') {
+    return [
+      commanderRoom(event.missionId),
+      ...[...new Set(searcherIds)].map((id) => searcherRoom(event.missionId, id)),
+    ];
+  }
   if (event.type === 'sighting.saved') return [commanderRoom(event.missionId)];
   // The searcher pool is the commander's (UC-C08); searchers do not see who else joined.
   if (event.type === 'participant.joined') return [commanderRoom(event.missionId)];
   // The Timeline is the commander's (UC-C19); searchers do not get it.
   if (event.type === 'timeline.recorded') return [commanderRoom(event.missionId)];
-  // Positions and assignments go only to the commander and the searcher concerned (decision 32).
-  if (event.type === 'participant.moved' || event.type === 'participant.updated') {
-    const searcherId = event.type === 'participant.moved' ? event.searcherId : event.participant.searcherId;
-    return [commanderRoom(event.missionId), searcherRoom(event.missionId, searcherId)];
+  // Positions and route points are the commander's alone (decision 32).
+  if (event.type === 'participant.moved' || event.type === 'participant.tracked')
+    return [commanderRoom(event.missionId)];
+  // Assignments go to the commander and the searcher concerned (decision 32).
+  if (event.type === 'participant.updated') {
+    return [commanderRoom(event.missionId), searcherRoom(event.missionId, event.participant.searcherId)];
   }
   return [membersRoom(event.missionId)];
 }
@@ -145,8 +159,8 @@ export function createRealtime({
   });
 
   const realtime: Realtime = {
-    publish(event) {
-      io.to(audienceOf(event)).emit('mission:event', event);
+    publish(event, options) {
+      io.to(audienceOf(event, options?.searcherIds)).emit('mission:event', event);
     },
   };
   return realtime;

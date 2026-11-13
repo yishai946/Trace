@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLkpCandidate } from '.';
+import { canReportSighting, isLkpCandidate } from '.';
 
 const lkpAt = new Date('2026-10-03T10:05:00Z');
 const undecided = (observedAt: Date) => ({ observedAt, lkpDecision: null });
@@ -31,5 +31,15 @@ describe('isLkpCandidate', () => {
 
   it('suggests any undecided sighting when there is no LKP yet', () => {
     expect(isLkpCandidate(undecided(new Date('2020-01-01T00:00:00Z')), null)).toBe(true);
+  });
+});
+
+describe('canReportSighting', () => {
+  it.each(['available', 'assigned'] as const)('lets a %s searcher report', (status) => {
+    expect(canReportSighting(status)).toBe(true);
+  });
+
+  it('refuses a searcher whose participation ended', () => {
+    expect(canReportSighting('ended')).toBe(false);
   });
 });

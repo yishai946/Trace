@@ -73,6 +73,7 @@ export const participants: Participant[] = [
     position: [35.128, 31.775],
     positionAt: '2026-10-03T12:00:00.000Z',
     gpsUnavailableSince: null,
+    battery: null,
   },
   {
     id: '00000000-0000-4000-8000-000000000009',
@@ -86,6 +87,7 @@ export const participants: Participant[] = [
     position: null,
     positionAt: null,
     gpsUnavailableSince: null,
+    battery: null,
   },
 ];
 
@@ -140,6 +142,21 @@ export const sightingB: Sighting = {
   lkpDecision: 'rejected',
   lkpCandidate: false,
   createdAt: '2026-10-03T13:10:00.000Z',
+};
+
+/** A searcher's own sighting at 16:58 Israel time (UC-F10): later than the LKP and sightingA, so TRACE suggests it. */
+export const sightingC: Sighting = {
+  ...sightingA,
+  id: '00000000-0000-4000-8000-0000000005c1',
+  number: 3,
+  position: { type: 'Point', coordinates: [35.1412, 31.7745] },
+  observedAt: '2026-10-03T13:58:00.000Z',
+  description: null,
+  source: 'self',
+  reportedBy: { role: 'searcher', name: 'אלון שגיא', callsign: 7 },
+  lkpDecision: null,
+  lkpCandidate: true,
+  createdAt: '2026-10-03T14:00:00.000Z',
 };
 
 const commanderActor = { kind: 'commander', userId: '00000000-0000-4000-8000-000000000201', name: 'מנהל' } as const;
@@ -273,7 +290,7 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     type: 'sos.activated',
     actor: searcher07,
     subject: subjectOf('sos', 'חורשת אורנים'),
-    details: {},
+    details: { message: 'נפלתי, כאב ברגל' },
   },
 };
 

@@ -136,6 +136,7 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
       <TextField
         label="פירוט"
         multiline
+        tall
         numberOfLines={4}
         maxLength={REPORT_TEXT_MAX}
         value={text}

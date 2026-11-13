@@ -26,6 +26,7 @@ describe('routes', () => {
         'name',
         'report',
         'reports',
+        'sighting',
         'sos',
         'start',
       ].sort(),

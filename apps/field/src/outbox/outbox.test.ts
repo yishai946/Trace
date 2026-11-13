@@ -57,6 +57,14 @@ describe('enqueue and pending', () => {
     expect(await pendingCount()).toBe(8);
   });
 
+  it('keeps the ids the caller made, and ignores one that is already queued', async () => {
+    const id = '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0d';
+    await enqueue({ kind: 'sighting', missionId: A, payloads: ['first'], ids: [id] });
+    await enqueue({ kind: 'sighting', missionId: A, payloads: ['again'], ids: [id] });
+    expect((await pending()).map((item) => [item.id, item.payload])).toEqual([[id, 'first']]);
+    expect(await pendingCount()).toBe(1);
+  });
+
   it('adds nothing for an empty list', async () => {
     await enqueue({ kind: 'track-point', missionId: A, payloads: [] });
     expect(await pendingCount()).toBe(0);
@@ -230,6 +238,45 @@ describe('flushOutbox with writes in between', () => {
     expect(payloadsOf(vi.mocked(s.send).mock.calls[0]!)).toEqual([2]);
     expect(await pendingCount()).toBe(1);
     expect((await pending())[0]!.id).toBe('x');
+  });
+});
+
+describe('isPending and wasDropped', () => {
+  const idOf = async (n: number) => (await pending())[n]!.id;
+
+  it('says whether an item still waits', async () => {
+    await enqueue({ kind: 'sighting', missionId: A, payloads: [1] });
+    const id = await idOf(0);
+    expect(await isPending(id)).toBe(true);
+    await flushOutbox({ sighting: sender() });
+    expect(await isPending(id)).toBe(false);
+    expect(wasDropped(id)).toBe(false);
+  });
+
+  it('remembers the ids of a dropped batch', async () => {
+    await enqueue({ kind: 'sighting', missionId: A, payloads: [1] });
+    const id = await idOf(0);
+    await flushOutbox({ sighting: sender(async () => 'drop-batch', 1) });
+    expect(await isPending(id)).toBe(false);
+    expect(wasDropped(id)).toBe(true);
+  });
+
+  it('remembers every id of a kind and mission dropped with drop-mission', async () => {
+    await enqueue({ kind: 'sighting', missionId: A, payloads: [1, 2] });
+    await enqueue({ kind: 'sighting', missionId: B, payloads: [3] });
+    const [a1, a2] = [await idOf(0), await idOf(1)];
+    const b1 = await idOf(2);
+    await flushOutbox({ sighting: sender(async (missionId) => (missionId === A ? 'drop-mission' : 'sent'), 1) });
+    expect(wasDropped(a1)).toBe(true);
+    expect(wasDropped(a2)).toBe(true);
+    expect(wasDropped(b1)).toBe(false);
+  });
+
+  it('flushes only the kinds it has a sender for', async () => {
+    await enqueue({ kind: 'track-point', missionId: A, payloads: [1] });
+    await enqueue({ kind: 'sighting', missionId: A, payloads: [2] });
+    await flushOutbox({ sighting: sender() });
+    expect((await pending()).map((item) => item.kind)).toEqual(['track-point']);
   });
 });
 

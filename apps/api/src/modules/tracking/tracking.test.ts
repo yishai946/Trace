@@ -1,8 +1,15 @@
-import { Mission, ParticipantList, TrackPointsResult, type MissionEvent, type TrackPointInput } from '@trace/schemas';
+import {
+  Mission,
+  ParticipantList,
+  ParticipantTrack,
+  TrackPointsResult,
+  type MissionEvent,
+  type TrackPointInput,
+} from '@trace/schemas';
 import { asc, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { asGeoJson } from '../../db/geometry';
-import { trackPoints } from '../../db/schema';
+import { missions, participations, trackPoints } from '../../db/schema';
 import {
   addParticipant,
   createTestApp,
@@ -90,7 +97,9 @@ describe('track points (UC-S01)', () => {
         searcherId: user.searcherId,
         position: [35.133, 31.78],
       },
+      { type: 'participant.tracked', participantId: participationId },
     ]);
+    expect(published[1]).toMatchObject({ points: [{ context: 'safety' }, { context: 'search' }, { accuracy: 8 }] });
   });
 
   it('adds nothing when the same batch arrives again', async () => {
@@ -147,5 +156,92 @@ describe('track points (UC-S01)', () => {
   it('rejects an invalid point', async () => {
     const res = await upload([{ ...point(1), position: [200, 31.78] }]);
     expect(res.statusCode).toBe(400);
+  });
+
+  describe('the route (UC-C10)', () => {
+    const trackUrl = (id: string = participationId, missionId: string = mission.id) =>
+      `/api/missions/${missionId}/participants/${id}/track`;
+    const route = (id?: string) => commander({ method: 'GET', url: trackUrl(id) });
+    const at = (minute: number) => new Date(point(minute).recordedAt).toISOString();
+
+    it('lists the points oldest first with their accuracy and context', async () => {
+      await upload([point(3, { accuracy: 8 }), point(1, { context: 'safety' }), point(2)]);
+      const res = await route();
+
+      expect(res.statusCode).toBe(200);
+      expect(ParticipantTrack.parse(res.json())).toEqual({
+        participantId: participationId,
+        points: [
+          { position: [35.131, 31.78], recordedAt: at(1), accuracy: null, context: 'safety' },
+          { position: [35.132, 31.78], recordedAt: at(2), accuracy: null, context: 'search' },
+          { position: [35.133, 31.78], recordedAt: at(3), accuracy: 8, context: 'search' },
+        ],
+      });
+    });
+
+    it('is empty before the first point', async () => {
+      expect(ParticipantTrack.parse((await route()).json()).points).toEqual([]);
+    });
+
+    it('stays readable after the activity ended and while the mission is not active', async () => {
+      await upload([point(1)]);
+      await ctx.db.update(participations).set({ status: 'ended' }).where(eq(participations.id, participationId));
+      for (const status of ['paused', 'ended_located', 'ended_stopped'] as const) {
+        await ctx.db.update(missions).set({ status }).where(eq(missions.id, mission.id));
+        const res = await route();
+        expect(res.statusCode, status).toBe(200);
+        expect(ParticipantTrack.parse(res.json()).points, status).toHaveLength(1);
+      }
+    });
+
+    it('is the commander of the mission only', async () => {
+      await upload([point(1)]);
+      // A searcher of the mission, even for their own route, is refused (decision 32).
+      expect((await injectAs(ctx, user)({ method: 'GET', url: trackUrl() })).statusCode).toBe(403);
+      const other = await signInSearcher(ctx);
+      const otherId = await addParticipant(ctx.db, {
+        missionId: mission.id,
+        callsign: 5,
+        searcherId: other.searcherId,
+      });
+      expect((await injectAs(ctx, user)({ method: 'GET', url: trackUrl(otherId) })).statusCode).toBe(403);
+      // Not a searcher of the mission at all.
+      const outsider = await signInSearcher(ctx);
+      expect((await injectAs(ctx, outsider)({ method: 'GET', url: trackUrl() })).statusCode).toBe(404);
+      // Another commander does not learn the mission exists.
+      const stranger = injectAs(ctx, await signInCommander(ctx));
+      expect((await stranger({ method: 'GET', url: trackUrl() })).statusCode).toBe(404);
+      expect((await ctx.app.inject({ method: 'GET', url: trackUrl() })).statusCode).toBe(401);
+    });
+
+    it('does not give the route of a searcher of another mission through this one', async () => {
+      const created = await commander({
+        method: 'POST',
+        url: '/api/missions',
+        payload: {
+          name: 'אחר',
+          rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
+          lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' },
+        },
+      });
+      const otherMission = Mission.parse(created.json());
+      const otherSearcher = await signInSearcher(ctx);
+      const otherId = await addParticipant(ctx.db, {
+        missionId: otherMission.id,
+        callsign: 1,
+        searcherId: otherSearcher.searcherId,
+      });
+      await injectAs(
+        ctx,
+        otherSearcher,
+      )({
+        method: 'POST',
+        url: `/api/missions/${otherMission.id}/track-points`,
+        payload: { points: [point(1)] },
+      });
+
+      expect((await route(otherId)).statusCode).toBe(404);
+      expect((await commander({ method: 'GET', url: trackUrl(otherId, otherMission.id) })).statusCode).toBe(200);
+    });
   });
 });

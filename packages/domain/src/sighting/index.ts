@@ -1,3 +1,5 @@
+import type { ParticipationStatus } from '../participation';
+
 /** Who saw the missing person (decision 61): the reporter themself or an eyewitness. No certainty level or photo. */
 export const SIGHTING_SOURCES = ['self', 'witness'] as const;
 export type SightingSource = (typeof SIGHTING_SOURCES)[number];
@@ -18,4 +20,9 @@ export function isLkpCandidate(
   if (sighting.lkpDecision !== null) return false;
   if (currentLkpObservedAt === null) return true;
   return sighting.observedAt.getTime() > currentLkpObservedAt.getTime();
+}
+
+/** Whether a searcher may report a sighting: while the participation is open, available or assigned (UC-F10). */
+export function canReportSighting(status: ParticipationStatus): boolean {
+  return status !== 'ended';
 }

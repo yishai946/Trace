@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { Splash } from '../components/Splash';
 // Importing the tracking module defines the background GPS task at load time, before any screen
-// (expo-task-manager); `useOutboxSync` is the hook that sends the queued points.
+// (expo-task-manager); `useOutboxSync` is the hook that sends what is queued.
 import { useOutboxSync } from '../tracking';
 import { applyDocumentDirection } from '../i18n/rtl';
 import { useSession } from '../state/session';
@@ -27,6 +27,7 @@ function ThemedStack() {
       >
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.surface } }}>
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="sighting" options={{ presentation: 'modal' }} />
           <Stack.Screen name="missing-person" options={{ presentation: 'modal' }} />
         </Stack>
       </View>
@@ -36,7 +37,7 @@ function ThemedStack() {
 }
 
 export default function RootLayout() {
-  // Sends the track points kept on the device when the connection or the session allows (UC-S01).
+  // Sends the track points, sightings and reports kept on the device when the connection or the session allows (UC-S01).
   useOutboxSync();
   useEffect(() => {
     if (Platform.OS === 'web') applyDocumentDirection(document);

@@ -1,7 +1,7 @@
 import { PARTICIPATION_STATUSES, TASK_STATUSES } from '@trace/domain';
 import { z } from 'zod';
-import { LngLat } from './geo';
-import { Mission, MissionStatus } from './missions';
+import { LngLat } from '../geo';
+import { Mission, MissionStatus } from '../missions';
 
 export const ParticipationStatus = z.enum(PARTICIPATION_STATUSES).meta({ id: 'ParticipationStatus' });
 export const TaskStatus = z.enum(TASK_STATUSES).meta({ id: 'TaskStatus' });
@@ -23,6 +23,11 @@ export const Participant = z
     positionAt: z.iso.datetime({ offset: true }).nullable(),
     /** Since when the phone reports no GPS (decision 42); null while it works. */
     gpsUnavailableSince: z.iso.datetime({ offset: true }).nullable().default(null),
+    /** The phone's last reported battery (decision 13); null before the first report. */
+    battery: z
+      .object({ level: z.number().int().min(0).max(100), measuredAt: z.iso.datetime({ offset: true }) })
+      .nullable()
+      .default(null),
   })
   .meta({ id: 'Participant' });
 
@@ -62,9 +67,15 @@ export const AssignBody = z.object({ polygonId: z.uuid() }).meta({ id: 'AssignBo
 /** PUT /missions/:id/participation/gps: whether the searcher's phone has GPS now (UC-S01, decision 42). */
 export const GpsStatusBody = z.object({ available: z.boolean() }).meta({ id: 'GpsStatusBody' });
 
+/** PUT /missions/:id/participation/battery: the phone's battery level in percent and when it was measured (decision 13). */
+export const BatteryBody = z
+  .object({ level: z.number().int().min(0).max(100), measuredAt: z.iso.datetime({ offset: true }) })
+  .meta({ id: 'BatteryBody' });
+
 export const ParticipantParams = z.object({ missionId: z.uuid(), participantId: z.uuid() });
 
 export type Participant = z.infer<typeof Participant>;
+export type BatteryBody = z.infer<typeof BatteryBody>;
 export type AssignBody = z.infer<typeof AssignBody>;
 export type JoinPreview = z.infer<typeof JoinPreview>;
 export type OwnParticipation = z.infer<typeof OwnParticipation>;

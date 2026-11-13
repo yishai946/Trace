@@ -18,6 +18,15 @@ describe('CreateSightingBody', () => {
     expect(CreateSightingBody.parse(valid)).toEqual(valid);
   });
 
+  it('accepts an id made on the phone', () => {
+    const id = '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0d';
+    expect(CreateSightingBody.parse({ ...valid, id }).id).toBe(id);
+  });
+
+  it('refuses an id that is not a UUID', () => {
+    expect(failingPaths({ ...valid, id: 'abc' })).toContain('/id');
+  });
+
   it('turns a blank or missing description into null', () => {
     expect(CreateSightingBody.parse({ ...valid, description: '  ' }).description).toBeNull();
     const { description: _description, ...without } = valid;

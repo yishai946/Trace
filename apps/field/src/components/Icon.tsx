@@ -59,6 +59,7 @@ const icons = {
   ),
   flag: <Path d="M6 21V4M6 4h11l-2.5 4L17 12H6" />,
   wifiOff: <Path d="M2 8a15 15 0 0 1 20 0M5.5 12a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0M12 20h.01M3 3l18 18" />,
+  sighting: <Path d="M12 3l9 9-9 9-9-9z" />,
   send: <Path d="m3 11 18-8-8 18-2-8z" />,
 } as const;
 

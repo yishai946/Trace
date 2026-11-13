@@ -7,6 +7,7 @@ export * from './photo';
 export * from './polygon';
 export * from './report';
 export * from './role';
+export * from './sos';
 export * from './sighting';
 export * from './timeline';
 export * from './tracking';

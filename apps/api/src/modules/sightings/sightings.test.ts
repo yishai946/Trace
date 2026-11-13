@@ -139,6 +139,112 @@ describe('sightings', () => {
     });
   });
 
+  describe('from a searcher (UC-F10)', () => {
+    let searcher: Awaited<ReturnType<typeof signInSearcher>>;
+    let asSearcher: ReturnType<typeof injectAs>;
+    const ID = '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0d';
+
+    beforeEach(async () => {
+      searcher = await signInSearcher(ctx, { name: 'אלון שגיא' });
+      await addParticipant(ctx.db, { missionId, callsign: 7, searcherId: searcher.searcherId });
+      asSearcher = injectAs(ctx, searcher);
+    });
+
+    const postAsSearcher = (overrides: Record<string, unknown> = {}, id = missionId) =>
+      post(body(overrides), id, asSearcher);
+
+    it('saves the sighting with its source and the searcher as reporter', async () => {
+      const res = await postAsSearcher({ source: 'self' });
+      expect(res.statusCode).toBe(201);
+      const sighting = Sighting.parse(res.json());
+      expect(sighting.source).toBe('self');
+      expect(sighting.reportedBy).toEqual({ role: 'searcher', name: 'אלון שגיא', callsign: 7 });
+      expect(await getSightings()).toEqual([sighting]);
+    });
+
+    it('does not change the LKP', async () => {
+      const before = await getMissionLkp();
+      await postAsSearcher({ observedAt: '2026-10-03T14:22:00+03:00' });
+      expect(await getMissionLkp()).toEqual(before);
+      expect(await getLkps()).toHaveLength(1);
+    });
+
+    it('suggests a sighting later than the LKP and leaves the decision to the commander', async () => {
+      const sighting = Sighting.parse((await postAsSearcher({ observedAt: '2026-10-03T14:22:00+03:00' })).json());
+      expect(sighting.lkpCandidate).toBe(true);
+      expect((await getSightings())[0]).toMatchObject({ lkpCandidate: true, lkpDecision: null });
+    });
+
+    it('does not suggest an earlier sighting', async () => {
+      const sighting = Sighting.parse((await postAsSearcher({ observedAt: '2026-10-03T12:00:00+03:00' })).json());
+      expect(sighting.lkpCandidate).toBe(false);
+    });
+
+    it('answers 200 with the same sighting when the phone sends the same id again', async () => {
+      const first = await postAsSearcher({ id: ID });
+      const again = await postAsSearcher({ id: ID });
+      expect(first.statusCode).toBe(201);
+      expect(again.statusCode).toBe(200);
+      expect(Sighting.parse(again.json())).toEqual(Sighting.parse(first.json()));
+      expect(Sighting.parse(first.json()).id).toBe(ID);
+      expect(await getSightings()).toHaveLength(1);
+    });
+
+    it('refuses an id that belongs to another reporter', async () => {
+      await add({ id: ID });
+      const res = await postAsSearcher({ id: ID });
+      expect(res.statusCode).toBe(409);
+      expect(errorCode(res)).toBe('SIGHTING_ID_TAKEN');
+      expect(await getSightings()).toHaveLength(1);
+    });
+
+    it('refuses an id that belongs to a sighting of another mission', async () => {
+      const otherMissionId = await newMission(inject);
+      await addParticipant(ctx.db, { missionId: otherMissionId, callsign: 7, searcherId: searcher.searcherId });
+      expect((await postAsSearcher({ id: ID }, otherMissionId)).statusCode).toBe(201);
+      const res = await postAsSearcher({ id: ID });
+      expect(res.statusCode).toBe(409);
+      expect(errorCode(res)).toBe('SIGHTING_ID_TAKEN');
+    });
+
+    it('refuses a searcher whose participation ended', async () => {
+      const other = await signInSearcher(ctx);
+      await addParticipant(ctx.db, { missionId, callsign: 8, searcherId: other.searcherId, status: 'ended' });
+      const res = await post(body(), missionId, injectAs(ctx, other));
+      expect(res.statusCode).toBe(409);
+      expect(errorCode(res)).toBe('PARTICIPATION_ENDED');
+      expect(await getSightings()).toHaveLength(0);
+    });
+
+    it('lets an available searcher without a polygon report', async () => {
+      expect((await postAsSearcher()).statusCode).toBe(201);
+    });
+
+    it('is read-only once the mission ended', async () => {
+      await ctx.db.update(missions).set({ status: 'ended_stopped' }).where(eq(missions.id, missionId));
+      const res = await postAsSearcher();
+      expect(res.statusCode).toBe(409);
+      expect(errorCode(res)).toBe('MISSION_ENDED');
+    });
+
+    it('answers 404 to a searcher outside the mission', async () => {
+      const outsider = injectAs(ctx, await signInSearcher(ctx));
+      expect((await post(body(), missionId, outsider)).statusCode).toBe(404);
+    });
+
+    it('allows a report while the mission is paused', async () => {
+      await ctx.db.update(missions).set({ status: 'paused' }).where(eq(missions.id, missionId));
+      expect((await postAsSearcher()).statusCode).toBe(201);
+    });
+  });
+
+  it('lets a commander send an id too', async () => {
+    const id = '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0e';
+    expect((await post(body({ id }))).statusCode).toBe(201);
+    expect((await post(body({ id }))).statusCode).toBe(200);
+    expect(await getSightings()).toHaveLength(1);
+  });
+
   describe('LKP suggestion', () => {
     it('suggests a sighting later than the LKP', async () => {
       expect((await add({ observedAt: '2026-10-03T14:22:00+03:00' })).lkpCandidate).toBe(true);
@@ -339,13 +445,13 @@ describe('sightings', () => {
       }
     });
 
-    it('lets a searcher in the mission read the LKP history, and nothing else', async () => {
+    it('lets a searcher in the mission add a sighting and read the LKP history, but not list or decide sightings', async () => {
       const searcher = await signInSearcher(ctx);
       await addParticipant(ctx.db, { missionId, callsign: 7, searcherId: searcher.searcherId });
       const asSearcher = injectAs(ctx, searcher);
       const sighting = await add();
       expect((await asSearcher({ method: 'GET', url: sightingsUrl() })).statusCode).toBe(403);
-      expect((await post(body(), missionId, asSearcher)).statusCode).toBe(403);
+      expect((await post(body(), missionId, asSearcher)).statusCode).toBe(201);
       expect((await decide(sighting.id, 'accepted', missionId, asSearcher)).statusCode).toBe(403);
       const lkps = await asSearcher({ method: 'GET', url: `/api/missions/${missionId}/lkps` });
       expect(lkps.statusCode).toBe(200);

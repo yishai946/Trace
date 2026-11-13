@@ -1,5 +1,5 @@
 {
-  "id": "aa17e0eb-2a16-4efa-98e9-831afdc7c59d",
+  "id": "2335630c-f5c5-4319-9068-10f0778cc0e0",
   "prevId": "d76fa4e7-c1a0-453f-9e67-993a6ad14785",
   "version": "7",
   "dialect": "postgresql",
@@ -637,6 +637,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "battery_level": {
+          "name": "battery_level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "battery_measured_at": {
+          "name": "battery_measured_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "joined_at": {
           "name": "joined_at",
           "type": "timestamp with time zone",
@@ -926,216 +938,6 @@
           "columns": ["session_id"]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.report_photos": {
-      "name": "report_photos",
-      "schema": "",
-      "columns": {
-        "report_id": {
-          "name": "report_id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "content_type": {
-          "name": "content_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "data": {
-          "name": "data",
-          "type": "bytea",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "report_photos_report_id_reports_id_fk": {
-          "name": "report_photos_report_id_reports_id_fk",
-          "tableFrom": "report_photos",
-          "tableTo": "reports",
-          "columnsFrom": ["report_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.reports": {
-      "name": "reports",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "mission_id": {
-          "name": "mission_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reported_by": {
-          "name": "reported_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "polygon_id": {
-          "name": "polygon_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "type": {
-          "name": "type",
-          "type": "report_type",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "report_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'new'"
-        },
-        "text": {
-          "name": "text",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "position": {
-          "name": "position",
-          "type": "geometry(Point,4326)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "accuracy": {
-          "name": "accuracy",
-          "type": "double precision",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "reported_at": {
-          "name": "reported_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "reports_mission_idx": {
-          "name": "reports_mission_idx",
-          "columns": [
-            {
-              "expression": "mission_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "reports_polygon_idx": {
-          "name": "reports_polygon_idx",
-          "columns": [
-            {
-              "expression": "polygon_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "reports_mission_id_missions_id_fk": {
-          "name": "reports_mission_id_missions_id_fk",
-          "tableFrom": "reports",
-          "tableTo": "missions",
-          "columnsFrom": ["mission_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "reports_reported_by_users_id_fk": {
-          "name": "reports_reported_by_users_id_fk",
-          "tableFrom": "reports",
-          "tableTo": "users",
-          "columnsFrom": ["reported_by"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "reports_polygon_id_polygons_id_fk": {
-          "name": "reports_polygon_id_polygons_id_fk",
-          "tableFrom": "reports",
-          "tableTo": "polygons",
-          "columnsFrom": ["polygon_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1797,16 +1599,6 @@
       "name": "polygon_status",
       "schema": "public",
       "values": ["unassigned", "active", "completed"]
-    },
-    "public.report_status": {
-      "name": "report_status",
-      "schema": "public",
-      "values": ["new", "handled"]
-    },
-    "public.report_type": {
-      "name": "report_type",
-      "schema": "public",
-      "values": ["finding", "hazard", "inaccessible", "general", "located"]
     },
     "public.sighting_source": {
       "name": "sighting_source",

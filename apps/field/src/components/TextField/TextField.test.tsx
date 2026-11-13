@@ -32,10 +32,13 @@ describe('TextField', () => {
     expect(screen.getByLabelText('מספר טלפון')).toHaveStyle({ textAlign: 'right' });
   });
 
-  it('is a taller text area when multiline', () => {
-    render(<TextField label="פירוט" multiline value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
-    const input = screen.getByLabelText('פירוט');
-    expect(input.tagName).toBe('TEXTAREA');
-    expect(input).toHaveStyle({ minHeight: `${pendingTokens.reportTextMinH}px` });
+  it('makes a multiline field taller than a single line', () => {
+    render(<TextField label="תיאור קצר" multiline value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
+    expect(screen.getByLabelText('תיאור קצר').tagName).toBe('TEXTAREA');
+    expect(screen.getByLabelText('תיאור קצר')).toHaveStyle({ minHeight: '66px' });
+  });
+  it('is a taller report text area when tall', () => {
+    render(<TextField label="פירוט" multiline tall value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
+    expect(screen.getByLabelText('פירוט')).toHaveStyle({ minHeight: `${pendingTokens.reportTextMinH}px` });
   });
 });

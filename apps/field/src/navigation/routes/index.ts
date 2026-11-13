@@ -16,6 +16,8 @@ export const routes = {
   reports: '/reports',
   /** Fm04 "פרטי נעדר מלאים": the missing person's details, read-only (UC-F04). */
   missingPerson: '/missing-person',
+  /** Fm09: report a sighting of the missing person (UC-F10). */
+  sighting: '/sighting',
   /** Fm08: a new report. */
   report: '/report',
   /** Fm11: messages from the commander. */

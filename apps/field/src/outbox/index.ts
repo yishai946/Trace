@@ -2,11 +2,11 @@ import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 import { uuidv7 } from './uuidv7';
 
 /**
- * The outbox: what the phone must tell the server but could not yet (UC-S01, UC-S03). Items wait in a SQLite table on
+ * The outbox: what the phone must tell the server but could not yet (UC-S01, UC-S03, UC-F10). Items wait in a SQLite table on
  * the device, oldest first, and an item is deleted only after the server confirmed it, so a failed or interrupted send
  * loses nothing. Each kind of item has a sender that knows its endpoint; the outbox knows only order and deletion.
  */
-export type OutboxKind = 'track-point' | 'report' | 'report-photo';
+export type OutboxKind = 'track-point' | 'sighting' | 'report' | 'report-photo';
 
 export interface OutboxItem {
   /** Time-ordered UUID, made on the phone. */
@@ -99,7 +99,7 @@ function toItem(row: Row): OutboxItem | null {
   }
 }
 
-/** How many dropped ids are remembered; a refused report is looked up right after its send, so a few are enough. */
+/** How many dropped ids are remembered; a refused item is looked up right after its send, so a few are enough. */
 const DROPPED_MEMORY = 200;
 /** Ids of items the server refused for good and the outbox deleted, newest last. Kept in memory only. */
 const dropped = new Set<string>();
@@ -117,7 +117,7 @@ function rememberDropped(ids: string[]): void {
 
 /**
  * Whether the item with this id was deleted because the server refused it for good (`drop-batch`, `drop-mission`), as
- * opposed to confirmed. Lets a caller tell a rejected report from a sent one once the item is no longer pending.
+ * opposed to confirmed. Lets a caller tell a rejected sighting from a sent one once the item is no longer pending.
  */
 export function wasDropped(id: string): boolean {
   return dropped.has(id);
@@ -134,8 +134,9 @@ export function onOutboxChange(listener: () => void): () => void {
 const notifyChange = () => listeners.forEach((listener) => listener());
 
 /**
- * Adds items to the end of the queue, in the order given. `ids` are the items' ids when the caller made them (a report
- * keeps the id it has on the server); an id already in the queue is left as it was. Otherwise each gets a new UUIDv7.
+ * Adds items to the end of the queue, in the order given. `ids` are the items' ids when the caller made them (a
+ * sighting keeps the id it has on the server); an id already in the queue is left as it was. Otherwise each gets a new
+ * UUIDv7.
  */
 export async function enqueue({
   kind,

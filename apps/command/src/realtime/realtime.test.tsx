@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tans
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { eventSamples, mission, sightingA } from '../mission/fixtures';
+import { eventSamples, mission, sightingA, sightingC } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
 
@@ -351,6 +351,17 @@ describe('useMissionLive', () => {
     const decided = { ...sightingA, lkpDecision: 'rejected' as const, lkpCandidate: false };
     act(() => socket.fire('mission:event', { type: 'sighting.saved', missionId, sighting: decided }));
     expect(queryClient.getQueryData(missionKeys.sightings(missionId))).toEqual([decided]);
+  });
+
+  it('adds a sighting a searcher reported to the map without refetching the sightings', async () => {
+    const { queryClient } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await connectAndJoin(socket);
+    queryClient.setQueryData<Sighting[]>(missionKeys.sightings(missionId), [sightingA]);
+
+    act(() => socket.fire('mission:event', { type: 'sighting.saved', missionId, sighting: sightingC }));
+    expect(queryClient.getQueryData(missionKeys.sightings(missionId))).toEqual([sightingA, sightingC]);
+    expect(queryClient.getQueryState(missionKeys.sightings(missionId))?.isInvalidated).toBe(false);
   });
 
   it('updates the mission’s LKP and refetches the history when the LKP changes', async () => {

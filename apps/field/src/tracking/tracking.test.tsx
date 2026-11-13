@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker } from '.';
-import { pending } from '../outbox';
+import { enqueue, pending } from '../outbox';
 import { useSession } from '../state/session';
 
 const platform = vi.hoisted(() => ({ OS: 'ios' }));
@@ -236,6 +236,46 @@ describe('useOutboxSync', () => {
     renderHook(() => useOutboxSync());
     await vi.waitFor(async () => expect(await pending()).toEqual([]));
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends a queued sighting when the connection returns', async () => {
+    const missionId = session.missionId;
+    useSession.setState({ ...useSession.getInitialState(), ...session });
+    const queued = {
+      id: '0192f3a0-7b2e-7c3a-9d41-5e6f7a8b9c0d',
+      position: { type: 'Point', coordinates: [35.0139, 31.7412] },
+      observedAt: '2026-10-03T13:58:00.000Z',
+      source: 'self',
+      description: null,
+    };
+    await enqueue({ kind: 'sighting', missionId, payloads: [queued], ids: [queued.id] });
+    const fetch = vi.fn(async (_url: string, _init: RequestInit): Promise<Response> => {
+      throw new TypeError('offline');
+    });
+    vi.stubGlobal('fetch', fetch);
+    renderHook(() => useOutboxSync());
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    expect(await pending()).toHaveLength(1);
+
+    fetch.mockImplementation(async () =>
+      Response.json(
+        {
+          ...queued,
+          missionId,
+          number: 1,
+          reportedBy: { role: 'searcher', name: 'אלון', callsign: 4 },
+          lkpDecision: null,
+          lkpCandidate: true,
+          createdAt: '2026-10-03T14:00:00.000Z',
+        },
+        { status: 201 },
+      ),
+    );
+    await act(async () => {
+      for (const listener of network.listeners) listener({ isConnected: true, isInternetReachable: true });
+    });
+    await vi.waitFor(async () => expect(await pending()).toEqual([]));
+    expect(String(fetch.mock.calls.at(-1)![0])).toMatch(new RegExp(`/missions/${missionId}/sightings$`));
   });
 
   it('sends when the token becomes available', async () => {
