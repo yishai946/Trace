@@ -15,9 +15,12 @@ import { mapStatus } from '../../mission/mapStatus';
 import { useMission, useMissionPolygons } from '../../mission/queries';
 import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
+import { filterItems, toMapReports, toReportItems } from '../../reports/reportItems';
+import { useMissionReports } from '../../reports/useMissionReports';
 import { usePendingReports } from '../../reports/usePendingReports';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
+import { pendingTokens } from '../../theme/pending';
 
 /** Fm04 to Fm06: the mission on a full-screen map, with the searcher's actions in a sheet at the bottom. */
 export default function MapScreen() {
@@ -34,7 +37,22 @@ export default function MapScreen() {
   const mission = useMission();
   const polygons = useMissionPolygons();
   const assigned = participation?.status === 'assigned' ? participation : null;
-  const area = toMissionArea(polygons.data ?? [], mission.data, assigned?.polygonId);
+  const reports = useMissionReports();
+  // The reports of my polygon and my own, the same ones as on the reports screen (UC-F11, decision 80).
+  const reportItems = toReportItems({
+    reports: reports.data ?? [],
+    pending: pendingReports.items,
+    participation,
+    polygons: polygons.data ?? [],
+    from: null,
+  });
+  const area = toMissionArea(
+    polygons.data ?? [],
+    mission.data,
+    assigned?.polygonId,
+    toMapReports(filterItems(reportItems, 'polygon', assigned?.polygonId ?? null)),
+  );
+  const polygonReports = reports.data ? area.data.reports.length : null;
 
   // Fm13: the participation ended (UC-C18); tracking already stopped with it.
   if (participation?.status === 'ended') {
@@ -112,6 +130,21 @@ export default function MapScreen() {
           </View>
         </SafeAreaView>
       ) : null}
+      {assigned ? (
+        <View style={styles.reportsButton} pointerEvents="box-none">
+          <View style={[styles.reportsButtonBox, { backgroundColor: color.surface, borderRadius: radius.radiusMd }]}>
+            <Button
+              label="דיווחים בפוליגון"
+              accessibilityLabel={polygonReports === null ? 'דיווחים בפוליגון' : `דיווחים בפוליגון, ${polygonReports}`}
+              variant="ghost"
+              size="lg"
+              icon="reports"
+              badge={polygonReports === null ? undefined : String(polygonReports)}
+              onPress={() => openScreen(router, routes.reports)}
+            />
+          </View>
+        </View>
+      ) : null}
       <View
         style={[
           styles.sheet,
@@ -165,6 +198,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bannerText: { flex: 1 },
+  // Fm06: over the map, at the start side, above the sheet.
+  reportsButton: { position: 'absolute', start: spacing.space6, bottom: pendingTokens.reportsButtonBottom },
+  reportsButtonBox: { alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', gap: spacing.space4 },
   action: { flex: 1 },
   sheet: {

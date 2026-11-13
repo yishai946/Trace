@@ -38,4 +38,9 @@ describe('Button trailing word', () => {
     render(<Button label="צרף תמונה" trailing="אופציונלי" />, { wrapper: ThemeProvider });
     expect(screen.getByRole('button', { name: 'צרף תמונה' })).toHaveTextContent('אופציונלי');
   });
+
+  it('shows a count after the label', () => {
+    render(<Button label="דיווחים בפוליגון" badge="3" />, { wrapper: ThemeProvider });
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
 });

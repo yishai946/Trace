@@ -188,6 +188,8 @@ describe('the reports screen (Fm10)', () => {
           phone: '+972526114085',
           position: null,
           positionAt: null,
+          gpsUnavailableSince: null,
+          battery: null,
         },
       });
     });
