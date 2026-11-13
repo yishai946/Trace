@@ -1,9 +1,11 @@
+import { compareReportsNewestFirst } from '@trace/domain';
 import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
   OwnParticipation,
   type Mission,
+  type Report,
   type ServerToClientEvents,
 } from '@trace/schemas';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
@@ -24,6 +26,19 @@ export const RETRY_MS = 5_000;
  */
 let participationEvents = 0;
 
+/**
+ * Changes the cached list of reports. A list that is not cached yet may be on its way, and the answer could miss this
+ * change, so it is fetched again instead (UC-F11). The screen filters what it shows by the searcher's polygon.
+ */
+function changeReports(queryClient: QueryClient, missionId: string, change: (list: Report[]) => Report[]): void {
+  const key = missionKeys.reports(missionId);
+  if (queryClient.getQueryData<Report[]>(key)) {
+    queryClient.setQueryData<Report[]>(key, (list) => list && change(list));
+    return;
+  }
+  void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+}
+
 /** Applies a mission event to the cached data, so the screens and the map change at once. */
 export function applyEvent(queryClient: QueryClient, event: MissionEvent): void {
   const key = missionKeys.mission(event.missionId);
@@ -42,10 +57,23 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
     case 'participant.updated': {
       // Only the searcher's own participation reaches Field (decision 32).
       const { id, callsign, status, polygonId, taskStatus } = event.participant;
+      const before = useSession.getState().participation;
       participationEvents += 1;
+      // The new polygon's reports were never pushed to this searcher: read them (UC-F11, decision 80).
+      if (before?.status !== status || before.polygonId !== polygonId) {
+        void queryClient.invalidateQueries({ queryKey: missionKeys.reports(event.missionId) });
+      }
       useSession.getState().updateParticipation({ id, callsign, status, polygonId, taskStatus });
       return;
     }
+    case 'report.saved':
+      changeReports(queryClient, event.missionId, (list) =>
+        [...list.filter((r) => r.id !== event.report.id), event.report].sort(compareReportsNewestFirst),
+      );
+      return;
+    case 'report.deleted':
+      changeReports(queryClient, event.missionId, (list) => list.filter((r) => r.id !== event.reportId));
+      return;
     case 'polygon.saved':
     case 'polygon.deleted':
       void queryClient.invalidateQueries({ queryKey: missionKeys.polygons(event.missionId) });
@@ -58,7 +86,8 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
 
 /**
  * Keeps the searcher's mission live over the realtime channel (UC-C04, UC-C05): joins it with the session token, and
- * applies the commander's changes to the LKP, the rally point, the details and the polygons. After every join,
+ * applies the commander's changes to the LKP, the rally point, the details and the polygons, and the reports of the
+ * searcher's polygon. After every join,
  * including after a lost connection, it refetches the mission, since events sent while away are not replayed. An
  * expired session signs the searcher out; other refusals are tried again.
  */

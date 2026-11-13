@@ -7,9 +7,11 @@ interface PendingReports {
   count: number;
   /** One of them says the missing person was located: the commander does not know yet (UC-F09). */
   located: boolean;
+  /** The valid ones, in the order they wait, for the list of reports (UC-F11). */
+  items: CreateReportBody[];
 }
 
-const NONE: PendingReports = { count: 0, located: false };
+const NONE: PendingReports = { count: 0, located: false, items: [] };
 
 /** The reports of the mission that wait in the outbox, kept up to date as they are added and sent. */
 export function usePendingReports(missionId: string | null): PendingReports {
@@ -25,7 +27,11 @@ export function usePendingReports(missionId: string | null): PendingReports {
             const parsed = CreateReportBody.safeParse(item.payload);
             return parsed.success ? [parsed.data] : [];
           });
-          setPending({ count: items.length, located: reports.some((report) => report.type === 'located') });
+          setPending({
+            count: items.length,
+            located: reports.some((report) => report.type === 'located'),
+            items: reports,
+          });
         })
         .catch(() => undefined);
     load();

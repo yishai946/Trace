@@ -82,4 +82,32 @@ describe('toMissionArea', () => {
     expect(south).toBeLessThan(31.78);
     expect(north).toBeGreaterThan(31.78);
   });
+
+  it('draws the reports it is given and frames them too', () => {
+    const area = toMissionArea(
+      [
+        polygon('a', [
+          [35, 31.7],
+          [35.01, 31.7],
+          [35.01, 31.71],
+          [35, 31.7],
+        ]),
+      ],
+      undefined,
+      null,
+      [
+        { id: 'r1', position: [35.005, 31.705], time: '16:44', hazard: true },
+        { id: 'r2', position: [35.02, 31.705], time: '17:01', hazard: false, located: true },
+      ],
+    );
+    expect(area.data.reports.map((r) => [r.id, r.hazard, r.located ?? false])).toEqual([
+      ['r1', true, false],
+      ['r2', false, true],
+    ]);
+    expect(area.bounds).toEqual([35, 31.7, 35.02, 31.71]);
+  });
+
+  it('draws no reports by default', () => {
+    expect(toMissionArea([]).data.reports).toEqual([]);
+  });
 });
