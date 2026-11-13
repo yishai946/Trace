@@ -1,6 +1,6 @@
 import type { Polygon } from 'geojson';
 import { describe, expect, it } from 'vitest';
-import { areaSquareMeters, boundsOf, distanceOutsideMeters, findOutside, isInsidePolygon, isValidPolygon } from '.';
+import { areaSquareMeters, boundsOf, distanceMeters, distanceOutsideMeters, findOutside, isInsidePolygon, isValidPolygon } from '.';
 
 describe('geometry', () => {
   // About 1.1 km x 1.1 km near Jerusalem.
@@ -97,5 +97,26 @@ describe('geometry', () => {
       [35.006, 31.703],
     ];
     expect(isValidPolygon({ type: 'Polygon', coordinates: [outer, bigHole, smallHole] })).toBe(false);
+  });
+
+  describe('distanceMeters', () => {
+    it('is 0 between a point and itself', () => {
+      expect(distanceMeters([35.0, 31.0], [35.0, 31.0])).toBe(0);
+    });
+
+    it('measures about 111.2 km for one degree of latitude', () => {
+      const meters = distanceMeters([35.0, 31.0], [35.0, 32.0]);
+      expect(Math.abs(meters - 111_195) / 111_195).toBeLessThan(0.005);
+    });
+
+    it('measures about 111 m for 0.001 degree of latitude', () => {
+      expect(distanceMeters([35.0, 31.0], [35.0, 31.001])).toBeCloseTo(111.2, 0);
+    });
+
+    it('is the same in both directions', () => {
+      const a: [number, number] = [35.01, 31.7];
+      const b: [number, number] = [35.2, 31.9];
+      expect(distanceMeters(a, b)).toBeCloseTo(distanceMeters(b, a), 6);
+    });
   });
 });
