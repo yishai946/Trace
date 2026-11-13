@@ -73,7 +73,7 @@ export const TimelineEvent = z
     /** Subject: the participant (label = name, with callsign). Actor: the system. */
     z.object({ ...base, type: z.literal('contact.lost'), details: empty }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
-    z.object({ ...base, type: z.literal('sos.activated'), details: empty }),
+    z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
   ])
   .meta({ id: 'TimelineEvent' });
 

@@ -6,6 +6,7 @@ import { Lkp, Mission } from './missions';
 import { Participant } from './participants';
 import { MissionPolygon } from './polygons';
 import { Sighting } from './sightings';
+import { Sos } from './sos';
 import { TimelineEvent } from './timeline';
 import { TrackPoint } from './tracking';
 
@@ -123,6 +124,13 @@ const MessageReceiptRecorded = z.object({
   recipient: MessageRecipient,
 });
 
+/**
+ * An SOS was activated or closed (UC-F13, UC-C14). The whole SOS is sent. The commander, the sender and the searchers
+ * it was sent to get it: those assigned to the sender's polygon at activation, and the same ones when it is closed
+ * (decisions 98, 99). A client that was offline reads `GET /missions/:id/sos` after it reconnects.
+ */
+const SosSaved = z.object({ type: z.literal('sos.saved'), missionId: z.uuid(), sos: Sos });
+
 /** Every event the server sends about a mission, on the `mission:event` channel. */
 export const MissionEvent = z.discriminatedUnion('type', [
   PolygonSaved,
@@ -139,6 +147,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   MessageSent,
   MessageReceived,
   MessageReceiptRecorded,
+  SosSaved,
 ]);
 
 /** Event names and payloads, for typing both ends of the Socket.IO connection. */
