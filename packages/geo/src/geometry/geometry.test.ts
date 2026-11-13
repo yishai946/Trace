@@ -1,6 +1,14 @@
 import type { Polygon } from 'geojson';
 import { describe, expect, it } from 'vitest';
-import { areaSquareMeters, boundsOf, distanceMeters, distanceOutsideMeters, findOutside, isInsidePolygon, isValidPolygon } from '.';
+import {
+  areaSquareMeters,
+  boundsOf,
+  distanceMeters,
+  distanceOutsideMeters,
+  findOutside,
+  isInsidePolygon,
+  isValidPolygon,
+} from '.';
 
 describe('geometry', () => {
   // About 1.1 km x 1.1 km near Jerusalem.
