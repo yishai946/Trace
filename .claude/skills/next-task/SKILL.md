@@ -38,7 +38,7 @@ Open issues with label `claude:working` assigned to `<me>`: read its branch from
 
 ## 2. Pick the next task
 
-Candidates: no assignee, none of the labels `blocked`, `needs-input`, `claude:working`, `epic` (an epic only groups sub-issues), no open PR naming it, and every issue in "Blocked by" closed. Sort by milestone (M1 first, none last), then `priority:` (P0, P1, P2, none last), then number. Take the first; if none, say so and stop.
+Candidates: no assignee, none of the labels `blocked`, `needs-input`, `claude:working`, `epic` (an epic only groups sub-issues), no open PR naming it, every issue in "Blocked by" closed, and board Status **Ready** (a card can stay In review after a PR closes unmerged). Read Status with `gh api 'users/yishai946/projectsV2/6/items?per_page=100' --paginate` (needs the `project` token scope: `gh auth refresh -s project`); if the board cannot be read, say so and ask the user which issue to take. Sort by milestone (M1 first, none last), then `priority:` (P0, P1, P2, none last), then number. Take the first; if none, say so and stop.
 
 Claim it: assign `<me>`, add `claude:working`. Create the branch from an up-to-date `dev`, named by `docs/CODING_STANDARDS.md#branches` (e.g. `feat/command/missions/edit`), push it, and comment `claude:working <ISO time> branch <name>`. Re-read the issue: if someone else is now assigned, undo your claim and take the next.
 
@@ -93,9 +93,9 @@ If the screen needs a value, pattern or component the design system lacks, or de
 ## 9. Open the Pull Request
 
 - Merge `origin/dev` into the branch and run `pnpm check` again.
-- Body from `.github/pull_request_template.md`: keep its sections and order, delete its HTML comment, fill it in. First line `Closes #<N>` (or `Refs #<N>` if part of the issue is left, ticking only done boxes). Add: Decisions, Tests, **QA** (rounds, what was checked, screenshots or paths, remaining NOTES), Design changes needed if any. The **Review** section is added in 9b.
+- Body from `.github/pull_request_template.md`: keep its sections and order, delete its HTML comment, fill it in. First line always `Closes #<N>` (the required PR check fails without it); work that did not fit becomes its own new issue, listed under Follow-ups. Add: Decisions, Tests, **QA** (rounds, what was checked, screenshots or paths, remaining NOTES), Design changes needed if any. The **Review** section is added in 9b.
 - Open into `dev` with `-F body=@pr.md`; title in commit-convention form.
-- Verify at once: `gh api repos/yishai946/Trace/pulls/<PR> --jq .body | head -n 3` shows `Closes #<N>` / `Refs #<N>` first, not a file path; if not, fix with `gh api -X PATCH .../pulls/<PR> -F body=@pr.md`.
+- Verify at once: `gh api repos/yishai946/Trace/pulls/<PR> --jq .body | head -n 3` shows `Closes #<N>` first, not a file path; if not, fix with `gh api -X PATCH .../pulls/<PR> -F body=@pr.md`.
 - No BLOCKING left: normal PR. BLOCKING left after 3 rounds: **draft** PR saying what is wrong.
 - If the issue is a sub-issue (`.../issues/<N>/parent`) and every other sub-issue of the epic is closed (`.../issues/<epic>/sub_issues`), also write `Closes #<epic>`.
 - Keep `claude:working` until 9b is done.
