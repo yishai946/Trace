@@ -1,41 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { Splash } from '../components/Splash';
+import { useEffect } from 'react';
+import { Platform } from 'react-native';
+import { ThemedStack } from '../components/ThemedStack';
 // Importing the tracking module defines the background GPS task at load time, before any screen
 // (expo-task-manager); `useOutboxSync` is the hook that sends what is queued.
 import { useOutboxSync } from '../tracking';
 import { applyDocumentDirection } from '../i18n/rtl';
 import { useSession } from '../state/session';
-import { ThemeProvider, useTheme } from '../theme';
+import { ThemeProvider } from '../theme';
 
 const queryClient = new QueryClient();
-
-function ThemedStack() {
-  const { themeId, theme } = useTheme();
-  const [splashDone, setSplashDone] = useState(false);
-  return (
-    <>
-      <StatusBar style={themeId === 'night' ? 'light' : 'dark'} />
-      {/* Hidden from VoiceOver and TalkBack while the splash covers it, so nothing behind it can be focused. */}
-      <View
-        style={styles.stack}
-        accessibilityElementsHidden={!splashDone}
-        importantForAccessibility={splashDone ? 'auto' : 'no-hide-descendants'}
-      >
-        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.surface } }}>
-          <Stack.Screen name="report" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="report-edit" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="sighting" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="missing-person" options={{ presentation: 'modal' }} />
-        </Stack>
-      </View>
-      {!splashDone && <Splash onDone={() => setSplashDone(true)} />}
-    </>
-  );
-}
 
 export default function RootLayout() {
   // Sends the track points, sightings and reports kept on the device when the connection or the session allows (UC-S01).
@@ -54,7 +28,3 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  stack: { flex: 1 },
-});

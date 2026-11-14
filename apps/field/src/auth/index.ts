@@ -117,3 +117,19 @@ export function saveNameErrorMessage(error: unknown): string {
   if (code === 400) return 'השם לא תקין.';
   return 'שמירת השם נכשלה. נסה שוב.';
 }
+
+/**
+ * Whether the searcher can go on after the code was right (UC-F01). A first sign-in has no profile yet (404), which
+ * sends them to the name screen. Any other failure is transient and must not decide for them: `false`, so they stay
+ * and try again.
+ */
+export async function canContinueAfterSignIn(): Promise<boolean> {
+  try {
+    const token = useSession.getState().token;
+    await apiRequest('/searchers/me', { baseUrl: apiBaseUrl, token, schema: SearcherProfile });
+    return true;
+  } catch (error) {
+    const status = error instanceof ApiRequestError ? error.status : null;
+    return status === 404 || status === 401;
+  }
+}

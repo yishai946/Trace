@@ -15,7 +15,7 @@ export function uuidv7(): string {
   if (ms > lastMs) {
     lastMs = ms;
     // Start each millisecond below the top, so the counter has room to rise.
-    counter = getRandomValues(new Uint16Array(1))[0]! & 0x7ff;
+    counter = (getRandomValues(new Uint16Array(1))[0] ?? 0) & 0x7ff;
   } else {
     ms = lastMs;
     counter += 1;
@@ -36,7 +36,7 @@ export function uuidv7(): string {
   bytes[5] = ms & 0xff;
   bytes[6] = 0x70 | (counter >> 8);
   bytes[7] = counter & 0xff;
-  bytes[8] = 0x80 | (bytes[8]! & 0x3f);
+  bytes[8] = 0x80 | ((bytes[8] ?? 0) & 0x3f);
 
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;

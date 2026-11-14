@@ -1,9 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
-import { SearcherProfile } from '@trace/schemas';
 import { useState } from 'react';
-import { INVALID_PHONE, sendCode, sendCodeErrorMessage, verifyCode, verifyErrorMessage } from '../../auth';
+import {
+  canContinueAfterSignIn,
+  INVALID_PHONE,
+  sendCode,
+  sendCodeErrorMessage,
+  verifyCode,
+  verifyErrorMessage,
+} from '../../auth';
 import { toE164 } from '../../auth/phone';
-import { apiBaseUrl, apiRequest, ApiRequestError } from '../../api';
+import { ApiRequestError } from '../../api';
 import { useSession } from '../../state/session';
 import { CodeStep } from './CodeStep';
 import { PhoneStep } from './PhoneStep';
@@ -23,24 +29,13 @@ export function SignIn({ onSignedIn }: { onSignedIn: () => void }) {
   const [profileFailed, setProfileFailed] = useState(false);
   const [checking, setChecking] = useState(false);
 
-  // A first sign-in has no profile yet (404), which sends the searcher to the name screen. Any other failure is
-  // transient and must not decide for them, so the searcher stays here and tries again.
   const checkProfile = async () => {
     setChecking(true);
     setProfileFailed(false);
-    try {
-      const token = useSession.getState().token;
-      await apiRequest('/searchers/me', { baseUrl: apiBaseUrl, token, schema: SearcherProfile });
-    } catch (error) {
-      const status = error instanceof ApiRequestError ? error.status : null;
-      if (status !== 404 && status !== 401) {
-        setProfileFailed(true);
-        setChecking(false);
-        return;
-      }
-    }
+    const canContinue = await canContinueAfterSignIn();
     setChecking(false);
-    onSignedIn();
+    if (canContinue) onSignedIn();
+    else setProfileFailed(true);
   };
 
   const send = useMutation({ mutationFn: sendCode });

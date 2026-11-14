@@ -1,16 +1,13 @@
 import { radius, spacing, typography } from '@trace/design';
-import { formatCallsign } from '@trace/domain';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { ltr } from '../../i18n/rtl';
-import { formatDistance, type ReportItem } from '../../reports/reportItems';
+import type { ReportItem } from '../../reports/reportItems';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
-import { CallsignChip } from '../CallsignChip';
 import { ReportImage } from '../ReportImage';
-
-const COORDINATE_DIGITS = 4;
+import { CollapsedMeta } from './CollapsedMeta';
+import { describeReport } from './describeReport';
 
 export interface ReportCardProps {
   item: ReportItem;
@@ -27,25 +24,7 @@ export interface ReportCardProps {
  */
 export function ReportCard({ item, selected, onPress, onEdit }: ReportCardProps) {
   const { color } = useTheme().theme;
-  const [lng, lat] = item.position;
-  const place = [
-    `${ltr(lat.toFixed(COORDINATE_DIGITS))}, ${ltr(lng.toFixed(COORDINATE_DIGITS))}`,
-    item.polygonName ? `פוליגון ${item.polygonName}` : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
-  const who = item.mine
-    ? 'הדיווח שלי'
-    : [item.callsign === null ? null : formatCallsign(item.callsign), item.name].filter(Boolean).join(' ');
-  const label = [
-    item.typeLabel,
-    item.time,
-    item.text,
-    who,
-    !item.mine && item.distanceMeters !== null ? formatDistance(item.distanceMeters) : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
+  const { place, label } = describeReport(item);
   const waiting = <Badge tone="warn" icon="wifiOff" label="ממתין לסנכרון" />;
 
   const editable = selected && item.mine && !item.pending && onEdit;
@@ -86,25 +65,7 @@ export function ReportCard({ item, selected, onPress, onEdit }: ReportCardProps)
             </View>
           </View>
         ) : (
-          <View style={styles.row}>
-            {item.mine ? (
-              <>
-                <Text style={[typography.meta, { color: color.inkSecondary }]}>הדיווח שלי</Text>
-                <View style={styles.spacer} />
-                {item.pending ? waiting : null}
-              </>
-            ) : (
-              <>
-                {item.callsign !== null ? <CallsignChip callsign={item.callsign} /> : null}
-                <Text style={[typography.meta, { color: color.inkSecondary }]}>{item.name}</Text>
-                {item.distanceMeters !== null ? (
-                  <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>
-                    {`· ${formatDistance(item.distanceMeters)}`}
-                  </Text>
-                ) : null}
-              </>
-            )}
-          </View>
+          <CollapsedMeta item={item} waiting={waiting} />
         )}
       </Pressable>
       {editable ? (
