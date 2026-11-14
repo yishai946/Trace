@@ -87,3 +87,8 @@
   box-shadow: var(--shadow-panel);
   color: var(--ink-secondary);
 }
+
+/* The compact critical alert: a 44px button, padding space-4 on both sides and its border, then the column gap. */
+.stage[data-alert] {
+  --map-overlay-top: calc(var(--pending-touch-target) + var(--space-4) * 3 + 2px);
+}

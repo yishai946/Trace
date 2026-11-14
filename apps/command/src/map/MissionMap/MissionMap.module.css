@@ -86,15 +86,19 @@
 
 /* Phone (usePhoneLayout, 768px): the toolbar is a column at the inline end under the app bar; zoom and coordinates go. */
 @media (width <= 768px) {
+  /* --map-overlay-top is set by the phone mission screen while a critical alert sits under the bar. */
   .toolbar {
-    top: calc(var(--space-6) * 2 + var(--header-h));
+    top: calc(var(--space-6) * 2 + var(--header-h) + var(--map-overlay-top, 0px));
     bottom: auto;
     left: auto;
     inset-inline-end: var(--space-6);
     transform: none;
 
     /* Never reach under the expanded bottom sheet (min(sheet height, 45%)); scroll instead. */
-    max-height: calc(100% - var(--space-6) * 2 - var(--header-h) - min(var(--pending-sheet-h), 45%) - var(--space-6));
+    max-height: calc(
+      100% - var(--space-6) * 2 - var(--header-h) - var(--map-overlay-top, 0px) - min(var(--pending-sheet-h), 45%) -
+        var(--space-6)
+    );
     overflow-y: auto;
   }
 
@@ -105,7 +109,7 @@
 
   /* Beside the toolbar column: one tool button plus its padding and border. */
   .hint {
-    top: calc(var(--space-6) * 2 + var(--header-h));
+    top: calc(var(--space-6) * 2 + var(--header-h) + var(--map-overlay-top, 0px));
     bottom: auto;
     left: auto;
     inset-inline-start: var(--space-6);
