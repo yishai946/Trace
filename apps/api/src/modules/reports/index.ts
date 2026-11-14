@@ -30,8 +30,16 @@ import {
 export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   acceptPhotoBodies(app);
 
-  /** Who gets a report's events besides the commander (decision 80), read after the change is saved. */
-  const recipientsOf = async (reportId: string) => ({ searcherIds: await reportRecipients(db, { reportId }) });
+  /** Who gets a report's events besides the commander (decision 80), read after the change is saved; the commander only when the lookup fails. */
+  const recipientsOf = async (reportId: string): Promise<{ searcherIds?: string[] }> => {
+    try {
+      return { searcherIds: await reportRecipients(db, { reportId }) };
+    } catch (error) {
+      // The report is saved: a failed lookup must not fail the response. The commander still hears of it.
+      app.log.error(error, 'Report recipients lookup failed');
+      return {};
+    }
+  };
 
   app.post(
     '/missions/:missionId/reports',

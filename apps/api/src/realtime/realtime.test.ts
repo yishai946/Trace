@@ -1143,6 +1143,32 @@ describe('realtime', () => {
       expect(reportEvents(toOther)).toHaveLength(1);
     });
 
+    it('R8: an edit reaches the author after the author moved to another polygon', async () => {
+      const { commander, reporter, mission, polygonB, toReporter } = await setup();
+      await sendReport(reporter, mission.id);
+      const participants = ParticipantList.parse(
+        (await injectAs(ctx, commander)({ method: 'GET', url: `/api/missions/${mission.id}/participants` })).json(),
+      );
+      const author = participants.find((p) => p.callsign === 1);
+      await injectAs(
+        ctx,
+        commander,
+      )({
+        method: 'PUT',
+        url: `/api/missions/${mission.id}/participants/${author?.id}/assignment`,
+        payload: { polygonId: polygonB.id },
+      });
+      await settle();
+      toReporter.length = 0;
+      const edited = await injectAs(
+        ctx,
+        commander,
+      )({ method: 'PATCH', url: `/api/missions/${mission.id}/reports/${REPORT_ID}`, payload: { text: 'עודכן' } });
+      expect(edited.statusCode).toBe(200);
+      await settle();
+      expect(reportEvents(toReporter)).toHaveLength(1);
+    });
+
     it('R7: a photo upload goes to the same audience', async () => {
       const { reporter, mission, toCommander, toReporter, toMate, toOther, toIdle } = await setup();
       await sendReport(reporter, mission.id);
