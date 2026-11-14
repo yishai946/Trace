@@ -39,12 +39,12 @@ Stop and ask (see Questions) only when the task needs one of these:
 
 ## 1. Pick and claim
 
-An explicit issue number is the candidate (it may already be assigned to `<me>`; if someone else holds it, stop). Otherwise candidates: **no assignee** (an assigned issue is never free, even one assigned to `<me>` with `claude:working`; a human releases a stuck one), none of the labels `blocked`, `needs-input`, `claude:working`, `epic` (an epic only groups sub-issues), no open PR naming it, every issue in "Blocked by" closed, and board Status **Ready** (a card can stay In review after a PR closes unmerged). Read Status with `gh api 'users/yishai946/projectsV2/6/items?per_page=100' --paginate` (needs the `project` token scope: `gh auth refresh -s project`); if the board cannot be read, say so and ask which issue to take. Sort by milestone (M1 first, none last), then `priority:` (P0, P1, P2, none last), then number. Take the first; if none, say so and stop. Do nothing else before you hold a task: no install, no database.
+An explicit issue number is the candidate (it may already be assigned to `<me>`; if someone else holds it, stop) and still has to pass every check below except Ready and sorting. Otherwise candidates: **no assignee** (an assigned issue is never free, even one assigned to `<me>` with `claude:working`; a human releases a stuck one), none of the labels `blocked`, `needs-input`, `claude:working`, `epic` (an epic only groups sub-issues), no open PR with `Closes #<N>` in its body (`gh api 'repos/yishai946/Trace/pulls?state=open&per_page=100' --paginate --jq '.[].body'`), every issue in "Blocked by" closed, and board Status **Ready** (a card can stay In review after a PR closes unmerged). Read Status with `gh api 'users/yishai946/projectsV2/6/items?per_page=100' --paginate` (needs the `project` token scope: `gh auth refresh -s project`); if the board cannot be read, say so and ask which issue to take. Sort by milestone (M1 first, none last), then `priority:` (P0, P1, P2, none last), then number. Take the first; if none, say so and stop. Do nothing else before you hold a task: no install, no database.
 
 Claim it (several agents share one GitHub login, so the assignee cannot tell them apart):
 
-1. Make a run id (6 random hex characters). Assign `<me>`, then comment `claude:working <run-id> <ISO time> branch <name>`; the branch name follows `docs/CODING_STANDARDS.md#branches` (e.g. `feat/command/missions/edit`).
-2. Re-read the issue's comments. The **first** `claude:working` comment wins. If it is not yours, delete your comment and take the next candidate (do not touch the assignee or label: they belong to the winner).
+1. Make a run id (6 random hex characters). Assign `<me>`, then comment `claude:working <run-id> <ISO time> branch <name>` (keep the comment `id` from the response: `--jq .id`); the branch name follows `docs/CODING_STANDARDS.md#branches` (e.g. `feat/command/missions/edit`).
+2. Re-read the issue's comments (`--paginate`). Among the `claude:working` comments created in the last 10 minutes (older ones are leftovers of earlier runs and are ignored), the one with the lowest `id` wins. If it is not yours, delete your comment (`gh api -X DELETE .../issues/comments/<id>`) and take the next candidate (do not touch the assignee or label: they belong to the winner).
 3. Won: add the label `claude:working`, create the branch from an up-to-date `dev`, push it.
 
 ## 2. Prepare the machine (after the claim only)
@@ -53,7 +53,7 @@ Claim it (several agents share one GitHub login, so the assignee cannot tell the
 
 ## 3. Plan and build
 
-**One agent plans and builds** (sonnet, effort medium) when `size:` is XS, S or M. For L, XL or no size, a planner (opus, effort medium) writes the plan first and a sonnet implementer follows it; use the strongest model only to plan.
+**One agent plans and builds** (sonnet, effort medium) when `size:` is XS, S or M. For L or XL, a planner (opus, effort medium) writes the plan first and a sonnet implementer follows it; use the strongest model only to plan.
 
 The plan is short: files with their module folder and functions/components/routes, the tests (one per acceptance criterion plus real edge cases: empty, missing, invalid, unauthorized, wrong mission status, time zones), the order of work. Post it as an issue comment. Open questions that are minor are decided (see above); a fateful one means no plan: go to Questions.
 
