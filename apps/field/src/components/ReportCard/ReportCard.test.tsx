@@ -156,3 +156,20 @@ describe('ReportCard edit (UC-C11, decision 88)', () => {
     expect(screen.queryByRole('button', { name: 'עריכה' })).toBeNull();
   });
 });
+
+describe('ReportCard identity', () => {
+  it('keeps the same card element, so focus is not lost, when it is selected and gets its edit button', () => {
+    const mine = item({ mine: true });
+    const onEdit = () => undefined;
+    const { rerender } = render(<ReportCard item={mine} selected={false} onPress={() => undefined} onEdit={onEdit} />, {
+      wrapper: ThemeProvider,
+    });
+    const card = screen.getByRole('button', { expanded: false });
+    card.focus();
+    expect(document.activeElement).toBe(card);
+    rerender(<ReportCard item={mine} selected onPress={() => undefined} onEdit={onEdit} />);
+    expect(screen.getByRole('button', { expanded: true })).toBe(card);
+    expect(document.activeElement).toBe(card);
+    expect(screen.getByRole('button', { name: 'עריכה' })).toBeInTheDocument();
+  });
+});

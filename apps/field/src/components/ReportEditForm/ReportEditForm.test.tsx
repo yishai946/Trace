@@ -85,6 +85,16 @@ describe('ReportEditForm', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('clears the empty-text message once valid text is typed', () => {
+    setup();
+    const field = screen.getByRole('textbox', { name: 'פירוט' });
+    fireEvent.change(field, { target: { value: '   ' } });
+    fireEvent.click(save());
+    expect(screen.getByText('כתוב מה ראית.')).toBeInTheDocument();
+    fireEvent.change(field, { target: { value: 'מדרון' } });
+    expect(screen.queryByText('כתוב מה ראית.')).toBeNull();
+  });
+
   it('says "שומר…" and disables the button while saving, so a second press sends nothing', async () => {
     let finish: (res: Response) => void = () => undefined;
     const fetch = vi.fn(() => new Promise<Response>((resolve) => (finish = resolve)));

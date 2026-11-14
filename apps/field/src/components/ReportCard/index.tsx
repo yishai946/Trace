@@ -48,71 +48,70 @@ export function ReportCard({ item, selected, onPress, onEdit }: ReportCardProps)
     .join(', ');
   const waiting = <Badge tone="warn" icon="wifiOff" label="ממתין לסנכרון" />;
 
-  const card = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ expanded: selected }}
-      aria-expanded={selected}
-      onPress={onPress}
-      style={[
-        styles.card,
-        selected && styles.open,
-        { backgroundColor: selected ? color.surfaceRaised : 'transparent' },
-      ]}
-    >
-      <View style={styles.row}>
-        <Badge label={item.typeLabel} />
-        {item.mine ? <Badge tone="accent" label="שלי" /> : null}
-        <View style={styles.spacer} />
-        <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>{item.time}</Text>
-      </View>
-      <Text
-        numberOfLines={selected ? undefined : 1}
-        style={[typography.body, selected && styles.fullText, { color: color.ink }]}
-      >
-        {item.text}
-      </Text>
-      {selected ? (
-        <View style={styles.details}>
-          <ReportImage url={item.photoUrl} />
-          <View style={styles.detailText}>
-            <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>{place}</Text>
-            {item.pending ? waiting : item.mine ? <Badge tone="ok" icon="check" label="נשלח" /> : null}
-          </View>
-        </View>
-      ) : (
-        <View style={styles.row}>
-          {item.mine ? (
-            <>
-              <Text style={[typography.meta, { color: color.inkSecondary }]}>הדיווח שלי</Text>
-              <View style={styles.spacer} />
-              {item.pending ? waiting : null}
-            </>
-          ) : (
-            <>
-              {item.callsign !== null ? <CallsignChip callsign={item.callsign} /> : null}
-              <Text style={[typography.meta, { color: color.inkSecondary }]}>{item.name}</Text>
-              {item.distanceMeters !== null ? (
-                <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>
-                  {`· ${formatDistance(item.distanceMeters)}`}
-                </Text>
-              ) : null}
-            </>
-          )}
-        </View>
-      )}
-    </Pressable>
-  );
   const editable = selected && item.mine && !item.pending && onEdit;
-  if (!editable) return card;
-  // The edit button is a sibling of the card, not inside it: a button must not contain a button.
+  // The edit button is a sibling of the card, not inside it: a button must not contain a button. The wrapper is there in
+  // every state, so selecting the card never remounts it and keeps keyboard focus.
   return (
     <View style={styles.editable}>
-      {card}
-      <View style={styles.edit}>
-        <Button label="עריכה" variant="secondary" onPress={onEdit} />
-      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ expanded: selected }}
+        aria-expanded={selected}
+        onPress={onPress}
+        style={[
+          styles.card,
+          selected && styles.open,
+          { backgroundColor: selected ? color.surfaceRaised : 'transparent' },
+        ]}
+      >
+        <View style={styles.row}>
+          <Badge label={item.typeLabel} />
+          {item.mine ? <Badge tone="accent" label="שלי" /> : null}
+          <View style={styles.spacer} />
+          <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>{item.time}</Text>
+        </View>
+        <Text
+          numberOfLines={selected ? undefined : 1}
+          style={[typography.body, selected && styles.fullText, { color: color.ink }]}
+        >
+          {item.text}
+        </Text>
+        {selected ? (
+          <View style={styles.details}>
+            <ReportImage url={item.photoUrl} />
+            <View style={styles.detailText}>
+              <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>{place}</Text>
+              {item.pending ? waiting : item.mine ? <Badge tone="ok" icon="check" label="נשלח" /> : null}
+            </View>
+          </View>
+        ) : (
+          <View style={styles.row}>
+            {item.mine ? (
+              <>
+                <Text style={[typography.meta, { color: color.inkSecondary }]}>הדיווח שלי</Text>
+                <View style={styles.spacer} />
+                {item.pending ? waiting : null}
+              </>
+            ) : (
+              <>
+                {item.callsign !== null ? <CallsignChip callsign={item.callsign} /> : null}
+                <Text style={[typography.meta, { color: color.inkSecondary }]}>{item.name}</Text>
+                {item.distanceMeters !== null ? (
+                  <Text style={[typography.meta, styles.time, { color: color.inkSecondary }]}>
+                    {`· ${formatDistance(item.distanceMeters)}`}
+                  </Text>
+                ) : null}
+              </>
+            )}
+          </View>
+        )}
+      </Pressable>
+      {editable ? (
+        <View style={styles.edit}>
+          <Button label="עריכה" variant="secondary" onPress={onEdit} />
+        </View>
+      ) : null}
     </View>
   );
 }

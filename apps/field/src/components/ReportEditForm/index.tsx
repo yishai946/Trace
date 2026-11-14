@@ -89,7 +89,10 @@ export function ReportEditForm({ report, onCancel, onDone }: ReportEditFormProps
         numberOfLines={4}
         maxLength={REPORT_TEXT_MAX}
         value={text}
-        onChangeText={setText}
+        onChangeText={(next) => {
+          setText(next);
+          if (textError && next.trim()) setTextError(null);
+        }}
         error={textError}
         editable={!saving}
       />
