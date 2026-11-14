@@ -1,13 +1,10 @@
 import { isCriticalReport, isMissionEnded } from '@trace/domain';
 import type { Mission, MissionPolygon, Participant, Report } from '@trace/schemas';
 import { useState, type ReactNode } from 'react';
+import { Overlays } from './Overlays';
+import { PhoneBar } from './PhoneBar';
 import styles from './PhoneMissionScreen.module.css';
-import { Button } from '../../components/Button';
-import { ConnectionStatus, type Connection } from '../../components/ConnectionStatus';
-import { MissionSwitcher } from '../../components/MissionSwitcher';
-import { TraceMark } from '../../components/TraceMark';
-import { CriticalReportAlert } from '../CriticalReportAlert';
-import { JoinCodePanel } from '../JoinCodePanel';
+import type { Connection } from '../../components/ConnectionStatus';
 import { MissionSheet, type SheetTab } from '../MissionSheet';
 import { MissionTabBar, type MissionTab } from '../MissionTabBar';
 import { statusCounts } from '../reportView';
@@ -38,17 +35,6 @@ interface PhoneMissionScreenProps {
   reportsFailed: boolean;
   onOpenReport: (id: string) => void;
 }
-
-/** Icons from wireframe Cm04. */
-const icon = {
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  'aria-hidden': true,
-} as const;
 
 /**
  * Command on the phone, the mission screen (Console "Command בטלפון", wireframe Cm04): the map full screen, a compact
@@ -120,57 +106,34 @@ export function PhoneMissionScreen({
             onOpenReport={onOpenReport}
           />
 
-          {(critical || notice || joinOpen || searchOpen) && (
-            <div className={styles.below}>
-              <CriticalReportAlert compact reports={reports ?? []} onOpen={onOpenReport} />
-              {notice && (
-                <p className={styles.notice} role="alert">
-                  {notice}
-                </p>
-              )}
-              {joinOpen && <JoinCodePanel mission={mission} onClose={() => onJoinOpenChange(false)} />}
-              {searchOpen && <div className={styles.search}>{renderSearch(() => setSearchOpen(false))}</div>}
-            </div>
-          )}
+          <Overlays
+            mission={mission}
+            critical={critical}
+            reports={reports}
+            notice={notice}
+            joinOpen={joinOpen}
+            onCloseJoin={() => onJoinOpenChange(false)}
+            search={searchOpen ? renderSearch(() => setSearchOpen(false)) : null}
+            onOpenReport={onOpenReport}
+          />
 
-          <header className={styles.bar}>
-            <span className={styles.brand}>
-              <TraceMark size={18} />
-            </span>
-            <div className={styles.mission}>
-              <MissionSwitcher mission={mission} missions={missions} onSelect={onSelectMission} onShowAll={onShowAll} />
-            </div>
-            <ConnectionStatus connection={connection} />
-            <div className={styles.actions}>
-              <Button
-                variant="icon"
-                aria-label={`קוד הצטרפות ${mission.joinCode}`}
-                aria-expanded={joinOpen}
-                onPress={() => {
-                  setSearchOpen(false);
-                  onJoinOpenChange(!joinOpen);
-                }}
-              >
-                <svg {...icon}>
-                  <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-4v-2M14 18h2" />
-                </svg>
-              </Button>
-              <Button
-                variant="icon"
-                aria-label="חיפוש מקום"
-                aria-expanded={searchOpen}
-                onPress={() => {
-                  if (!searchOpen) onJoinOpenChange(false);
-                  setSearchOpen(!searchOpen);
-                }}
-              >
-                <svg {...icon}>
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-4-4" />
-                </svg>
-              </Button>
-            </div>
-          </header>
+          <PhoneBar
+            mission={mission}
+            missions={missions}
+            connection={connection}
+            onSelectMission={onSelectMission}
+            onShowAll={onShowAll}
+            joinOpen={joinOpen}
+            searchOpen={searchOpen}
+            onToggleJoin={() => {
+              setSearchOpen(false);
+              onJoinOpenChange(!joinOpen);
+            }}
+            onToggleSearch={() => {
+              if (!searchOpen) onJoinOpenChange(false);
+              setSearchOpen(!searchOpen);
+            }}
+          />
         </div>
       )}
 

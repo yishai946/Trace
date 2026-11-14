@@ -6,6 +6,7 @@ import { AddSightingForm } from './AddSightingForm';
 import { CurrentLkp } from './CurrentLkp';
 import styles from './LkpPanel.module.css';
 import { LkpSuggestion } from './LkpSuggestion';
+import { PanelNotices } from './PanelNotices';
 import { SightingList } from './SightingList';
 
 interface LkpPanelProps {
@@ -99,13 +100,7 @@ export function LkpPanel({
             />
           )}
 
-          {ended && <p className={styles.hint}>המסע הסתיים. LKP ותצפיות לקריאה בלבד.</p>}
-          {!ended && !canChange && <p className={styles.hint}>אין חיבור. פעולות חדשות חסומות.</p>}
-          {error && (
-            <p role="alert" className={styles.error}>
-              {error}
-            </p>
-          )}
+          <PanelNotices ended={ended} canChange={canChange} error={error} />
 
           <SightingList
             sightings={sightings}
