@@ -64,6 +64,21 @@ All contributors and coding assistants should preserve existing behavior, follow
 - Avoid speculative abstractions, one-use wrappers, and configuration for values that are not expected to vary.
 - Handle expected failures at the layer that can recover or provide useful context; let unexpected errors reach the application error boundary.
 
+### Size and structure limits
+
+ESLint enforces these in `apps/**` and `packages/**` (tests, fixtures and the declarative `db/schema.ts` and map style are exempt). A file or function over a limit is split before new code is added to it; it is never given an `eslint-disable`.
+
+- A file has at most 250 lines (code only); an Expo Router file in `apps/field/src/app/` at most 60: it only wires a route to its screen in `src/components/`.
+- A function, component or hook has at most 120 lines, a cyclomatic complexity of 15 and nesting of 3. A component longer than that splits its parts into components of their own; a hook that holds several concerns splits into one hook per concern.
+- One React component per `.tsx` file (an icon set is the only exception). Its hooks, helpers and sub-components sit beside it in its folder.
+- State that is more than about three related `useState` calls, or form logic (validate, submit, announce), goes in a hook named after what it manages. The component only renders and handles input.
+- Check the repo before writing a helper (`grep` its name and its shape) and reuse it. Logic that two apps need goes to a `packages/*` package; never copy it. The same list update, error, date or loading-state code appearing twice is one helper.
+- Route handlers do four things: parse, authorize, call one service function, reply. What follows a change (realtime events, push, timeline records) is the service layer's job, not each route's.
+- Services do not build errors inline: use the factories in `apps/api/src/errors.ts` (`missionEnded`, `participationEnded`, `unsupportedPhoto`, `notFound`, …) and the shared `lockMission`.
+- Layers: routes do not import `drizzle-orm` or `db/schema`; components, pages and routes do not call `apiRequest`, only the app's query, mutation and sender modules do; packages never import from apps.
+- No `as` to silence the type checker, no `!` non-null assertion, no `as` on an object literal. Parse at the boundary, give the value a type, or handle the missing case.
+- Every `eslint-disable` states its reason in the same comment and is removed if it stops being needed.
+
 ---
 
 ## 5. Imports and Modules

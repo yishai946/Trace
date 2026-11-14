@@ -14,6 +14,7 @@ import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { lkpPoints, missionPhotos, missions, participations } from '../../db/schema';
 import { notFound, missionEnded, unsupportedPhoto } from '../../errors';
+import { isoOrNull } from '../isoOrNull';
 import { lockMission } from '../lockMission';
 import { recordEvent } from '../timeline/timeline.service';
 
@@ -48,8 +49,6 @@ interface LkpRow {
   observedAt: Date;
 }
 
-const iso = (date: Date | null) => (date ? date.toISOString() : null);
-
 /** The photo's address, with its version so a replaced photo is not served from a cache. */
 const photoUrl = (missionId: string, updatedAt: Date) => `/api/missions/${missionId}/photo?v=${updatedAt.getTime()}`;
 
@@ -62,7 +61,7 @@ function toMission(row: MissionRow, lkp: LkpRow | undefined): Mission {
     missingPerson: {
       name: row.missingPersonName,
       age: row.missingPersonAge,
-      disappearedAt: iso(row.disappearedAt),
+      disappearedAt: isoOrNull(row.disappearedAt),
       description: row.description,
       additionalInfo: row.additionalInfo,
       photoUrl: row.photoUpdatedAt ? photoUrl(row.id, row.photoUpdatedAt) : null,

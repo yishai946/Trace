@@ -2,9 +2,8 @@ import { recipientStatus, requiresAcknowledgement, type MessageUrgency } from '@
 import type { Message, MessageRecipient, MessageTarget, OwnMessage } from '@trace/schemas';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../../db';
+import { isoOrNull } from '../isoOrNull';
 import { messageRecipients, messages, participations, polygons, searchers } from '../../db/schema';
-
-const iso = (date: Date | null) => (date ? date.toISOString() : null);
 
 /**
  * The mission's messages, newest first, with their recipients ordered by callsign. With `ids`, only those messages.
@@ -53,9 +52,9 @@ export async function loadMessages(db: Db | Tx, missionId: string, ids?: string[
         callsign: recipient.callsign,
         name: recipient.name,
         status: recipientStatus(recipient),
-        deliveredAt: iso(recipient.deliveredAt),
-        readAt: iso(recipient.readAt),
-        acknowledgedAt: iso(recipient.acknowledgedAt),
+        deliveredAt: isoOrNull(recipient.deliveredAt),
+        readAt: isoOrNull(recipient.readAt),
+        acknowledgedAt: isoOrNull(recipient.acknowledgedAt),
       }));
     return {
       id: row.id,
@@ -140,9 +139,9 @@ export async function listOwnMessages(
       { ...row, sentAt: row.createdAt.toISOString() },
       {
         status: recipientStatus(row),
-        deliveredAt: iso(row.deliveredAt),
-        readAt: iso(row.readAt),
-        acknowledgedAt: iso(row.acknowledgedAt),
+        deliveredAt: isoOrNull(row.deliveredAt),
+        readAt: isoOrNull(row.readAt),
+        acknowledgedAt: isoOrNull(row.acknowledgedAt),
       },
     ),
   );

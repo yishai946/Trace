@@ -4,6 +4,8 @@ Before editing, read [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md) and 
 
 Before completing any code change, run `pnpm format` and `pnpm lint`, fix relevant findings, then rerun both commands until they pass. Report checks that cannot run or fail for pre-existing reasons.
 
+Structure rules are enforced by ESLint (see "Size and structure limits" in the coding standards): at most 250 lines per file (60 for an Expo Router file), 120 per function, one React component per file, no `as`/`!` workarounds, and the layer rules for routes, components and packages. Reuse before you write: search the repo for an existing helper, and put logic that two apps need in `packages/*`. Fix a limit by splitting, never by `eslint-disable`.
+
 # Branches
 
 Never commit to `main` or `dev`. Before the first edit of a new feature, fix or change, check the current branch; if it is `main`, `dev` or a branch for different work, create a new branch from an up-to-date `dev` (`git switch dev && git pull && git switch -c <type>/<scope>/<area>/.../<change>`). Name it by the rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#branches), e.g. `fix/command/map/polygons/create`. Pull Requests target `dev`, with a title in commit-convention form; they are squash-merged. Only a release Pull Request from `dev` into `main` uses a merge commit.
@@ -19,7 +21,7 @@ When a task is done and its checks pass, and before opening its Pull Request, st
 1. **Spec:** the issue's scenarios and checklist, and the use case and decisions in `docs/Specifications/`. Values the spec marks TBD that the code invents.
 2. **Standards:** `AGENTS.md`, `docs/CODING_STANDARDS.md` and any app `AGENTS.md`.
 3. **Design:** the Trace Console guidelines of the components used and the screen's wireframe, in both themes.
-4. **Code:** bugs, missing tests, missing loading, empty and error states.
+4. **Code:** bugs, missing tests, missing loading, empty and error states; copied code that should be one shared helper; logic in a route handler or component that belongs in a service or hook.
 
 Fix what it finds, or explain in the Pull Request why not. The Pull Request description has a **Review** section with what was found and what was done about it.
 

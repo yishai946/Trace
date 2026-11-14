@@ -1,3 +1,4 @@
+import { sameDay } from '../sameDay';
 import type { TimelineEventType } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 
@@ -50,9 +51,6 @@ export function formatEventTime(iso: string, withDate: boolean): string {
   const date = new Date(iso);
   return withDate ? `${dayMonth.format(date)}, ${time.format(date)}` : time.format(date);
 }
-
-const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 /** Whether the first and last events fall on different local days. Events are in either order. */
 export function spansDays(events: TimelineEvent[]): boolean {
