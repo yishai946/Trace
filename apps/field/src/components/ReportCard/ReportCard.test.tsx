@@ -26,8 +26,8 @@ const item = (overrides: Partial<ReportItem> = {}): ReportItem => ({
   ...overrides,
 });
 
-const show = (value: ReportItem, selected = false, onPress = () => undefined) =>
-  render(<ReportCard item={value} selected={selected} onPress={onPress} />, { wrapper: ThemeProvider });
+const show = (value: ReportItem, selected = false, onPress = () => undefined, onEdit?: () => void) =>
+  render(<ReportCard item={value} selected={selected} onPress={onPress} onEdit={onEdit} />, { wrapper: ThemeProvider });
 
 beforeEach(() => usePreferences.setState(usePreferences.getInitialState()));
 
@@ -122,5 +122,37 @@ describe('ReportCard expanded', () => {
     expect(screen.getByRole('button', { name: /מפגע, 16:44/ })).toHaveStyle({
       backgroundColor: themes[id].color.surfaceRaised,
     });
+  });
+});
+
+describe('ReportCard edit (UC-C11, decision 88)', () => {
+  const mine = item({ mine: true, distanceMeters: null });
+
+  it('offers "עריכה" on my own open report that the server has', () => {
+    const onEdit = vi.fn();
+    show(mine, true, undefined, onEdit);
+    fireEvent.click(screen.getByRole('button', { name: 'עריכה' }));
+    expect(onEdit).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not offer it closed, for someone else’s report, or for one that waits to be sent', () => {
+    const onEdit = vi.fn();
+    show(mine, false, undefined, onEdit);
+    expect(screen.queryByRole('button', { name: 'עריכה' })).toBeNull();
+  });
+
+  it('does not offer it on someone else’s report', () => {
+    show(item(), true, undefined, vi.fn());
+    expect(screen.queryByRole('button', { name: 'עריכה' })).toBeNull();
+  });
+
+  it('does not offer it on a report that waits for sync', () => {
+    show({ ...mine, pending: true }, true, undefined, vi.fn());
+    expect(screen.queryByRole('button', { name: 'עריכה' })).toBeNull();
+  });
+
+  it('does not offer it when no edit handler is given', () => {
+    show(mine, true);
+    expect(screen.queryByRole('button', { name: 'עריכה' })).toBeNull();
   });
 });

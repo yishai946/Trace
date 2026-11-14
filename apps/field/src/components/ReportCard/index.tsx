@@ -6,6 +6,7 @@ import { formatDistance, type ReportItem } from '../../reports/reportItems';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
+import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
 import { ReportImage } from '../ReportImage';
 
@@ -16,13 +17,15 @@ export interface ReportCardProps {
   /** Open: the whole text, the photo and the place (wireframe Fm10, the selected `.tcx-report`). */
   selected: boolean;
   onPress: () => void;
+  /** Opens the edit screen (UC-C11, decision 88). Offered on my own open report that the server already has. */
+  onEdit?: () => void;
 }
 
 /**
  * One report of the polygon (UC-F11, Fm10). Closed it is one line; pressing it opens the details, and pressing it again
- * closes them. Editing your own report is a separate screen.
+ * closes them. Editing your own report opens a separate screen.
  */
-export function ReportCard({ item, selected, onPress }: ReportCardProps) {
+export function ReportCard({ item, selected, onPress, onEdit }: ReportCardProps) {
   const { color } = useTheme().theme;
   const [lng, lat] = item.position;
   const place = [
@@ -45,7 +48,7 @@ export function ReportCard({ item, selected, onPress }: ReportCardProps) {
     .join(', ');
   const waiting = <Badge tone="warn" icon="wifiOff" label="ממתין לסנכרון" />;
 
-  return (
+  const card = (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
@@ -101,6 +104,17 @@ export function ReportCard({ item, selected, onPress }: ReportCardProps) {
       )}
     </Pressable>
   );
+  const editable = selected && item.mine && !item.pending && onEdit;
+  if (!editable) return card;
+  // The edit button is a sibling of the card, not inside it: a button must not contain a button.
+  return (
+    <View style={styles.editable}>
+      {card}
+      <View style={styles.edit}>
+        <Button label="עריכה" variant="secondary" onPress={onEdit} />
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -112,6 +126,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.space6,
     borderRadius: radius.radiusLg,
   },
+  editable: { gap: spacing.space3 },
+  edit: { alignItems: 'flex-start', paddingHorizontal: spacing.space6 },
   open: { gap: spacing.space5, padding: spacing.space6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.space3 },
   spacer: { flex: 1 },
