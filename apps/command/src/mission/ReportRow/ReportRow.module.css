@@ -1,0 +1,93 @@
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-height: var(--pending-list-item-h);
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+  text-decoration: none;
+}
+
+.item[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.item[aria-current='true'] {
+  background-color: var(--surface-raised);
+}
+
+.item[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.glyph {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--pending-glyph);
+  height: var(--pending-glyph);
+  border-radius: var(--radius-md);
+  background-color: var(--chip);
+  color: var(--ink-secondary);
+}
+
+.glyph[data-type='hazard'] {
+  color: var(--warning);
+}
+
+.glyph[data-type='located'] {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.glyph svg {
+  width: var(--pending-icon-size);
+  height: var(--pending-icon-size);
+}
+
+.itemText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.itemTitle,
+.itemMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemTitle {
+  font-weight: 600;
+}
+
+.itemMeta {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+}
+
+.badge[data-status='new'] {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.badge svg {
+  width: var(--pending-check-icon);
+  height: var(--pending-check-icon);
+}

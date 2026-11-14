@@ -7,7 +7,7 @@ import {
 } from '@trace/domain';
 import { formatLatLng, type LngLat } from '@trace/geo';
 import type { MissionPolygon, Report, ReportType } from '@trace/schemas';
-import { timeLabel } from '../../../mission/timeLabel';
+import { timeLabel } from '../timeLabel';
 
 export type StatusFilter = 'all' | 'new' | 'handled';
 export type TypeFilter = 'all' | ReportType;

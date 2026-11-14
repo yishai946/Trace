@@ -1,18 +1,10 @@
 import { REPORT_STATUS_LABELS, REPORT_TYPE_LABELS, REPORT_TYPES } from '@trace/domain';
 import type { MissionPolygon, Report } from '@trace/schemas';
-import { Link, Tab, TabList, TabPanel, Tabs, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+import { Tab, TabList, TabPanel, Tabs, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
-import { CheckIcon, ReportTypeIcon } from '../../components/icons';
+import { ReportRow } from '../../mission/ReportRow';
 import styles from './ReportsPage.module.css';
-import {
-  filterReports,
-  listMeta,
-  listTitle,
-  statusCounts,
-  typeCounts,
-  type StatusFilter,
-  type TypeFilter,
-} from './reportView';
+import { filterReports, statusCounts, typeCounts, type StatusFilter, type TypeFilter } from '../../mission/reportView';
 
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'הכל' },
@@ -73,23 +65,7 @@ export function ReportList({
       <ul className={styles.items}>
         {visible.map((report) => (
           <li key={report.id}>
-            <Link
-              className={styles.item}
-              aria-current={report.id === selectedId ? 'true' : undefined}
-              onPress={() => onSelect(report.id)}
-            >
-              <span className={styles.glyph} data-type={report.type}>
-                <ReportTypeIcon type={report.type} />
-              </span>
-              <span className={styles.itemText}>
-                <span className={styles.itemTitle}>{listTitle(report)}</span>
-                <span className={styles.itemMeta}>{listMeta(report, polygons)}</span>
-              </span>
-              <span className={styles.badge} data-status={report.status}>
-                {report.status === 'handled' && <CheckIcon />}
-                {REPORT_STATUS_LABELS[report.status]}
-              </span>
-            </Link>
+            <ReportRow report={report} polygons={polygons} current={report.id === selectedId} onSelect={onSelect} />
           </li>
         ))}
       </ul>

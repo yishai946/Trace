@@ -10,7 +10,7 @@ import {
   statusCounts,
   typeCounts,
 } from '.';
-import { polygonA, reportFinding, reportHazard, reportLocated, reports } from '../../../mission/fixtures';
+import { polygonA, reportFinding, reportHazard, reportLocated, reports } from '../fixtures';
 
 describe('filterReports', () => {
   it('keeps every report for "all" and "all"', () => {

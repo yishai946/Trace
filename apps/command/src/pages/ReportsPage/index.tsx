@@ -19,7 +19,7 @@ import { toMapData } from '../../mission/toMapData';
 import { ReportInspector } from './ReportInspector';
 import { ReportList } from './ReportList';
 import styles from './ReportsPage.module.css';
-import { filterReports, type StatusFilter, type TypeFilter } from './reportView';
+import { filterReports, type StatusFilter, type TypeFilter } from '../../mission/reportView';
 
 export interface ReportsPageProps {
   /** Newest first, as the API returns them. `undefined` while loading. */
