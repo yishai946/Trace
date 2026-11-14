@@ -21,11 +21,15 @@ export interface ReportsListProps {
 export function ReportsList({ items, state, empty, selectedId, onSelect, onRetry }: ReportsListProps) {
   const { color } = useTheme().theme;
   if (state === 'loading') {
-    return <Text style={[typography.body, { color: color.inkSecondary }]}>טוען דיווחים…</Text>;
+    return (
+      <Text role="status" accessibilityLiveRegion="polite" style={[typography.body, { color: color.inkSecondary }]}>
+        טוען דיווחים…
+      </Text>
+    );
   }
   if (state === 'error') {
     return (
-      <View style={styles.message}>
+      <View accessibilityRole="alert" style={styles.message}>
         <Text style={[typography.body, { color: color.ink }]}>לא ניתן לטעון את הדיווחים</Text>
         <Button label="נסה שוב" onPress={onRetry} />
       </View>

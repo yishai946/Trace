@@ -20,7 +20,6 @@ import { useMissionReports } from '../../reports/useMissionReports';
 import { usePendingReports } from '../../reports/usePendingReports';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 /** Fm04 to Fm06: the mission on a full-screen map, with the searcher's actions in a sheet at the bottom. */
 export default function MapScreen() {
@@ -110,42 +109,48 @@ export default function MapScreen() {
 
   return (
     <View style={styles.fill}>
-      <MissionMap area={area} />
-      {banner ? (
-        <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-          <View
-            accessibilityLiveRegion="polite"
-            style={[
-              styles.banner,
-              {
-                backgroundColor: color.surface,
-                // A lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
-                borderColor: status ? color.border : color.warning,
-                boxShadow: theme.shadow.shadowPanel,
-              },
-            ]}
-          >
-            <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{banner.text}</Text>
-            {banner.action}
+      {/* The map and what floats over it end where the sheet begins, so the sheet never covers them. */}
+      <View style={styles.fill} testID="map-area">
+        <MissionMap area={area} />
+        {banner ? (
+          <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
+            <View
+              accessibilityLiveRegion="polite"
+              style={[
+                styles.banner,
+                {
+                  backgroundColor: color.surface,
+                  // A lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
+                  borderColor: status ? color.border : color.warning,
+                  boxShadow: theme.shadow.shadowPanel,
+                },
+              ]}
+            >
+              <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{banner.text}</Text>
+              {banner.action}
+            </View>
+          </SafeAreaView>
+        ) : null}
+        {assigned ? (
+          <View style={styles.reportsButton} pointerEvents="box-none">
+            <View style={[styles.reportsButtonBox, { backgroundColor: color.surface, borderRadius: radius.radiusMd }]}>
+              <Button
+                label="דיווחים בפוליגון"
+                accessibilityLabel={
+                  polygonReports === null ? 'דיווחים בפוליגון' : `דיווחים בפוליגון, ${polygonReports}`
+                }
+                variant="ghost"
+                size="lg"
+                icon="reports"
+                badge={polygonReports === null ? undefined : String(polygonReports)}
+                onPress={() => openScreen(router, routes.reports)}
+              />
+            </View>
           </View>
-        </SafeAreaView>
-      ) : null}
-      {assigned ? (
-        <View style={styles.reportsButton} pointerEvents="box-none">
-          <View style={[styles.reportsButtonBox, { backgroundColor: color.surface, borderRadius: radius.radiusMd }]}>
-            <Button
-              label="דיווחים בפוליגון"
-              accessibilityLabel={polygonReports === null ? 'דיווחים בפוליגון' : `דיווחים בפוליגון, ${polygonReports}`}
-              variant="ghost"
-              size="lg"
-              icon="reports"
-              badge={polygonReports === null ? undefined : String(polygonReports)}
-              onPress={() => openScreen(router, routes.reports)}
-            />
-          </View>
-        </View>
-      ) : null}
+        ) : null}
+      </View>
       <View
+        testID="map-sheet"
         style={[
           styles.sheet,
           { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel },
@@ -198,8 +203,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bannerText: { flex: 1 },
-  // Fm06: over the map, at the start side, above the sheet.
-  reportsButton: { position: 'absolute', start: spacing.space6, bottom: pendingTokens.reportsButtonBottom },
+  // Fm06: over the map, at the start side, just above the sheet whatever its height.
+  reportsButton: { position: 'absolute', start: spacing.space6, bottom: spacing.space6 },
   reportsButtonBox: { alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', gap: spacing.space4 },
   action: { flex: 1 },

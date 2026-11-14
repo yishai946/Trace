@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import MapScreen from '../app/(mission)/map';
@@ -95,6 +95,19 @@ describe('the map sheet actions', () => {
       expect(await screen.findByRole('button', { name: 'דיווחים בפוליגון, 2' })).toBeInTheDocument();
       expect(mapProps.last?.area.data.reports).toHaveLength(2);
     });
+
+    it.each(['ready', 'searching', 'paused'] as const)(
+      'floats over the map, never inside the sheet, while the task is %s',
+      (taskStatus) => {
+        useSession.setState({ participation: { ...assigned, taskStatus } });
+        serve([]);
+        show();
+        const button = screen.getByRole('button', { name: /דיווחים בפוליגון/ });
+        // The map area ends where the sheet begins, whatever the sheet's height, so the sheet cannot cover the button.
+        expect(within(screen.getByTestId('map-area')).getByRole('button', { name: /דיווחים בפוליגון/ })).toBe(button);
+        expect(within(screen.getByTestId('map-sheet')).queryByRole('button', { name: /דיווחים בפוליגון/ })).toBeNull();
+      },
+    );
 
     it('is not offered to a searcher without a polygon', () => {
       useSession.setState({ participation: { ...assigned, status: 'available', polygonId: null, taskStatus: null } });

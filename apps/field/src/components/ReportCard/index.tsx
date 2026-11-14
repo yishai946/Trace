@@ -30,12 +30,24 @@ export function ReportCard({ item, selected, onPress }: ReportCardProps) {
   ]
     .filter(Boolean)
     .join(', ');
+  const who = item.mine
+    ? 'הדיווח שלי'
+    : [item.callsign, item.name].filter((part) => part !== null && part !== '').join(' ');
+  const label = [
+    item.typeLabel,
+    item.time,
+    item.text,
+    who,
+    !item.mine && item.distanceMeters !== null ? formatDistance(item.distanceMeters) : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
   const waiting = <Badge tone="warn" icon="wifiOff" label="ממתין לסנכרון" />;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${item.typeLabel}, ${item.time}, ${item.text}`}
+      accessibilityLabel={label}
       accessibilityState={{ expanded: selected }}
       aria-expanded={selected}
       onPress={onPress}

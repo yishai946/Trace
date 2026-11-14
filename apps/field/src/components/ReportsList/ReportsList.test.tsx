@@ -37,13 +37,13 @@ const show = (props: Partial<Parameters<typeof ReportsList>[0]> = {}) =>
 describe('ReportsList', () => {
   it('says it is loading', () => {
     show({ state: 'loading' });
-    expect(screen.getByText('טוען דיווחים…')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('טוען דיווחים…');
   });
 
   it('says it failed and tries again on request', () => {
     const onRetry = vi.fn();
     show({ state: 'error', onRetry });
-    expect(screen.getByText('לא ניתן לטעון את הדיווחים')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('לא ניתן לטעון את הדיווחים');
     fireEvent.click(screen.getByRole('button', { name: 'נסה שוב' }));
     expect(onRetry).toHaveBeenCalledTimes(1);
   });
@@ -57,8 +57,8 @@ describe('ReportsList', () => {
     show({ items: [item('a', 'ראשון'), item('b', 'שני')] });
     expect(screen.getByLabelText('רשימת דיווחים')).toBeInTheDocument();
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([
-      'מפגע, 16:44, ראשון',
-      'מפגע, 16:44, שני',
+      'מפגע, 16:44, ראשון, 11 יוסי דהן',
+      'מפגע, 16:44, שני, 11 יוסי דהן',
     ]);
   });
 

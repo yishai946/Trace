@@ -70,8 +70,6 @@ export const pendingTokens = {
   reportTextLeading: 1.4,
   /** Fm10 `.tc-seg` view switch (list or map): 136px wide, two icon-only segments. */
   viewToggleW: 136,
-  /** Fm06: the "דיווחים בפוליגון" button floats 210px above the bottom of the map. */
-  reportsButtonBottom: 210,
   /** Fm10: the report symbol's selection ring on the map, 2px. */
   selectionRing: 2,
   /** Fm09: height of the minimap under "מיקום התצפית". */

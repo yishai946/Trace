@@ -62,6 +62,18 @@ describe('ReportCard collapsed', () => {
     expect(screen.queryByText('נשלח')).toBeNull();
   });
 
+  it('names the author and the distance for screen readers, and "שלי" for my own report', () => {
+    show(item());
+    expect(
+      screen.getByRole('button', { name: 'מפגע, 16:44, מדרון חלק ליד הערוץ, 11 יוסי דהן, 120 מ׳ ממני' }),
+    ).toBeInTheDocument();
+  });
+
+  it('names my own report as mine', () => {
+    show(item({ mine: true, distanceMeters: null }));
+    expect(screen.getByRole('button', { name: 'מפגע, 16:44, מדרון חלק ליד הערוץ, הדיווח שלי' })).toBeInTheDocument();
+  });
+
   it('is a button that opens the details when pressed', () => {
     const onPress = vi.fn();
     show(item(), false, onPress);
