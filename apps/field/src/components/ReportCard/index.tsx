@@ -1,4 +1,5 @@
 import { radius, spacing, typography } from '@trace/design';
+import { formatCallsign } from '@trace/domain';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { formatDistance, type ReportItem } from '../../reports/reportItems';
@@ -32,7 +33,7 @@ export function ReportCard({ item, selected, onPress }: ReportCardProps) {
     .join(', ');
   const who = item.mine
     ? 'הדיווח שלי'
-    : [item.callsign, item.name].filter((part) => part !== null && part !== '').join(' ');
+    : [item.callsign === null ? null : formatCallsign(item.callsign), item.name].filter(Boolean).join(' ');
   const label = [
     item.typeLabel,
     item.time,

@@ -72,7 +72,7 @@ export default function ReportsScreen() {
   );
   // The open report closes by itself once it is not in the list (a filter change, a move, a deletion).
   const selected = items.find((item) => item.id === selectedId) ?? null;
-  const state = reports.isError && !reports.data ? 'error' : reports.isPending ? 'loading' : 'ready';
+  const state = reports.isError && !reports.data ? 'error' : reports.isLoading ? 'loading' : 'ready';
   const polygonName = polygonList?.find((p) => p.id === assigned?.polygonId)?.name;
 
   // A report just sent leaves the outbox: read the list in case its live event was missed.

@@ -69,6 +69,11 @@ describe('ReportCard collapsed', () => {
     ).toBeInTheDocument();
   });
 
+  it('writes the callsign as the chip does, with a leading zero', () => {
+    show(item({ callsign: 3, distanceMeters: null }));
+    expect(screen.getByRole('button', { name: 'מפגע, 16:44, מדרון חלק ליד הערוץ, 03 יוסי דהן' })).toBeInTheDocument();
+  });
+
   it('names my own report as mine', () => {
     show(item({ mine: true, distanceMeters: null }));
     expect(screen.getByRole('button', { name: 'מפגע, 16:44, מדרון חלק ליד הערוץ, הדיווח שלי' })).toBeInTheDocument();

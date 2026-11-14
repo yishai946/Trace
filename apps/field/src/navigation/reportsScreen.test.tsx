@@ -244,6 +244,39 @@ describe('the reports screen (Fm10)', () => {
     await waitFor(() => expect(screen.getAllByText('עוד לא נשלח')).toHaveLength(1));
   });
 
+  const waitingBody = {
+    id: '0190a3b2-7c4e-7a10-8a5e-00000000beef',
+    type: 'general',
+    text: 'נשמר בלי קליטה',
+    position: { type: 'Point', coordinates: [35.01, 31.74] },
+    accuracy: null,
+    reportedAt: '2026-10-03T17:00:00.000Z',
+  };
+
+  it('shows my waiting report with the error and the retry when the list cannot load', async () => {
+    await enqueue({ kind: 'report', missionId: MISSION_ID, payloads: [waitingBody], ids: [waitingBody.id] });
+    server.reportsStatus = 500;
+    show();
+    expect(await screen.findByText('לא ניתן לטעון את הדיווחים')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'נסה שוב' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /נשמר בלי קליטה/ })).toBeInTheDocument();
+    expect(screen.getByText('ממתין לסנכרון')).toBeInTheDocument();
+  });
+
+  it('shows my waiting report while the list is still loading', async () => {
+    await enqueue({ kind: 'report', missionId: MISSION_ID, payloads: [waitingBody], ids: [waitingBody.id] });
+    show();
+    expect(screen.getByText('טוען דיווחים…')).toBeInTheDocument();
+    expect(await screen.findByText('ממתין לסנכרון')).toBeInTheDocument();
+  });
+
+  it('does not load forever when the screen cannot ask the server', async () => {
+    useSession.setState({ token: null });
+    show();
+    expect(await screen.findByText('אין עדיין דיווחים בפוליגון')).toBeInTheDocument();
+    expect(screen.queryByText('טוען דיווחים…')).toBeNull();
+  });
+
   it('switches to the map and back', async () => {
     show();
     await screen.findByText('אין עדיין דיווחים בפוליגון');

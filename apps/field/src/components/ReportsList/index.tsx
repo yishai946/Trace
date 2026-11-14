@@ -7,7 +7,7 @@ import { ReportCard } from '../ReportCard';
 
 export interface ReportsListProps {
   items: ReportItem[];
-  /** `loading` only while there is nothing to show yet: a refresh in the background keeps the list. */
+  /** `loading` or `error` only while nothing was read yet: a refresh in the background keeps the list. */
   state: 'loading' | 'error' | 'ready';
   /** What an empty list says, which depends on the filter. */
   empty: string;
@@ -20,37 +20,45 @@ export interface ReportsListProps {
 /** The reports as cards (Fm10), with the loading, error and empty states of the screen (UC-F11). */
 export function ReportsList({ items, state, empty, selectedId, onSelect, onRetry }: ReportsListProps) {
   const { color } = useTheme().theme;
-  if (state === 'loading') {
-    return (
+  // The note comes first and the known reports stay below it: the searcher's own reports that wait on the phone must
+  // not disappear because the list could not be read.
+  const note =
+    state === 'loading' ? (
       <Text role="status" accessibilityLiveRegion="polite" style={[typography.body, { color: color.inkSecondary }]}>
         טוען דיווחים…
       </Text>
-    );
-  }
-  if (state === 'error') {
-    return (
+    ) : state === 'error' ? (
       <View accessibilityRole="alert" style={styles.message}>
         <Text style={[typography.body, { color: color.ink }]}>לא ניתן לטעון את הדיווחים</Text>
         <Button label="נסה שוב" onPress={onRetry} />
       </View>
-    );
-  }
-  if (items.length === 0) return <Text style={[typography.body, { color: color.inkSecondary }]}>{empty}</Text>;
+    ) : null;
+  const emptyText =
+    state === 'ready' && items.length === 0 ? (
+      <Text style={[typography.body, { color: color.inkSecondary }]}>{empty}</Text>
+    ) : null;
   return (
-    <View accessibilityLabel="רשימת דיווחים" style={styles.list}>
-      {items.map((item) => (
-        <ReportCard
-          key={item.id}
-          item={item}
-          selected={item.id === selectedId}
-          onPress={() => onSelect(item.id === selectedId ? null : item.id)}
-        />
-      ))}
+    <View style={styles.stack}>
+      {note}
+      {emptyText}
+      {items.length > 0 ? (
+        <View accessibilityLabel="רשימת דיווחים" style={styles.list}>
+          {items.map((item) => (
+            <ReportCard
+              key={item.id}
+              item={item}
+              selected={item.id === selectedId}
+              onPress={() => onSelect(item.id === selectedId ? null : item.id)}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  stack: { gap: spacing.space6 },
   list: { gap: spacing.space1 },
   message: { gap: spacing.space5, alignItems: 'flex-start' },
 });

@@ -72,4 +72,22 @@ describe('ReportsList', () => {
     fireEvent.click(screen.getByRole('button', { name: /ראשון/ }));
     expect(onSelect).toHaveBeenLastCalledWith(null);
   });
+
+  it('shows the reports that are already known together with the loading note', () => {
+    show({ state: 'loading', items: [item('a', 'ממתין אצלי')] });
+    expect(screen.getByRole('status')).toHaveTextContent('טוען דיווחים…');
+    expect(screen.getByRole('button', { name: /ממתין אצלי/ })).toBeInTheDocument();
+  });
+
+  it('shows the reports that are already known together with the error and the retry', () => {
+    show({ state: 'error', items: [item('a', 'ממתין אצלי')] });
+    expect(screen.getByRole('alert')).toHaveTextContent('לא ניתן לטעון את הדיווחים');
+    expect(screen.getByRole('button', { name: 'נסה שוב' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /ממתין אצלי/ })).toBeInTheDocument();
+  });
+
+  it('does not say the list is empty while it is loading or failed', () => {
+    show({ state: 'error' });
+    expect(screen.queryByText('אין עדיין דיווחים בפוליגון')).toBeNull();
+  });
 });
