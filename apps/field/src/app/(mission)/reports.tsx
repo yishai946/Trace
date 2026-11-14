@@ -84,6 +84,8 @@ export default function ReportsScreen() {
     waiting.current = pending.count;
   }, [pending.count, missionId, queryClient]);
 
+  const edit = (id: string) => openScreen(router, { pathname: routes.reportEdit, params: { id } });
+
   const list = (
     <ReportsList
       items={items}
@@ -92,6 +94,7 @@ export default function ReportsScreen() {
       selectedId={selected?.id ?? null}
       onSelect={setSelectedId}
       onRetry={() => void reports.refetch()}
+      onEdit={edit}
     />
   );
   const filterChoice = assigned ? (
@@ -137,7 +140,12 @@ export default function ReportsScreen() {
           )}
           {selected ? (
             <View style={styles.padded}>
-              <ReportCard item={selected} selected onPress={() => setSelectedId(null)} />
+              <ReportCard
+                item={selected}
+                selected
+                onPress={() => setSelectedId(null)}
+                onEdit={() => edit(selected.id)}
+              />
             </View>
           ) : null}
         </View>

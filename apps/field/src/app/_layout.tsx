@@ -27,6 +27,7 @@ function ThemedStack() {
       >
         <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.color.surface } }}>
           <Stack.Screen name="report" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="report-edit" options={{ presentation: 'modal' }} />
           <Stack.Screen name="sighting" options={{ presentation: 'modal' }} />
           <Stack.Screen name="missing-person" options={{ presentation: 'modal' }} />
         </Stack>

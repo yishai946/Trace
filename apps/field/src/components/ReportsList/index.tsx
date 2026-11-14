@@ -15,10 +15,12 @@ export interface ReportsListProps {
   /** The id of the report to open, or null to close the open one. */
   onSelect: (id: string | null) => void;
   onRetry: () => void;
+  /** Opens the edit screen of the report with this id (my own, UC-C11). */
+  onEdit?: (id: string) => void;
 }
 
 /** The reports as cards (Fm10), with the loading, error and empty states of the screen (UC-F11). */
-export function ReportsList({ items, state, empty, selectedId, onSelect, onRetry }: ReportsListProps) {
+export function ReportsList({ items, state, empty, selectedId, onSelect, onRetry, onEdit }: ReportsListProps) {
   const { color } = useTheme().theme;
   // The note comes first and the known reports stay below it: the searcher's own reports that wait on the phone must
   // not disappear because the list could not be read.
@@ -49,6 +51,7 @@ export function ReportsList({ items, state, empty, selectedId, onSelect, onRetry
               item={item}
               selected={item.id === selectedId}
               onPress={() => onSelect(item.id === selectedId ? null : item.id)}
+              onEdit={onEdit && (() => onEdit(item.id))}
             />
           ))}
         </View>
