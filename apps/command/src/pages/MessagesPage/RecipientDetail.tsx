@@ -17,6 +17,7 @@ export interface RecipientDetailProps {
 const stateOf = (r: Message['recipients'][number]) =>
   r.status === 'acknowledged' ? 'acknowledged' : r.status === 'read' ? 'read' : r.deliveredAt ? 'delivered' : 'pending';
 
+/** The time of the latest step: acknowledged, else read, else delivered. */
 const lastTime = (r: Message['recipients'][number]) => r.acknowledgedAt ?? r.readAt ?? r.deliveredAt;
 
 /** Who got the selected message and where each one stands (wireframe Cd11 "פירוט לפי נמען"). */

@@ -19,10 +19,6 @@ interface Input {
 }
 
 /**
- * What the phone Reports screen shows: the filtered list, the one report whose card is open (a critical report that
- * just arrived takes the card), and the map with its focus.
- */
-/**
  * A critical report that arrived while the screen was open: its card shows, even over another selection. The reports
  * already there when the screen opened are not new. `onArrived` runs when one arrives, to bring the closed card back.
  */
@@ -44,6 +40,10 @@ function useArrivedCritical(reports: Report[] | undefined, onArrived: () => void
   return { arrivedId, clearArrived: () => setArrivedId(null) };
 }
 
+/**
+ * What the phone Reports screen shows: the filtered list, the one report whose card is open (a critical report that
+ * just arrived takes the card), and the map with its focus.
+ */
 export function usePhoneReports({
   reports,
   mission,

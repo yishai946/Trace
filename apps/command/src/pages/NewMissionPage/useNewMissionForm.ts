@@ -8,8 +8,6 @@ import { useCreateMission } from '../../mission/missionQueries';
 import { emptyForm, toCreateBody, validate, type FormErrors, type NewMissionForm } from './newMissionForm';
 import type { PlaceMode } from './PointPicker';
 
-/** Where the map opens for a new mission: Jerusalem, until the commander places a point. */
-
 export type PointKind = 'lkp' | 'rally';
 
 /** Only one point follows map clicks, so choosing "map" for one sends the other to "search". */

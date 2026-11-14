@@ -2,7 +2,6 @@ import type { Message } from '@trace/schemas';
 import styles from './MessagesPage.module.css';
 import { counts } from './messageView';
 
-/** The time of the latest step: acknowledged, else read, else delivered. */
 /** How many recipients got, read and (for a critical message) acknowledged it. */
 export function DeliveryCounts({ message }: { message: Message }) {
   const total = counts(message);

@@ -2,6 +2,7 @@ import { Button as AriaButton, type ButtonProps as AriaButtonProps } from 'react
 import { buttonClasses, type ButtonVariant } from './buttonClasses';
 
 export type { ButtonVariant };
+export { LinkButton, type LinkButtonProps } from './LinkButton';
 
 export interface ButtonProps extends AriaButtonProps {
   /**
