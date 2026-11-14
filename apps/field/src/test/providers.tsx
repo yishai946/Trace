@@ -9,11 +9,12 @@ const frame = { x: 0, y: 0, width: 390, height: 844 };
 /* eslint-enable no-restricted-syntax */
 const insets = { top: 47, left: 0, right: 0, bottom: 34 };
 
-/** Query client (no retries), safe-area metrics of a phone and the theme: what a Field screen needs to render. */
-export function TestProviders({ children }: { children: ReactNode }) {
-  const [client] = useState(
+/** Query client (no retries, or the one a test passes to read and change its cache), safe-area metrics of a phone and the theme: what a Field screen needs to render. */
+export function TestProviders({ children, client: given }: { children: ReactNode; client?: QueryClient }) {
+  const [own] = useState(
     () => new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } }),
   );
+  const client = given ?? own;
   return (
     <QueryClientProvider client={client}>
       <SafeAreaProvider initialMetrics={{ frame, insets }}>

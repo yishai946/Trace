@@ -18,13 +18,22 @@ const ID_2 = '0190a3b2-7c4e-7a10-8a5e-3f2d1c0b9a82';
 describe('usePendingReports', () => {
   it('counts the reports that wait and tells whether one says the missing person was located', async () => {
     const { result } = renderHook(() => usePendingReports(missionId));
-    await waitFor(() => expect(result.current).toEqual({ count: 0, located: false }));
+    await waitFor(() => expect(result.current).toEqual({ count: 0, located: false, items: [] }));
 
     await act(() => enqueue({ kind: 'report', missionId, payloads: [report(ID_1, 'hazard')], ids: [ID_1] }));
-    await waitFor(() => expect(result.current).toEqual({ count: 1, located: false }));
+    await waitFor(() => expect(result.current).toMatchObject({ count: 1, located: false }));
 
     await act(() => enqueue({ kind: 'report', missionId, payloads: [report(ID_2, 'located')], ids: [ID_2] }));
-    await waitFor(() => expect(result.current).toEqual({ count: 2, located: true }));
+    await waitFor(() => expect(result.current).toMatchObject({ count: 2, located: true }));
+    expect(result.current.items.map((item) => item.id)).toEqual([ID_1, ID_2]);
+  });
+
+  it('counts a payload that is not a valid report but lists only the valid ones', async () => {
+    await enqueue({ kind: 'report', missionId, payloads: [{ nonsense: true }], ids: [ID_1] });
+    await enqueue({ kind: 'report', missionId, payloads: [report(ID_2, 'hazard')], ids: [ID_2] });
+    const { result } = renderHook(() => usePendingReports(missionId));
+    await waitFor(() => expect(result.current.count).toBe(2));
+    expect(result.current.items.map((item) => item.id)).toEqual([ID_2]);
   });
 
   it('updates after a send, and ignores other missions and photos', async () => {
@@ -32,14 +41,14 @@ describe('usePendingReports', () => {
     await enqueue({ kind: 'report-photo', missionId, payloads: [{}] });
     await enqueue({ kind: 'report', missionId, payloads: [report(ID_2, 'located')], ids: [ID_2] });
     const { result } = renderHook(() => usePendingReports(missionId));
-    await waitFor(() => expect(result.current).toEqual({ count: 1, located: true }));
+    await waitFor(() => expect(result.current).toMatchObject({ count: 1, located: true }));
 
     await act(() => flushOutbox({ report: { batchSize: 1, send: async () => 'sent' } }));
-    await waitFor(() => expect(result.current).toEqual({ count: 0, located: false }));
+    await waitFor(() => expect(result.current).toEqual({ count: 0, located: false, items: [] }));
   });
 
   it('has nothing without a mission', async () => {
     const { result } = renderHook(() => usePendingReports(null));
-    expect(result.current).toEqual({ count: 0, located: false });
+    expect(result.current).toEqual({ count: 0, located: false, items: [] });
   });
 });

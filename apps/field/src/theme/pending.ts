@@ -65,6 +65,13 @@ export const pendingTokens = {
   reportTextMinH: 124,
   /** Fm10 `.tcx-ph`: the report photo's thumbnail, 84x84. */
   reportThumb: 84,
+  /** Fm10 `.tcx-report`: a report card is 68px high at least; its open text has a 1.4 line height. */
+  reportCardMinH: 68,
+  reportTextLeading: 1.4,
+  /** Fm10 `.tc-seg` view switch (list or map): 136px wide, two icon-only segments. */
+  viewToggleW: 136,
+  /** Fm10: the report symbol's selection ring on the map, 2px. */
+  selectionRing: 2,
   /** Fm09: height of the minimap under "מיקום התצפית". */
   sightingMapH: 236,
   /** Fm09: minimum height of the "תיאור קצר" text area (two lines). */

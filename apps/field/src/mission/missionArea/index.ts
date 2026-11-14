@@ -1,11 +1,11 @@
 import { boundsOf, type Bounds, type LngLat } from '@trace/geo';
-import { emptyMissionMapData, type MissionMapData } from '@trace/map';
+import { emptyMissionMapData, type MapReport, type MissionMapData } from '@trace/map';
 import type { Mission, MissionPolygon } from '@trace/schemas';
-import type { Feature } from 'geojson';
+import type { Feature, Point } from 'geojson';
 
 export interface MissionArea {
   data: MissionMapData;
-  /** Frames every polygon, the LKP and the rally point; null while the mission shows none of them. */
+  /** Frames every polygon, the LKP, the rally point and the reports; null while the mission shows none of them. */
   bounds: Bounds | null;
 }
 
@@ -32,19 +32,23 @@ export function formatDateTime(iso: string): string {
 
 /**
  * The mission area on the map, drawn with the shared Trace Console style: its polygons and, once the mission is
- * known, its LKP and rally point. Never other searchers' positions (decisions 31, 32).
+ * known, its LKP and rally point, and the reports it is given (UC-F11). Never other searchers' positions (decisions 31,
+ * 32).
  */
 export function toMissionArea(
   polygons: MissionPolygon[],
   mission?: Pick<Mission, 'lkp' | 'rallyPoint'>,
   /** The searcher's own polygon, drawn selected (UC-F05). */
   assignedPolygonId?: string | null,
+  /** The reports to draw: the ones this searcher may see (decision 80). */
+  reports: MapReport[] = [],
 ): MissionArea {
   const lkp = mission?.lkp ?? null;
   const features: Feature[] = [
     ...polygons.map((p) => p.geometry),
     ...(lkp ? [lkp.position] : []),
     ...(mission ? [mission.rallyPoint] : []),
+    ...reports.map((r): Point => ({ type: 'Point', coordinates: r.position })),
   ].map((geometry) => ({ type: 'Feature', geometry, properties: {} }));
 
   return {
@@ -59,6 +63,7 @@ export function toMissionArea(
         selected: p.id === assignedPolygonId,
       })),
       lkp: lkp ? { id: 'lkp', position: lkp.position.coordinates as LngLat, time: formatTime(lkp.observedAt) } : null,
+      reports,
       rally: mission ? (mission.rallyPoint.coordinates as LngLat) : null,
     },
     bounds: features.length ? frame(features) : null,

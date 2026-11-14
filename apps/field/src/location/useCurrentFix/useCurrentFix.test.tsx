@@ -53,4 +53,18 @@ describe('useCurrentFix', () => {
     await waitFor(() => expect(result.current.state).toBe('unavailable'));
     expect(result.current.fix).toBeNull();
   });
+
+  it('does not ask for permission when told not to prompt, and is unavailable without it', async () => {
+    location.get.mockResolvedValue({ granted: false });
+    const { result } = renderHook(() => useCurrentFix({ prompt: false }));
+    await waitFor(() => expect(result.current.state).toBe('unavailable'));
+    expect(location.request).not.toHaveBeenCalled();
+    expect(location.position).not.toHaveBeenCalled();
+  });
+
+  it('takes the fix without prompting when permission was already granted', async () => {
+    const { result } = renderHook(() => useCurrentFix({ prompt: false }));
+    await waitFor(() => expect(result.current.state).toBe('ready'));
+    expect(location.request).not.toHaveBeenCalled();
+  });
 });

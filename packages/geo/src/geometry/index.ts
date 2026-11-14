@@ -15,6 +15,17 @@ export function distanceOutsideMeters(point: LngLat, polygon: Polygon): number {
   return Math.max(0, pointToPolygonDistance(point, polygon, { units: 'meters' }));
 }
 
+const EARTH_RADIUS_METERS = 6_371_008.8;
+
+/** Great-circle distance in meters between two points (haversine). */
+export function distanceMeters(a: LngLat, b: LngLat): number {
+  const rad = (degrees: number) => (degrees * Math.PI) / 180;
+  const dLat = rad(b[1] - a[1]);
+  const dLng = rad(b[0] - a[0]);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLng / 2) ** 2;
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
 export interface PositionedItem<Id> {
   id: Id;
   position: LngLat;

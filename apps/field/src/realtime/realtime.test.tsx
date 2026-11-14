@@ -1,10 +1,11 @@
-import type { JoinMissionAck, Mission } from '@trace/schemas';
+import type { JoinMissionAck, Mission, Report } from '@trace/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RETRY_MS, useMissionLive } from '.';
 import { missionKeys } from '../mission/queries';
+import { makeReport } from '../reports/fixtures';
 import { useSession } from '../state/session';
 
 type Handler = (...args: never[]) => void;
@@ -269,5 +270,105 @@ describe('useMissionLive', () => {
     expect(socket?.connects).toBe(1);
     unmount();
     expect(socket?.disconnected).toBe(true);
+  });
+});
+
+describe('useMissionLive: reports (UC-F11)', () => {
+  const cachedReports = (queryClient: QueryClient) =>
+    queryClient.getQueryData<Report[]>(missionKeys.reports(missionId));
+  const reportsState = (queryClient: QueryClient) => queryClient.getQueryState(missionKeys.reports(missionId));
+  const own = {
+    id: '00000000-0000-4000-8000-000000000002',
+    callsign: 7,
+    status: 'assigned' as const,
+    polygonId: '00000000-0000-4000-8000-0000000000a1',
+    taskStatus: 'searching' as const,
+  };
+  const participantEvent = (changes: Record<string, unknown>) => ({
+    type: 'participant.updated',
+    missionId,
+    participant: {
+      ...own,
+      ...changes,
+      searcherId: '00000000-0000-4000-8000-000000000105',
+      name: 'דנה',
+      phone: '+972526114085',
+      position: null,
+      positionAt: null,
+    },
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+  beforeEach(() => {
+    sockets.length = 0;
+    useSession.setState({
+      ...useSession.getInitialState(),
+      token: 't1',
+      restored: true,
+      missionId,
+      participation: own,
+    });
+  });
+
+  it('adds a saved report to the cached list, newest first, and replaces an edited one', () => {
+    const { socket, queryClient } = setup();
+    const older = makeReport({ reportedAt: '2026-10-03T10:00:00.000Z' });
+    queryClient.setQueryData(missionKeys.reports(missionId), [older]);
+    const newer = makeReport({ reportedAt: '2026-10-03T12:00:00.000Z' });
+    act(() => socket?.fire('mission:event', { type: 'report.saved', missionId, report: newer }));
+    expect(cachedReports(queryClient)?.map((r) => r.id)).toEqual([newer.id, older.id]);
+
+    const edited = { ...older, text: 'עודכן' };
+    act(() => socket?.fire('mission:event', { type: 'report.saved', missionId, report: edited }));
+    expect(cachedReports(queryClient)).toHaveLength(2);
+    expect(cachedReports(queryClient)?.find((r) => r.id === older.id)?.text).toBe('עודכן');
+  });
+
+  it('removes a deleted report from the cached list', () => {
+    const { socket, queryClient } = setup();
+    const report = makeReport();
+    const other = makeReport();
+    queryClient.setQueryData(missionKeys.reports(missionId), [report, other]);
+    act(() => socket?.fire('mission:event', { type: 'report.deleted', missionId, reportId: report.id }));
+    expect(cachedReports(queryClient)?.map((r) => r.id)).toEqual([other.id]);
+  });
+
+  it('refetches instead of writing when the list is not cached', async () => {
+    const { socket, queryClient } = setup();
+    queryClient.setQueryData(missionKeys.reports(missionId), undefined);
+    const observer = queryClient.getQueryCache().build(queryClient, { queryKey: missionKeys.reports(missionId) });
+    act(() => socket?.fire('mission:event', { type: 'report.saved', missionId, report: makeReport() }));
+    await vi.waitFor(() => expect(observer.state.isInvalidated).toBe(true));
+    expect(cachedReports(queryClient)).toBeUndefined();
+    act(() => socket?.fire('mission:event', { type: 'report.deleted', missionId, reportId: makeReport().id }));
+    expect(cachedReports(queryClient)).toBeUndefined();
+  });
+
+  it('refetches the reports when the searcher moves to another polygon or is unassigned', () => {
+    const { socket, queryClient } = setup();
+    queryClient.setQueryData(missionKeys.reports(missionId), []);
+    act(() => socket?.fire('mission:event', participantEvent({ polygonId: '00000000-0000-4000-8000-0000000000b2' })));
+    expect(reportsState(queryClient)?.isInvalidated).toBe(true);
+
+    queryClient.setQueryData(missionKeys.reports(missionId), []);
+    act(() => socket?.fire('mission:event', participantEvent({ polygonId: null, status: 'available' })));
+    expect(reportsState(queryClient)?.isInvalidated).toBe(true);
+  });
+
+  it('does not refetch the reports when the polygon and the status stay the same', () => {
+    const { socket, queryClient } = setup();
+    queryClient.setQueryData(missionKeys.reports(missionId), []);
+    act(() => socket?.fire('mission:event', participantEvent({ taskStatus: 'paused' })));
+    expect(reportsState(queryClient)?.isInvalidated).toBe(false);
+  });
+
+  it('refetches the reports after every join, for events sent while away', async () => {
+    const { socket, queryClient } = setup();
+    queryClient.setQueryData(missionKeys.reports(missionId), []);
+    await join(socket as FakeSocket);
+    expect(reportsState(queryClient)?.isInvalidated).toBe(true);
   });
 });

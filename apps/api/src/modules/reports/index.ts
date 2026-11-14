@@ -22,12 +22,24 @@ import {
   getReportPhoto,
   listReports,
   markReportHandled,
+  reportRecipients,
   setReportPhoto,
   updateReport,
 } from './reports.service';
 
 export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   acceptPhotoBodies(app);
+
+  /** Who gets a report's events besides the commander (decision 80), read after the change is saved; the commander only when the lookup fails. */
+  const recipientsOf = async (reportId: string): Promise<{ searcherIds?: string[] }> => {
+    try {
+      return { searcherIds: await reportRecipients(db, { reportId }) };
+    } catch (error) {
+      // The report is saved: a failed lookup must not fail the response. The commander still hears of it.
+      app.log.error(error, 'Report recipients lookup failed');
+      return {};
+    }
+  };
 
   app.post(
     '/missions/:missionId/reports',
@@ -64,7 +76,9 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
         actor,
         body: request.body,
       });
-      if (created) realtime.publish({ type: 'report.saved', missionId, report });
+      if (created) {
+        realtime.publish({ type: 'report.saved', missionId, report }, await recipientsOf(report.id));
+      }
       if (created && event) realtime.publish({ type: 'timeline.recorded', missionId, event });
       return reply.code(created ? 201 : 200).send(report);
     },
@@ -103,7 +117,7 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
       if (!Buffer.isBuffer(body)) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'Send the photo as an image');
       const { missionId, reportId } = request.params;
       const report = await setReportPhoto(db, { missionId, reportId, userId: actorOf(request).userId, data: body });
-      realtime.publish({ type: 'report.saved', missionId, report });
+      realtime.publish({ type: 'report.saved', missionId, report }, await recipientsOf(report.id));
       return report;
     },
   );
@@ -113,14 +127,16 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
     {
       schema: {
         tags: ['reports'],
-        summary: "List the mission's reports, newest first (UC-C11)",
-        description: "The mission's commander. Searchers get 403 until UC-F11.",
+        summary: 'List the reports the caller may see, newest first (UC-C11, UC-F11)',
+        description:
+          "The mission's commander gets all of them. A searcher gets the reports from the polygon they are assigned " +
+          'to and their own (decision 80); an Available searcher or one who finished gets only their own.',
         params: MissionParams,
         response: { 200: ReportList, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
       },
-      preHandler: missionAccess(db, 'commander'),
+      preHandler: missionAccess(db, 'member'),
     },
-    (request) => listReports(db, request.params.missionId),
+    (request) => listReports(db, { missionId: request.params.missionId, actor: actorOf(request) }),
   );
 
   app.get(
@@ -130,7 +146,8 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
         tags: ['reports'],
         summary: "Get a report's photo (UC-C11)",
         description:
-          "The mission's commander or the searcher who sent the report; 404 for anyone else and when there is no photo.",
+          "The mission's commander, the author, or a searcher who may see the report (decision 80); 404 for anyone " +
+          'else and when there is no photo.',
         params: ReportParams,
         querystring: z.object({ v: z.string().optional().describe("The photo's version, from photoUrl") }),
         produces: [...PHOTO_TYPES],
@@ -167,7 +184,7 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
     async (request) => {
       const { missionId, reportId } = request.params;
       const { report, changed } = await markReportHandled(db, { missionId, reportId });
-      if (changed) realtime.publish({ type: 'report.saved', missionId, report });
+      if (changed) realtime.publish({ type: 'report.saved', missionId, report }, await recipientsOf(report.id));
       return report;
     },
   );
@@ -190,7 +207,7 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
     async (request) => {
       const { missionId, reportId } = request.params;
       const report = await updateReport(db, { missionId, reportId, actor: actorOf(request), body: request.body });
-      realtime.publish({ type: 'report.saved', missionId, report });
+      realtime.publish({ type: 'report.saved', missionId, report }, await recipientsOf(report.id));
       return report;
     },
   );
@@ -209,8 +226,8 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
     },
     async (request, reply) => {
       const { missionId, reportId } = request.params;
-      await deleteReport(db, { missionId, reportId });
-      realtime.publish({ type: 'report.deleted', missionId, reportId });
+      const { searcherIds } = await deleteReport(db, { missionId, reportId });
+      realtime.publish({ type: 'report.deleted', missionId, reportId }, { searcherIds });
       return reply.status(204).send(null);
     },
   );

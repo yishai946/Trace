@@ -21,9 +21,10 @@ interface CurrentFixState {
 
 /**
  * The searcher's position, taken once when the screen opens (a sighting, UC-F10). When location is denied or the phone
- * gives no fix the state is `unavailable`, and the screen asks for a point on the map instead.
+ * gives no fix the state is `unavailable`, and the screen asks for a point on the map instead. With `prompt: false` it
+ * never asks for permission: a screen that only uses the fix as a hint (distances, UC-F11) takes it if already granted.
  */
-export function useCurrentFix(): CurrentFixState {
+export function useCurrentFix({ prompt = true }: { prompt?: boolean } = {}): CurrentFixState {
   const [result, setResult] = useState<CurrentFixState>({ state: 'locating', fix: null });
   useEffect(() => {
     let active = true;
@@ -33,7 +34,7 @@ export function useCurrentFix(): CurrentFixState {
     void (async () => {
       try {
         let permission = await getForegroundPermissionsAsync();
-        if (!permission.granted) permission = await requestForegroundPermissionsAsync();
+        if (!permission.granted && prompt) permission = await requestForegroundPermissionsAsync();
         if (!permission.granted) return finish({ state: 'unavailable', fix: null });
         const { coords, timestamp } = await getCurrentPositionAsync({ accuracy: Accuracy.High });
         finish({
@@ -47,6 +48,6 @@ export function useCurrentFix(): CurrentFixState {
     return () => {
       active = false;
     };
-  }, []);
+  }, [prompt]);
   return result;
 }

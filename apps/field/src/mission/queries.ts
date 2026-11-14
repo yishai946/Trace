@@ -6,6 +6,7 @@ import { useSession } from '../state/session';
 export const missionKeys = {
   mission: (missionId: string) => ['missions', missionId] as const,
   polygons: (missionId: string) => ['missions', missionId, 'polygons'] as const,
+  reports: (missionId: string) => ['missions', missionId, 'reports'] as const,
   joinPreview: (code: string) => ['join', code] as const,
 };
 

@@ -15,6 +15,8 @@ import { mapStatus } from '../../mission/mapStatus';
 import { useMission, useMissionPolygons } from '../../mission/queries';
 import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
+import { filterItems, toMapReports, toReportItems } from '../../reports/reportItems';
+import { useMissionReports } from '../../reports/useMissionReports';
 import { usePendingReports } from '../../reports/usePendingReports';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
@@ -34,7 +36,22 @@ export default function MapScreen() {
   const mission = useMission();
   const polygons = useMissionPolygons();
   const assigned = participation?.status === 'assigned' ? participation : null;
-  const area = toMissionArea(polygons.data ?? [], mission.data, assigned?.polygonId);
+  const reports = useMissionReports();
+  // The reports of my polygon and my own, the same ones as on the reports screen (UC-F11, decision 80).
+  const reportItems = toReportItems({
+    reports: reports.data ?? [],
+    pending: pendingReports.items,
+    participation,
+    polygons: polygons.data ?? [],
+    from: null,
+  });
+  const area = toMissionArea(
+    polygons.data ?? [],
+    mission.data,
+    assigned?.polygonId,
+    toMapReports(filterItems(reportItems, 'polygon', assigned?.polygonId ?? null)),
+  );
+  const polygonReports = reports.data ? area.data.reports.length : null;
 
   // Fm13: the participation ended (UC-C18); tracking already stopped with it.
   if (participation?.status === 'ended') {
@@ -92,27 +109,48 @@ export default function MapScreen() {
 
   return (
     <View style={styles.fill}>
-      <MissionMap area={area} />
-      {banner ? (
-        <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-          <View
-            accessibilityLiveRegion="polite"
-            style={[
-              styles.banner,
-              {
-                backgroundColor: color.surface,
-                // A lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
-                borderColor: status ? color.border : color.warning,
-                boxShadow: theme.shadow.shadowPanel,
-              },
-            ]}
-          >
-            <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{banner.text}</Text>
-            {banner.action}
+      {/* The map and what floats over it end where the sheet begins, so the sheet never covers them. */}
+      <View style={styles.fill} testID="map-area">
+        <MissionMap area={area} />
+        {banner ? (
+          <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
+            <View
+              accessibilityLiveRegion="polite"
+              style={[
+                styles.banner,
+                {
+                  backgroundColor: color.surface,
+                  // A lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
+                  borderColor: status ? color.border : color.warning,
+                  boxShadow: theme.shadow.shadowPanel,
+                },
+              ]}
+            >
+              <Text style={[typography.body, styles.bannerText, { color: color.ink }]}>{banner.text}</Text>
+              {banner.action}
+            </View>
+          </SafeAreaView>
+        ) : null}
+        {assigned ? (
+          <View style={styles.reportsButton} pointerEvents="box-none">
+            <View style={[styles.reportsButtonBox, { backgroundColor: color.surface, borderRadius: radius.radiusMd }]}>
+              <Button
+                label="דיווחים בפוליגון"
+                accessibilityLabel={
+                  polygonReports === null ? 'דיווחים בפוליגון' : `דיווחים בפוליגון, ${polygonReports}`
+                }
+                variant="ghost"
+                size="lg"
+                icon="reports"
+                badge={polygonReports === null ? undefined : String(polygonReports)}
+                onPress={() => openScreen(router, routes.reports)}
+              />
+            </View>
           </View>
-        </SafeAreaView>
-      ) : null}
+        ) : null}
+      </View>
       <View
+        testID="map-sheet"
         style={[
           styles.sheet,
           { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel },
@@ -165,6 +203,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   bannerText: { flex: 1 },
+  // Fm06: over the map, at the start side, just above the sheet whatever its height.
+  reportsButton: { position: 'absolute', start: spacing.space6, bottom: spacing.space6 },
+  reportsButtonBox: { alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', gap: spacing.space4 },
   action: { flex: 1 },
   sheet: {

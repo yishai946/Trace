@@ -2,6 +2,7 @@ import { radius, spacing, typography } from '@trace/design';
 import { Pressable, StyleSheet, Text, type PressableProps } from 'react-native';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
+import { Badge } from '../Badge';
 import { Icon, type IconName } from '../Icon';
 
 export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
@@ -16,6 +17,8 @@ export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> 
   icon?: IconName;
   /** A quiet word at the end of the button, such as "אופציונלי" (wireframe `.tcx-meta`). */
   trailing?: string;
+  /** An accent count after the label, such as the reports of the polygon on the map (Fm06). */
+  badge?: string;
 }
 
 /** Trace Console Button for React Native. At least 44px high: the mobile touch target. */
@@ -26,6 +29,7 @@ export function Button({
   block = false,
   icon,
   trailing,
+  badge,
   disabled,
   accessibilityLabel,
   ...props
@@ -63,6 +67,7 @@ export function Button({
     >
       {icon ? <Icon name={icon} color={ink} large={size === 'lg'} /> : null}
       <Text style={[quiet ? typography.body : typography.bodyStrong, { color: ink }]}>{label}</Text>
+      {badge ? <Badge tone="accent" label={badge} /> : null}
       {trailing ? <Text style={[typography.meta, styles.trailing, { color: color.inkMuted }]}>{trailing}</Text> : null}
     </Pressable>
   );

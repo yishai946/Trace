@@ -133,12 +133,12 @@ const MessageReceiptRecorded = z.object({
 const SosSaved = z.object({ type: z.literal('sos.saved'), missionId: z.uuid(), sos: Sos });
 
 /**
- * A report was received, got its photo, was marked Handled or edited (UC-F09, UC-C11). Only the mission's commander
- * gets it for now; UC-F11 adds the polygon's searchers (decision 80).
+ * A report was received, got its photo, was marked Handled or edited (UC-F09, UC-C11). The mission's commander gets
+ * it, and so do the author and the searchers assigned to the report's polygon (UC-F11, decision 80).
  */
 const ReportSaved = z.object({ type: z.literal('report.saved'), missionId: z.uuid(), report: Report });
 
-/** The commander deleted a report (UC-C11, decision 89). Only the mission's commander gets it. */
+/** The commander deleted a report (UC-C11, decision 89). It goes to the same audience as `report.saved`. */
 const ReportDeleted = z.object({ type: z.literal('report.deleted'), missionId: z.uuid(), reportId: z.uuid() });
 
 /** Every event the server sends about a mission, on the `mission:event` channel. */

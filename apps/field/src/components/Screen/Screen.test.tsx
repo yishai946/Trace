@@ -68,4 +68,15 @@ describe('Screen', () => {
     );
     expect(screen.getByTestId('screen-footer')).toHaveStyle({ paddingBottom: `${spacing.space6}px` });
   });
+
+  it('can hold content that fills the screen instead of scrolling', () => {
+    render(
+      <Screen title="דיווחים" scroll={false}>
+        <Text>מפה</Text>
+      </Screen>,
+      { wrapper: Providers },
+    );
+    expect(screen.getByRole('heading', { name: 'דיווחים' })).toBeInTheDocument();
+    expect(screen.getByText('מפה')).toBeInTheDocument();
+  });
 });
