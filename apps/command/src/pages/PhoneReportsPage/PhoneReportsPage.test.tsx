@@ -272,4 +272,12 @@ describe('PhoneReportsPage', () => {
     rerender(<PhoneReportsPage {...base} reports={[...reports]} />);
     expect(screen.queryByRole('region', { name: 'פרטי דיווח' })).toBeNull();
   });
+
+  it('FX4: marking a selected report Handled moves focus to its card, not the page', () => {
+    const open = { ...base, selectedId: reportFinding.id };
+    const { rerender } = render(<PhoneReportsPage {...open} reports={[reportFinding, reportHazard]} />);
+    within(card()).getByRole('button', { name: 'סמן כטופל' }).focus();
+    rerender(<PhoneReportsPage {...open} reports={[{ ...reportFinding, status: 'handled' }, reportHazard]} />);
+    expect(card()).toHaveFocus();
+  });
 });

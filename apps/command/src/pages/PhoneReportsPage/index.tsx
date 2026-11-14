@@ -146,10 +146,11 @@ export function PhoneReportsPage({
   // When the card that had focus goes away (closed, handled, or the screen just opened from the alert), focus would
   // fall to the page: move it to the card that shows, or to the heading.
   const shownId = shown?.id;
+  const shownStatus = shown?.status;
   useEffect(() => {
     if (document.activeElement && document.activeElement !== document.body) return;
     (root.current?.querySelector<HTMLElement>('[data-report-card]') ?? heading.current)?.focus();
-  }, [shownId]);
+  }, [shownId, shownStatus]);
 
   const card = (floating: boolean) =>
     shown && (
