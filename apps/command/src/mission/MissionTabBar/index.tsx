@@ -7,6 +7,8 @@ export type MissionTab = 'board' | 'searchers' | 'reports';
 interface MissionTabBarProps {
   current: MissionTab;
   onNavigate: (tab: MissionTab) => void;
+  /** The count on an item: New reports on "דיווחים". Nothing shows for 0. */
+  counts?: Partial<Record<MissionTab, number>>;
 }
 
 /** Icons from wireframe Cm04: 24 viewBox, 1.8 stroke, shown at 20px. */
@@ -60,20 +62,29 @@ const ITEMS: { tab: MissionTab; label: string; icon: ReactNode }[] = [
 ];
 
 /** The bottom tab bar of the phone mission screen (Console "Command בטלפון", wireframe Cm04). */
-export function MissionTabBar({ current, onNavigate }: MissionTabBarProps) {
+export function MissionTabBar({ current, onNavigate, counts }: MissionTabBarProps) {
   return (
     <nav className={styles.bar} aria-label="ניווט ראשי">
-      {ITEMS.map(({ tab, label, icon }) => (
-        <Link
-          key={tab}
-          className={styles.item}
-          aria-current={current === tab ? 'page' : undefined}
-          onPress={() => onNavigate(tab)}
-        >
-          {icon}
-          {label}
-        </Link>
-      ))}
+      {ITEMS.map(({ tab, label, icon }) => {
+        const count = counts?.[tab] ?? 0;
+        return (
+          <Link
+            key={tab}
+            className={styles.item}
+            aria-label={count > 0 ? `${label}, ${count} חדשים` : undefined}
+            aria-current={current === tab ? 'page' : undefined}
+            onPress={() => onNavigate(tab)}
+          >
+            {icon}
+            {label}
+            {count > 0 && (
+              <span className={styles.count} aria-hidden="true">
+                {count}
+              </span>
+            )}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

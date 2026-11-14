@@ -8,6 +8,7 @@
 }
 
 .item {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -38,4 +39,22 @@
 .item svg {
   width: 20px;
   height: 20px;
+}
+
+/* The New count on an item (wireframe tcx-tabbar__n). Its size is a design-system gap (pending.css). */
+.count {
+  position: absolute;
+  top: var(--space-3);
+  inset-inline-start: calc(50% + var(--space-3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--pending-tabbar-badge);
+  height: var(--pending-tabbar-badge);
+  padding-inline: var(--space-2);
+  border-radius: calc(var(--pending-tabbar-badge) / 2);
+  background-color: var(--accent);
+  color: var(--surface);
+  font: var(--text-callsign);
+  font-variant-numeric: tabular-nums;
 }
