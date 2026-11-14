@@ -16,6 +16,53 @@ const FREE_VALUES = '/%$|^(auto|inherit|normal|none)$/';
 const RAW_COLOR_MESSAGE =
   'Use a color token from @trace/design (themes.<theme>.color.* or var(--token)) instead of a raw color.';
 
+const DESIGN_SYNTAX = [
+  {
+    selector: `Literal[value=${RAW_COLOR}]`,
+    message: RAW_COLOR_MESSAGE,
+  },
+  {
+    selector: `TemplateElement[value.raw=${RAW_COLOR}]`,
+    message: RAW_COLOR_MESSAGE,
+  },
+  {
+    selector: `Property[key.name=/[cC]olor$/][value.type='Literal']:not([value.value=${COLOR_KEYWORDS}])`,
+    message: RAW_COLOR_MESSAGE,
+  },
+  {
+    selector: `JSXAttribute[name.name=/[cC]olor$|^(fill|stroke)$/] > Literal:not([value=${COLOR_KEYWORDS}])`,
+    message: RAW_COLOR_MESSAGE,
+  },
+  {
+    selector: `Property[key.name='fontWeight'][value.type='Literal']${ALLOWED_WEIGHTS}`,
+    message: `Font weight must be one of the design system's weights: ${fontWeights.join(', ')}.`,
+  },
+  {
+    selector: `Property[key.name=${STYLE_KEYS}][value.type='Literal']:not([value.value=0]):not([value.value=${FREE_VALUES}])`,
+    message:
+      'Use a token from @trace/design (spacing, radius, size, typography, themes.*.shadow) instead of a raw style value.',
+  },
+];
+
+// A top-level React component: a PascalCase function, or a PascalCase const holding an arrow function.
+const COMPONENT_NAME = '[id.name=/^[A-Z][a-z]/]';
+const COMPONENT = `:matches(${[
+  `FunctionDeclaration${COMPONENT_NAME}`,
+  `:matches(ExportNamedDeclaration, ExportDefaultDeclaration):has(> FunctionDeclaration${COMPONENT_NAME})`,
+  `:matches(VariableDeclaration, ExportNamedDeclaration):has(VariableDeclarator${COMPONENT_NAME}[init.type='ArrowFunctionExpression'])`,
+].join(', ')})`;
+const ONE_COMPONENT = {
+  selector: `Program > ${COMPONENT} ~ ${COMPONENT}`,
+  message: 'One React component per file: move this component to its own file in the module folder. See AGENTS.md.',
+};
+
+const NOT_PRODUCT_CODE = ['**/*.test.{ts,tsx}', '**/fixtures.ts', '**/testing/**', '**/test/**', '**/scripts/**'];
+const API_CLIENT_ONLY_IN_DATA_MODULES = {
+  group: ['**/api'],
+  importNames: ['apiRequest'],
+  message: 'Components, pages and routes do not call the API: use a query, mutation or sender module. See AGENTS.md.',
+};
+
 export default defineConfig(
   {
     ignores: [
@@ -49,32 +96,78 @@ export default defineConfig(
     // Tests hold fixture data (image sizes, sample colors), not design values.
     ignores: ['**/*.test.{ts,tsx}'],
     rules: {
-      'no-restricted-syntax': [
+      'no-restricted-syntax': ['error', ...DESIGN_SYNTAX],
+    },
+  },
+  {
+    files: ['apps/**/*.tsx'],
+    // An icon set is one module of many small components.
+    ignores: ['**/*.test.tsx', '**/test/**', 'apps/command/src/components/icons.tsx'],
+    rules: { 'no-restricted-syntax': ['error', ...DESIGN_SYNTAX, ONE_COMPONENT] },
+  },
+  {
+    // Size and structure limits. A file or function over a limit is split, never exempted. See AGENTS.md.
+    files: ['apps/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}'],
+    ignores: NOT_PRODUCT_CODE,
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
+    rules: {
+      'max-lines': ['error', { max: 250, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['error', { max: 120, skipBlankLines: true, skipComments: true }],
+      complexity: ['error', 15],
+      'max-depth': ['error', 3],
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
+      ],
+    },
+  },
+  {
+    // Declarative data (the tables, the map style): one long list, with no logic to split.
+    files: ['apps/api/src/db/schema.ts', 'packages/map/src/style/**'],
+    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
+  },
+  {
+    // A route file is one plugin function that registers its routes; the file limit bounds it.
+    files: ['apps/api/src/modules/*/index.ts'],
+    rules: {
+      'max-lines-per-function': 'off',
+      'no-restricted-imports': [
         'error',
         {
-          selector: `Literal[value=${RAW_COLOR}]`,
-          message: RAW_COLOR_MESSAGE,
+          paths: [{ name: 'drizzle-orm', message: 'Routes do not query the database: call the module service.' }],
+          patterns: [
+            { group: ['**/db/schema'], message: 'Routes do not query the database: call the module service.' },
+          ],
         },
+      ],
+    },
+  },
+  {
+    files: ['apps/*/src/components/**', 'apps/*/src/pages/**', 'apps/command/src/App/**'],
+    ignores: NOT_PRODUCT_CODE,
+    rules: { 'no-restricted-imports': ['error', { patterns: [API_CLIENT_ONLY_IN_DATA_MODULES] }] },
+  },
+  {
+    // An Expo Router file only wires a route to its screen component.
+    files: ['apps/field/src/app/**'],
+    rules: {
+      'max-lines': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
+      'no-restricted-imports': ['error', { patterns: [API_CLIENT_ONLY_IN_DATA_MODULES] }],
+    },
+  },
+  {
+    files: ['packages/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
         {
-          selector: `TemplateElement[value.raw=${RAW_COLOR}]`,
-          message: RAW_COLOR_MESSAGE,
-        },
-        {
-          selector: `Property[key.name=/[cC]olor$/][value.type='Literal']:not([value.value=${COLOR_KEYWORDS}])`,
-          message: RAW_COLOR_MESSAGE,
-        },
-        {
-          selector: `JSXAttribute[name.name=/[cC]olor$|^(fill|stroke)$/] > Literal:not([value=${COLOR_KEYWORDS}])`,
-          message: RAW_COLOR_MESSAGE,
-        },
-        {
-          selector: `Property[key.name='fontWeight'][value.type='Literal']${ALLOWED_WEIGHTS}`,
-          message: `Font weight must be one of the design system's weights: ${fontWeights.join(', ')}.`,
-        },
-        {
-          selector: `Property[key.name=${STYLE_KEYS}][value.type='Literal']:not([value.value=0]):not([value.value=${FREE_VALUES}])`,
-          message:
-            'Use a token from @trace/design (spacing, radius, size, typography, themes.*.shadow) instead of a raw style value.',
+          patterns: [
+            {
+              group: ['**/apps/**', '@trace/api', '@trace/command', '@trace/field'],
+              message: 'Packages never import from apps.',
+            },
+          ],
         },
       ],
     },
