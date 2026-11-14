@@ -20,6 +20,8 @@ export const routes = {
   sighting: '/sighting',
   /** Fm08: a new report. */
   report: '/report',
+  /** Edit my own report: category and text (UC-C11, decision 88). Opened with `?id=` of the report. */
+  reportEdit: '/report-edit',
   /** Fm11: messages from the commander. */
   messages: '/messages',
   /** Fm12: SOS. */

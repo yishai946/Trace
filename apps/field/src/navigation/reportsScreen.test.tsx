@@ -143,6 +143,21 @@ describe('the reports screen (Fm10)', () => {
     expect(screen.queryByRole('img', { name: 'מפת דיווחים בפוליגון' })).toBeNull();
   });
 
+  it('opens the edit screen from my own open report, and not from a friend’s', async () => {
+    const mineReport = own({ text: 'שלי' });
+    server.reports = [makeReport({ text: 'של חבר' }), mineReport];
+    show();
+    fireEvent.click(await screen.findByRole('button', { name: /של חבר/ }));
+    expect(screen.queryByRole('button', { name: 'עריכה' })).toBeNull();
+    const mine = screen.getByRole('button', { name: /שלי/ });
+    fireEvent.click(mine);
+    fireEvent.click(screen.getByRole('button', { name: 'עריכה' }));
+    expect(router.push).toHaveBeenCalledWith(
+      { pathname: '/report-edit', params: { id: mineReport.id } },
+      { dangerouslySingular: true },
+    );
+  });
+
   it('opens a report from its symbol on the map', async () => {
     const report = makeReport({ text: 'גשר שבור' });
     server.reports = [report];
