@@ -12,7 +12,7 @@ import type { z } from 'zod';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { participations, trackPoints } from '../../db/schema';
-import { AppError, notFound } from '../../errors';
+import { notFound, participationEnded } from '../../errors';
 
 /**
  * How far past the server's clock a point may be dated and still move the last position. A phone whose clock runs
@@ -48,7 +48,7 @@ export async function recordTrackPoints(
       .for('update');
     if (!participation) throw notFound('Mission');
     if (!acceptsTrackPoints(participation.status)) {
-      throw new AppError(409, 'PARTICIPATION_ENDED', 'The activity in this mission has ended');
+      throw participationEnded();
     }
 
     const inserted = await tx

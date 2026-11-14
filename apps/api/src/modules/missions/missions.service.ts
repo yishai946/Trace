@@ -13,7 +13,8 @@ import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { lkpPoints, missionPhotos, missions, participations } from '../../db/schema';
-import { AppError, notFound } from '../../errors';
+import { notFound, missionEnded, unsupportedPhoto } from '../../errors';
+import { lockMission } from '../lockMission';
 import { recordEvent } from '../timeline/timeline.service';
 
 /** The request body plus the commander who creates the mission and will manage it. */
@@ -198,15 +199,10 @@ export async function createMission(
  */
 export async function updateRallyPoint(db: Db, missionId: string, rallyPoint: PointGeometry): Promise<Mission> {
   await db.transaction(async (tx) => {
-    const [mission] = await tx
-      .select({ status: missions.status })
-      .from(missions)
-      .where(eq(missions.id, missionId))
-      .for('update');
-    if (!mission) throw notFound('Mission');
-    if (!canChangeRallyPoint(mission.status)) {
-      throw new AppError(409, 'MISSION_ENDED', 'The rally point of an ended mission cannot be changed');
-    }
+    await lockMission(tx, missionId, {
+      allowed: canChangeRallyPoint,
+      refusal: () => missionEnded('The rally point of an ended mission cannot be changed'),
+    });
     await tx.update(missions).set({ rallyPoint, updatedAt: new Date() }).where(eq(missions.id, missionId));
   });
   return getMission(db, missionId);
@@ -220,15 +216,10 @@ export type MissionDetailsInput = z.output<typeof UpdateMissionDetailsBody>;
  */
 export async function updateMissionDetails(db: Db, missionId: string, details: MissionDetailsInput): Promise<Mission> {
   await db.transaction(async (tx) => {
-    const [mission] = await tx
-      .select({ status: missions.status })
-      .from(missions)
-      .where(eq(missions.id, missionId))
-      .for('update');
-    if (!mission) throw notFound('Mission');
-    if (!canEditMissionDetails(mission.status)) {
-      throw new AppError(409, 'MISSION_ENDED', 'The details of an ended mission cannot be changed');
-    }
+    await lockMission(tx, missionId, {
+      allowed: canEditMissionDetails,
+      refusal: () => missionEnded('The details of an ended mission cannot be changed'),
+    });
     const { missingPerson } = details;
     await tx
       .update(missions)
@@ -259,11 +250,9 @@ export interface MissionPhoto {
 export async function setMissionPhoto(db: Db, missionId: string, data: Buffer): Promise<Mission> {
   const [mission] = await db.select({ status: missions.status }).from(missions).where(eq(missions.id, missionId));
   if (!mission) throw notFound('Mission');
-  if (!canEditMissionDetails(mission.status)) {
-    throw new AppError(409, 'MISSION_ENDED', 'The photo of an ended mission cannot be changed');
-  }
+  if (!canEditMissionDetails(mission.status)) throw missionEnded('The photo of an ended mission cannot be changed');
   const contentType = detectPhotoType(data);
-  if (!contentType) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'The photo must be a JPEG, PNG or WebP image');
+  if (!contentType) throw unsupportedPhoto();
   await db
     .insert(missionPhotos)
     .values({ missionId, contentType, data })

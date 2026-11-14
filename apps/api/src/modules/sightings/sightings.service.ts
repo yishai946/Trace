@@ -12,8 +12,9 @@ import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { lkpPoints, missions, participations, searchers, sightings, users } from '../../db/schema';
-import { AppError, notFound } from '../../errors';
+import { lkpPoints, participations, searchers, sightings, users } from '../../db/schema';
+import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
+import { lockMission } from '../lockMission';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 export type CreateSightingInput = z.output<typeof CreateSightingBody> & {
@@ -97,17 +98,11 @@ async function currentLkp(db: Db | Tx, missionId: string): Promise<CurrentLkp | 
 const lockedAt = sql<Date>`clock_timestamp()`;
 
 /** Locks the mission row so concurrent LKP changes in one mission run one after another. */
-async function lockMission(tx: Tx, missionId: string) {
-  const [mission] = await tx
-    .select({ status: missions.status })
-    .from(missions)
-    .where(eq(missions.id, missionId))
-    .for('update');
-  if (!mission) throw notFound('Mission');
-  if (!canChangeLkp(mission.status)) {
-    throw new AppError(409, 'MISSION_ENDED', 'LKP and sightings of an ended mission cannot be changed');
-  }
-}
+const lockLkp = (tx: Tx, missionId: string) =>
+  lockMission(tx, missionId, {
+    allowed: canChangeLkp,
+    refusal: () => missionEnded('LKP and sightings of an ended mission cannot be changed'),
+  });
 
 /**
  * The mission's sightings, oldest first. The route's access check has already answered 404 for an unknown mission.
@@ -140,7 +135,7 @@ export async function createSighting(
   input: CreateSightingInput,
 ): Promise<{ sighting: Sighting; created: boolean }> {
   return db.transaction(async (tx) => {
-    await lockMission(tx, input.missionId);
+    await lockLkp(tx, input.missionId);
     if (input.searcherId !== null) {
       const [participation] = await tx
         .select({ status: participations.status })
@@ -148,7 +143,7 @@ export async function createSighting(
         .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)));
       if (!participation) throw notFound('Mission');
       if (!canReportSighting(participation.status)) {
-        throw new AppError(409, 'PARTICIPATION_ENDED', 'The activity in this mission has ended');
+        throw participationEnded();
       }
     }
     const [inserted] = await tx
@@ -192,7 +187,7 @@ export async function decideLkp(
   input: { missionId: string; sightingId: string; decision: LkpDecision; userId: string },
 ): Promise<LkpDecisionResult> {
   return db.transaction(async (tx) => {
-    await lockMission(tx, input.missionId);
+    await lockLkp(tx, input.missionId);
     const found = await findSighting(tx, input.missionId, input.sightingId);
     const current = await currentLkp(tx, input.missionId);
     if (!isLkpCandidate(found, current?.observedAt ?? null)) {

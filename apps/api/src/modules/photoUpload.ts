@@ -1,6 +1,6 @@
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
 import type { FastifyError, FastifyInstance } from 'fastify';
-import { AppError } from '../errors';
+import { AppError, unsupportedPhoto } from '../errors';
 
 /** Fastify's own errors for a photo upload, in the API's error codes. Anything else goes to the app's handler. */
 export function photoUploadError(error: FastifyError): Error {
@@ -10,7 +10,7 @@ export function photoUploadError(error: FastifyError): Error {
     });
   }
   if (error.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE') {
-    return new AppError(415, 'UNSUPPORTED_PHOTO', 'The photo must be a JPEG, PNG or WebP image');
+    return unsupportedPhoto();
   }
   return error;
 }
