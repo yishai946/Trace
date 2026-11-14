@@ -2,7 +2,7 @@ import type { Message, MissionPolygon, Participant } from '@trace/schemas';
 import { CallsignChip } from '../../components/CallsignChip';
 import { timeLabel } from '../../mission/timeLabel';
 import styles from './MessagesPage.module.css';
-import { UrgencyBadge } from './SentMessages';
+import { UrgencyBadge } from './UrgencyBadge';
 import { byAttention, counts, isFinal, recipientsLabel, recipientStateLabel } from './messageView';
 
 const BODY_PREVIEW = 40;

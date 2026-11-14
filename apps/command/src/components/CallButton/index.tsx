@@ -1,6 +1,6 @@
 import { useId } from 'react';
 import { telHref } from '@trace/domain';
-import { LinkButton } from '../Button';
+import { LinkButton } from '../Button/LinkButton';
 import { PhoneIcon } from '../icons';
 import styles from './CallButton.module.css';
 

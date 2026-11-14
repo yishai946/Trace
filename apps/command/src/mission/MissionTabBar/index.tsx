@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-aria-components';
 import styles from './MissionTabBar.module.css';
+import { Icon } from './Icon';
 
 export type MissionTab = 'board' | 'searchers' | 'reports';
 
@@ -9,23 +10,6 @@ interface MissionTabBarProps {
   onNavigate: (tab: MissionTab) => void;
   /** The count on an item: New reports on "דיווחים". Nothing shows for 0. */
   counts?: Partial<Record<MissionTab, number>>;
-}
-
-/** Icons from wireframe Cm04: 24 viewBox, 1.8 stroke, shown at 20px. */
-function Icon({ children }: { children: ReactNode }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {children}
-    </svg>
-  );
 }
 
 const ITEMS: { tab: MissionTab; label: string; icon: ReactNode }[] = [

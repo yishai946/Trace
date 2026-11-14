@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { Button, LinkButton } from '.';
+import { Button } from '.';
+import { LinkButton } from './LinkButton';
 
 describe('Button', () => {
   it('calls onPress when clicked', () => {
