@@ -107,6 +107,15 @@ All contributors and coding assistants should preserve existing behavior, follow
 - Sanitize or encode untrusted content at the correct output context to prevent injection vulnerabilities.
 - Add error handling where failure would otherwise cause data loss, inconsistent state, or an unclear user experience.
 
+### Logging
+
+- The API logs only through the Fastify logger (`app.log`, `request.log`), never `console`. CLI scripts in `apps/api/src/scripts/` may print their result with `console.info` / `console.error`.
+- Client apps (`apps/command`, `apps/field`) ship no `console` calls (ESLint `no-console`). Show the user an error state instead; error tracking comes with monitoring.
+- Levels: `error` for a failure someone must look at (unexpected exception, a failed background job); `warn` for a recoverable problem (some push tokens failed); `info` for key events (start-up, one line per request, sign-in, SOS, mission state changes); `debug` for detail useful while developing.
+- `LOG_LEVEL` defaults to `info` in production, `debug` in development and `silent` in tests.
+- Every request writes one `request completed` line. Routes called very often (health checks, GPS uploads) set `config: { requestLogLevel: 'debug' }`.
+- Never log credentials or personal data: passwords, tokens, cookies, OTP codes outside development, phone numbers, searchers' exact locations. The logger censors the common field names (`apps/api/src/logging`); do not rely on it, log ids instead.
+
 ---
 
 ## 9. Comments and Documentation

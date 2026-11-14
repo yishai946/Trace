@@ -44,6 +44,12 @@ export default defineConfig(
     extends: [reactHooks.configs.flat.recommended],
   },
   {
+    // Client code ships to users' browsers and phones: no console output (logging convention, CODING_STANDARDS.md §8).
+    files: ['apps/command/**/*.{ts,tsx,js,jsx}', 'apps/field/**/*.{ts,tsx,js,jsx}'],
+    ignores: ['**/*.test.{ts,tsx}', '**/*.config.{ts,js,mjs,cjs}', '**/scripts/**'],
+    rules: { 'no-console': 'error' },
+  },
+  {
     // Design values come only from @trace/design (the Trace Console design system). See AGENTS.md.
     files: ['apps/**/*.{ts,tsx,js,jsx}'],
     // Tests hold fixture data (image sizes, sample colors), not design values.
