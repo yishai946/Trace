@@ -1,8 +1,8 @@
 import { radius, spacing, typography } from '@trace/design';
 import { StyleSheet, Text, View } from 'react-native';
-import { useTheme } from '../theme';
-import { Icon, type IconName } from './Icon';
-import { pendingTokens } from '../theme/pending';
+import { useTheme } from '../../theme';
+import { Icon, type IconName } from '../Icon';
+import { pendingTokens } from '../../theme/pending';
 
 export type BadgeTone = 'neutral' | 'ok' | 'warn' | 'accent';
 
