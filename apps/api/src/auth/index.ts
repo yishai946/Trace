@@ -7,6 +7,7 @@ import { OTP_LENGTH } from '@trace/schemas';
 import { asc, eq, lte, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { accounts, otpRequests, sessions, users, verifications } from '../db/schema';
+import type { FastifyBaseLogger } from 'fastify';
 import type { Env } from '../env';
 
 /** Delivers a sign-in code to a searcher's phone. */
@@ -16,6 +17,8 @@ interface AuthOptions {
   env: Env;
   db: Db;
   sendOtp: OtpSender;
+  /** Better Auth logs here instead of to the console. */
+  log?: FastifyBaseLogger;
 }
 
 /** E.164: a plus sign, a country code and up to 15 digits. */
@@ -65,8 +68,15 @@ async function claimOtpRequest(db: Db, phone: string) {
  * the session cookie; Field can send the session token as `Authorization: Bearer <token>` instead. A searcher gets a
  * profile when they enter their name (`PUT /api/searchers/me`), and each phone number can request only so many codes.
  */
-export function createAuth({ env, db, sendOtp }: AuthOptions) {
+export function createAuth({ env, db, sendOtp, log }: AuthOptions) {
   return betterAuth({
+    logger: log
+      ? {
+          level: 'warn',
+          log: (level, message, ...args) =>
+            args.length > 0 ? log[level]({ details: args }, `Auth: ${message}`) : log[level](`Auth: ${message}`),
+        }
+      : undefined,
     baseURL: env.API_URL,
     basePath: '/api/auth',
     secret: env.AUTH_SECRET,
