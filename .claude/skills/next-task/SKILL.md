@@ -28,6 +28,8 @@ Rules in `AGENTS.md` and `docs/CODING_STANDARDS.md` (and `apps/field/AGENTS.md` 
 
 ## Decisions you make and decisions you ask about
 
+**An autonomous run is one invoked with `--merge` (the recurring cloud task always is).** Everything below about deciding TBD values and about the design artifacts applies only to it; a run without `--merge` asks about TBD values (Questions) and follows the live-artifact and design-sync rules in `AGENTS.md`.
+
 Values the spec leaves open (TBD), missing details, texts, layout, naming, ordering, defaults: **decide**, with your best recommendation, and record each in the PR under **Decisions made without spec** (what, the alternatives, why). Do not wait for a human.
 
 Stop and ask (see Questions) only when the task needs one of these:
@@ -90,7 +92,7 @@ BLOCKING findings go to the implementer, then QA verifies once more. At most **2
 
 ## 6. Design deviations
 
-Never edit `packages/design/source/`, `packages/design/wireframes/` or `packages/design/src/generated/` by hand, and do not update the claude.ai artifacts in this run. Deviations from the wireframe or Trace Console, and any value, pattern or component the design system lacks, go in the PR under **Design deviations** (screen, what differs, why, the token or component to add). They do not block the merge and need no `design-change` label; the design artifact is brought up to date from these lists afterwards.
+Without `--merge`, follow the design rules in `AGENTS.md` instead (live artifacts, `/sync-design`, update the design after UI work). In an autonomous run: never edit `packages/design/source/`, `packages/design/wireframes/` or `packages/design/src/generated/` by hand, and never update the claude.ai artifacts in this run. Deviations from the wireframe or Trace Console, and any value, pattern or component the design system lacks, go in the PR under **Design deviations** (screen, what differs, why, the token or component to add). They do not block the merge and need no `design-change` label; the design artifact is brought up to date from these lists afterwards.
 
 ## 7. Open the Pull Request
 
