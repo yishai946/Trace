@@ -3,7 +3,8 @@ import { CallsignChip } from '../../components/CallsignChip';
 import { timeLabel } from '../../mission/timeLabel';
 import styles from './MessagesPage.module.css';
 import { UrgencyBadge } from './UrgencyBadge';
-import { byAttention, counts, isFinal, recipientsLabel, recipientStateLabel } from './messageView';
+import { byAttention, isFinal, recipientsLabel, recipientStateLabel } from './messageView';
+import { DeliveryCounts } from './DeliveryCounts';
 
 const BODY_PREVIEW = 40;
 
@@ -16,12 +17,10 @@ export interface RecipientDetailProps {
 const stateOf = (r: Message['recipients'][number]) =>
   r.status === 'acknowledged' ? 'acknowledged' : r.status === 'read' ? 'read' : r.deliveredAt ? 'delivered' : 'pending';
 
-/** The time of the latest step: acknowledged, else read, else delivered. */
 const lastTime = (r: Message['recipients'][number]) => r.acknowledgedAt ?? r.readAt ?? r.deliveredAt;
 
 /** Who got the selected message and where each one stands (wireframe Cd11 "פירוט לפי נמען"). */
 export function RecipientDetail({ message, participants, polygons }: RecipientDetailProps) {
-  const total = counts(message);
   const preview = message.body.length > BODY_PREVIEW ? `${message.body.slice(0, BODY_PREVIEW)}…` : message.body;
   const rows = [...message.recipients].sort(byAttention);
 
@@ -34,28 +33,7 @@ export function RecipientDetail({ message, participants, polygons }: RecipientDe
           {recipientsLabel(message)}, <span className={styles.num}>{timeLabel(message.sentAt)}</span>, &quot;{preview}
           &quot;
         </p>
-        <div className={`${styles.counts} ${styles.fullRow}`}>
-          <span>
-            נמסרה{' '}
-            <b className={styles.num}>
-              {total.delivered}/{total.total}
-            </b>
-          </span>
-          <span>
-            נקראה{' '}
-            <b className={styles.num}>
-              {total.read}/{total.total}
-            </b>
-          </span>
-          {message.urgency === 'critical' && (
-            <span>
-              אושרה{' '}
-              <b className={styles.num}>
-                {total.acknowledged}/{total.total}
-              </b>
-            </span>
-          )}
-        </div>
+        <DeliveryCounts message={message} />
       </div>
       <div className={styles.scroll}>
         <table className={`${styles.table} ${styles.fixed}`}>

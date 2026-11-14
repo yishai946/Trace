@@ -79,6 +79,44 @@ function searcherOf(event: TimelineEvent): Segment[] {
   return event.actor.kind === 'searcher' ? [{ callsign: event.actor.callsign }, ` ${event.actor.name}`] : [];
 }
 
+type EventOf<T extends TimelineEvent['type']> = Extract<TimelineEvent, { type: T }>;
+
+/** "[07] שם " before the text, when a searcher performed the event. */
+const bySearcher = (event: TimelineEvent, text: string): Segment[] => {
+  const who = searcherOf(event);
+  return [...who, `${who.length ? ' ' : ''}${text}`];
+};
+
+const endedText = (event: EventOf<'mission.ended'>) =>
+  event.details.outcome === 'located' ? 'המסע הסתיים, הנעדר אותר' : 'המסע הסתיים, החיפוש הופסק';
+
+function lkpText({ details: { observedAt, previousObservedAt } }: EventOf<'lkp.changed'>): string {
+  if (previousObservedAt === null) return 'LKP נקבע ראשונית';
+  return `LKP עודכן ל-${formatEventTime(observedAt, false)}, קודם ${formatEventTime(previousObservedAt, false)}`;
+}
+
+function reportSegments(event: EventOf<'report.submitted'>, label: string): Segment[] {
+  const who = searcherOf(event);
+  return who.length ? [`${label}, מ-`, ...who] : [label];
+}
+
+function contactSegments(event: EventOf<'contact.lost'>, label: string): Segment[] {
+  const { callsign } = event.subject;
+  return ['אבד קשר עם ', ...(callsign === null ? [label] : [{ callsign }, ` ${label}`])];
+}
+
+const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] => [
+  ...bySearcher(event, 'הפעיל SOS'),
+  ...(event.subject.label === null ? [] : [`, ${label}`]),
+];
+
+const segmented = (badge: string, segments: Segment[], danger = false): EventView => ({
+  badge,
+  danger,
+  segments,
+  destination: null,
+});
+
 /** How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. */
 export function describeEvent(event: TimelineEvent): EventView {
   const label = event.subject.label ?? '';
@@ -90,67 +128,24 @@ export function describeEvent(event: TimelineEvent): EventView {
     case 'mission.resumed':
       return plain('השהיה', 'המסע חודש');
     case 'mission.ended':
-      return plain(
-        'מסע',
-        event.details.outcome === 'located' ? 'המסע הסתיים, הנעדר אותר' : 'המסע הסתיים, החיפוש הופסק',
-      );
-    case 'lkp.changed': {
-      const { observedAt, previousObservedAt } = event.details;
-      return plain(
-        'LKP',
-        previousObservedAt === null
-          ? 'LKP נקבע ראשונית'
-          : `LKP עודכן ל-${formatEventTime(observedAt, false)}, קודם ${formatEventTime(previousObservedAt, false)}`,
-        'map',
-      );
-    }
+      return plain('מסע', endedText(event));
+    case 'lkp.changed':
+      return plain('LKP', lkpText(event), 'map');
     case 'polygon.created':
       return plain('פוליגון', `${label} נוצר`, 'map');
     case 'polygon.boundary_changed':
       return plain('פוליגון', boundaryText(label, event.details.searchersOutside), 'map');
     case 'polygon.deleted':
       return plain('פוליגון', `${label} נמחק מהמפה`);
-    case 'search.started': {
-      const who = searcherOf(event);
-      return {
-        badge: 'חיפוש',
-        danger: false,
-        segments: [...who, `${who.length ? ' ' : ''}התחיל חיפוש ב${label}`],
-        destination: null,
-      };
-    }
-    case 'report.submitted': {
-      const who = searcherOf(event);
-      return {
-        badge: 'דיווח',
-        danger: false,
-        segments: who.length ? [`${label}, מ-`, ...who] : [label],
-        destination: null,
-      };
-    }
+    case 'search.started':
+      return segmented('חיפוש', bySearcher(event, `התחיל חיפוש ב${label}`));
+    case 'report.submitted':
+      return segmented('דיווח', reportSegments(event, label));
     case 'coverage.threshold_reached':
       return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
-    case 'contact.lost': {
-      const { callsign } = event.subject;
-      return {
-        badge: 'קשר',
-        danger: false,
-        segments: ['אבד קשר עם ', ...(callsign === null ? [label] : [{ callsign }, ` ${label}`])],
-        destination: null,
-      };
-    }
-    case 'sos.activated': {
-      const who = searcherOf(event);
-      return {
-        badge: 'SOS',
-        danger: true,
-        segments: [
-          ...who,
-          `${who.length ? ' ' : ''}הפעיל SOS`,
-          ...(event.subject.label === null ? [] : [`, ${label}`]),
-        ],
-        destination: null,
-      };
-    }
+    case 'contact.lost':
+      return segmented('קשר', contactSegments(event, label));
+    case 'sos.activated':
+      return segmented('SOS', sosSegments(event, label), true);
   }
 }
