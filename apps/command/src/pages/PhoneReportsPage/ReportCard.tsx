@@ -66,6 +66,7 @@ export function ReportCard({
       ref={section}
       tabIndex={-1}
       className={styles.card}
+      data-report-card=""
       data-floating={floating || undefined}
       aria-label="פרטי דיווח"
       onKeyDown={onKeyDown}

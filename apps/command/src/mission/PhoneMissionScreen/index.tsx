@@ -1,4 +1,4 @@
-import { isCriticalReport } from '@trace/domain';
+import { isCriticalReport, isMissionEnded } from '@trace/domain';
 import type { Mission, MissionPolygon, Participant, Report } from '@trace/schemas';
 import { useState, type ReactNode } from 'react';
 import styles from './PhoneMissionScreen.module.css';
@@ -92,7 +92,8 @@ export function PhoneMissionScreen({
   // The sheet's own reports tab lists them in the sheet, so it keeps "לוח" marked.
   const current: MissionTab = screen === 'reports' ? 'reports' : tab === 'searchers' ? 'searchers' : 'board';
   const newReports = reports ? statusCounts(reports).new : 0;
-  const critical = (reports ?? []).some(isCriticalReport);
+  // An ended mission is read-only: the alert would lead to a report that cannot be handled.
+  const critical = !isMissionEnded(mission.status) && (reports ?? []).some(isCriticalReport);
 
   return (
     <div className={styles.phone}>

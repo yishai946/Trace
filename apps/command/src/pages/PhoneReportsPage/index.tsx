@@ -11,7 +11,7 @@ import type {
   Sighting,
   UpdateReportBody,
 } from '@trace/schemas';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { ConnectionStatus, type Connection } from '../../components/ConnectionStatus';
@@ -85,17 +85,42 @@ export function PhoneReportsPage({
   /** The report the commander just chose: its card takes focus. */
   const [focusId, setFocusId] = useState<string | null>(null);
   const [focus, setFocus] = useState<MapFocus | null>(null);
+  /** A critical report that arrived while the screen was open: its card shows, even over another selection. */
+  const [arrivedId, setArrivedId] = useState<string | null>(null);
+  /** The critical reports already seen; null until the reports load. */
+  const [seen, setSeen] = useState<Set<string> | null>(null);
   const listRef = useRef<HTMLElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
 
   const all = reports ?? [];
   const counts = statusCounts(all);
-  const visible = filterByChip(all, chip);
-  const shown = closed ? null : (visible.find((r) => r.id === selectedId) ?? visible.find(isCriticalReport) ?? null);
+  const visible = useMemo(() => filterByChip(reports ?? [], chip), [reports, chip]);
+
+  if (reports) {
+    const critical = reports.filter(isCriticalReport).map((r) => r.id);
+    const fresh = seen ? critical.filter((id) => !seen.has(id)) : [];
+    if (!seen || fresh.length > 0) {
+      setSeen(new Set([...(seen ?? []), ...critical]));
+      if (fresh.length > 0) {
+        setClosed(false);
+        setArrivedId(fresh[0] ?? null);
+      }
+    }
+  }
+
+  const shown = closed
+    ? null
+    : (visible.find((r) => r.id === arrivedId) ??
+      visible.find((r) => r.id === selectedId) ??
+      visible.find(isCriticalReport) ??
+      null);
   const rows = visible.filter((r) => r.id !== shown?.id);
 
   const select = (id: string) => {
     onSelect(id);
     setClosed(false);
+    setArrivedId(null);
     setFocusId(id);
     const report = all.find((r) => r.id === id);
     if (report) setFocus({ center: report.position.coordinates as LngLat });
@@ -111,12 +136,20 @@ export function PhoneReportsPage({
         participants,
         sightings: sightings ?? [],
         lkps: lkps ?? [],
-        reports: filterByChip(reports ?? [], chip),
+        reports: visible,
         selectedPolygonId: null,
         editingPolygonId: null,
       }),
-    [mission, polygons, participants, sightings, lkps, reports, chip],
+    [mission, polygons, participants, sightings, lkps, visible],
   );
+
+  // When the card that had focus goes away (closed, handled, or the screen just opened from the alert), focus would
+  // fall to the page: move it to the card that shows, or to the heading.
+  const shownId = shown?.id;
+  useEffect(() => {
+    if (document.activeElement && document.activeElement !== document.body) return;
+    (root.current?.querySelector<HTMLElement>('[data-report-card]') ?? heading.current)?.focus();
+  }, [shownId]);
 
   const card = (floating: boolean) =>
     shown && (
@@ -160,9 +193,11 @@ export function PhoneReportsPage({
     ) : null;
 
   return (
-    <div className={styles.page}>
+    <div ref={root} className={styles.page}>
       <header className={styles.bar}>
-        <h1 className={styles.title}>דיווחים</h1>
+        <h1 ref={heading} tabIndex={-1} className={styles.title}>
+          דיווחים
+        </h1>
         <ConnectionStatus connection={connection} />
       </header>
       <Tabs selectedKey={view} onSelectionChange={(key) => setView(key as 'list' | 'map')} className={styles.tabs}>

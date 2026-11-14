@@ -236,4 +236,40 @@ describe('PhoneReportsPage', () => {
     expect(card().textContent).toContain('ישי');
     expect(within(card()).queryByText('04')).toBeNull();
   });
+
+  it('FX1: takes focus into the card when it opens with focus lost', () => {
+    renderPage({ selectedId: reportFinding.id });
+    expect(card()).toHaveFocus();
+  });
+
+  it('FX2: closing the card moves focus to the heading', () => {
+    renderPage();
+    fireEvent.click(within(card()).getByRole('button', { name: 'סגור' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'דיווחים' })).toHaveFocus();
+  });
+
+  it('FX3: marking the critical card Handled keeps focus on the page', () => {
+    const { rerender } = render(<PhoneReportsPage {...base} reports={[reportLocated, reportFinding]} />);
+    within(card()).getByRole('button', { name: 'סמן כטופל' }).focus();
+    const handled = { ...reportLocated, status: 'handled' as const };
+    rerender(<PhoneReportsPage {...base} reports={[handled, reportFinding]} />);
+    expect(document.activeElement).not.toBe(document.body);
+    expect(screen.getByRole('heading', { level: 1, name: 'דיווחים' })).toHaveFocus();
+  });
+
+  it('CL1: a new critical report that arrives shows its card again, after the card was closed', () => {
+    const open = { ...base, selectedId: reportFinding.id };
+    const { rerender } = render(<PhoneReportsPage {...open} reports={[reportFinding, reportHazard]} />);
+    fireEvent.click(within(card()).getByRole('button', { name: 'סגור' }));
+    expect(screen.queryByRole('region', { name: 'פרטי דיווח' })).toBeNull();
+    rerender(<PhoneReportsPage {...open} reports={[reportLocated, reportFinding, reportHazard]} />);
+    expect(within(card()).getByRole('heading', { name: 'הנעדר אותר' })).toBeTruthy();
+  });
+
+  it('CL2: a critical report that was already there stays closed', () => {
+    const { rerender } = render(<PhoneReportsPage {...base} reports={reports} />);
+    fireEvent.click(within(card()).getByRole('button', { name: 'סגור' }));
+    rerender(<PhoneReportsPage {...base} reports={[...reports]} />);
+    expect(screen.queryByRole('region', { name: 'פרטי דיווח' })).toBeNull();
+  });
 });

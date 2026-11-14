@@ -181,4 +181,9 @@ describe('PhoneMissionScreen', () => {
     );
     expect(screen.getByRole('alert', { name: 'התראה קריטית' })).toBeInTheDocument();
   });
+
+  it('PM6: shows no critical alert once the mission ended', () => {
+    renderScreen({ mission: { ...mission, status: 'ended_stopped' } });
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+  });
 });
