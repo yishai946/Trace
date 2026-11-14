@@ -23,6 +23,10 @@ When a task is done and its checks pass, and before opening its Pull Request, st
 
 Fix what it finds, or explain in the Pull Request why not. The Pull Request description has a **Review** section with what was found and what was done about it.
 
+# Autonomous runs
+
+The recurring cloud task and `/next-task --merge` follow [`.claude/skills/next-task/SKILL.md`](.claude/skills/next-task/SKILL.md). In such a run, an open question does not stop the work unless it is fateful (destructive migration or hard-to-undo data model, permissions or authentication, safety and field rules, a contradiction with an explicit decision-log entry). Decide a TBD value or a minor detail with your best recommendation and record it in the Pull Request under **Decisions made without spec**. The Trace Console and the wireframes are inspiration: deviations are listed in the Pull Request under **Design deviations** and do not block it, and the live artifacts are not read or updated in the run. This overrides only the TBD line under Product source of truth, the live-artifact steps under Design system, and the separate reviewer agent under Review before the Pull Request (the QA agent for UI and the Codex review replace it). Tokens, both themes, RTL, Workspaces and every other rule still apply to the agent.
+
 # Workspaces
 
 pnpm monorepo: deployable apps go in `apps/*` (e.g. `@trace/api`, `@trace/command`, `@trace/field`), shared code goes in `packages/*` (e.g. `@trace/domain` for pure business rules, `@trace/schemas` for request/response validation shared by client and server). Packages never import from apps. Every `tsconfig.json` extends `tsconfig.base.json`.
