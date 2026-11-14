@@ -1,12 +1,22 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { PhoneMissionScreen } from '.';
-import { mission, participants, polygonA, polygonB } from '../fixtures';
+import { mission, participants, polygonA, polygonB, reportFinding, reportLocated, reports } from '../fixtures';
 
-function renderScreen(props: Partial<Parameters<typeof PhoneMissionScreen>[0]> = {}) {
+type Props = Parameters<typeof PhoneMissionScreen>[0];
+
+/** Holds which screen is showing, the way the console does. */
+function Harness(props: Props) {
+  const [screen, setScreen] = useState<Props['screen']>(props.screen);
+  return <PhoneMissionScreen {...props} screen={screen} onScreenChange={setScreen} />;
+}
+
+function renderScreen(props: Partial<Props> = {}) {
   const onJoinOpenChange = vi.fn();
-  render(
-    <PhoneMissionScreen
+  const onOpenReport = vi.fn();
+  const view = render(
+    <Harness
       mission={mission}
       missions={[mission]}
       connection={{ state: 'up', label: 'זמין', detail: 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' }}
@@ -20,10 +30,16 @@ function renderScreen(props: Partial<Parameters<typeof PhoneMissionScreen>[0]> =
       polygons={[polygonA, polygonB]}
       workspace={<div>המפה</div>}
       renderSearch={(close) => <button onClick={close}>בחר מקום</button>}
+      screen="map"
+      onScreenChange={vi.fn()}
+      reportsScreen={<div>מסך הדיווחים</div>}
+      reports={reports}
+      reportsFailed={false}
+      onOpenReport={onOpenReport}
       {...props}
     />,
   );
-  return { onJoinOpenChange };
+  return { onJoinOpenChange, onOpenReport, ...view };
 }
 
 describe('PhoneMissionScreen', () => {
@@ -47,9 +63,12 @@ describe('PhoneMissionScreen', () => {
 
   it('follows a tab chosen in the sheet in the tab bar', () => {
     renderScreen();
-    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים' }));
-    expect(screen.getByRole('link', { name: 'דיווחים' })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'לוח' })).not.toHaveAttribute('aria-current');
+    fireEvent.click(screen.getByRole('tab', { name: 'מחפשים 2' }));
+    expect(screen.getByRole('link', { name: 'מחפשים' })).toHaveAttribute('aria-current', 'page');
+    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים 2' }));
+    expect(screen.getByRole('link', { name: 'דיווחים, 2 חדשים' })).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('link', { name: 'לוח' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByText('מסך הדיווחים')).not.toBeInTheDocument();
   });
 
   it('expands the sheet on alerts from the board item after it was collapsed', () => {
@@ -86,7 +105,85 @@ describe('PhoneMissionScreen', () => {
   });
 
   it('shows a notice as an alert', () => {
-    renderScreen({ notice: 'המסע נוצר, אבל התמונה לא נשמרה.' });
+    renderScreen({ notice: 'המסע נוצר, אבל התמונה לא נשמרה.', reports: [reportFinding] });
     expect(screen.getByRole('alert')).toHaveTextContent('המסע נוצר, אבל התמונה לא נשמרה.');
+  });
+
+  it('PM1: the reports item shows the Reports screen in place of the map', () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole('link', { name: 'דיווחים, 2 חדשים' }));
+    expect(screen.getByText('מסך הדיווחים')).toBeInTheDocument();
+    expect(screen.queryByText('המפה')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'דיווחים, 2 חדשים' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('PM2: from the Reports screen, the board and searchers items go back to the map', () => {
+    renderScreen({ screen: 'reports' });
+    fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
+    expect(screen.getByText('המפה')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'התראות', selected: true })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: 'דיווחים, 2 חדשים' }));
+    fireEvent.click(screen.getByRole('link', { name: 'מחפשים' }));
+    expect(screen.getByText('המפה')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'מחפשים 2', selected: true })).toBeInTheDocument();
+  });
+
+  it('PM3: shows the critical alert compact on the map, and not on the Reports screen', () => {
+    const { onOpenReport, unmount } = renderScreen();
+    const alert = screen.getByRole('alert', { name: 'התראה קריטית' });
+    expect(alert).toHaveAttribute('data-compact');
+    expect(alert.textContent).not.toContain('הדיווח אינו סוגר את המסע');
+    fireEvent.click(within(alert).getByRole('button', { name: 'פתח' }));
+    expect(onOpenReport).toHaveBeenCalledWith(reportLocated.id);
+    unmount();
+
+    renderScreen({ reports: [reportFinding] });
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+  });
+
+  it('PM3: no alert on the Reports screen', () => {
+    renderScreen({ screen: 'reports' });
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+  });
+
+  it('PM4: a row in the sheet opens its report', () => {
+    const { onOpenReport } = renderScreen();
+    fireEvent.click(screen.getByRole('tab', { name: 'דיווחים 2' }));
+    fireEvent.click(screen.getByRole('link', { name: /כפפה אפורה ליד השביל/ }));
+    expect(onOpenReport).toHaveBeenCalledWith(reportFinding.id);
+  });
+
+  it('PM5: a located report that arrives shows the alert', () => {
+    const view = renderScreen({ reports: [reportFinding] });
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+    view.rerender(
+      <Harness
+        mission={mission}
+        missions={[mission]}
+        connection={{ state: 'up', label: 'זמין', detail: 'מחובר לשרת. המפה מתעדכנת בזמן אמת.' }}
+        onSelectMission={vi.fn()}
+        onShowAll={vi.fn()}
+        joinOpen={false}
+        onJoinOpenChange={vi.fn()}
+        notice={null}
+        participants={participants}
+        participantsFailed={false}
+        polygons={[polygonA, polygonB]}
+        workspace={<div>המפה</div>}
+        renderSearch={() => null}
+        screen="map"
+        onScreenChange={vi.fn()}
+        reportsScreen={<div>מסך הדיווחים</div>}
+        reports={reports}
+        reportsFailed={false}
+        onOpenReport={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('alert', { name: 'התראה קריטית' })).toBeInTheDocument();
+  });
+
+  it('PM6: shows no critical alert once the mission ended', () => {
+    renderScreen({ mission: { ...mission, status: 'ended_stopped' } });
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
   });
 });

@@ -50,4 +50,18 @@ describe('CriticalReportAlert', () => {
     expect(alert.textContent).toContain('ישי');
     expect(within(alert).queryByText('02')).toBeNull();
   });
+
+  it('CA1: compact keeps the alert but drops the second line', () => {
+    const onOpen = vi.fn();
+    render(<CriticalReportAlert compact reports={[reportLocated]} onOpen={onOpen} />);
+    const alert = screen.getByRole('alert', { name: 'התראה קריטית' });
+    expect(alert).toHaveAttribute('data-compact');
+    expect(within(alert).getByText('קריטי')).toBeTruthy();
+    expect(within(alert).getByText('02')).toBeTruthy();
+    expect(within(alert).getByText('16:51')).toBeTruthy();
+    expect(alert.textContent).toContain('ממתין לאימות');
+    expect(alert.textContent).not.toContain('הדיווח אינו סוגר את המסע');
+    fireEvent.click(within(alert).getByRole('button', { name: 'פתח' }));
+    expect(onOpen).toHaveBeenCalledWith(reportLocated.id);
+  });
 });

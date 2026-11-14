@@ -1,5 +1,5 @@
 import { REPORT_TYPE_LABELS, REPORT_TYPES } from '@trace/domain';
-import { boundsOf, type LngLat } from '@trace/geo';
+import type { LngLat } from '@trace/geo';
 import type { MapProvider } from '@trace/map';
 import type {
   LkpPoint,
@@ -19,7 +19,7 @@ import { toMapData } from '../../mission/toMapData';
 import { ReportInspector } from './ReportInspector';
 import { ReportList } from './ReportList';
 import styles from './ReportsPage.module.css';
-import { filterReports, type StatusFilter, type TypeFilter } from './reportView';
+import { filterReports, initialReportsView, type StatusFilter, type TypeFilter } from '../../mission/reportView';
 
 export interface ReportsPageProps {
   /** Newest first, as the API returns them. `undefined` while loading. */
@@ -87,14 +87,7 @@ export function ReportsPage({
   };
 
   // The map opens on everything the mission placed: polygons, rally point, LKP and reports. Read once, at mount.
-  const [initialView] = useState(() => {
-    const points = [mission.rallyPoint, ...(mission.lkp ? [mission.lkp.position] : []), ...all.map((r) => r.position)];
-    const bounds = boundsOf({
-      type: 'GeometryCollection',
-      geometries: [...points, ...polygons.map((p) => p.geometry)],
-    });
-    return { center: mission.rallyPoint.coordinates as LngLat, zoom: 14, bounds };
-  });
+  const [initialView] = useState(() => initialReportsView({ mission, polygons, reports: all }));
   const data = useMemo(
     () =>
       toMapData({

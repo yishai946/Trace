@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
-import styles from './ReportsPage.module.css';
+import styles from './ReportEditForm.module.css';
 
 export interface ReportEditFormProps {
   report: Report;

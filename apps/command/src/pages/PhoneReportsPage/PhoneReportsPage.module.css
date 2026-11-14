@@ -1,0 +1,316 @@
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--map-ground);
+}
+
+.bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-4);
+  height: var(--header-h);
+  padding-inline: var(--space-6);
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface);
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font: var(--text-title);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.controls {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+}
+
+/* The list / map switch (SegmentedTabs look, 44px for touch). */
+.seg {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.segTab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: var(--pending-touch-target);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  font: var(--text-body);
+  cursor: pointer;
+  outline: none;
+}
+
+.segTab[data-pressed] {
+  background-color: var(--surface-hover);
+}
+
+.segTab[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segTab[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The filter chips scroll sideways (wireframe tcx-chipbtn--lg, 44px). */
+.chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-3);
+  overflow-x: auto;
+}
+
+.chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--pending-touch-target);
+  padding-inline: var(--space-7);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--pending-touch-target) / 2);
+  background-color: transparent;
+  color: var(--ink-secondary);
+  font: var(--text-body);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+}
+
+.chip[data-pressed] {
+  background-color: var(--surface-hover);
+}
+
+.chip[data-selected] {
+  border-color: var(--border-strong);
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.chip[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.listPanel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-height: 0;
+  padding-block: 0 var(--space-5);
+  padding-inline: var(--space-6);
+  overflow-y: auto;
+  outline: none;
+}
+
+.mapPanel {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  outline: none;
+}
+
+.list {
+  outline: none;
+}
+
+.list:focus-visible {
+  outline: 2px solid var(--focus);
+}
+
+.items {
+  margin-block: 0;
+  margin-inline: calc(var(--space-3) * -1);
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  outline: none;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Over the map the card floats, so it takes the one shadow. */
+.card[data-floating] {
+  position: absolute;
+  inset-inline: var(--space-6);
+  bottom: var(--space-6);
+  z-index: 1;
+  max-height: 60%;
+  overflow-y: auto;
+  box-shadow: var(--shadow-panel);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.cardTitle {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--text-body-strong);
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--pending-badge-h);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--chip);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge[data-status='new'] {
+  color: var(--accent);
+}
+
+.badge svg {
+  width: var(--pending-check-icon);
+  height: var(--pending-check-icon);
+}
+
+.strong {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}
+
+.meta {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.thumbLink {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.thumb {
+  display: block;
+  width: var(--pending-report-thumb-w);
+  height: var(--pending-report-thumb-h);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-raised);
+  object-fit: cover;
+}
+
+.text {
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  font: var(--text-body);
+  white-space: pre-wrap;
+}
+
+.edit {
+  flex: 1 1 100%;
+}
+
+.btnRow {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.btnRow > * {
+  flex: 1;
+}
+
+.btnRow > .main {
+  flex: 1.4;
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger-ink);
+  font: var(--text-meta);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  margin: 0;
+  padding-block: var(--space-7);
+  color: var(--ink-secondary);
+  text-align: center;
+}
+
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}

@@ -5,9 +5,9 @@ import {
   REPORT_TYPE_LABELS,
   REPORT_TYPES,
 } from '@trace/domain';
-import { formatLatLng, type LngLat } from '@trace/geo';
-import type { MissionPolygon, Report, ReportType } from '@trace/schemas';
-import { timeLabel } from '../../../mission/timeLabel';
+import { boundsOf, formatLatLng, type Bounds, type LngLat } from '@trace/geo';
+import type { Mission, MissionPolygon, Report, ReportType } from '@trace/schemas';
+import { timeLabel } from '../timeLabel';
 
 export type StatusFilter = 'all' | 'new' | 'handled';
 export type TypeFilter = 'all' | ReportType;
@@ -69,4 +69,47 @@ export function inspectorSub(report: Pick<Report, 'type' | 'status'>): string {
   const parts = ['דיווח', REPORT_STATUS_LABELS[report.status]];
   if (isCriticalReport(report)) parts.push('ממתין לאימות');
   return parts.join(', ');
+}
+
+export type ReportChip = 'all' | 'new' | Exclude<ReportType, 'located'>;
+
+/** The phone's filter chips (wireframe Cm10): all, New, then each category except "located", which the card shows. */
+export const REPORT_CHIPS: ReportChip[] = [
+  'all',
+  'new',
+  ...REPORT_TYPES.filter((t): t is Exclude<ReportType, 'located'> => t !== 'located'),
+];
+
+export function filterByChip(reports: Report[], chip: ReportChip): Report[] {
+  if (chip === 'all') return reports;
+  return chip === 'new' ? filterReports(reports, 'new', 'all') : filterReports(reports, 'all', chip);
+}
+
+/** `הכל 12`, `חדש 3`; a category chip is only its name. */
+export function chipLabel(chip: ReportChip, counts: Record<StatusFilter, number>): string {
+  if (chip === 'all') return `הכל ${counts.all}`;
+  if (chip === 'new') return `${REPORT_STATUS_LABELS.new} ${counts.new}`;
+  return REPORT_TYPE_LABELS[chip];
+}
+
+/** Where a reports map opens: everything the mission placed (polygons, rally point, LKP) and every report. */
+export function initialReportsView({
+  mission,
+  polygons,
+  reports,
+}: {
+  mission: Mission;
+  polygons: MissionPolygon[];
+  reports: Report[];
+}): { center: LngLat; zoom: number; bounds: Bounds } {
+  const points = [
+    mission.rallyPoint,
+    ...(mission.lkp ? [mission.lkp.position] : []),
+    ...reports.map((r) => r.position),
+  ];
+  const bounds = boundsOf({
+    type: 'GeometryCollection',
+    geometries: [...points, ...polygons.map((p) => p.geometry)],
+  });
+  return { center: mission.rallyPoint.coordinates as LngLat, zoom: 14, bounds };
 }

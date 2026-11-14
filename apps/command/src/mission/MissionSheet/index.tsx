@@ -1,7 +1,9 @@
-import type { MissionPolygon, Participant } from '@trace/schemas';
+import type { MissionPolygon, Participant, Report } from '@trace/schemas';
 import { Button, Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import styles from './MissionSheet.module.css';
 import { CallsignChip } from '../../components/CallsignChip';
+import { ReportRow } from '../ReportRow';
+import { statusCounts } from '../reportView';
 
 export type SheetTab = 'alerts' | 'searchers' | 'reports';
 
@@ -14,12 +16,14 @@ export interface MissionSheetProps {
   participants: Participant[] | undefined;
   participantsFailed: boolean;
   polygons: MissionPolygon[];
+  /** Newest first. Undefined while they load. */
+  reports: Report[] | undefined;
+  reportsFailed: boolean;
+  /** A tap on a report opens the Reports screen on it. */
+  onOpenReport: (id: string) => void;
 }
 
-/**
- * Alerts and reports have no phone screen yet (UC-C14, UC-C15, and UC-C11 on the phone): their tabs show no count
- * and say so, instead of a false zero while New reports or a located alert exist.
- */
+/** Alerts have no phone screen yet (UC-C14, UC-C15): their tab shows no count and says so. */
 
 /**
  * The bottom sheet of the phone mission screen (Console "Command בטלפון", wireframe Cm04): alerts, searchers and
@@ -33,8 +37,13 @@ export function MissionSheet({
   participants,
   participantsFailed,
   polygons,
+  reports,
+  reportsFailed,
+  onOpenReport,
 }: MissionSheetProps) {
   const searchers = participants?.filter((p) => p.status !== 'ended').sort((a, b) => a.callsign - b.callsign);
+
+  const newReports = reports ? statusCounts(reports).new : 0;
 
   const searchersBody = () => {
     if (searchers) {
@@ -61,6 +70,23 @@ export function MissionSheet({
     return <p className={styles.empty}>טוען מחפשים…</p>;
   };
 
+  const reportsBody = () => {
+    if (reports) {
+      if (reports.length === 0) return <p className={styles.empty}>עוד לא התקבלו דיווחים במסע הזה.</p>;
+      return (
+        <ul className={styles.list}>
+          {reports.map((report) => (
+            <li key={report.id}>
+              <ReportRow report={report} polygons={polygons} onSelect={onOpenReport} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    if (reportsFailed) return <p className={styles.empty}>לא ניתן לטעון את הדיווחים מהשרת.</p>;
+    return <p className={styles.empty}>טוען דיווחים…</p>;
+  };
+
   return (
     <section className={styles.sheet} data-expanded={expanded || undefined} aria-label="מצב המסע">
       <Button
@@ -81,7 +107,7 @@ export function MissionSheet({
               מחפשים {searchers && <span className={styles.count}>{searchers.length}</span>}
             </Tab>
             <Tab id="reports" className={styles.tab}>
-              דיווחים
+              דיווחים {newReports > 0 && <span className={styles.count}>{newReports}</span>}
             </Tab>
           </TabList>
           <TabPanel id="alerts" className={styles.body}>
@@ -91,7 +117,7 @@ export function MissionSheet({
             {searchersBody()}
           </TabPanel>
           <TabPanel id="reports" className={styles.body}>
-            <p className={styles.empty}>הדיווחים יוצגו כאן בקרוב. אפשר לראות אותם במחשב.</p>
+            {reportsBody()}
           </TabPanel>
         </Tabs>
       )}

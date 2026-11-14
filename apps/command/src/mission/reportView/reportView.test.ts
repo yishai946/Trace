@@ -1,16 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import {
+  chipLabel,
+  filterByChip,
   filterReports,
+  initialReportsView,
   inspectorSub,
   listMeta,
   listTitle,
   polygonLabel,
   positionLabel,
+  REPORT_CHIPS,
   reporterLabel,
   statusCounts,
   typeCounts,
 } from '.';
-import { polygonA, reportFinding, reportHazard, reportLocated, reports } from '../../../mission/fixtures';
+import { mission, polygonA, reportFinding, reportHazard, reportLocated, reports } from '../fixtures';
 
 describe('filterReports', () => {
   it('keeps every report for "all" and "all"', () => {
@@ -89,5 +93,39 @@ describe('inspectorSub', () => {
   it('adds that a New located report awaits verification', () => {
     expect(inspectorSub(reportLocated)).toBe('דיווח, חדש, ממתין לאימות');
     expect(inspectorSub({ ...reportLocated, status: 'handled' })).toBe('דיווח, טופל');
+  });
+});
+
+describe('the phone filter chips', () => {
+  it('RV1: lists all, New, then every category except "located"', () => {
+    expect(REPORT_CHIPS).toEqual(['all', 'new', 'finding', 'hazard', 'inaccessible', 'general']);
+  });
+
+  it('RV2: filters by one chip', () => {
+    expect(filterByChip(reports, 'all')).toBe(reports);
+    expect(filterByChip(reports, 'new')).toEqual([reportLocated, reportFinding]);
+    expect(filterByChip(reports, 'hazard')).toEqual([reportHazard]);
+    expect(filterByChip(reports, 'general')).toEqual([]);
+  });
+
+  it('RV3: labels the status chips with their count and the categories without one', () => {
+    const counts = statusCounts(reports);
+    expect(chipLabel('all', counts)).toBe('הכל 3');
+    expect(chipLabel('new', counts)).toBe('חדש 2');
+    expect(chipLabel('hazard', counts)).toBe('מפגע');
+  });
+});
+
+describe('initialReportsView', () => {
+  it('RV4: opens on the rally point, with bounds around the reports', () => {
+    const view = initialReportsView({ mission, polygons: [polygonA], reports: [reportFinding] });
+    const [lng, lat] = reportFinding.position.coordinates as [number, number];
+    expect(view.center).toEqual(mission.rallyPoint.coordinates);
+    expect(view.zoom).toBe(14);
+    const [west, south, east, north] = view.bounds;
+    expect(west).toBeLessThanOrEqual(lng);
+    expect(east).toBeGreaterThanOrEqual(lng);
+    expect(south).toBeLessThanOrEqual(lat);
+    expect(north).toBeGreaterThanOrEqual(lat);
   });
 });

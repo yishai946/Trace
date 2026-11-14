@@ -1,13 +1,13 @@
 import { REPORT_STATUS_LABELS, REPORT_TYPE_LABELS } from '@trace/domain';
 import type { MissionPolygon, Report, UpdateReportBody } from '@trace/schemas';
-import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
 import { CloseIcon, InfoIcon, ReportTypeIcon } from '../../components/icons';
 import { timeLabel } from '../../mission/timeLabel';
-import { ReportEditForm } from './ReportEditForm';
+import { ReportEditForm } from '../../mission/ReportEditForm';
+import { useReportEditing } from '../../mission/useReportEditing';
 import styles from './ReportsPage.module.css';
-import { inspectorSub, polygonLabel, positionLabel } from './reportView';
+import { inspectorSub, polygonLabel, positionLabel } from '../../mission/reportView';
 
 export interface ReportInspectorProps {
   report: Report;
@@ -34,43 +34,23 @@ export function ReportInspector({
   ended,
   onClose,
 }: ReportInspectorProps) {
-  const [editing, setEditing] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  // After a form or confirmation closes, focus goes back to the button that opened it (not to the page).
-  const editButton = useRef<HTMLButtonElement>(null);
-  const deleteButton = useRef<HTMLButtonElement>(null);
-  const cancelDelete = useRef<HTMLButtonElement>(null);
-  const returnTo = useRef<'edit' | 'delete' | null>(null);
-  useEffect(() => {
-    if (confirmingDelete) {
-      cancelDelete.current?.focus();
-      return;
-    }
-    if (editing) return;
-    (returnTo.current === 'edit' ? editButton : returnTo.current === 'delete' ? deleteButton : null)?.current?.focus();
-    returnTo.current = null;
-  }, [editing, confirmingDelete]);
-  const closeEdit = () => {
-    returnTo.current = 'edit';
-    setEditing(false);
-  };
-  const closeConfirm = () => {
-    returnTo.current = 'delete';
-    setConfirmingDelete(false);
-  };
+  const {
+    editing,
+    confirmingDelete,
+    openEdit,
+    closeEdit,
+    openConfirm,
+    closeConfirm,
+    editButton,
+    deleteButton,
+    cancelDelete,
+    onKeyDown,
+  } = useReportEditing();
   const { callsign, name } = report.reportedBy;
   const canChange = !!(onHandle && onUpdate && onDelete);
 
   return (
-    <aside
-      className={`${styles.panel} ${styles.inspector}`}
-      aria-label="פרטי דיווח"
-      onKeyDown={(e) => {
-        if (e.key !== 'Escape' || e.defaultPrevented) return;
-        if (editing) closeEdit();
-        else if (confirmingDelete) closeConfirm();
-      }}
-    >
+    <aside className={`${styles.panel} ${styles.inspector}`} aria-label="פרטי דיווח" onKeyDown={onKeyDown}>
       <div className={styles.section}>
         <span className={styles.glyph} data-type={report.type}>
           <ReportTypeIcon type={report.type} />
@@ -161,15 +141,10 @@ export function ReportInspector({
                   סמן כטופל
                 </Button>
               )}
-              <Button ref={editButton} onPress={() => setEditing(true)} isDisabled={busy}>
+              <Button ref={editButton} onPress={openEdit} isDisabled={busy}>
                 ערוך
               </Button>
-              <Button
-                ref={deleteButton}
-                variant="danger-outline"
-                onPress={() => setConfirmingDelete(true)}
-                isDisabled={busy}
-              >
+              <Button ref={deleteButton} variant="danger-outline" onPress={openConfirm} isDisabled={busy}>
                 מחק
               </Button>
             </div>

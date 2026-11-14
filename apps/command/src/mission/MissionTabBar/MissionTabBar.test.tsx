@@ -19,4 +19,18 @@ describe('MissionTabBar', () => {
     fireEvent.click(screen.getByRole('link', { name: 'דיווחים' }));
     expect(onNavigate).toHaveBeenCalledWith('reports');
   });
+
+  it('TB1: counts the New reports on the reports item', () => {
+    render(<MissionTabBar current="board" onNavigate={vi.fn()} counts={{ reports: 3 }} />);
+    const link = screen.getByRole('link', { name: 'דיווחים, 3 חדשים' });
+    expect(link).toHaveTextContent('3');
+  });
+
+  it('TB2: shows no badge without New reports', () => {
+    const { unmount } = render(<MissionTabBar current="board" onNavigate={vi.fn()} counts={{ reports: 0 }} />);
+    expect(screen.getByRole('link', { name: 'דיווחים' })).not.toHaveTextContent('0');
+    unmount();
+    render(<MissionTabBar current="board" onNavigate={vi.fn()} />);
+    expect(screen.getByRole('link', { name: 'דיווחים' }).querySelector('span')).toBeNull();
+  });
 });

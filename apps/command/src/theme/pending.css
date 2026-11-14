@@ -41,4 +41,9 @@
   --pending-report-photo-h: 150px;
   /* The floating critical-report alert, as wide as the SOS alert (wireframe Cd04 tc-alert, 560px). */
   --pending-alert-w: 560px;
+  /* The report photo thumbnail in the phone report card (wireframe Cm10 tcx-ph, 96×84). */
+  --pending-report-thumb-w: 96px;
+  --pending-report-thumb-h: 84px;
+  /* The count badge on a tab-bar item (wireframe tcx-tabbar__n, 16px). */
+  --pending-tabbar-badge: 16px;
 }
