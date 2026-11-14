@@ -122,12 +122,21 @@ export function PhoneReportsPage({
     setClosed(false);
     setArrivedId(null);
     setFocusId(id);
+    setFitted(true);
     const report = all.find((r) => r.id === id);
     if (report) setFocus({ center: report.position.coordinates as LngLat });
   };
 
   // The map opens on everything the mission placed: polygons, rally point, LKP and reports. Read once, at mount.
   const [initialView] = useState(() => initialReportsView({ mission, polygons, reports: all }));
+  // Opened while they still load: fit the map once when the first reports or polygons arrive, never after that.
+  const hasData = all.length > 0 || polygons.length > 0;
+  const [fitted, setFitted] = useState(hasData);
+  if (hasData && !fitted) {
+    setFitted(true);
+    const { center, bounds } = initialReportsView({ mission, polygons, reports: all });
+    setFocus((current) => current ?? { center, bounds });
+  }
   const data = useMemo(
     () =>
       toMapData({

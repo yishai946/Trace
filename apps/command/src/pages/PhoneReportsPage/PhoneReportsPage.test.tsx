@@ -17,6 +17,7 @@ import { PhoneReportsPage, type PhoneReportsPageProps } from '.';
 const mapProps = vi.hoisted(() => ({
   current: null as null | {
     data: { reports: unknown[] };
+    focus: { center: number[]; bounds?: number[] } | null;
     onPointSelect?: (t: { kind: 'report'; id: string }) => void;
   },
 }));
@@ -279,5 +280,22 @@ describe('PhoneReportsPage', () => {
     within(card()).getByRole('button', { name: 'סמן כטופל' }).focus();
     rerender(<PhoneReportsPage {...open} reports={[{ ...reportFinding, status: 'handled' }, reportHazard]} />);
     expect(card()).toHaveFocus();
+  });
+
+  it('MF1: fits the map once when the reports arrive after it opened', () => {
+    const { rerender } = render(<PhoneReportsPage {...base} reports={undefined} polygons={[]} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'מפה' }));
+    expect(mapProps.current?.focus).toBeNull();
+    rerender(<PhoneReportsPage {...base} reports={reports} polygons={[]} />);
+    expect(mapProps.current?.focus?.bounds).toHaveLength(4);
+    const first = mapProps.current?.focus;
+    rerender(<PhoneReportsPage {...base} reports={[reportFinding]} polygons={[]} />);
+    expect(mapProps.current?.focus).toBe(first);
+  });
+
+  it('MF2: does not refit when the data was there at mount', () => {
+    render(<PhoneReportsPage {...base} />);
+    fireEvent.click(screen.getByRole('tab', { name: 'מפה' }));
+    expect(mapProps.current?.focus).toBeNull();
   });
 });
