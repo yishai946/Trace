@@ -14,6 +14,7 @@ import { authRoutes, requireSignIn } from '../auth/auth.plugin';
 import type { Db } from '../db';
 import type { Env } from '../env';
 import { registerErrorHandlers } from '../errors';
+import { serverLogOptions, type LogStream } from '../logging';
 import { healthRoutes } from '../modules/health/routes';
 import { createExpoPushSender } from '../modules/notifications/expoPushSender';
 import { notificationRoutes } from '../modules/notifications';
@@ -42,20 +43,24 @@ interface AppOptions {
   realtimeRevalidateMs?: number;
   /** Sends push notifications. Defaults to Expo Push; tests pass a fake. */
   pushSender?: PushSender;
+  /** Where log lines go instead of stdout. Tests pass one to read them. */
+  logStream?: LogStream;
 }
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
-export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSender }: AppOptions) {
-  const app = Fastify({ logger: { level: env.LOG_LEVEL } }).withTypeProvider<ZodTypeProvider>();
+export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSender, logStream }: AppOptions) {
+  const app = Fastify(serverLogOptions(env, logStream)).withTypeProvider<ZodTypeProvider>();
   const auth = createAuth({
     env,
     db,
+    log: app.log,
     sendOtp:
       sendOtp ??
       (async ({ phoneNumber, code }) => {
         // The SMS provider is still an open decision (TECH_STACK.md), so production cannot send codes yet.
         if (env.NODE_ENV === 'production') throw new Error('No SMS provider is configured to send sign-in codes');
-        app.log.info({ phoneNumber, code }, 'Sign-in code (development only, not sent by SMS)');
+        // Only the last digits, so the log holds no phone number; enough to tell two test phones apart.
+        app.log.info({ phoneEnding: phoneNumber.slice(-4), code }, 'Sign-in code (development only, not sent by SMS)');
       }),
   });
 

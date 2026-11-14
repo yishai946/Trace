@@ -19,6 +19,8 @@ export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
   app.post(
     '/missions/:missionId/track-points',
     {
+      // Every searcher's phone calls this every few seconds; one line each would drown the log.
+      config: { requestLogLevel: 'debug' },
       schema: {
         tags: ['tracking'],
         summary: "Upload a batch of the searcher's own GPS points (UC-S01)",
@@ -67,6 +69,8 @@ export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
   app.get(
     '/missions/:missionId/participants/:participantId/track',
     {
+      // Every searcher's phone calls this every few seconds; one line each would drown the log.
+      config: { requestLogLevel: 'debug' },
       schema: {
         tags: ['tracking'],
         summary: "A searcher's route, oldest point first (UC-C10)",

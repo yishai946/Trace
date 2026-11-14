@@ -5,6 +5,8 @@ export const healthRoutes: FastifyPluginAsyncZod<{ version: string }> = async (a
   app.get(
     '/health',
     {
+      // Polled by uptime checks and load balancers; one line each would drown the log.
+      config: { requestLogLevel: 'debug' },
       schema: {
         tags: ['system'],
         summary: 'Liveness check',
