@@ -23,6 +23,7 @@ import {
   type Report,
   type Sighting,
   type SessionUser,
+  type UpdateReportBody,
 } from '@trace/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -79,6 +80,7 @@ import { LoginPage } from '../pages/LoginPage';
 import { MissionDetailsPage } from '../pages/MissionDetailsPage';
 import { MissionsPage } from '../pages/MissionsPage';
 import { NewMissionPage } from '../pages/NewMissionPage';
+import { PhoneReportsPage } from '../pages/PhoneReportsPage';
 import { ReportsPage } from '../pages/ReportsPage';
 import { SearchersPage } from '../pages/SearchersPage';
 import { MessagesPage } from '../pages/MessagesPage';
@@ -217,6 +219,35 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
     start({ onSettled: () => (reportInFlight.current = false) });
   };
   const reportMutation = [reportMutations.handle, reportMutations.update, reportMutations.remove];
+  /** What the Reports screens (desktop and phone) may do. Without a handler the action is hidden: offline, or an ended mission. */
+  const reportsChangeable = !!mission && operational && canChangeReport(mission.status);
+  const failedReportChange = reportMutation.find((m) => m.isError);
+  const reportActions = {
+    onHandle: reportsChangeable
+      ? (id: string) => {
+          reportMutations.update.reset();
+          reportMutations.remove.reset();
+          runReportChange((options) => reportMutations.handle.mutate(id, options));
+        }
+      : undefined,
+    onUpdate: reportsChangeable
+      ? (id: string, body: UpdateReportBody) => {
+          reportMutations.handle.reset();
+          reportMutations.remove.reset();
+          runReportChange((options) => reportMutations.update.mutate({ reportId: id, ...body }, options));
+        }
+      : undefined,
+    onDelete: reportsChangeable
+      ? (id: string) => {
+          reportMutations.handle.reset();
+          reportMutations.update.reset();
+          runReportChange((options) => reportMutations.remove.mutate(id, options));
+        }
+      : undefined,
+    busy: reportMutation.some((m) => m.isPending),
+    error: failedReportChange ? reportErrorMessage(failedReportChange.error) : null,
+    ended: !!mission && isMissionEnded(mission.status),
+  };
 
   // Always on screen: a dot and one word. The reason and its effect are in the tooltip and the accessible name.
   const connection: Connection = !connected
@@ -246,8 +277,10 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
     />
   );
 
+  // The phone shows the map under everything but its Reports screen; the desktop only in the map view.
+  const showMap = view === 'map' || (phone && view !== 'reports');
   const workspace =
-    !mission || (view !== 'map' && !phone) ? null : polygons.isPending ? (
+    !mission || !showMap ? null : polygons.isPending ? (
       <p className={styles.setup}>טוען מסע…</p>
     ) : (
       <MissionWorkspace
@@ -260,8 +293,8 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
         sightings={sightings.data}
         lkps={lkps.data}
         reports={reports.data ?? []}
-        // The phone has no Reports screen yet, so the alert would lead nowhere there.
-        onOpenReport={phone ? undefined : openReport}
+        onOpenReport={openReport}
+        alertOnMap={!phone}
         sightingsLoading={sightings.isPending || lkps.isPending}
         sightingsFailed={sightings.isError || lkps.isError}
         onRetrySightings={() => {
@@ -295,6 +328,30 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
           participantsFailed={participants.isError}
           polygons={polygons.data ?? []}
           workspace={workspace}
+          screen={view === 'reports' ? 'reports' : 'map'}
+          onScreenChange={setView}
+          reports={reports.data}
+          reportsFailed={reports.isError}
+          onOpenReport={openReport}
+          reportsScreen={
+            <PhoneReportsPage
+              key={mission.id}
+              reports={reports.data}
+              loadFailed={reports.isError}
+              onRetry={() => void reports.refetch()}
+              mission={mission}
+              polygons={polygons.data ?? []}
+              participants={participants.data ?? []}
+              sightings={sightings.data}
+              lkps={lkps.data}
+              provider={provider}
+              themeId={theme}
+              connection={connection}
+              selectedId={selectedReportId}
+              onSelect={setSelectedReportId}
+              {...reportActions}
+            />
+          }
           renderSearch={(close) => (
             <PlaceSearch
               provider={provider}
@@ -420,40 +477,7 @@ function Console({ provider, user }: { provider: MapProvider; user: SessionUser 
               themeId={theme}
               selectedId={selectedReportId}
               onSelect={setSelectedReportId}
-              onHandle={
-                operational && canChangeReport(mission.status)
-                  ? (id) => {
-                      reportMutations.update.reset();
-                      reportMutations.remove.reset();
-                      runReportChange((options) => reportMutations.handle.mutate(id, options));
-                    }
-                  : undefined
-              }
-              onUpdate={
-                operational && canChangeReport(mission.status)
-                  ? (id, body) => {
-                      reportMutations.handle.reset();
-                      reportMutations.remove.reset();
-                      runReportChange((options) => reportMutations.update.mutate({ reportId: id, ...body }, options));
-                    }
-                  : undefined
-              }
-              onDelete={
-                operational && canChangeReport(mission.status)
-                  ? (id) => {
-                      reportMutations.handle.reset();
-                      reportMutations.update.reset();
-                      runReportChange((options) => reportMutations.remove.mutate(id, options));
-                    }
-                  : undefined
-              }
-              busy={reportMutation.some((m) => m.isPending)}
-              error={
-                reportMutation.find((m) => m.isError)
-                  ? reportErrorMessage(reportMutation.find((m) => m.isError)?.error)
-                  : null
-              }
-              ended={isMissionEnded(mission.status)}
+              {...reportActions}
             />
           )}
           {view === 'messages' && (
@@ -576,8 +600,10 @@ interface MissionWorkspaceProps {
   lkps: LkpPoint[] | undefined;
   /** Newest first. */
   reports: Report[];
-  /** Opens a report in the Reports page. Absent where that page does not exist (the phone). */
-  onOpenReport?: (id: string) => void;
+  /** Opens a report in the Reports page or screen. */
+  onOpenReport: (id: string) => void;
+  /** The floating critical alert; the phone shows its own under the top bar. */
+  alertOnMap: boolean;
   sightingsLoading: boolean;
   sightingsFailed: boolean;
   onRetrySightings: () => void;
@@ -602,6 +628,7 @@ function MissionWorkspace({
   lkps,
   reports,
   onOpenReport,
+  alertOnMap,
   sightingsLoading,
   sightingsFailed,
   onRetrySightings,
@@ -730,7 +757,7 @@ function MissionWorkspace({
   }, [adding]);
 
   const selectPoint = (target: PointTarget) => {
-    if (target.kind === 'report') onOpenReport?.(target.id);
+    if (target.kind === 'report') onOpenReport(target.id);
     else openLkpPanel(target.kind === 'sighting' ? target.id : null);
   };
 
@@ -831,7 +858,7 @@ function MissionWorkspace({
         }}
       />
 
-      {onOpenReport && <CriticalReportAlert floating reports={reports} onOpen={onOpenReport} />}
+      {alertOnMap && <CriticalReportAlert floating reports={reports} onOpen={onOpenReport} />}
 
       {rallyOpen && (
         <div className={styles.rallyPanel}>
