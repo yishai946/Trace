@@ -25,6 +25,7 @@ describe('routes', () => {
         'myMissions',
         'name',
         'report',
+        'reportEdit',
         'reports',
         'sighting',
         'sos',
