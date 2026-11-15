@@ -5,6 +5,7 @@ import {
   type FastifyServerOptions,
   type LogLevel,
 } from 'fastify';
+import { SENSITIVE_KEYS } from '@trace/monitoring';
 import type { Env } from '../env';
 
 /** Where log lines go; Fastify writes to stdout when none is given. */
@@ -29,14 +30,12 @@ export function defaultLogLevel(nodeEnv: 'development' | 'test' | 'production'):
 }
 
 /**
- * Fields that never reach the log: credentials, phone numbers and searchers' exact locations. Pino replaces them with
- * `[Redacted]`, at the top level of a log object and one level down.
+ * Fields that never reach the log (`SENSITIVE_KEYS` of `@trace/monitoring`, the list the error reports use too). Pino
+ * replaces them with `[Redacted]`, at the top level of a log object and one level down.
  */
-const SENSITIVE_KEYS = ['authorization', 'cookie', 'password', 'token', 'phoneNumber', 'phone', 'lat', 'lng'];
+const accessor = (key: string) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `["${key}"]`);
 export const REDACT_PATHS = [
-  ...SENSITIVE_KEYS.flatMap((key) => [key, `*.${key}`]),
-  'coordinates',
-  '*.coordinates',
+  ...SENSITIVE_KEYS.flatMap((key) => [accessor(key).replace(/^\./, ''), `*${accessor(key)}`]),
   'req.headers.authorization',
   'req.headers.cookie',
   'res.headers["set-cookie"]',
