@@ -142,7 +142,7 @@ export function MissionMap({
       mapRef.current = null;
     };
     // The map is created once; later prop changes are applied by the effects below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- creating the map again on a prop change would reset it
   }, []);
 
   useMapSync({ mapRef, drawRef, ready, themeId, terrain, data, focus, style });

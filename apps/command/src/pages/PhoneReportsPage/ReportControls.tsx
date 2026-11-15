@@ -1,4 +1,5 @@
 import { Tab, TabList, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+import { chooseFirst } from '../../choose';
 import styles from './PhoneReportsPage.module.css';
 import { chipLabel, REPORT_CHIPS, type ReportChip } from '../../mission/reportView';
 
@@ -26,7 +27,7 @@ export function ReportControls({ chip, counts, onChip }: ReportControlsProps) {
         selectionMode="single"
         disallowEmptySelection
         selectedKeys={[chip]}
-        onSelectionChange={(keys) => onChip(([...keys][0] as ReportChip | undefined) ?? 'all')}
+        onSelectionChange={(keys) => onChip(chooseFirst(REPORT_CHIPS, keys, 'all'))}
       >
         {REPORT_CHIPS.map((c) => (
           <ToggleButton key={c} id={c} className={styles.chip}>

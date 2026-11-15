@@ -4,6 +4,7 @@ import styles from './SearchersPage.module.css';
 import { CallButton } from '../../components/CallButton';
 import { CallsignChip } from '../../components/CallsignChip';
 import { timeLabel } from '../../mission/timeLabel';
+import { statusLabel } from '../../mission/participantStatus';
 import { AssignMenu } from './AssignMenu';
 import { EndParticipation } from './EndParticipation';
 import { ListState } from '../../components/ListState';
@@ -22,15 +23,6 @@ export interface SearchersPageProps {
   assigning?: boolean;
   /** The last assignment failed, in words. */
   assignError?: string | null;
-}
-
-/** The searcher's state in words, as in wireframe Cd08. */
-export function statusLabel(p: Pick<Participant, 'status' | 'taskStatus'>): string {
-  if (p.status === 'available') return 'זמין';
-  if (p.status === 'ended') return 'סיים';
-  if (p.taskStatus === 'searching') return 'בחיפוש';
-  if (p.taskStatus === 'paused') return 'מושהה';
-  return 'משובץ';
 }
 
 /** Waiting searchers first, the candidates for assignment (UC-C08 step 3), then assigned, then those in the field. */
