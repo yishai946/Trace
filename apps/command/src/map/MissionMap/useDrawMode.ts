@@ -34,7 +34,7 @@ export function useDrawMode({ drawRef, mapRef, editFeatureRef, ready, editing, t
       if (draw.enabled) draw.removeFeatures([featureId]);
     };
     // Only a new polygon restarts editing; geometry updates come from the editor itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `editing` is read once per polygon: its geometry changes come from the editor
   }, [ready, editingId]);
 
   // While editing, the effect above owns the mode.

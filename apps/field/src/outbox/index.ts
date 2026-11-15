@@ -1,89 +1,13 @@
-import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
+import type { SQLiteDatabase } from 'expo-sqlite';
+import { notifyChange } from './changes';
+import { database, serialized } from './database';
+import { forgetDropped, rememberDropped } from './dropped';
+import type { OutboxItem, OutboxKind, OutboxSender, Row, SendOutcome } from './types';
 import { uuidv7 } from './uuidv7';
 
-/**
- * The outbox: what the phone must tell the server but could not yet (UC-S01, UC-S03, UC-F10). Items wait in a SQLite table on
- * the device, oldest first, and an item is deleted only after the server confirmed it, so a failed or interrupted send
- * loses nothing. Each kind of item has a sender that knows its endpoint; the outbox knows only order and deletion.
- */
-export type OutboxKind = 'track-point' | 'sighting' | 'report' | 'report-photo';
-
-export interface OutboxItem {
-  /** Time-ordered UUID, made on the phone. */
-  id: string;
-  kind: OutboxKind;
-  missionId: string;
-  /** What the sender sends, as it was when recorded. Not validated here: the sender validates it. */
-  payload: unknown;
-  /** Milliseconds since the epoch, when the item was added. */
-  createdAt: number;
-}
-
-/**
- * What the server answered for a batch. `sent`: it took the batch. `drop-batch`: it will never take this batch (it is
- * invalid). `drop-mission`: it will take nothing more of this mission (the activity ended, or access is gone). A
- * sender throws when the answer is not final (no network, server error, no token), and the items stay.
- */
-export type SendOutcome = 'sent' | 'drop-batch' | 'drop-mission';
-
-export interface OutboxSender {
-  /** Most items of one send. */
-  batchSize: number;
-  /** Sends the oldest items of one mission, in order. */
-  send(missionId: string, items: OutboxItem[]): Promise<SendOutcome>;
-}
-
-interface Row {
-  seq: number;
-  id: string;
-  kind: OutboxKind;
-  mission_id: string;
-  payload: string;
-  created_at: number;
-}
-
-const SCHEMA_VERSION = 1;
-
-let opened: Promise<SQLiteDatabase> | null = null;
-
-function database(): Promise<SQLiteDatabase> {
-  opened ??= openDatabaseAsync('trace-outbox.db')
-    .then(async (db) => {
-      const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
-      if ((row?.user_version ?? 0) < SCHEMA_VERSION) {
-        await db.execAsync(`
-          PRAGMA journal_mode = WAL;
-          CREATE TABLE IF NOT EXISTS outbox (
-            seq INTEGER PRIMARY KEY AUTOINCREMENT,
-            id TEXT NOT NULL UNIQUE,
-            kind TEXT NOT NULL,
-            mission_id TEXT NOT NULL,
-            payload TEXT NOT NULL,
-            created_at INTEGER NOT NULL
-          );
-          CREATE INDEX IF NOT EXISTS outbox_stream ON outbox (kind, mission_id, seq);
-          PRAGMA user_version = ${SCHEMA_VERSION};
-        `);
-      }
-      return db;
-    })
-    .catch((error: unknown) => {
-      opened = null;
-      throw error;
-    });
-  return opened;
-}
-
-/**
- * Every write goes through here, one at a time. The connection is shared, and `withTransactionAsync` is not exclusive:
- * two overlapping transactions fail on BEGIN, and the loser's ROLLBACK also undoes the winner's rows.
- */
-let writes: Promise<unknown> = Promise.resolve();
-function serialized<T>(task: () => Promise<T>): Promise<T> {
-  const result = writes.then(task, task);
-  writes = result.catch(() => undefined);
-  return result;
-}
+export { onOutboxChange } from './changes';
+export { wasDropped } from './dropped';
+export type { OutboxItem, OutboxKind, OutboxSender, SendOutcome } from './types';
 
 function toItem(row: Row): OutboxItem | null {
   try {
@@ -98,40 +22,6 @@ function toItem(row: Row): OutboxItem | null {
     return null;
   }
 }
-
-/** How many dropped ids are remembered; a refused item is looked up right after its send, so a few are enough. */
-const DROPPED_MEMORY = 200;
-/** Ids of items the server refused for good and the outbox deleted, newest last. Kept in memory only. */
-const dropped = new Set<string>();
-
-function rememberDropped(ids: string[]): void {
-  for (const id of ids) {
-    dropped.delete(id);
-    dropped.add(id);
-  }
-  for (const id of dropped) {
-    if (dropped.size <= DROPPED_MEMORY) break;
-    dropped.delete(id);
-  }
-}
-
-/**
- * Whether the item with this id was deleted because the server refused it for good (`drop-batch`, `drop-mission`), as
- * opposed to confirmed. Lets a caller tell a rejected sighting from a sent one once the item is no longer pending.
- */
-export function wasDropped(id: string): boolean {
-  return dropped.has(id);
-}
-
-const listeners = new Set<() => void>();
-
-/** Calls `listener` after every change of what waits (added, sent, dropped, cleared). Returns the unsubscribe function. */
-export function onOutboxChange(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => void listeners.delete(listener);
-}
-
-const notifyChange = () => listeners.forEach((listener) => listener());
 
 /**
  * Adds items to the end of the queue, in the order given. `ids` are the items' ids when the caller made them (a
@@ -203,7 +93,7 @@ export async function pendingCount(): Promise<number> {
 export async function clearOutbox(): Promise<void> {
   const db = await database();
   await serialized(() => db.runAsync('DELETE FROM outbox'));
-  dropped.clear();
+  forgetDropped();
   notifyChange();
 }
 

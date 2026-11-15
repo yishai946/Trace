@@ -1,6 +1,7 @@
 import type { TimelineEvent } from '@trace/schemas';
 import { useState } from 'react';
 import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+import { chooseFirst } from '../../choose';
 import styles from './TimelinePage.module.css';
 import { Button } from '../../components/Button';
 import {
@@ -26,6 +27,7 @@ export interface TimelinePageProps {
 }
 
 type Filter = TimelineCategory | 'all';
+const FILTERS: Filter[] = ['all', ...TIMELINE_CATEGORIES.map((c) => c.id)];
 
 /** The operational Timeline (UC-C19, wireframe Cd14): significant events newest first, filterable by kind. */
 export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: TimelinePageProps) {
@@ -73,7 +75,7 @@ export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: Timelin
             selectionMode="single"
             disallowEmptySelection
             selectedKeys={[filter]}
-            onSelectionChange={(keys) => select(([...keys][0] as Filter | undefined) ?? 'all')}
+            onSelectionChange={(keys) => select(chooseFirst(FILTERS, keys, 'all'))}
           >
             <ToggleButton id="all" className={styles.chip}>
               הכל <span className={styles.count}>{newestFirst.length}</span>

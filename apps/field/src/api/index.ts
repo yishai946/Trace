@@ -11,6 +11,7 @@ export const UPLOAD_TIMEOUT_MS = 60_000;
 
 /** A failed API call. `code` and `details` come from the server's shared error shape. */
 export class ApiRequestError extends Error {
+  // eslint-disable-next-line max-params -- positional by design: every call site builds it from a response's fields
   constructor(
     readonly status: number,
     readonly code: ErrorCode | 'NETWORK_ERROR',

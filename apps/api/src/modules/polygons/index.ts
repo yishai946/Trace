@@ -68,7 +68,12 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request) => {
       const { missionId, polygonId } = request.params;
-      const { polygon, event } = await updatePolygon(db, missionId, polygonId, request.body, actorOf(request));
+      const { polygon, event } = await updatePolygon(db, {
+        missionId,
+        polygonId,
+        input: request.body,
+        actor: actorOf(request),
+      });
       realtime.publish({ type: 'polygon.saved', missionId, polygon });
       if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
       return polygon;

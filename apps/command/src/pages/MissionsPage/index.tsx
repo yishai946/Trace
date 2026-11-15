@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Input, SearchField, Tab, TabList, TabPanel, Tabs, type Key } from 'react-aria-components';
 import { MissionCards } from './MissionCards';
 import { MissionTable } from './MissionTable';
+import { choose } from '../../choose';
 import styles from './MissionsPage.module.css';
 import { Button } from '../../components/Button';
 import { usePhoneLayout } from '../../hooks/usePhoneLayout';
@@ -16,6 +17,7 @@ const FILTERS: { id: Filter; label: string; matches: (m: Mission) => boolean }[]
   { id: 'paused', label: 'מושהה', matches: (m) => m.status === 'paused' },
   { id: 'ended', label: 'הסתיים', matches: (m) => isMissionEnded(m.status) },
 ];
+const FILTER_IDS = FILTERS.map((f) => f.id);
 
 export interface MissionsPageProps {
   /** The commander's missions, newest first. `undefined` while loading. */
@@ -89,7 +91,7 @@ export function MissionsPage({ missions, loadFailed, onOpen, onNew, canCreate, p
         <Tabs
           className={styles.tabsRoot}
           selectedKey={filter}
-          onSelectionChange={(key: Key) => setFilter(key as Filter)}
+          onSelectionChange={(key: Key) => setFilter(choose(FILTER_IDS, key, 'all'))}
         >
           <div className={styles.controls}>
             <Button variant="primary" size="lg" className={styles.newMission} onPress={onNew} isDisabled={!canCreate}>
@@ -111,7 +113,11 @@ export function MissionsPage({ missions, loadFailed, onOpen, onNew, canCreate, p
 
   return (
     <section className={styles.panel} aria-label="רשימת מסעות">
-      <Tabs className={styles.tabsRoot} selectedKey={filter} onSelectionChange={(key: Key) => setFilter(key as Filter)}>
+      <Tabs
+        className={styles.tabsRoot}
+        selectedKey={filter}
+        onSelectionChange={(key: Key) => setFilter(choose(FILTER_IDS, key, 'all'))}
+      >
         <div className={styles.toolbar}>
           <h1 className={styles.title}>המסעות שלי</h1>
           {tabs}

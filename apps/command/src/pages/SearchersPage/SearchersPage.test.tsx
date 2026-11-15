@@ -1,7 +1,8 @@
 import type { Participant } from '@trace/schemas';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { SearchersPage, statusLabel, type SearchersPageProps } from '.';
+import { statusLabel } from '../../mission/participantStatus';
+import { SearchersPage, type SearchersPageProps } from '.';
 import { participants, polygonA } from '../../mission/fixtures';
 import { timeLabel } from '../../mission/timeLabel';
 

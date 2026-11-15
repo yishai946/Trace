@@ -3,6 +3,7 @@ import type { MissionPolygon, Report } from '@trace/schemas';
 import { Tab, TabList, TabPanel, Tabs, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { ReportRow } from '../../mission/ReportRow';
+import { choose, chooseFirst } from '../../choose';
 import styles from './ReportsPage.module.css';
 import { filterReports, statusCounts, typeCounts, type StatusFilter, type TypeFilter } from '../../mission/reportView';
 
@@ -77,7 +78,18 @@ export function ReportList({
         <h2 className={`${styles.title} ${styles.grow}`}>דיווחים</h2>
         <span className={styles.meta}>{`${byStatus.all} דיווחים`}</span>
       </div>
-      <Tabs selectedKey={status} onSelectionChange={(key) => onStatusChange(key as StatusFilter)}>
+      <Tabs
+        selectedKey={status}
+        onSelectionChange={(key) =>
+          onStatusChange(
+            choose(
+              STATUS_TABS.map((tab) => tab.id),
+              key,
+              'all',
+            ),
+          )
+        }
+      >
         <div className={styles.filters}>
           <TabList className={styles.seg} aria-label="סטטוס">
             {STATUS_TABS.map((tab) => (
@@ -92,7 +104,7 @@ export function ReportList({
             selectionMode="single"
             disallowEmptySelection
             selectedKeys={[type]}
-            onSelectionChange={(keys) => onTypeChange(([...keys][0] as TypeFilter | undefined) ?? 'all')}
+            onSelectionChange={(keys) => onTypeChange(chooseFirst(['all', ...REPORT_TYPES], keys, 'all'))}
           >
             <ToggleButton id="all" className={styles.chip}>
               הכל

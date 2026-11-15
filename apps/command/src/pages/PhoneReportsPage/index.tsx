@@ -18,7 +18,10 @@ import { ListState } from '../../components/ListState';
 import { ScreenBar } from './ScreenBar';
 import { ReportControls } from './ReportControls';
 import { usePhoneReports } from './usePhoneReports';
+import { choose } from '../../choose';
 import styles from './PhoneReportsPage.module.css';
+
+const VIEWS = ['list', 'map'] as const;
 
 export interface PhoneReportsPageProps {
   /** Newest first, as the API returns them. `undefined` while loading. */
@@ -117,7 +120,7 @@ export function PhoneReportsPage({
   return (
     <div ref={root} className={styles.page}>
       <ScreenBar heading={heading} connection={connection} />
-      <Tabs selectedKey={view} onSelectionChange={(key) => setView(key as 'list' | 'map')} className={styles.tabs}>
+      <Tabs selectedKey={view} onSelectionChange={(key) => setView(choose(VIEWS, key, 'list'))} className={styles.tabs}>
         <ReportControls chip={chip} counts={counts} onChip={setChip} />
         <TabPanel id="list" className={styles.listPanel}>
           {card(false)}

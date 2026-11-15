@@ -1,8 +1,9 @@
-import { MESSAGE_TARGET_KINDS, type MessageTargetKind } from '@trace/domain';
+import { MESSAGE_TARGET_KINDS } from '@trace/domain';
 import type { Message, MissionPolygon, Participant, SendMessageBody } from '@trace/schemas';
 import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
+import { choose } from '../../choose';
 import styles from './MessagesPage.module.css';
 import { UrgencyChoice } from './UrgencyChoice';
 import { useComposeMessage } from './useComposeMessage';
@@ -76,7 +77,7 @@ export function ComposeMessage({
           orientation="horizontal"
           value={form.kind}
           onChange={(value) => {
-            change({ kind: value as MessageTargetKind });
+            change({ kind: choose(MESSAGE_TARGET_KINDS, value, 'mission') });
             setErrors((current) => ({ ...current, target: undefined }));
           }}
         >
