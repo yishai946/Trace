@@ -1,5 +1,5 @@
 import { isActiveInPolygon } from '@trace/domain';
-import { findOutside, type LngLat, type Polygon } from '@trace/geo';
+import { findOutside, type Polygon } from '@trace/geo';
 import { PolygonGeometry, SearchersOutsideDetails, type MissionPolygon, type Participant } from '@trace/schemas';
 import { useMemo, useState } from 'react';
 import { ApiRequestError } from '../../api';
@@ -34,13 +34,15 @@ export function usePolygonEdit({ missionId, polygons, participants }: PolygonEdi
   const outside = useMemo<OutsideSearcher[]>(() => {
     if (!edit) return [];
     if (edit.serverOutside) return edit.serverOutside;
-    const located = participants.filter((p) => isActiveInPolygon(p, edit.polygonId) && p.position);
+    const located = participants.flatMap((p) =>
+      isActiveInPolygon(p, edit.polygonId) && p.position ? [{ p, position: p.position }] : [],
+    );
     return findOutside(
-      located.map((p) => ({ id: p.id, position: p.position as LngLat })),
+      located.map(({ p, position }) => ({ id: p.id, position })),
       edit.draft,
     ).flatMap(({ id, meters }) => {
-      const p = located.find((l) => l.id === id);
-      return p ? [{ callsign: p.callsign, name: p.name, meters }] : [];
+      const found = located.find((l) => l.p.id === id);
+      return found ? [{ callsign: found.p.callsign, name: found.p.name, meters }] : [];
     });
   }, [edit, participants]);
 

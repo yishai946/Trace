@@ -1,28 +1,21 @@
 import { spacing, typography } from '@trace/design';
-import { isInsidePolygon, formatLatLng, type LngLat } from '@trace/geo';
-import type { Mission, MissionPolygon, SightingSource } from '@trace/schemas';
-import { useState } from 'react';
+import type { Mission, MissionPolygon } from '@trace/schemas';
 import { StyleSheet, Text, View } from 'react-native';
-import { ltr } from '../../i18n/rtl';
-import { useCurrentFix } from '../../location/useCurrentFix';
 import { toMissionArea } from '../../mission/missionArea';
-import { uuidv7 } from '../../outbox/uuidv7';
-import { clockOf, toSighting, type DraftErrors, type LocationMode } from '../../sightings/draft';
-import { submitSighting } from '../../sightings/submit';
+import { clockOf } from '../../sightings/draft';
 import { useTheme } from '../../theme';
 import { Button } from '../Button';
-import { FieldError } from '../FieldError';
 import { Screen } from '../Screen';
 import { SegmentedChoice } from '../SegmentedChoice';
 import { TextField } from '../TextField';
+import { SightingFooter } from './SightingFooter';
 import { SightingLocation } from './SightingLocation';
+import { useSightingDraft } from './useSightingDraft';
 
 const sources = [
   { value: 'self', label: 'אני ראיתי' },
   { value: 'witness', label: 'עד ראייה' },
 ] as const;
-
-type Status = 'idle' | 'sending' | 'pending' | 'rejected' | 'save-failed';
 
 export interface SightingFormProps {
   missionId: string;
@@ -42,78 +35,24 @@ export interface SightingFormProps {
  */
 export function SightingForm({ missionId, mission, polygons, assignedPolygonId, onCancel, onDone }: SightingFormProps) {
   const { color } = useTheme().theme;
-  const [source, setSource] = useState<SightingSource>('self');
-  const [mode, setMode] = useState<LocationMode>('mine');
-  const [picked, setPicked] = useState<LngLat | null>(null);
-  const [clock, setClock] = useState(() => clockOf(new Date()));
-  const [description, setDescription] = useState('');
-  const [errors, setErrors] = useState<DraftErrors>({});
-  const [status, setStatus] = useState<Status>('idle');
-
-  const fix = useCurrentFix();
-  const position = mode === 'mine' ? (fix.fix?.position ?? null) : picked;
-  const polygon = position ? polygons.find((p) => isInsidePolygon(position, p.geometry)) : undefined;
+  const draft = useSightingDraft({ missionId, polygons, onDone });
+  const {
+    source,
+    setSource,
+    mode,
+    setMode,
+    clock,
+    setClock,
+    description,
+    setDescription,
+    errors,
+    setErrors,
+    position,
+    meta,
+  } = draft;
   const area = toMissionArea(polygons, mission, assignedPolygonId);
 
-  const meta = position
-    ? `${ltr(formatLatLng(position))}${polygon ? `, פוליגון ${polygon.name}` : ''}`
-    : mode === 'map'
-      ? 'הקש על המפה במקום שבו נראה הנעדר.'
-      : fix.state === 'locating'
-        ? 'מאתר את המיקום שלך…'
-        : 'המיקום שלך לא זמין. בחר את המקום במפה.';
-
-  const pick = (point: LngLat) => {
-    setPicked(point);
-    setMode('map');
-    setErrors((e) => ({ ...e, position: undefined }));
-  };
-
-  const submit = async () => {
-    const result = toSighting({ source, position, clock, description }, { now: new Date(), id: uuidv7() });
-    if ('errors' in result) return setErrors(result.errors);
-    setErrors({});
-    setStatus('sending');
-    try {
-      const delivery = await submitSighting({ missionId, sighting: result.sighting });
-      if (delivery === 'sent') onDone();
-      else setStatus(delivery);
-    } catch {
-      setStatus('save-failed');
-    }
-  };
-
-  const sending = status === 'sending';
-  const footer =
-    status === 'pending' ? (
-      <>
-        <Text accessibilityLiveRegion="polite" style={[typography.body, { color: color.ink }]}>
-          אין חיבור. התצפית נשמרה בטלפון ותישלח אוטומטית כשהחיבור יחזור.
-        </Text>
-        <Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
-      </>
-    ) : status === 'rejected' ? (
-      <>
-        <FieldError message="התצפית לא נשלחה: המסע הסתיים או שהפעילות שלך בו הסתיימה." />
-        <Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
-      </>
-    ) : (
-      <>
-        {status === 'save-failed' ? <FieldError message="לא ניתן לשמור את התצפית בטלפון. נסה שוב." /> : null}
-        <Button
-          label={sending ? 'שולח…' : 'שלח תצפית'}
-          variant="primary"
-          size="lg"
-          block
-          icon="send"
-          disabled={sending}
-          onPress={() => void submit()}
-        />
-        <Text style={[typography.caption, styles.caption, { color: color.inkMuted }]}>
-          התצפית תופיע מיד במפה של המנהל
-        </Text>
-      </>
-    );
+  const footer = <SightingFooter status={draft.status} onSubmit={() => void draft.submit()} onDone={onDone} />;
 
   return (
     <Screen
@@ -133,7 +72,7 @@ export function SightingForm({ missionId, mission, polygons, assignedPolygonId, 
         position={position}
         meta={meta}
         area={area}
-        onPick={pick}
+        onPick={draft.pick}
         error={errors.position}
       />
       <View style={styles.timeRow}>
@@ -170,5 +109,4 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   // The button sits level with the input, not with its label above.
   timeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.space4 },
-  caption: { textAlign: 'center' },
 });

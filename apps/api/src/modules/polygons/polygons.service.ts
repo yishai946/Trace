@@ -160,10 +160,12 @@ export async function createPolygon(
  */
 export async function updatePolygon(
   db: Db,
-  missionId: string,
-  polygonId: string,
-  input: UpdatePolygonInput,
-  actor: Actor,
+  {
+    missionId,
+    polygonId,
+    input,
+    actor,
+  }: { missionId: string; polygonId: string; input: UpdatePolygonInput; actor: Actor },
 ): Promise<{ polygon: MissionPolygon; event: TimelineEvent | null }> {
   if (input.geometry) await assertValid(db, input.geometry);
   return db.transaction(async (tx) => {

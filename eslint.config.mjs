@@ -127,6 +127,8 @@ export default defineConfig(
       'max-lines-per-function': ['error', { max: 120, skipBlankLines: true, skipComments: true }],
       complexity: ['error', 15],
       'max-depth': ['error', 3],
+      'max-params': ['error', 4],
+      'max-statements': ['error', 30],
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/consistent-type-assertions': [
         'error',

@@ -1,7 +1,7 @@
 import type { ThemeId } from '@trace/design';
 import type { LngLat, Bounds } from '@trace/geo';
 import { toMissionSources, type MissionMapData, type TerrainOptions } from '@trace/map';
-import type { GeoJSONSource, Map as MapLibreMap, StyleSpecification } from 'maplibre-gl';
+import { GeoJSONSource, type Map as MapLibreMap, type StyleSpecification } from 'maplibre-gl';
 import { useEffect, type RefObject } from 'react';
 import type { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
 import { DRAW_PREFIX } from './createDraw';
@@ -44,14 +44,15 @@ export function useMapSync({ mapRef, drawRef, ready, themeId, terrain, data, foc
     drawRef.current?.updateModeOptions<typeof TerraDrawSelectMode>('select', { styles: selectStyles(themeId) });
     map.easeTo({ pitch: terrain.terrain3d ? 55 : 0, duration: 600 });
     // `style` reads the latest props through a ref, so it is not a dependency.
-  }, [mapRef, drawRef, ready, themeId, terrain]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mapRef, drawRef, ready, themeId, terrain]); // eslint-disable-line react-hooks/exhaustive-deps -- `style` is rebuilt from the latest props on every render
 
   // Mission data updates only replace the overlay sources' data.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     for (const [id, collection] of Object.entries(toMissionSources(data))) {
-      (map.getSource(id) as GeoJSONSource | undefined)?.setData(collection);
+      const source = map.getSource(id);
+      if (source instanceof GeoJSONSource) source.setData(collection);
     }
   }, [mapRef, ready, data]);
 

@@ -4,7 +4,7 @@ import { SafeAreaInsetsContext, SafeAreaProvider } from 'react-native-safe-area-
 import { ThemeProvider } from '../theme';
 
 // A 390x844 phone frame: test data, not styling.
-/* eslint-disable no-restricted-syntax */
+/* eslint-disable no-restricted-syntax -- test data, not styling */
 const frame = { x: 0, y: 0, width: 390, height: 844 };
 /* eslint-enable no-restricted-syntax */
 const insets = { top: 47, left: 0, right: 0, bottom: 34 };
