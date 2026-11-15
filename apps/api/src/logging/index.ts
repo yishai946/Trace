@@ -90,7 +90,11 @@ export function serverLogOptions(env: Env, stream?: LogStream): Pick<FastifyServ
   const destination = stream
     ? { stream }
     : shipping
-      ? { transport: { targets: [{ target: 'pino/file', level: env.LOG_LEVEL, options: { destination: 1 } }, shipping] } }
+      ? {
+          transport: {
+            targets: [{ target: 'pino/file', level: env.LOG_LEVEL, options: { destination: 1 } }, shipping],
+          },
+        }
       : {};
   return {
     logger: { level: env.LOG_LEVEL, redact: REDACT_PATHS, ...destination },

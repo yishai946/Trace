@@ -43,7 +43,10 @@ const LOKI_VARIABLES = ['LOKI_URL', 'LOKI_USER', 'LOKI_TOKEN'] as const;
 const Env = EnvInput.superRefine((env, ctx) => {
   const missing = LOKI_VARIABLES.filter((name) => !env[name]);
   if (missing.length === 0 || missing.length === LOKI_VARIABLES.length) return;
-  ctx.addIssue({ code: 'custom', message: `Set all of ${LOKI_VARIABLES.join(', ')} or none; missing ${missing.join(', ')}` });
+  ctx.addIssue({
+    code: 'custom',
+    message: `Set all of ${LOKI_VARIABLES.join(', ')} or none; missing ${missing.join(', ')}`,
+  });
 }).transform((env) => ({
   ...env,
   LOG_LEVEL: env.LOG_LEVEL ?? defaultLogLevel(env.NODE_ENV),
