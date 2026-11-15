@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { choose, chooseFirst } from './choose';
+import { choose, chooseFirst } from '.';
 
 const options = ['all', 'new'] as const;
 
