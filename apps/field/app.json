@@ -37,6 +37,7 @@
       "expo-sqlite",
       "expo-secure-store",
       "expo-dev-client",
+      "@sentry/react-native/expo",
       [
         "expo-location",
         {
