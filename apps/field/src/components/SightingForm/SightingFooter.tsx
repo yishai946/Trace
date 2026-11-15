@@ -7,15 +7,15 @@ import type { SightingStatus } from './useSightingDraft';
 
 interface SightingFooterProps {
   status: SightingStatus;
-  sending: boolean;
   onSubmit: () => void;
   /** Back to the map. */
   onDone: () => void;
 }
 
 /** Under the form: the send button, or what happened to the sighting once it was sent or kept on the phone. */
-export function SightingFooter({ status, sending, onSubmit, onDone }: SightingFooterProps) {
+export function SightingFooter({ status, onSubmit, onDone }: SightingFooterProps) {
   const { color } = useTheme().theme;
+  const sending = status === 'sending';
   return status === 'pending' ? (
     <>
       <Text accessibilityLiveRegion="polite" style={[typography.body, { color: color.ink }]}>

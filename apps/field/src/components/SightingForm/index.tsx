@@ -52,14 +52,7 @@ export function SightingForm({ missionId, mission, polygons, assignedPolygonId, 
   } = draft;
   const area = toMissionArea(polygons, mission, assignedPolygonId);
 
-  const footer = (
-    <SightingFooter
-      status={draft.status}
-      sending={draft.status === 'sending'}
-      onSubmit={() => void draft.submit()}
-      onDone={onDone}
-    />
-  );
+  const footer = <SightingFooter status={draft.status} onSubmit={() => void draft.submit()} onDone={onDone} />;
 
   return (
     <Screen
@@ -116,5 +109,4 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   // The button sits level with the input, not with its label above.
   timeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.space4 },
-  caption: { textAlign: 'center' },
 });

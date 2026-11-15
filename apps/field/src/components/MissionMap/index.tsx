@@ -32,7 +32,7 @@ type MapLibreModule = typeof MapLibre;
  */
 function loadMapLibre(): MapLibreModule | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily: the native module is missing on web and in tests
     return require('@maplibre/maplibre-react-native') as MapLibreModule;
   } catch {
     return null;
