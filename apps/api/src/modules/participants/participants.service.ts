@@ -5,7 +5,7 @@ import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { assignments, missions, participations, polygons, searchers } from '../../db/schema';
-import { AppError, notFound } from '../../errors';
+import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
 import { CLOCK_SKEW_MS } from '../tracking/tracking.service';
 
 /** The mission behind a join code, as shown before the searcher confirms (UC-F02). 404 for a code no mission has. */
@@ -165,7 +165,7 @@ export async function assignParticipant(
       .where(eq(missions.id, input.missionId))
       .for('share');
     if (!mission) throw notFound('Mission');
-    if (isMissionEnded(mission.status)) throw new AppError(409, 'MISSION_ENDED', 'An ended mission is read-only');
+    if (isMissionEnded(mission.status)) throw missionEnded('An ended mission is read-only');
 
     const [participation] = await tx
       .select({ id: participations.id, status: participations.status, polygonId: participations.polygonId })
@@ -174,7 +174,7 @@ export async function assignParticipant(
       .for('update');
     if (!participation) throw notFound('Searcher');
     if (participation.status === 'ended') {
-      throw new AppError(409, 'PARTICIPATION_ENDED', "The searcher's activity in this mission has ended");
+      throw participationEnded("The searcher's activity in this mission has ended");
     }
 
     const [polygon] = await tx
@@ -286,7 +286,7 @@ export async function setBattery(
       .for('update');
     if (!participation) throw notFound('Mission');
     if (!acceptsTrackPoints(participation.status)) {
-      throw new AppError(409, 'PARTICIPATION_ENDED', 'The activity in this mission has ended');
+      throw participationEnded();
     }
     if (measuredAt.getTime() > Date.now() + CLOCK_SKEW_MS) return null;
     if (participation.measuredAt && participation.measuredAt.getTime() >= measuredAt.getTime()) return null;

@@ -13,19 +13,11 @@ import { z } from 'zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
-import { AppError, forbidden } from '../../errors';
+import { forbidden, unsupportedPhoto } from '../../errors';
 import type { Realtime } from '../../realtime';
 import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
-import {
-  createReport,
-  deleteReport,
-  getReportPhoto,
-  listReports,
-  markReportHandled,
-  reportRecipients,
-  setReportPhoto,
-  updateReport,
-} from './reports.service';
+import { getReportPhoto, listReports, reportRecipients } from './reports.read';
+import { createReport, deleteReport, markReportHandled, setReportPhoto, updateReport } from './reports.service';
 
 export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
   acceptPhotoBodies(app);
@@ -114,7 +106,7 @@ export const reportRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }>
     },
     async (request) => {
       const body: unknown = request.body;
-      if (!Buffer.isBuffer(body)) throw new AppError(415, 'UNSUPPORTED_PHOTO', 'Send the photo as an image');
+      if (!Buffer.isBuffer(body)) throw unsupportedPhoto('Send the photo as an image');
       const { missionId, reportId } = request.params;
       const report = await setReportPhoto(db, { missionId, reportId, userId: actorOf(request).userId, data: body });
       realtime.publish({ type: 'report.saved', missionId, report }, await recipientsOf(report.id));

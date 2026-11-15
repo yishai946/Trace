@@ -1,3 +1,4 @@
+import { sameDay } from '../sameDay';
 import type { MissionStatus } from '@trace/domain';
 
 /** How each mission status reads in the list (wireframe Cd02): a word and the state of its dot. */
@@ -11,9 +12,6 @@ export const MISSION_STATUS_LABELS: Record<MissionStatus, { label: string; tone:
 const time = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
 const dayMonth = new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit' });
 const fullDate = new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
-const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
 /** When a mission was opened, as the list shows it: "היום 11:16", "אתמול 22:40", "01.10, 14:05" or "01.10.2025". */
 export function formatOpened(iso: string, now: Date = new Date()): string {

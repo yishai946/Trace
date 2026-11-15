@@ -11,15 +11,15 @@ import type {
   UpdateReportBody,
 } from '@trace/schemas';
 import type { ThemeId } from '@trace/design';
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ReportTypeIcon } from '../../components/icons';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { CriticalReportAlert } from '../../mission/CriticalReportAlert';
-import { toMapData } from '../../mission/toMapData';
+import { useReportsMap } from './useReportsMap';
 import { ReportInspector } from './ReportInspector';
 import { ReportList } from './ReportList';
 import styles from './ReportsPage.module.css';
-import { filterReports, initialReportsView, type StatusFilter, type TypeFilter } from '../../mission/reportView';
+import { filterReports, type StatusFilter, type TypeFilter } from '../../mission/reportView';
 
 export interface ReportsPageProps {
   /** Newest first, as the API returns them. `undefined` while loading. */
@@ -86,22 +86,7 @@ export function ReportsPage({
     if (report) setFocus({ center: report.position.coordinates as LngLat });
   };
 
-  // The map opens on everything the mission placed: polygons, rally point, LKP and reports. Read once, at mount.
-  const [initialView] = useState(() => initialReportsView({ mission, polygons, reports: all }));
-  const data = useMemo(
-    () =>
-      toMapData({
-        mission,
-        polygons,
-        participants,
-        sightings: sightings ?? [],
-        lkps: lkps ?? [],
-        reports: reports ?? [],
-        selectedPolygonId: null,
-        editingPolygonId: null,
-      }),
-    [mission, polygons, participants, sightings, lkps, reports],
-  );
+  const { initialView, data } = useReportsMap({ mission, polygons, participants, sightings, lkps, reports });
 
   return (
     <div className={styles.page}>

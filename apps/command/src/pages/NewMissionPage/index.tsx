@@ -1,33 +1,22 @@
 import type { ThemeId } from '@trace/design';
 import type { LngLat } from '@trace/geo';
-import { emptyMissionMapData, type MapProvider } from '@trace/map';
+import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
-import { useMemo, useState, type FormEvent } from 'react';
 import { Form } from 'react-aria-components';
-import { ApiRequestError } from '../../api';
-import { PhotoPicker } from '../../components/PhotoPicker';
 import { Button } from '../../components/Button';
 import { DateTimeField } from '../../components/DateTimeField';
-import { TextField } from '../../components/TextField';
-import { MissionMap, type MapFocus } from '../../map/MissionMap';
-import { useCreateMission } from '../../mission/missionQueries';
+import { MissionMap } from '../../map/MissionMap';
 import styles from './NewMissionPage.module.css';
-import {
-  emptyForm,
-  MESSAGES,
-  missionName,
-  toCreateBody,
-  validate,
-  type FormErrors,
-  type NewMissionForm,
-} from './newMissionForm';
+import { MESSAGES, missionName } from './newMissionForm';
+import { MissingPersonFields } from './MissingPersonFields';
+import { useNewMissionForm } from './useNewMissionForm';
 import { MissionNameTitle } from './MissionNameTitle';
-import { PointPicker, type PlaceMode } from './PointPicker';
+import { PointPicker } from './PointPicker';
 
 /** Where the map opens for a new mission: Jerusalem, until the commander places a point. */
-const DEFAULT_CENTER: LngLat = [35.2137, 31.7683];
 
-type PointKind = 'lkp' | 'rally';
+/** Where the map opens before a point is placed: Jerusalem. */
+const DEFAULT_CENTER: LngLat = [35.2137, 31.7683];
 
 export interface NewMissionPageProps {
   provider: MapProvider;
@@ -41,63 +30,23 @@ export interface NewMissionPageProps {
 
 /** The new-mission screen (UC-C02, wireframe Cd03): mission and missing-person details, LKP and rally point. */
 export function NewMissionPage({ provider, themeId, online, onCancel, onCreated }: NewMissionPageProps) {
-  const [form, setForm] = useState<NewMissionForm>(emptyForm);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [modes, setModes] = useState<Record<PointKind, PlaceMode>>({ lkp: 'map', rally: 'search' });
-  const [focus, setFocus] = useState<MapFocus | null>(null);
-  const create = useCreateMission();
-
-  // Only one point follows map clicks: the one whose "map" tab is open.
-  const placing: PointKind | null = modes.lkp === 'map' ? 'lkp' : modes.rally === 'map' ? 'rally' : null;
-
-  const update = (changes: Partial<NewMissionForm>) => {
-    const next = { ...form, ...changes };
-    setForm(next);
-    // Once the commander has tried to create, the marks follow what they fix.
-    if (Object.keys(errors).length > 0) setErrors(validate(next));
-  };
-
-  const setMode = (kind: PointKind, mode: PlaceMode) => {
-    const other: PointKind = kind === 'lkp' ? 'rally' : 'lkp';
-    setModes(
-      (current) =>
-        ({
-          [kind]: mode,
-          [other]: mode === 'map' && current[other] === 'map' ? 'search' : current[other],
-        }) as Record<PointKind, PlaceMode>,
-    );
-  };
-
-  const setPoint = (kind: PointKind, point: LngLat) => update(kind === 'lkp' ? { lkp: point } : { rally: point });
-
-  const mapData = useMemo(
-    () => ({
-      ...emptyMissionMapData,
-      lkp: form.lkp ? { id: 'lkp', position: form.lkp, time: form.lkpObservedAt.slice(11, 16) } : null,
-      rally: form.rally,
-    }),
-    [form.lkp, form.lkpObservedAt, form.rally],
-  );
-
-  const submit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const found = validate(form);
-    setErrors(found);
-    if (Object.keys(found).length > 0 || !online) return;
-    create.mutate(
-      { body: toCreateBody(form), photo },
-      { onSuccess: ({ mission, photoFailed }) => onCreated(mission, photoFailed) },
-    );
-  };
-
-  const failure =
-    create.error instanceof ApiRequestError && create.error.code === 'NETWORK_ERROR'
-      ? 'אין חיבור לשרת. המסע לא נוצר.'
-      : create.error
-        ? 'המסע לא נוצר. בדקו את הפרטים ונסו שוב.'
-        : null;
-
+  const {
+    form,
+    photo,
+    setPhoto,
+    errors,
+    modes,
+    focus,
+    setFocus,
+    placing,
+    mapData,
+    failure,
+    creating,
+    update,
+    setMode,
+    setPoint,
+    submit,
+  } = useNewMissionForm({ online, onCreated });
   return (
     <>
       <MissionMap
@@ -123,48 +72,7 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
         </div>
 
         <div className={styles.scroll}>
-          <fieldset className={styles.group}>
-            <legend className={styles.sectionTitle}>פרטי הנעדר</legend>
-            <div className={styles.nameAge}>
-              <TextField
-                label="שם הנעדר"
-                value={form.personName}
-                onChange={(personName) => update({ personName })}
-                isInvalid={!!errors.personName}
-                errorMessage={errors.personName}
-              />
-              <TextField
-                label="גיל"
-                ltr
-                inputMode="numeric"
-                value={form.age}
-                onChange={(age) => update({ age })}
-                isInvalid={!!errors.age}
-                errorMessage={errors.age}
-              />
-            </div>
-            <DateTimeField
-              label="זמן היעלמות"
-              value={form.disappearedAt}
-              onChange={(disappearedAt) => update({ disappearedAt })}
-            />
-            <div className={styles.photoRow}>
-              <PhotoPicker photo={photo} onChange={setPhoto} />
-              <TextField
-                className={styles.grow}
-                label="תיאור / לבוש"
-                rows={5}
-                value={form.description}
-                onChange={(description) => update({ description })}
-              />
-            </div>
-            <TextField
-              label="מידע רלוונטי נוסף"
-              rows={4}
-              value={form.additionalInfo}
-              onChange={(additionalInfo) => update({ additionalInfo })}
-            />
-          </fieldset>
+          <MissingPersonFields form={form} errors={errors} photo={photo} onPhoto={setPhoto} onChange={update} />
         </div>
 
         <div className={styles.footer}>
@@ -184,9 +92,9 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
               type="submit"
               variant="primary"
               className={styles.grow}
-              isDisabled={!form.lkp || !form.rally || !online || create.isPending}
+              isDisabled={!form.lkp || !form.rally || !online || creating}
             >
-              {create.isPending ? 'יוצר מסע…' : 'צור מסע'}
+              {creating ? 'יוצר מסע…' : 'צור מסע'}
             </Button>
           </div>
           <p className={styles.caption}>המסע נפתח מיד כפעיל, ונוצר קוד הצטרפות.</p>

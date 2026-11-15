@@ -1,19 +1,9 @@
-import {
-  CONTOUR_WIDTH,
-  FOREFOOT,
-  HEADING,
-  PEAK_RADIUS,
-  PRINT_BOX,
-  SOLE,
-  SOLE_HEIGHT,
-  SPLASH,
-  printContours,
-  walk,
-} from '@trace/design';
+import { FOREFOOT, HEADING, PRINT_BOX, SOLE, SOLE_HEIGHT, SPLASH, walk } from '@trace/design';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
-import Svg, { Circle, ClipPath, Defs, G, Path } from 'react-native-svg';
+import { AccessibilityInfo, Animated, Easing, StyleSheet, useWindowDimensions } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '../../theme';
+import { Sole } from './Sole';
 
 const BOX = PRINT_BOX;
 const FOREFOOT_BOX = { w: 240, h: 280 } as const;
@@ -152,40 +142,6 @@ export function Splash({ onDone }: SplashProps) {
         </Svg>
       </Animated.View>
     </Animated.View>
-  );
-}
-
-interface SoleProps {
-  index: number;
-  ink: string;
-  line: string;
-  /** Colour of the summit; null leaves a hole in the ink like the other steps. */
-  peak: string | null;
-}
-
-/** One sole: ink with contour lines cut into it. */
-function Sole({ index, ink, line, peak }: SoleProps) {
-  const { contours, peak: summit } = useMemo(() => printContours(index), [index]);
-  const clipId = `sole-${index}`;
-  return (
-    <View style={StyleSheet.absoluteFill}>
-      <Svg width="100%" height="100%" viewBox={`${BOX.x} ${BOX.y} ${BOX.w} ${BOX.h}`}>
-        <Defs>
-          <ClipPath id={clipId}>
-            <Path d={SOLE.forefoot} />
-            <Path d={SOLE.heel} />
-          </ClipPath>
-        </Defs>
-        <Path d={SOLE.forefoot} fill={ink} />
-        <Path d={SOLE.heel} fill={ink} />
-        <G clipPath={`url(#${clipId})`} fill="none" stroke={line} strokeLinejoin="round">
-          {contours.map((c, i) => (
-            <Path key={i} d={c.d} strokeWidth={c.major ? CONTOUR_WIDTH.major : CONTOUR_WIDTH.minor} />
-          ))}
-        </G>
-        <Circle cx={summit.x} cy={summit.y} r={peak ? PEAK_RADIUS.last : PEAK_RADIUS.hole} fill={peak ?? line} />
-      </Svg>
-    </View>
   );
 }
 

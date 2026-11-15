@@ -42,6 +42,46 @@ function parseRetryAfter(value: string | null): number | undefined {
   return value !== null && /^\d+$/.test(value.trim()) ? Number(value) : undefined;
 }
 
+/** A time limit for one request: it aborts after `ms`, or when the caller's own signal aborts. Call `dispose` when done. */
+function withTimeout(signal: AbortSignal | undefined, ms: number) {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, ms);
+  const abortWithCaller = () => controller.abort();
+  if (signal?.aborted) controller.abort();
+  else signal?.addEventListener('abort', abortWithCaller, { once: true });
+  return {
+    signal: controller.signal,
+    timedOut: () => timedOut,
+    dispose: () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', abortWithCaller);
+    },
+  };
+}
+
+function headersOf({ token, body, upload }: Pick<RequestOptions<z.ZodType>, 'token' | 'body' | 'upload'>) {
+  const headers: Record<string, string> = {};
+  if (token) headers.authorization = `Bearer ${token}`;
+  if (body !== undefined) headers['content-type'] = 'application/json';
+  if (upload) headers['content-type'] = upload.contentType;
+  return headers;
+}
+
+/** The failure the server answered with, in its shared error shape. */
+async function failureOf(res: Response): Promise<ApiRequestError> {
+  const retryAfter = parseRetryAfter(res.headers.get('retry-after'));
+  const parsed = ApiError.safeParse(await res.json().catch(() => null));
+  if (!parsed.success) {
+    return new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`, undefined, retryAfter);
+  }
+  const { code, message, details } = parsed.data.error;
+  return new ApiRequestError(res.status, code, message, details, retryAfter);
+}
+
 /** Calls the TRACE API with the searcher's bearer token and validates the response with the shared zod schema. */
 export async function apiRequest<S extends z.ZodType>(
   path: string,
@@ -49,57 +89,30 @@ export async function apiRequest<S extends z.ZodType>(
 ): Promise<z.infer<S>> {
   if (!baseUrl) throw new ApiRequestError(0, 'NETWORK_ERROR', 'EXPO_PUBLIC_API_URL is not set');
 
-  const headers: Record<string, string> = {};
-  if (token) headers.authorization = `Bearer ${token}`;
-  if (body !== undefined) headers['content-type'] = 'application/json';
-  if (upload) headers['content-type'] = upload.contentType;
-
   // One timer covers the request and reading the answer; the caller's own signal still aborts it.
-  const controller = new AbortController();
-  let timedOut = false;
-  const timer = setTimeout(
-    () => {
-      timedOut = true;
-      controller.abort();
-    },
-    upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS,
-  );
-  const abortWithCaller = () => controller.abort();
-  if (signal?.aborted) controller.abort();
-  else signal?.addEventListener('abort', abortWithCaller, { once: true });
-
+  const limit = withTimeout(signal, upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS);
   try {
     let res: Response;
     try {
       res = await fetch(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
         method,
-        signal: controller.signal,
+        signal: limit.signal,
         // The bearer token is the only credential: the sign-in response also sets a cookie that must not outlive sign-out.
         credentials: 'omit',
-        headers,
+        headers: headersOf({ token, body, upload }),
         body: upload ? upload.data : body === undefined ? undefined : JSON.stringify(body),
       });
     } catch (error) {
-      if (signal?.aborted && !timedOut) throw error;
+      if (signal?.aborted && !limit.timedOut()) throw error;
       throw new ApiRequestError(
         0,
         'NETWORK_ERROR',
-        timedOut ? 'The server did not answer in time' : 'The server is not reachable',
+        limit.timedOut() ? 'The server did not answer in time' : 'The server is not reachable',
       );
     }
-
-    if (!res.ok) {
-      const retryAfter = parseRetryAfter(res.headers.get('retry-after'));
-      const parsed = ApiError.safeParse(await res.json().catch(() => null));
-      if (parsed.success) {
-        const { code, message, details } = parsed.data.error;
-        throw new ApiRequestError(res.status, code, message, details, retryAfter);
-      }
-      throw new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`, undefined, retryAfter);
-    }
+    if (!res.ok) throw await failureOf(res);
     return (schema ? schema.parse(await res.json()) : undefined) as z.infer<S>;
   } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', abortWithCaller);
+    limit.dispose();
   }
 }

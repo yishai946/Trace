@@ -13,9 +13,10 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { missions, participations, polygons, searchers } from '../../db/schema';
+import { participations, polygons, searchers } from '../../db/schema';
 import type { Actor } from '../../auth/auth.plugin';
 import { AppError, notFound } from '../../errors';
+import { lockMission } from '../lockMission';
 import { recordEvent } from '../timeline/timeline.service';
 
 export type CreatePolygonInput = z.output<typeof CreatePolygonBody>;
@@ -53,17 +54,11 @@ function toPolygon(row: PolygonRow): MissionPolygon {
 }
 
 /** Locks the mission row so concurrent polygon changes in one mission run one after another. */
-async function lockActiveMission(tx: Tx, missionId: string) {
-  const [mission] = await tx
-    .select({ status: missions.status })
-    .from(missions)
-    .where(eq(missions.id, missionId))
-    .for('update');
-  if (!mission) throw notFound('Mission');
-  if (!canChangePolygons(mission.status)) {
-    throw new AppError(409, 'MISSION_NOT_ACTIVE', 'Polygons can be changed only while the mission is active');
-  }
-}
+const lockActiveMission = (tx: Tx, missionId: string) =>
+  lockMission(tx, missionId, {
+    allowed: canChangePolygons,
+    refusal: () => new AppError(409, 'MISSION_NOT_ACTIVE', 'Polygons can be changed only while the mission is active'),
+  });
 
 async function findPolygon(tx: Tx, missionId: string, polygonId: string): Promise<PolygonRow> {
   const [row] = await selectPolygons(tx).where(

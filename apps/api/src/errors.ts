@@ -18,6 +18,12 @@ export class AppError extends Error {
 export const notFound = (what: string) => new AppError(404, 'NOT_FOUND', `${what} not found`);
 export const unauthenticated = () => new AppError(401, 'UNAUTHENTICATED', 'Sign in to continue');
 export const forbidden = () => new AppError(403, 'FORBIDDEN', 'You are not allowed to do this');
+/** An ended mission is read-only; the message says what could not be changed. */
+export const missionEnded = (message: string) => new AppError(409, 'MISSION_ENDED', message);
+export const participationEnded = (message = 'The activity in this mission has ended') =>
+  new AppError(409, 'PARTICIPATION_ENDED', message);
+export const unsupportedPhoto = (message = 'The photo must be a JPEG, PNG or WebP image') =>
+  new AppError(415, 'UNSUPPORTED_PHOTO', message);
 
 const body = (code: ErrorCode, message: string, details?: unknown): ApiError => ({
   error: details === undefined ? { code, message } : { code, message, details },

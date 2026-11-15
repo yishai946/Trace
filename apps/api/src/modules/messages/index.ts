@@ -16,7 +16,8 @@ import type { Db } from '../../db';
 import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
 import type { PushNotifier } from '../notifications/notifications.service';
-import { listMessages, listOwnMessages, PUSH_TITLES, recordReceipt, sendMessage } from './messages.service';
+import { listMessages, listOwnMessages } from './messages.read';
+import { PUSH_TITLES, recordReceipt, sendMessage } from './messages.service';
 
 export const messageRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push: PushNotifier }> = async (
   app,

@@ -1,13 +1,13 @@
-import { REPORT_STATUS_LABELS, REPORT_TYPE_LABELS } from '@trace/domain';
+import { REPORT_TYPE_LABELS } from '@trace/domain';
 import type { MissionPolygon, Report, UpdateReportBody } from '@trace/schemas';
 import { Button } from '../../components/Button';
-import { CallsignChip } from '../../components/CallsignChip';
 import { CloseIcon, InfoIcon, ReportTypeIcon } from '../../components/icons';
-import { timeLabel } from '../../mission/timeLabel';
 import { ReportEditForm } from '../../mission/ReportEditForm';
 import { useReportEditing } from '../../mission/useReportEditing';
+import { InspectorActions } from './InspectorActions';
+import { ReportFacts } from './ReportFacts';
 import styles from './ReportsPage.module.css';
-import { inspectorSub, polygonLabel, positionLabel } from '../../mission/reportView';
+import { inspectorSub } from '../../mission/reportView';
 
 export interface ReportInspectorProps {
   report: Report;
@@ -46,7 +46,6 @@ export function ReportInspector({
     cancelDelete,
     onKeyDown,
   } = useReportEditing();
-  const { callsign, name } = report.reportedBy;
   const canChange = !!(onHandle && onUpdate && onDelete);
 
   return (
@@ -83,74 +82,23 @@ export function ReportInspector({
         ) : (
           <p className={styles.text}>{report.text}</p>
         )}
-        <dl className={styles.facts}>
-          <div>
-            <dt>מדווח</dt>
-            <dd className={styles.reporter}>
-              {callsign !== null && <CallsignChip callsign={callsign} />}
-              {name}
-            </dd>
-          </div>
-          <div>
-            <dt>פוליגון</dt>
-            <dd>{polygonLabel(report, polygons)}</dd>
-          </div>
-          <div>
-            <dt>זמן</dt>
-            <dd>
-              <time className={styles.num} dateTime={report.reportedAt}>
-                {timeLabel(report.reportedAt)}
-              </time>
-            </dd>
-          </div>
-          <div>
-            <dt>סטטוס</dt>
-            <dd>{REPORT_STATUS_LABELS[report.status]}</dd>
-          </div>
-          <div className={styles.wide}>
-            <dt>מיקום GPS</dt>
-            <dd>
-              <span dir="ltr" className={styles.num}>
-                {positionLabel(report)}
-              </span>
-            </dd>
-          </div>
-        </dl>
+        <ReportFacts report={report} polygons={polygons} />
       </div>
 
       {canChange && !editing && (
-        <div className={`${styles.section} ${styles.column}`}>
-          {confirmingDelete ? (
-            <>
-              <div role="group" aria-label="אישור מחיקה" className={styles.confirm}>
-                <p className={styles.hint}>למחוק את הדיווח? אי אפשר לבטל.</p>
-                <div className={styles.actions}>
-                  <Button ref={cancelDelete} onPress={closeConfirm} isDisabled={busy}>
-                    בטל
-                  </Button>
-                  <Button variant="danger" onPress={() => onDelete(report.id)} isDisabled={busy}>
-                    מחק דיווח
-                  </Button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className={styles.actions}>
-              {report.status === 'new' && (
-                <Button variant="primary" onPress={() => onHandle(report.id)} isDisabled={busy}>
-                  סמן כטופל
-                </Button>
-              )}
-              <Button ref={editButton} onPress={openEdit} isDisabled={busy}>
-                ערוך
-              </Button>
-              <Button ref={deleteButton} variant="danger-outline" onPress={openConfirm} isDisabled={busy}>
-                מחק
-              </Button>
-            </div>
-          )}
-          <p className={styles.hint}>מחיקה למנהל בלבד. עריכה ללא היסטוריית גרסאות.</p>
-        </div>
+        <InspectorActions
+          report={report}
+          busy={busy}
+          confirmingDelete={confirmingDelete}
+          onHandle={onHandle}
+          onDelete={onDelete}
+          openEdit={openEdit}
+          openConfirm={openConfirm}
+          closeConfirm={closeConfirm}
+          editButtonRef={editButton}
+          deleteButtonRef={deleteButton}
+          cancelDeleteRef={cancelDelete}
+        />
       )}
       {!canChange && ended && (
         <div className={styles.section}>

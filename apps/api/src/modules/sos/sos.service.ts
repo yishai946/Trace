@@ -6,7 +6,7 @@ import type { Actor } from '../../auth/auth.plugin';
 import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { participations, polygons, searchers, sosAlertRecipients, sosAlerts, users } from '../../db/schema';
-import { AppError, forbidden, notFound } from '../../errors';
+import { forbidden, notFound, participationEnded } from '../../errors';
 import { recordEvent } from '../timeline/timeline.service';
 
 /** The searcher who acts: the route has checked that they have a profile and are in the mission. */
@@ -74,6 +74,42 @@ async function readSos(db: Db | Tx, id: string): Promise<Sos> {
   return toSos(row);
 }
 
+/** The searchers assigned to the sender's polygon, without the sender, and the polygon's name. */
+async function polygonAudience(
+  tx: Tx,
+  { missionId, polygonId, senderId }: { missionId: string; polygonId: string; senderId: string },
+) {
+  const recipients = await tx
+    .select({ searcherId: participations.searcherId })
+    .from(participations)
+    .where(
+      and(
+        eq(participations.missionId, missionId),
+        eq(participations.status, 'assigned'),
+        eq(participations.polygonId, polygonId),
+        ne(participations.searcherId, senderId),
+      ),
+    );
+  const [polygon] = await tx.select({ name: polygons.name }).from(polygons).where(eq(polygons.id, polygonId));
+  return { recipients, polygonName: polygon?.name ?? null };
+}
+
+/** Where the SOS is: the location sent with it, else the searcher's last known position, else nowhere. */
+function sosFix(
+  location: Body['location'],
+  participation: { lastPosition: string | null; lastPositionAt: Date | null },
+) {
+  if (location) {
+    return { position: location.position, recordedAt: new Date(location.recordedAt), accuracy: location.accuracy };
+  }
+  if (!participation.lastPosition || !participation.lastPositionAt) return null;
+  return {
+    position: PointGeometry.parse(JSON.parse(participation.lastPosition)),
+    recordedAt: participation.lastPositionAt,
+    accuracy: null,
+  };
+}
+
 export interface ActivatedSos {
   sos: Sos;
   /** False when the searcher already had an active SOS: it is returned unchanged and nothing else happens. */
@@ -109,7 +145,7 @@ export async function activateSos(
       .for('update');
     if (!participation) throw notFound('Mission');
     if (!canActivateSos(participation.status)) {
-      throw new AppError(409, 'PARTICIPATION_ENDED', 'The activity in this mission has ended');
+      throw participationEnded();
     }
 
     const [active] = await tx
@@ -120,32 +156,10 @@ export async function activateSos(
 
     // Only an assigned searcher has a polygon.
     const polygonId = participation.status === 'assigned' ? participation.polygonId : null;
-    const recipients = polygonId
-      ? await tx
-          .select({ searcherId: participations.searcherId })
-          .from(participations)
-          .where(
-            and(
-              eq(participations.missionId, missionId),
-              eq(participations.status, 'assigned'),
-              eq(participations.polygonId, polygonId),
-              ne(participations.searcherId, actor.searcherId),
-            ),
-          )
-      : [];
-    const polygonName = polygonId
-      ? ((await tx.select({ name: polygons.name }).from(polygons).where(eq(polygons.id, polygonId)))[0]?.name ?? null)
-      : null;
-
-    const fix = location
-      ? { position: location.position, recordedAt: new Date(location.recordedAt), accuracy: location.accuracy }
-      : participation.lastPosition && participation.lastPositionAt
-        ? {
-            position: PointGeometry.parse(JSON.parse(participation.lastPosition)),
-            recordedAt: participation.lastPositionAt,
-            accuracy: null,
-          }
-        : null;
+    const { recipients, polygonName } = polygonId
+      ? await polygonAudience(tx, { missionId, polygonId, senderId: actor.searcherId })
+      : { recipients: [], polygonName: null };
+    const fix = sosFix(location, participation);
 
     const [row] = await tx
       .insert(sosAlerts)

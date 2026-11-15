@@ -56,6 +56,16 @@ export interface JoinFormProps {
   scanning?: boolean;
 }
 
+/** What is wrong, in words: the join that failed, else the preview of the code that was entered in full. */
+function shownError(
+  join: ReturnType<typeof useJoinMission>,
+  preview: ReturnType<typeof useJoinPreview>,
+  complete: string | null,
+): string | null {
+  if (join.isError) return joinErrorMessage(join.error);
+  return complete && preview.isError ? previewErrorMessage(preview.error) : null;
+}
+
 /**
  * Fm02: join a mission by scanning its QR, opening its link or typing its code (UC-F02, decision 6). All three end in
  * the same code; the mission behind it is shown before the searcher confirms.
@@ -76,11 +86,7 @@ export function JoinForm({ onJoined, onOpenMyMissions, scanning = true }: JoinFo
     if (found && found !== code) change(found);
   };
   const mission = complete ? preview.data : undefined;
-  const error = join.isError
-    ? joinErrorMessage(join.error)
-    : complete && preview.isError
-      ? previewErrorMessage(preview.error)
-      : null;
+  const error = shownError(join, preview, complete);
 
   return (
     <Screen

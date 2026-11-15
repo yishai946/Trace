@@ -1,13 +1,13 @@
-import { isCriticalReport, REPORT_STATUS_LABELS, REPORT_TYPE_LABELS } from '@trace/domain';
+import { isCriticalReport } from '@trace/domain';
 import type { MissionPolygon, Report, UpdateReportBody } from '@trace/schemas';
 import { useEffect, useRef } from 'react';
-import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
-import { CheckIcon, CloseIcon } from '../../components/icons';
 import { ReportEditForm } from '../../mission/ReportEditForm';
 import { polygonLabel, positionLabel } from '../../mission/reportView';
 import { timeLabel } from '../../mission/timeLabel';
 import { useReportEditing } from '../../mission/useReportEditing';
+import { CardHead } from './CardHead';
+import { CardActions } from './CardActions';
 import styles from './PhoneReportsPage.module.css';
 
 export interface ReportCardProps {
@@ -71,17 +71,7 @@ export function ReportCard({
       aria-label="פרטי דיווח"
       onKeyDown={onKeyDown}
     >
-      <div className={styles.head}>
-        {critical && <span className={`${styles.badge} ${styles.strong}`}>קריטי</span>}
-        <h2 className={styles.cardTitle}>{REPORT_TYPE_LABELS[report.type]}</h2>
-        <span className={styles.badge} data-status={report.status}>
-          {report.status === 'handled' && <CheckIcon />}
-          {REPORT_STATUS_LABELS[report.status]}
-        </span>
-        <Button variant="icon" aria-label="סגור" onPress={onClose}>
-          <CloseIcon />
-        </Button>
-      </div>
+      <CardHead report={report} critical={critical} onClose={onClose} />
       <p className={styles.meta}>
         {callsign !== null && <CallsignChip callsign={callsign} />} {name}, {polygonLabel(report, polygons)},{' '}
         <time className={styles.num} dateTime={report.reportedAt}>
@@ -117,41 +107,21 @@ export function ReportCard({
           {positionLabel(report)}
         </span>
       </p>
-      {canChange &&
-        !editing &&
-        (confirmingDelete ? (
-          <div role="group" aria-label="אישור מחיקה" className={styles.confirm}>
-            <p className={styles.hint}>למחוק את הדיווח? אי אפשר לבטל.</p>
-            <div className={styles.btnRow}>
-              <Button size="lg" ref={cancelDelete} onPress={closeConfirm} isDisabled={busy}>
-                בטל
-              </Button>
-              <Button size="lg" variant="danger" onPress={() => onDelete(report.id)} isDisabled={busy}>
-                מחק דיווח
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.btnRow}>
-            {report.status === 'new' && (
-              <Button
-                size="lg"
-                variant="primary"
-                className={styles.main}
-                onPress={() => onHandle(report.id)}
-                isDisabled={busy}
-              >
-                סמן כטופל
-              </Button>
-            )}
-            <Button size="lg" ref={editButton} onPress={openEdit} isDisabled={busy}>
-              ערוך
-            </Button>
-            <Button size="lg" ref={deleteButton} variant="danger-outline" onPress={openConfirm} isDisabled={busy}>
-              מחק
-            </Button>
-          </div>
-        ))}
+      {canChange && !editing && (
+        <CardActions
+          report={report}
+          busy={busy}
+          confirmingDelete={confirmingDelete}
+          onHandle={onHandle}
+          onDelete={onDelete}
+          openEdit={openEdit}
+          openConfirm={openConfirm}
+          closeConfirm={closeConfirm}
+          editButtonRef={editButton}
+          deleteButtonRef={deleteButton}
+          cancelDeleteRef={cancelDelete}
+        />
+      )}
       {!canChange && ended && <p className={styles.hint}>המסע הסתיים. הדיווחים לקריאה בלבד.</p>}
       {error && (
         <p role="alert" className={styles.error}>

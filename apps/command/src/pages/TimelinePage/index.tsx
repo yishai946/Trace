@@ -1,18 +1,17 @@
-import { formatCallsign } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { useState } from 'react';
-import { Link, ToggleButton, ToggleButtonGroup } from 'react-aria-components';
+import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import styles from './TimelinePage.module.css';
 import { Button } from '../../components/Button';
-import { CallsignChip } from '../../components/CallsignChip';
 import {
   CATEGORY_OF,
   TIMELINE_CATEGORIES,
-  describeEvent,
   formatEventTime,
   spansDays,
   type TimelineCategory,
 } from '../../mission/timelineEvent';
+import { EventRow } from './EventRow';
+import { ListState } from '../../components/ListState';
 
 /** How many events show at a time; "טען אירועים קודמים" shows this many more. */
 export const PAGE_SIZE = 50;
@@ -89,34 +88,35 @@ export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: Timelin
       )}
 
       <div className={styles.body}>
-        {events === undefined ? (
-          loadFailed ? (
-            <div className={styles.empty}>
-              <p role="alert">לא ניתן לטעון את ציר הזמן מהשרת.</p>
-              <Button onPress={onRetry}>נסה שוב</Button>
-            </div>
-          ) : (
-            <p className={styles.empty}>טוען ציר זמן…</p>
-          )
-        ) : events.length === 0 ? (
-          <p className={styles.empty}>אין עדיין אירועים במסע הזה.</p>
-        ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">שעה</th>
-                <th scope="col">סוג</th>
-                <th scope="col">אירוע</th>
-                <th scope="col">מעבר אל</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((event) => (
-                <EventRow key={event.id} event={event} withDate={withDate} onGoToMap={onGoToMap} />
-              ))}
-            </tbody>
-          </table>
-        )}
+        <ListState
+          items={events}
+          loadFailed={loadFailed}
+          onRetry={onRetry}
+          className={styles.empty}
+          text={{
+            failed: 'לא ניתן לטעון את ציר הזמן מהשרת.',
+            loading: 'טוען ציר זמן…',
+            empty: 'אין עדיין אירועים במסע הזה.',
+          }}
+        >
+          {() => (
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th scope="col">שעה</th>
+                  <th scope="col">סוג</th>
+                  <th scope="col">אירוע</th>
+                  <th scope="col">מעבר אל</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((event) => (
+                  <EventRow key={event.id} event={event} withDate={withDate} onGoToMap={onGoToMap} />
+                ))}
+              </tbody>
+            </table>
+          )}
+        </ListState>
       </div>
 
       {hasEvents && (
@@ -132,54 +132,5 @@ export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: Timelin
         </div>
       )}
     </section>
-  );
-}
-
-function EventRow({ event, withDate, onGoToMap }: { event: TimelineEvent; withDate: boolean; onGoToMap: () => void }) {
-  const view = describeEvent(event);
-  // Every row's link says what it leads from, so links in a list are told apart.
-  const plainText = view.segments
-    .map((segment) => (typeof segment === 'string' ? segment : formatCallsign(segment.callsign)))
-    .join('');
-  return (
-    <tr data-danger={view.danger || undefined}>
-      <td>
-        <time dateTime={event.occurredAt} className={styles.num}>
-          {formatEventTime(event.occurredAt, withDate)}
-        </time>
-      </td>
-      <td>
-        <span className={styles.badge} data-danger={view.danger || undefined}>
-          {view.badge}
-        </span>
-      </td>
-      <td>
-        {view.segments.map((segment, i) =>
-          typeof segment === 'string' ? (
-            <span key={i}>{segment}</span>
-          ) : (
-            <CallsignChip key={i} callsign={segment.callsign} />
-          ),
-        )}
-      </td>
-      <td>
-        {view.destination === 'map' && (
-          <Link className={styles.link} aria-label={`לוח מבצעי: ${plainText}`} onPress={onGoToMap}>
-            לוח מבצעי
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m15 6-6 6 6 6" />
-            </svg>
-          </Link>
-        )}
-      </td>
-    </tr>
   );
 }
