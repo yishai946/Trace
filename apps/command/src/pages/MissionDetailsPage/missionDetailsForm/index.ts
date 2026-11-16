@@ -1,6 +1,7 @@
 import { localDateTimeOf } from '@trace/domain';
 import type { Mission, UpdateMissionDetailsBody } from '@trace/schemas';
 import { ApiRequestError } from '../../../api';
+import { AGE_MESSAGE, ageError, toMissingPerson } from '../../../mission/missingPersonForm';
 
 /** What the commander edits on the mission details screen, as the inputs hold it. */
 export interface MissionDetailsForm {
@@ -17,12 +18,10 @@ export type DetailsErrors = Partial<Record<'name' | 'age', string>>;
 
 export const DETAILS_MESSAGES = {
   name: 'חסר שם או מזהה למסע.',
-  age: 'גיל במספרים שלמים, 0 עד 130.',
+  age: AGE_MESSAGE,
 } as const;
 
 export const PHOTO_SAVE_FAILED = 'הפרטים נשמרו, אבל התמונה לא נשמרה. נסו שוב.';
-
-const MAX_AGE = 130;
 
 /** An ISO time as a datetime-local value in the commander's time zone: `YYYY-MM-DDTHH:mm`. Empty for null. */
 export function toLocalInput(iso: string | null): string {
@@ -46,24 +45,14 @@ export function fromMission(mission: Mission): MissionDetailsForm {
 export function validate(form: MissionDetailsForm): DetailsErrors {
   const errors: DetailsErrors = {};
   if (!form.name.trim()) errors.name = DETAILS_MESSAGES.name;
-  const age = form.age.trim();
-  if (age && !(/^\d+$/.test(age) && Number(age) <= MAX_AGE)) errors.age = DETAILS_MESSAGES.age;
+  const age = ageError(form.age);
+  if (age) errors.age = age;
   return errors;
 }
 
 /** The API request for a valid form. Blank text becomes null. */
 export function toUpdateBody(form: MissionDetailsForm): UpdateMissionDetailsBody {
-  const text = (value: string) => value.trim() || null;
-  return {
-    name: form.name.trim(),
-    missingPerson: {
-      name: text(form.personName),
-      age: form.age.trim() ? Number(form.age) : null,
-      disappearedAt: form.disappearedAt ? new Date(form.disappearedAt).toISOString() : null,
-      description: text(form.description),
-      additionalInfo: text(form.additionalInfo),
-    },
-  };
+  return { name: form.name.trim(), missingPerson: toMissingPerson(form) };
 }
 
 const normalise = (form: MissionDetailsForm): MissionDetailsForm => ({

@@ -1,5 +1,6 @@
 import type { LngLat } from '@trace/geo';
 import type { CreateMissionBody } from '@trace/schemas';
+import { AGE_MESSAGE, ageError, toMissingPerson } from '../../../mission/missingPersonForm';
 
 /** What the commander typed on the new-mission screen, as the inputs hold it. */
 export interface NewMissionForm {
@@ -33,13 +34,11 @@ export type FormErrors = Partial<Record<'personName' | 'age' | 'lkp' | 'lkpObser
 
 export const MESSAGES = {
   personName: 'חסר שם הנעדר. הוא גם שם המסע, ואפשר לשנות אותו בכותרת.',
-  age: 'גיל במספרים שלמים, 0 עד 130.',
+  age: AGE_MESSAGE,
   lkp: 'חסר LKP — חובה לפני יצירת המסע.',
   lkpObservedAt: 'חסרים התאריך והשעה שבהם נראה ב-LKP.',
   rally: 'חסרה נקודת כינוס — חובה לפני יצירת המסע.',
 } as const;
-
-const MAX_AGE = 130;
 
 /** The mission's name: the one typed in the title, or else the missing person's name. */
 export const missionName = (form: Pick<NewMissionForm, 'name' | 'personName'>) =>
@@ -49,8 +48,8 @@ export const missionName = (form: Pick<NewMissionForm, 'name' | 'personName'>) =
 export function validate(form: NewMissionForm): FormErrors {
   const errors: FormErrors = {};
   if (!missionName(form)) errors.personName = MESSAGES.personName;
-  const age = form.age.trim();
-  if (age && !(/^\d+$/.test(age) && Number(age) <= MAX_AGE)) errors.age = MESSAGES.age;
+  const age = ageError(form.age);
+  if (age) errors.age = age;
   if (!form.lkp) errors.lkp = MESSAGES.lkp;
   else if (!form.lkpObservedAt) errors.lkpObservedAt = MESSAGES.lkpObservedAt;
   if (!form.rally) errors.rally = MESSAGES.rally;
@@ -60,16 +59,9 @@ export function validate(form: NewMissionForm): FormErrors {
 /** The API request for a valid form. Call `validate` first. */
 export function toCreateBody(form: NewMissionForm): CreateMissionBody {
   if (!form.rally || !form.lkp) throw new Error('A mission needs a rally point and an LKP');
-  const text = (value: string) => value.trim() || null;
   return {
     name: missionName(form),
-    missingPerson: {
-      name: text(form.personName),
-      age: form.age.trim() ? Number(form.age) : null,
-      disappearedAt: form.disappearedAt ? new Date(form.disappearedAt).toISOString() : null,
-      description: text(form.description),
-      additionalInfo: text(form.additionalInfo),
-    },
+    missingPerson: toMissingPerson(form),
     rallyPoint: { type: 'Point', coordinates: form.rally },
     lkp: { position: { type: 'Point', coordinates: form.lkp }, observedAt: new Date(form.lkpObservedAt).toISOString() },
   };
