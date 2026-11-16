@@ -1,3 +1,4 @@
+import { localDateTimeOf } from '@trace/domain';
 import type { Mission, UpdateMissionDetailsBody } from '@trace/schemas';
 import { ApiRequestError } from '../../../api';
 
@@ -23,14 +24,9 @@ export const PHOTO_SAVE_FAILED = 'הפרטים נשמרו, אבל התמונה �
 
 const MAX_AGE = 130;
 
-const pad = (value: number, length = 2) => String(value).padStart(length, '0');
-
 /** An ISO time as a datetime-local value in the commander's time zone: `YYYY-MM-DDTHH:mm`. Empty for null. */
 export function toLocalInput(iso: string | null): string {
-  if (!iso) return '';
-  const date = new Date(iso);
-  const day = `${pad(date.getFullYear(), 4)}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  return `${day}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return iso ? localDateTimeOf(new Date(iso)) : '';
 }
 
 /** The form filled with the mission as saved. Missing values are empty. */

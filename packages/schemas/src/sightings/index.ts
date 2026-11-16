@@ -1,5 +1,6 @@
 import { LKP_DECISIONS, SIGHTING_SOURCES, USER_ROLES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { PointGeometry } from '../geo';
 import { Lkp } from '../missions';
 
@@ -13,7 +14,7 @@ export const CreateSightingBody = z.object({
   /** Made on the phone (UUIDv7) so a retry after a lost answer cannot add the sighting twice; Command omits it. */
   id: z.uuid().optional(),
   position: PointGeometry,
-  observedAt: z.iso.datetime({ offset: true }),
+  observedAt: IsoDateTime,
   source: SightingSource,
   description: z
     .string()
@@ -31,7 +32,7 @@ export const Sighting = z
     /** 1, 2, … in the order the mission's sightings were added; shown on the map and in the list. */
     number: z.number().int().min(1),
     position: PointGeometry,
-    observedAt: z.iso.datetime({ offset: true }),
+    observedAt: IsoDateTime,
     description: z.string().nullable(),
     source: SightingSource,
     reportedBy: z.object({
@@ -43,7 +44,7 @@ export const Sighting = z
     lkpDecision: LkpDecision.nullable(),
     /** TRACE suggests making it the new LKP: undecided and later than the current LKP (decisions 59, 63). */
     lkpCandidate: z.boolean(),
-    createdAt: z.iso.datetime({ offset: true }),
+    createdAt: IsoDateTime,
   })
   .meta({ id: 'Sighting' });
 

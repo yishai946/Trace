@@ -1,3 +1,4 @@
+import { clockOf } from '@trace/domain';
 import type { LngLat } from '@trace/geo';
 import type { SightingSource } from '@trace/schemas';
 import type { QueuedSighting } from '../sender';
@@ -19,10 +20,7 @@ export interface DraftErrors {
   clock?: string;
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
-
-/** `HH:MM` of a date, in the phone's time zone. */
-export const clockOf = (date: Date): string => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+export { clockOf };
 
 /** Hours and minutes of a typed time such as `16:58`, or null when it is not a time of day. */
 export function parseClock(text: string): { hours: number; minutes: number } | null {

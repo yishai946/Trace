@@ -1,5 +1,6 @@
 import { POLYGON_STATUSES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { PolygonGeometry } from '../geo';
 
 export const PolygonStatus = z.enum(POLYGON_STATUSES).meta({ id: 'PolygonStatus' });
@@ -19,8 +20,8 @@ export const MissionPolygon = z
     /** Searchers assigned to the polygon. While above zero the polygon cannot be deleted. */
     activeSearchers: z.number().int().min(0),
     geometry: PolygonGeometry,
-    createdAt: z.iso.datetime({ offset: true }),
-    updatedAt: z.iso.datetime({ offset: true }),
+    createdAt: IsoDateTime,
+    updatedAt: IsoDateTime,
   })
   .meta({ id: 'MissionPolygon' });
 

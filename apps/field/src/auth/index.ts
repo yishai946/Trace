@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { padNumber } from '@trace/domain';
 import { PhoneSignIn, SearcherProfile } from '@trace/schemas';
 import { useEffect } from 'react';
 import { apiBaseUrl, apiRequest, ApiRequestError } from '../api';
@@ -81,8 +82,7 @@ export function useStartRoute(): StartRoute | null {
 
 /** `42` as `00:42`. */
 export function formatCountdown(seconds: number): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${pad(Math.floor(seconds / 60))}:${pad(seconds % 60)}`;
+  return `${padNumber(Math.floor(seconds / 60))}:${padNumber(seconds % 60)}`;
 }
 
 const NETWORK = 'אין חיבור לשרת. בדוק את החיבור ונסה שוב.';

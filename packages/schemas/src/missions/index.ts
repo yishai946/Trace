@@ -1,5 +1,6 @@
 import { MISSION_STATUSES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { PointGeometry } from '../geo';
 
 export const MissionStatus = z.enum(MISSION_STATUSES).meta({ id: 'MissionStatus' });
@@ -19,7 +20,7 @@ const optionalText = (max: number) =>
 export const MissingPersonInput = z.object({
   name: optionalText(120),
   age: z.number().int().min(0).max(130).nullable().default(null),
-  disappearedAt: z.iso.datetime({ offset: true }).nullable().default(null),
+  disappearedAt: IsoDateTime.nullable().default(null),
   description: optionalText(2000),
   additionalInfo: optionalText(2000),
 });
@@ -28,7 +29,7 @@ export const MissingPerson = z
   .object({
     name: z.string().nullable(),
     age: z.number().int().nullable(),
-    disappearedAt: z.iso.datetime({ offset: true }).nullable(),
+    disappearedAt: IsoDateTime.nullable(),
     description: z.string().nullable(),
     additionalInfo: z.string().nullable(),
     /** Where the photo is served (`GET /api/missions/:id/photo`), versioned so a replaced photo is fetched again. */
@@ -36,9 +37,7 @@ export const MissingPerson = z
   })
   .meta({ id: 'MissingPerson' });
 
-export const Lkp = z
-  .object({ position: PointGeometry, observedAt: z.iso.datetime({ offset: true }) })
-  .meta({ id: 'Lkp' });
+export const Lkp = z.object({ position: PointGeometry, observedAt: IsoDateTime }).meta({ id: 'Lkp' });
 
 const MissionName = z.string().trim().min(1, 'Mission name is required').max(120);
 
@@ -47,13 +46,13 @@ export const LkpPoint = z
   .object({
     id: z.uuid(),
     position: PointGeometry,
-    observedAt: z.iso.datetime({ offset: true }),
+    observedAt: IsoDateTime,
     current: z.boolean(),
     /** The sighting it came from, or null for the LKP set when the mission was created. */
     sightingId: z.uuid().nullable(),
     /** Who set it; null when unknown (points set before this was recorded). */
     setBy: z.string().nullable(),
-    createdAt: z.iso.datetime({ offset: true }),
+    createdAt: IsoDateTime,
   })
   .meta({ id: 'LkpPoint' });
 
@@ -90,8 +89,8 @@ export const Mission = z
     rallyPoint: PointGeometry,
     /** The current LKP; earlier ones are kept as history. */
     lkp: Lkp.nullable(),
-    createdAt: z.iso.datetime({ offset: true }),
-    updatedAt: z.iso.datetime({ offset: true }),
+    createdAt: IsoDateTime,
+    updatedAt: IsoDateTime,
   })
   .meta({ id: 'Mission' });
 

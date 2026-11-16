@@ -1,5 +1,6 @@
 import { TRACK_CONTEXTS } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { LngLat } from '../geo';
 
 export const TrackContext = z.enum(TRACK_CONTEXTS).meta({ id: 'TrackContext' });
@@ -12,7 +13,7 @@ export const TrackPointInput = z
   .object({
     position: LngLat,
     /** When the phone took the fix, not when it was sent: an offline batch arrives later. */
-    recordedAt: z.iso.datetime({ offset: true }),
+    recordedAt: IsoDateTime,
     /** Horizontal accuracy in meters, when the phone reports it. */
     accuracy: z.number().min(0).max(100_000).nullable().default(null),
     context: TrackContext,
@@ -35,7 +36,7 @@ export const TrackPointsResult = z
 export const TrackPoint = z
   .object({
     position: LngLat,
-    recordedAt: z.iso.datetime({ offset: true }),
+    recordedAt: IsoDateTime,
     accuracy: z.number().nullable(),
     context: TrackContext,
   })
