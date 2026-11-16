@@ -1,4 +1,4 @@
-import { JoinedMission, JoinPreview, Mission, MissionPolygonList } from '@trace/schemas';
+import { JoinedMission, JoinPreview, Mission, MissionPolygonList, OwnParticipation } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiBaseUrl, apiRequest } from '../api';
 import { useSession } from '../state/session';
@@ -11,6 +11,11 @@ export const missionKeys = {
 };
 
 /** The polygons of the searcher's mission. Waits until the searcher signed in and joined a mission. */
+/** The searcher's own participation in a mission (their assignment and status), read from the server. */
+export function fetchOwnParticipation(missionId: string, token: string) {
+  return apiRequest(`/missions/${missionId}/participation`, { baseUrl: apiBaseUrl, token, schema: OwnParticipation });
+}
+
 export function useMissionPolygons() {
   const token = useSession((s) => s.token);
   const missionId = useSession((s) => s.missionId);

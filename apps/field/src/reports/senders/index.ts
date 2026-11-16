@@ -1,8 +1,9 @@
-import { CreateReportBody, Report } from '@trace/schemas';
+import { CreateReportBody } from '@trace/schemas';
 import { z } from 'zod';
-import { ApiRequestError, apiBaseUrl, apiRequest } from '../../api';
+import { ApiRequestError } from '../../api';
 import type { OutboxSender } from '../../outbox';
 import { useSession } from '../../state/session';
+import { postReport, putReportPhoto } from '../requests';
 
 /** What a queued photo holds: the report it belongs to and the JPEG, already shrunk on the phone, as base64. */
 export const ReportPhotoPayload = z.object({ reportId: z.uuid(), base64: z.string().min(1) });
@@ -27,13 +28,7 @@ export const reportSender: OutboxSender = {
     if (!parsed.success) return 'drop-batch';
     const bearer = token();
     try {
-      await apiRequest(`/missions/${missionId}/reports`, {
-        baseUrl: apiBaseUrl,
-        token: bearer,
-        method: 'POST',
-        body: parsed.data,
-        schema: Report,
-      });
+      await postReport(missionId, bearer, parsed.data);
       return 'sent';
     } catch (error) {
       if (!(error instanceof ApiRequestError)) throw error;
@@ -62,13 +57,7 @@ export const reportPhotoSender: OutboxSender = {
     if (!parsed.success) return 'drop-batch';
     const bearer = token();
     try {
-      await apiRequest(`/missions/${missionId}/reports/${parsed.data.reportId}/photo`, {
-        baseUrl: apiBaseUrl,
-        token: bearer,
-        method: 'PUT',
-        upload: { contentType: 'image/jpeg', data: bytesOf(parsed.data.base64) },
-        schema: Report,
-      });
+      await putReportPhoto(missionId, bearer, parsed.data.reportId, bytesOf(parsed.data.base64));
       return 'sent';
     } catch (error) {
       if (!(error instanceof ApiRequestError)) throw error;

@@ -158,7 +158,14 @@ export default defineConfig(
     },
   },
   {
-    files: ['apps/*/src/components/**', 'apps/*/src/pages/**', 'apps/command/src/App/**'],
+    files: [
+      'apps/*/src/components/**',
+      'apps/*/src/pages/**',
+      'apps/command/src/App/**',
+      'apps/field/src/realtime/**',
+      'apps/field/src/reports/senders/**',
+      'apps/field/src/sightings/sender/**',
+    ],
     ignores: NOT_PRODUCT_CODE,
     rules: {
       'no-restricted-imports': [
