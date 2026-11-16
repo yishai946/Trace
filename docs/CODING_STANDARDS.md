@@ -66,9 +66,10 @@ All contributors and coding assistants should preserve existing behavior, follow
 
 ### Size and structure limits
 
-ESLint enforces these in `apps/**` and `packages/**` (tests, fixtures and the declarative `db/schema.ts` and map style are exempt). A file or function over a limit is split before new code is added to it, not exempted. An `eslint-disable` is allowed only for a case a limit cannot fit (such as a constructor that mirrors a response's fields), and states its reason.
+ESLint enforces these in `apps/**` and `packages/**` (tests and fixtures are exempt, except for the test file limit below). A file or function over a limit is split before new code is added to it, not exempted. An `eslint-disable` is allowed only for a case a limit cannot fit (such as a constructor that mirrors a response's fields), and states its reason.
 
 - A file has at most 250 lines (code only); an Expo Router file in `apps/field/src/app/` at most 60: it only wires a route to its screen in `src/components/`.
+- A test file has at most 600 lines (code only): past that it is split by area, with the shared setup in a `fixtures.ts` beside it.
 - A function, component or hook has at most 120 lines, a cyclomatic complexity of 15 and nesting of 3. A component longer than that splits its parts into components of their own; a hook that holds several concerns splits into one hook per concern.
 - One React component per `.tsx` file (an icon set is the only exception). Its hooks, helpers and sub-components sit beside it in its folder.
 - State that is more than about three related `useState` calls, or form logic (validate, submit, announce), goes in a hook named after what it manages. The component only renders and handles input.

@@ -137,9 +137,9 @@ export default defineConfig(
     },
   },
   {
-    // Declarative data (the map style): one long list, with no logic to split.
-    files: ['packages/map/src/style/**'],
-    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
+    // A test file past this size is split by area, with its setup in a fixtures file.
+    files: ['**/*.test.{ts,tsx}'],
+    rules: { 'max-lines': ['error', { max: 600, skipBlankLines: true, skipComments: true }] },
   },
   {
     // A route file is one plugin function that registers its routes; the file limit bounds it.

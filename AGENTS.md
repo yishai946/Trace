@@ -4,7 +4,7 @@ Before editing, read [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md) and 
 
 Before completing any code change, run `pnpm format` and `pnpm lint`, fix relevant findings, then rerun both commands until they pass. Report checks that cannot run or fail for pre-existing reasons.
 
-Structure rules are enforced by ESLint (see "Size and structure limits" in the coding standards): at most 250 lines per file (60 for an Expo Router file), 120 per function, one React component per file, no `as`/`!` workarounds, and the layer rules for routes, components and packages. Reuse before you write: search the repo for an existing helper, and put logic that two apps need in `packages/*`. Fix a limit by splitting, never by `eslint-disable`.
+Structure rules are enforced by ESLint (see "Size and structure limits" in the coding standards): at most 250 lines per file (60 for an Expo Router file, 600 for a test file), 120 per function, one React component per file, no `as`/`!` workarounds, and the layer rules for routes, components and packages. Reuse before you write: search the repo for an existing helper, and put logic that two apps need in `packages/*`. Fix a limit by splitting, never by `eslint-disable`.
 
 # Branches
 
