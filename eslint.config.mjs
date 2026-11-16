@@ -137,8 +137,8 @@ export default defineConfig(
     },
   },
   {
-    // Declarative data (the tables, the map style): one long list, with no logic to split.
-    files: ['apps/api/src/db/schema.ts', 'packages/map/src/style/**'],
+    // Declarative data (the map style): one long list, with no logic to split.
+    files: ['packages/map/src/style/**'],
     rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
   },
   {
