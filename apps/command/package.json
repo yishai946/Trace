@@ -14,6 +14,7 @@
     "@internationalized/date": "^3.12.4",
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
+    "@trace/api-client": "workspace:*",
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",

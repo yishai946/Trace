@@ -7,6 +7,7 @@
     "@maplibre/maplibre-react-native": "^11.5.1",
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
+    "@trace/api-client": "workspace:*",
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
