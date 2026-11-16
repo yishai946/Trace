@@ -9,7 +9,7 @@
     "dev": "pnpm --parallel --filter \"./apps/*\" dev",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "node --test 'eslint-rules/*.test.mjs' && pnpm -r test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint . && stylelint \"apps/**/*.{css,scss}\" --allow-empty-input",

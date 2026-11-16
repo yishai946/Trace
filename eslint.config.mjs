@@ -3,6 +3,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
+import requireDisableReason from './eslint-rules/require-disable-reason.mjs';
 import { fontWeights } from './packages/design/scripts/lint-values.mjs';
 
 // Raw design values that must come from @trace/design instead.
@@ -78,6 +79,12 @@ export default defineConfig(
   },
   js.configs.recommended,
   tseslint.configs.recommended,
+  {
+    // Every eslint-disable states its reason (ESLint core has no rule for it).
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+    plugins: { trace: { rules: { 'require-disable-reason': requireDisableReason } } },
+    rules: { 'trace/require-disable-reason': 'error' },
+  },
   {
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: {

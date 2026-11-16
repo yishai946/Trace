@@ -77,7 +77,7 @@ ESLint enforces these in `apps/**` and `packages/**` (tests, fixtures and the de
 - Services do not build errors inline: use the factories in `apps/api/src/errors.ts` (`missionEnded`, `participationEnded`, `unsupportedPhoto`, `notFound`, …) and the shared `lockMission`.
 - Layers: routes do not import `drizzle-orm` or `db/schema`; components, pages and routes do not call `apiRequest`, only the app's query, mutation and sender modules do; packages never import from apps.
 - No `as` to silence the type checker, no `!` non-null assertion, no `as` on an object literal. Parse at the boundary, give the value a type, or handle the missing case.
-- Every `eslint-disable` states its reason in the same comment and is removed if it stops being needed.
+- Every `eslint-disable` states its reason in the same comment and is removed if it stops being needed. The reason is enforced by the local rule `trace/require-disable-reason` (`eslint-rules/`); the unused ones by `reportUnusedDisableDirectives`.
 
 ---
 
