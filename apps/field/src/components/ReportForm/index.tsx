@@ -1,15 +1,13 @@
-import type { ReportType } from '@trace/domain';
-import { CreateReportBody, REPORT_TEXT_MAX } from '@trace/schemas';
-import { useRef, useState } from 'react';
-import { newReportId, submitReport } from '../../reports/submit';
-import { useReportFix } from '../../reports/useReportFix';
+import { REPORT_TEXT_MAX } from '@trace/schemas';
 import { Button } from '../Button';
 import { Notice } from '../Notice';
 import { ReportLocation } from '../ReportLocation';
-import { ReportPhoto, type ReportPhotoValue } from '../ReportPhoto';
+import { ReportPhoto } from '../ReportPhoto';
 import { ReportTypePicker } from '../ReportTypePicker';
 import { Screen } from '../Screen';
 import { TextField } from '../TextField';
+import { ReportOutcome } from './ReportOutcome';
+import { useReportDraft } from './useReportDraft';
 
 export interface ReportFormProps {
   missionId: string;
@@ -20,100 +18,20 @@ export interface ReportFormProps {
   onDone: () => void;
 }
 
-type Phase = 'editing' | 'sending' | 'located-pending' | 'rejected';
-
-const LOCATED_NOT_SENT =
-  'הדיווח "הנעדר אותר" לא הגיע למנהל. אין חיבור: הדיווח נשמר במכשיר ויישלח אוטומטית כשהחיבור יחזור. עד אז המנהל לא יודע עליו.';
-
-const REJECTED = 'הדיווח לא התקבל: הפעילות הסתיימה או שהגישה שלך הוסרה. המנהל לא קיבל את הדיווח.';
-const LOCATED_REJECTED =
-  'הדיווח "הנעדר אותר" לא התקבל: הפעילות הסתיימה או שהגישה שלך הוסרה. המנהל לא קיבל את הדיווח, ויש לעדכן אותו בדרך אחרת.';
-
 /**
  * Fm08, a new field report (UC-F09): category, details, an optional photo and the position the phone attaches. The
  * report is first kept on the phone and then sent, so without a connection it waits and goes out by itself. A
  * "הנעדר אותר" report that waits gets a prominent warning: the commander has not heard of it.
  */
 export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportFormProps) {
-  const fix = useReportFix();
-  const [type, setType] = useState<ReportType | null>(null);
-  const [text, setText] = useState('');
-  const [photo, setPhoto] = useState<ReportPhotoValue | null>(null);
-  const [errors, setErrors] = useState<{ type?: string; text?: string }>({});
-  const [phase, setPhase] = useState<Phase>('editing');
-  const [saveError, setSaveError] = useState<string | null>(null);
-  // State updates are not instant, so a second press in the same moment is stopped here.
-  const sending = useRef(false);
-
-  async function submit() {
-    if (sending.current || phase !== 'editing' || fix.state !== 'ready' || !fix.fix) return;
-    const next = {
-      ...(type ? {} : { type: 'בחר קטגוריה.' }),
-      ...(text.trim() ? {} : { text: 'כתוב מה ראית.' }),
-    };
-    setErrors(next);
-    if (!type || next.text) return;
-
-    const report = {
-      id: newReportId(),
-      type,
-      text: text.trim(),
-      position: { type: 'Point' as const, coordinates: fix.fix.position },
-      accuracy: fix.fix.accuracy,
-      reportedAt: new Date().toISOString(),
-    };
-    if (!CreateReportBody.safeParse(report).success) {
-      setErrors({ text: 'הדיווח לא תקין.' });
-      return;
-    }
-
-    sending.current = true;
-    setSaveError(null);
-    setPhase('sending');
-    try {
-      const delivery = await submitReport({ missionId, report, photo: photo && { base64: photo.base64 } });
-      if (delivery === 'rejected') {
-        setPhase('rejected');
-      } else if (delivery === 'pending' && type === 'located') {
-        setPhase('located-pending');
-      } else {
-        onDone();
-      }
-    } catch {
-      // Nothing was saved on the phone: keep the form so the searcher can try again.
-      setSaveError('לא ניתן לשמור את הדיווח במכשיר. נסה שוב.');
-      setPhase('editing');
-    } finally {
-      sending.current = false;
-    }
-  }
-
+  const { fix, type, setType, text, setText, photo, setPhoto, errors, phase, saveError, submit } = useReportDraft({
+    missionId,
+    onDone,
+  });
   const leading = <Button label="ביטול" icon="close" variant="ghost" onPress={onCancel} />;
 
-  if (phase === 'rejected') {
-    return (
-      <Screen
-        title="דיווח חדש"
-        footer={<Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
-      >
-        <Notice tone="warn" icon="alert" live>
-          {type === 'located' ? LOCATED_REJECTED : REJECTED}
-        </Notice>
-      </Screen>
-    );
-  }
-
-  if (phase === 'located-pending') {
-    return (
-      <Screen
-        title="דיווח חדש"
-        footer={<Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
-      >
-        <Notice tone="warn" icon="wifiOff" live>
-          {LOCATED_NOT_SENT}
-        </Notice>
-      </Screen>
-    );
+  if (phase === 'rejected' || phase === 'located-pending') {
+    return <ReportOutcome outcome={phase} type={type} onDone={onDone} />;
   }
 
   return (
