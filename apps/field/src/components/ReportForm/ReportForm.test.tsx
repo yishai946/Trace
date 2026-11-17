@@ -88,6 +88,16 @@ const setup = (props: { onDone?: () => void; onCancel?: () => void; polygonName?
   return { onDone };
 };
 const send = () => screen.getByRole('button', { name: 'שלח דיווח' });
+/**
+ * The button that leads back to the map once the report left the form. It must be a new button, not the send button
+ * relabelled: react-native-web applies a reused button's new press handler only after the screen is painted, so a
+ * fast press could still find it disabled (#201).
+ */
+const backToMap = (sendButton: HTMLElement) => {
+  const back = screen.getByRole('button', { name: 'חזרה למפה' });
+  expect(back).not.toBe(sendButton);
+  return back;
+};
 const ready = () => waitFor(() => expect(send()).not.toHaveAttribute('aria-disabled', 'true'));
 const fill = (type = 'מפגע', text = 'מדרון חלק') => {
   fireEvent.click(screen.getByRole('radio', { name: new RegExp(`^${type}`) }));
@@ -197,12 +207,13 @@ describe('ReportForm', () => {
     const { onDone } = setup();
     await ready();
     fill('הנעדר אותר', 'נמצא ליד העץ');
-    fireEvent.click(send());
+    const sendButton = send();
+    fireEvent.click(sendButton);
 
     const warning = await screen.findByRole('alert');
     expect(warning).toHaveTextContent('לא הגיע למנהל');
     expect(onDone).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    fireEvent.click(backToMap(sendButton));
     expect(onDone).toHaveBeenCalledOnce();
   });
 
@@ -214,14 +225,15 @@ describe('ReportForm', () => {
     const { onDone } = setup();
     await ready();
     fill('הנעדר אותר', 'נמצא ליד העץ');
-    fireEvent.click(send());
+    const sendButton = send();
+    fireEvent.click(sendButton);
 
     const warning = await screen.findByRole('alert');
     expect(warning).toHaveTextContent('לא התקבל');
     expect(warning).toHaveTextContent('הנעדר אותר');
     expect(onDone).not.toHaveBeenCalled();
     expect(screen.queryByText('דיווח ממתין לשליחה')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    fireEvent.click(backToMap(sendButton));
     expect(onDone).toHaveBeenCalledOnce();
   });
 
