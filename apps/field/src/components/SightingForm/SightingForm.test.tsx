@@ -86,7 +86,22 @@ const renderForm = (polygons: MissionPolygon[] = []) =>
     { wrapper: TestProviders },
   );
 const stripBidi = (text: string | null) => (text ?? '').replace(/[⁦⁩]/g, '');
-const send = () => fireEvent.click(screen.getByRole('button', { name: 'שלח תצפית' }));
+/** Presses the send button and returns it. */
+const send = () => {
+  const button = screen.getByRole('button', { name: 'שלח תצפית' });
+  fireEvent.click(button);
+  return button;
+};
+/**
+ * The button that leads back to the map once the sighting left the form. It must be a new button, not the send button
+ * relabelled: react-native-web applies a reused button's new press handler only after the screen is painted, so a
+ * fast press could still find it disabled (#205).
+ */
+const backToMap = (sendButton: HTMLElement) => {
+  const back = screen.getByRole('button', { name: 'חזרה למפה' });
+  expect(back).not.toBe(sendButton);
+  return back;
+};
 
 beforeEach(() => {
   fix.current = { state: 'ready', fix: { position: [35.13, 31.78], accuracy: 5, at: 1 } };
@@ -205,22 +220,23 @@ describe('SightingForm', () => {
   it('keeps the sighting on the phone when there is no connection, and goes back to the map', async () => {
     submit.fn.mockResolvedValue('pending');
     renderForm();
-    send();
+    const sendButton = send();
     expect(
       await screen.findByText('אין חיבור. התצפית נשמרה בטלפון ותישלח אוטומטית כשהחיבור יחזור.'),
     ).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    fireEvent.click(backToMap(sendButton));
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
   it('says when the server refused the sighting for good', async () => {
     submit.fn.mockResolvedValue('rejected');
     renderForm();
-    send();
+    const sendButton = send();
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'התצפית לא נשלחה: המסע הסתיים או שהפעילות שלך בו הסתיימה.',
     );
-    expect(screen.getByRole('button', { name: 'חזרה למפה' })).toBeInTheDocument();
+    fireEvent.click(backToMap(sendButton));
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 
   it('says when the sighting could not be saved on the phone, and lets the searcher try again', async () => {
