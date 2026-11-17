@@ -246,10 +246,10 @@ describe('ReportForm', () => {
     await ready();
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'צרף תמונה' }));
-    expect(await screen.findByText('תמונה מצורפת', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(await screen.findByText('תמונה מצורפת')).toBeInTheDocument();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce(), { timeout: 4000 });
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
     await waitFor(() =>
       expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST', 'PUT']),
     );
