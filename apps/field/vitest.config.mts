@@ -21,5 +21,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     env: { EXPO_PUBLIC_API_URL: 'https://api.test' },
+    // Longer than Testing Library's wait limit (src/test/setup.ts), so a slow wait fails with its own message.
+    testTimeout: 15_000,
   },
 });

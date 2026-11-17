@@ -94,7 +94,7 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
     return (
       <Screen
         title="דיווח חדש"
-        footer={<Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
+        footer={<Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
       >
         <Notice tone="warn" icon="alert" live>
           {type === 'located' ? LOCATED_REJECTED : REJECTED}
@@ -107,7 +107,7 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
     return (
       <Screen
         title="דיווח חדש"
-        footer={<Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
+        footer={<Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
       >
         <Notice tone="warn" icon="wifiOff" live>
           {LOCATED_NOT_SENT}
@@ -121,7 +121,10 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
       title="דיווח חדש"
       leading={leading}
       footer={
+        // A key of its own: react-native-web applies a reused button's new press handler only after paint, so "חזרה
+        // למפה" must not reuse the disabled "שולח…" button.
         <Button
+          key="send"
           label={phase === 'sending' ? 'שולח…' : 'שלח דיווח'}
           variant="primary"
           size="lg"
