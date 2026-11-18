@@ -756,12 +756,26 @@ describe('field reports (UC-F09)', () => {
       expect(Report.parse(res.json())).toMatchObject({ type: 'general', text: 'עדכון' });
     });
 
-    it('refuses another searcher in the mission and hides the report from outsiders', async () => {
-      const other = await otherSearcher();
-      const res = await patch({ text: 'פולש' }, other);
+    const joinPolygon = async (callsign: number, polygonId: string) => {
+      const as = await signInSearcher(ctx);
+      await addParticipant(ctx.db, { missionId: mission.id, callsign, searcherId: as.searcherId, polygonId });
+      return as;
+    };
+
+    it('refuses a searcher of the report’s polygon who is not its author', async () => {
+      const res = await patch({ text: 'פולש' }, await joinPolygon(5, polygon.id));
       expect(res.statusCode).toBe(403);
       expect(ApiError.parse(res.json()).error.code).toBe('FORBIDDEN');
-      expect((await patch({ text: 'פולש' }, await signInSearcher(ctx))).statusCode).toBe(404);
+      expect((await rows())[0]?.text).toBe('מדרון חלק');
+    });
+
+    it('answers 404 to a searcher who may not see the report, so its existence is not revealed', async () => {
+      const polygonB = await makePolygonB();
+      for (const as of [await joinPolygon(6, polygonB.id), await otherSearcher(7), await signInSearcher(ctx)]) {
+        const res = await patch({ text: 'פולש' }, as);
+        expect(res.statusCode).toBe(404);
+        expect(ApiError.parse(res.json()).error.code).toBe('NOT_FOUND');
+      }
       expect((await rows())[0]?.text).toBe('מדרון חלק');
     });
 

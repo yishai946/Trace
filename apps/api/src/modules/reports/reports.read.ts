@@ -98,6 +98,19 @@ export async function listReports(
   return rows.map(toReport);
 }
 
+/** Whether the actor may see this report of the mission (decision 80), the same rule as the list. */
+export async function isReportVisible(
+  db: Db | Tx,
+  { missionId, reportId, actor }: { missionId: string; reportId: string; actor: Actor },
+): Promise<boolean> {
+  const visible = await visibilityFilter(db, missionId, actor);
+  const [row] = await db
+    .select({ id: reports.id })
+    .from(reports)
+    .where(and(eq(reports.id, reportId), eq(reports.missionId, missionId), visible));
+  return row !== undefined;
+}
+
 /**
  * The photo of a report, for whoever may see the report: its mission's commander, its author, or a searcher in its
  * polygon (decision 80). Anyone else gets 404, as the photo upload does.
