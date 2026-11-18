@@ -7,7 +7,7 @@ import type { Db, Tx } from '../../db';
 import { missions, participations, reportPhotos, reports } from '../../db/schema';
 import { AppError, forbidden, notFound, missionEnded, participationEnded, unsupportedPhoto } from '../../errors';
 import { recordEvent } from '../timeline/timeline.service';
-import { findReport, reportRecipients } from './reports.read';
+import { findReport, isReportVisible, reportRecipients } from './reports.read';
 
 export interface CreateReportResult {
   report: Report;
@@ -142,7 +142,10 @@ export async function markReportHandled(
   });
 }
 
-/** The commander or the author edits the category or the text; there is no version history (decision 88). */
+/**
+ * The commander or the author edits the category or the text; there is no version history (decision 88). Another
+ * searcher who may see the report gets 403; one who may not gets 404, so its existence is not revealed.
+ */
 export async function updateReport(
   db: Db,
   {
@@ -154,7 +157,9 @@ export async function updateReport(
 ): Promise<Report> {
   return db.transaction(async (tx) => {
     const row = await lockReport(tx, missionId, reportId);
-    if (actor.role !== 'commander' && row.reportedBy !== actor.userId) throw forbidden();
+    if (actor.role !== 'commander' && row.reportedBy !== actor.userId) {
+      throw (await isReportVisible(tx, { missionId, reportId, actor })) ? forbidden() : notFound('Report');
+    }
     if (!canChangeReport(row.missionStatus)) throw reportsLocked();
     await tx
       .update(reports)
