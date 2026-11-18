@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RETRY_MS, useMissionLive } from '.';
 import { missionKeys } from '../mission/queries';
 import { makeReport } from '../reports/fixtures';
+import { makeSos } from '../sos/fixtures';
 import { useSession } from '../state/session';
 
 type Handler = (...args: never[]) => void;
@@ -334,6 +335,30 @@ describe('useMissionLive: reports (UC-F11)', () => {
     queryClient.setQueryData(missionKeys.reports(missionId), [report, other]);
     act(() => socket?.fire('mission:event', { type: 'report.deleted', missionId, reportId: report.id }));
     expect(cachedReports(queryClient)?.map((r) => r.id)).toEqual([other.id]);
+  });
+
+  it('shows an SOS the searcher sent, and its closing by the commander, at once', () => {
+    const { socket, queryClient } = setup();
+    const key = missionKeys.sos(missionId);
+    queryClient.setQueryData(key, []);
+    const active = makeSos();
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: active }));
+    expect(queryClient.getQueryData(key)).toEqual([active]);
+
+    const closed = makeSos({
+      status: 'closed',
+      closedAt: '2026-10-03T17:10:00.000Z',
+      closedBy: { role: 'commander', name: 'רן' },
+    });
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: closed }));
+    expect(queryClient.getQueryData(key)).toEqual([closed]);
+  });
+
+  it('refetches the SOS list after every join', async () => {
+    const { socket, queryClient } = setup();
+    queryClient.setQueryData(missionKeys.sos(missionId), []);
+    await join(socket as FakeSocket);
+    expect(queryClient.getQueryState(missionKeys.sos(missionId))?.isInvalidated).toBe(true);
   });
 
   it('refetches instead of writing when the list is not cached', async () => {
