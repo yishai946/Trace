@@ -1,4 +1,6 @@
-import type { Sos } from '@trace/schemas';
+import type { CreateSosBody, Sos } from '@trace/schemas';
+import type { CurrentFix } from '../../location/useCurrentFix';
+import { formatTime } from '../../mission/missionArea';
 
 /** Puts an SOS in the list (replacing the one with its id), newest first, as the server lists them. */
 export function upsertSos(list: Sos[], sos: Sos): Sos[] {
@@ -20,4 +22,21 @@ export function ownActiveSos(list: Sos[], participantId: string | undefined): So
 export function ownClosedSos(list: Sos[], participantId: string | undefined): Sos | null {
   const newest = ownNewest(list, participantId);
   return newest?.status === 'closed' ? newest : null;
+}
+
+/** How a closed SOS ended, as a sentence for its sender: by the commander or by themselves, and when. */
+export function endedSentence(sos: Sos | null): string | null {
+  if (!sos?.closedAt) return null;
+  const by = sos.closedBy?.role === 'commander' ? 'על ידי המנהל' : 'על ידך';
+  return `ה-SOS שהפעלת נסגר ${by} ב-${formatTime(sos.closedAt)}.`;
+}
+
+/** The phone's fix as the SOS location; null when there is none, and the server uses the last known position. */
+export function sosLocationOf(fix: CurrentFix | null): CreateSosBody['location'] {
+  if (!fix) return null;
+  return {
+    position: { type: 'Point', coordinates: fix.position },
+    recordedAt: new Date(fix.at).toISOString(),
+    accuracy: fix.accuracy,
+  };
 }

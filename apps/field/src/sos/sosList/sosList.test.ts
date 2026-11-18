@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ownActiveSos, ownClosedSos, upsertSos } from '.';
+import { endedSentence, ownActiveSos, ownClosedSos, sosLocationOf, upsertSos } from '.';
 import { makeSos, OWN_PARTICIPANT_ID } from '../fixtures';
 
 const other = {
@@ -42,5 +42,26 @@ describe('own SOS', () => {
     });
     expect(ownClosedSos([closed], OWN_PARTICIPANT_ID)).toBe(closed);
     expect(ownClosedSos([makeSos(), closed], OWN_PARTICIPANT_ID)).toBeNull();
+  });
+});
+
+describe('endedSentence', () => {
+  it('says who closed the SOS', () => {
+    const base = { status: 'closed' as const, closedAt: '2026-10-03T17:10:00.000Z' };
+    expect(endedSentence(makeSos({ ...base, closedBy: { role: 'commander', name: 'רן' } }))).toContain('על ידי המנהל');
+    expect(endedSentence(makeSos({ ...base, closedBy: { role: 'searcher', name: 'דנה' } }))).toContain('על ידך');
+    expect(endedSentence(makeSos())).toBeNull();
+    expect(endedSentence(null)).toBeNull();
+  });
+});
+
+describe('sosLocationOf', () => {
+  it('turns a fix into the SOS location, and nothing into null', () => {
+    expect(sosLocationOf({ position: [35.1, 31.7], accuracy: 4, at: 0 })).toEqual({
+      position: { type: 'Point', coordinates: [35.1, 31.7] },
+      recordedAt: '1970-01-01T00:00:00.000Z',
+      accuracy: 4,
+    });
+    expect(sosLocationOf(null)).toBeNull();
   });
 });

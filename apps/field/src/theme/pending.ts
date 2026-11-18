@@ -76,4 +76,10 @@ export const pendingTokens = {
   sightingMapH: 236,
   /** Fm09: minimum height of the "תיאור קצר" text area (two lines). */
   textAreaMinH: 66,
+  /** Fm12 `.tcx-sosbtn`: the SOS button is a 208px circle with 48px text, inside a 248px `.tcx-sosring` of 3px stroke. */
+  sosButton: 208,
+  sosRing: 248,
+  sosRingStroke: 3,
+  sosLabelSize: 48,
+  sosLabelLeading: 52,
 } as const;
