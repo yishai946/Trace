@@ -76,7 +76,7 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push
         realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
         void push.notifySearchers({
           missionId,
-          searcherIds: searcherIds.filter((id) => id !== actor.searcherId),
+          searcherIds: searcherIds.filter((id) => actor.role !== 'searcher' || id !== actor.searcherId),
           message: sosPushMessage(sos, 'closed'),
         });
       }
