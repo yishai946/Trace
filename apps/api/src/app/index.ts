@@ -94,7 +94,7 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
         await signedIn.register(polygonRoutes, { db, realtime });
         await signedIn.register(sightingRoutes, { db, realtime });
         await signedIn.register(messageRoutes, { db, realtime, push });
-        await signedIn.register(sosRoutes, { db, realtime });
+        await signedIn.register(sosRoutes, { db, realtime, push });
         await signedIn.register(participantRoutes, { db, realtime });
         await signedIn.register(trackingRoutes, { db, realtime });
         await signedIn.register(reportRoutes, { db, realtime });

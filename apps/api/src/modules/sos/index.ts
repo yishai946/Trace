@@ -5,9 +5,14 @@ import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
+import type { PushNotifier } from '../notifications/notifications.service';
 import { activateSos, closeSos, listSos } from './sos.service';
+import { sosPushMessage } from './sosPush';
 
-export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
+export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push: PushNotifier }> = async (
+  app,
+  { db, realtime, push },
+) => {
   app.post(
     '/missions/:missionId/sos',
     {
@@ -17,7 +22,8 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = 
         description:
           'A searcher in the mission whose activity has not ended, in any mission state. It goes to the commander and ' +
           'to the searchers assigned to the sender’s polygon (decision 98). Without a location the last known position ' +
-          'is used. An SOS that is already active is returned with 200 and nothing is sent again. Returns 400 ' +
+          'is used, and those searchers also get a push, so it reaches them with the app in the background. An SOS ' +
+          'that is already active is returned with 200 and nothing is sent again. Returns 400 ' +
           'VALIDATION_ERROR, 403 FORBIDDEN (the commander, or no profile), 404 NOT_FOUND, 409 PARTICIPATION_ENDED.',
         params: MissionParams,
         body: CreateSosBody,
@@ -30,7 +36,7 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = 
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { missionId } = request.params;
-      const { sos, created, searcherIds, event } = await activateSos(db, {
+      const { sos, created, searcherIds, recipientIds, event } = await activateSos(db, {
         ...request.body,
         missionId,
         actor: { userId: actor.userId, searcherId: actor.searcherId },
@@ -38,6 +44,11 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = 
       if (created) {
         realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
         if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+        void push.notifySearchers({
+          missionId,
+          searcherIds: recipientIds,
+          message: sosPushMessage(sos, 'activated'),
+        });
       }
       return reply.status(created ? 201 : 200).send(sos);
     },
@@ -51,7 +62,8 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = 
         summary: 'Close an SOS (UC-F13, UC-C14)',
         description:
           'The commander closes any SOS of the mission, a searcher only their own (decision 99). The update goes to ' +
-          'the same people as the activation. Closing a closed SOS returns it unchanged. Returns 403 FORBIDDEN for ' +
+          'the same people as the activation, by push as well (to the sender too when someone else closes it). ' +
+          'Closing a closed SOS returns it unchanged. Returns 403 FORBIDDEN for ' +
           'another searcher, 404 NOT_FOUND for an unknown SOS.',
         params: SosParams,
         response: { 200: Sos, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
@@ -60,8 +72,16 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = 
     },
     async (request) => {
       const { missionId, sosId } = request.params;
-      const { sos, changed, searcherIds } = await closeSos(db, { missionId, sosId, actor: actorOf(request) });
-      if (changed) realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
+      const actor = actorOf(request);
+      const { sos, changed, searcherIds } = await closeSos(db, { missionId, sosId, actor });
+      if (changed) {
+        realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
+        void push.notifySearchers({
+          missionId,
+          searcherIds: searcherIds.filter((id) => actor.role !== 'searcher' || id !== actor.searcherId),
+          message: sosPushMessage(sos, 'closed'),
+        });
+      }
       return sos;
     },
   );

@@ -116,6 +116,8 @@ export interface ActivatedSos {
   created: boolean;
   /** The searchers to tell besides the commander: the sender and the recipients stored now. */
   searcherIds: string[];
+  /** The recipients stored now, without the sender: the ones to push to. */
+  recipientIds: string[];
   /** The Timeline record to publish after the commit; null when nothing was created. */
   event: TimelineEvent | null;
 }
@@ -152,7 +154,8 @@ export async function activateSos(
       .select({ id: sosAlerts.id })
       .from(sosAlerts)
       .where(and(eq(sosAlerts.participationId, participation.id), eq(sosAlerts.status, 'active')));
-    if (active) return { sos: await readSos(tx, active.id), created: false, searcherIds: [], event: null };
+    if (active)
+      return { sos: await readSos(tx, active.id), created: false, searcherIds: [], recipientIds: [], event: null };
 
     // Only an assigned searcher has a polygon.
     const polygonId = participation.status === 'assigned' ? participation.polygonId : null;
@@ -184,10 +187,12 @@ export async function activateSos(
       subject: { kind: 'sos', id: row.id, label: polygonName },
       details: { message },
     });
+    const recipientIds = recipients.map((r) => r.searcherId);
     return {
       sos: await readSos(tx, row.id),
       created: true,
-      searcherIds: [actor.searcherId, ...recipients.map((r) => r.searcherId)],
+      searcherIds: [actor.searcherId, ...recipientIds],
+      recipientIds,
       event,
     };
   });
