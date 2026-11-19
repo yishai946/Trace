@@ -204,8 +204,6 @@ export interface ClosedSos {
   changed: boolean;
   /** The searchers to tell besides the commander: the sender and the recipients stored at activation (decision 99). */
   searcherIds: string[];
-  /** The recipients stored at activation, without the sender. */
-  recipientIds: string[];
 }
 
 /**
@@ -239,12 +237,10 @@ export async function closeSos(
       .select({ searcherId: sosAlertRecipients.searcherId })
       .from(sosAlertRecipients)
       .where(eq(sosAlertRecipients.sosId, sosId));
-    const recipientIds = recipients.map((r) => r.searcherId);
     return {
       sos: await readSos(tx, sosId),
       changed,
-      searcherIds: [locked.senderId, ...recipientIds],
-      recipientIds,
+      searcherIds: [locked.senderId, ...recipients.map((r) => r.searcherId)],
     };
   });
 }

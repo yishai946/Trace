@@ -22,7 +22,8 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push
         description:
           'A searcher in the mission whose activity has not ended, in any mission state. It goes to the commander and ' +
           'to the searchers assigned to the sender’s polygon (decision 98). Without a location the last known position ' +
-          'is used. A push goes to those searchers so they are alerted with the app in the background. An SOS that is already active is returned with 200 and nothing is sent again. Returns 400 ' +
+          'is used, and those searchers also get a push, so it reaches them with the app in the background. An SOS ' +
+          'that is already active is returned with 200 and nothing is sent again. Returns 400 ' +
           'VALIDATION_ERROR, 403 FORBIDDEN (the commander, or no profile), 404 NOT_FOUND, 409 PARTICIPATION_ENDED.',
         params: MissionParams,
         body: CreateSosBody,
@@ -61,7 +62,8 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push
         summary: 'Close an SOS (UC-F13, UC-C14)',
         description:
           'The commander closes any SOS of the mission, a searcher only their own (decision 99). The update goes to ' +
-          'the same people as the activation, as a push too (the sender as well when the commander closes it). Closing a closed SOS returns it unchanged. Returns 403 FORBIDDEN for ' +
+          'the same people as the activation, by push as well (to the sender too when someone else closes it). ' +
+          'Closing a closed SOS returns it unchanged. Returns 403 FORBIDDEN for ' +
           'another searcher, 404 NOT_FOUND for an unknown SOS.',
         params: SosParams,
         response: { 200: Sos, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
