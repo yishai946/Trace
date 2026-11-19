@@ -6,10 +6,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import { typography, spacing } from '@trace/design';
 import { ltr } from '../../i18n/rtl';
 import type { CurrentFix } from '../../location/useCurrentFix';
+import type { SosSendFailure } from '../../sos/sendFailure';
 import { useTheme } from '../../theme';
 import { Notice } from '../Notice';
 import { SosHoldButton } from '../SosHoldButton';
 import { SosFacts } from '../SosFacts';
+import { SosNotDelivered } from '../SosNotDelivered';
 import { TextField } from '../TextField';
 
 export interface SosActivationProps {
@@ -18,8 +20,8 @@ export interface SosActivationProps {
   /** The phone's fix taken when the screen opened; null when there is none (the server then uses the last known one). */
   fix: CurrentFix | null;
   sending: boolean;
-  /** The last send failed; the message stays in the field for the next try. */
-  failed: boolean;
+  /** Why the last send was not delivered, or null; the message stays in the field for the next try. */
+  failure: SosSendFailure | null;
   /** How the searcher's previous SOS ended, as a sentence. */
   endedNote: string | null;
   onActivate: (message: string) => void;
@@ -31,7 +33,7 @@ export function SosActivation({
   polygonName,
   fix,
   sending,
-  failed,
+  failure,
   endedNote,
   onActivate,
 }: SosActivationProps) {
@@ -69,11 +71,7 @@ export function SosActivation({
       <Text
         style={[typography.meta, { color: color.inkMuted }]}
       >{`${ltr(message.length)}/${ltr(SOS_MESSAGE_MAX_LENGTH)}`}</Text>
-      {failed ? (
-        <Notice icon="alert" tone="warn" live>
-          ה-SOS לא נשלח. בדוק את החיבור ונסה שוב. ההודעה נשמרה.
-        </Notice>
-      ) : null}
+      {failure ? <SosNotDelivered failure={failure} /> : null}
     </View>
   );
 }

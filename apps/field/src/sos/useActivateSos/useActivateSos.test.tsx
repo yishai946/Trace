@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,6 +7,9 @@ import { missionKeys } from '../../mission/queries';
 import { MISSION_ID } from '../../reports/fixtures';
 import { useSession } from '../../state/session';
 import { makeSos } from '../fixtures';
+
+const network = vi.hoisted(() => ({ state: { isConnected: true, isInternetReachable: true } }));
+vi.mock('expo-network', () => ({ getNetworkStateAsync: vi.fn(async () => network.state) }));
 
 let client: QueryClient;
 const wrapper = ({ children }: { children: ReactNode }) => (
@@ -20,6 +23,8 @@ beforeEach(() => {
   useSession.setState({ token: 'tok', missionId: MISSION_ID });
 });
 afterEach(() => {
+  network.state = { isConnected: true, isInternetReachable: true };
+  onlineManager.setOnline(true);
   vi.unstubAllGlobals();
   useSession.setState({ token: null, missionId: null });
 });
@@ -66,5 +71,32 @@ describe('useActivateSos', () => {
     result.current.mutate({ message: 'עזרה' });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(client.getQueryData(missionKeys.sos(MISSION_ID))).toBeUndefined();
+  });
+
+  it.each([
+    ['no network', { isConnected: false, isInternetReachable: false }],
+    ['a network without internet', { isConnected: true, isInternetReachable: false }],
+  ])('fails at once with a network error and sends nothing on %s', async (_, state) => {
+    network.state = state;
+    const fetch = vi.fn(async () => json(makeSos(), 201));
+    vi.stubGlobal('fetch', fetch);
+    const { result } = renderHook(() => useActivateSos(), { wrapper });
+    result.current.mutate({ message: 'עזרה' });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('is not paused when the query client thinks the phone is offline, so the searcher is told at once', async () => {
+    onlineManager.setOnline(false);
+    network.state = { isConnected: false, isInternetReachable: false };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(makeSos(), 201)),
+    );
+    const { result } = renderHook(() => useActivateSos(), { wrapper });
+    result.current.mutate({});
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.isPaused).toBe(false);
   });
 });

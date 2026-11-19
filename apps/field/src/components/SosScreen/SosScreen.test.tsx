@@ -1,4 +1,5 @@
 import { QueryClient } from '@tanstack/react-query';
+import { Linking } from 'react-native';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SosScreen } from '.';
@@ -9,6 +10,8 @@ import { makeSos } from '../../sos/fixtures';
 import { useSession } from '../../state/session';
 import { TestProviders } from '../../test/providers';
 
+const network = vi.hoisted(() => ({ state: { isConnected: true, isInternetReachable: true } }));
+vi.mock('expo-network', () => ({ getNetworkStateAsync: vi.fn(async () => network.state) }));
 vi.mock('../../location/useCurrentFix', () => ({
   useCurrentFix: () => ({ state: 'ready', fix: { position: [35.0098, 31.7452], accuracy: 5, at: 1_790_000_000_000 } }),
 }));
@@ -54,6 +57,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
 });
 afterEach(() => {
+  network.state = { isConnected: true, isInternetReachable: true };
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -96,6 +101,34 @@ describe('SosScreen activation', () => {
     expect(posts('/sos')).toHaveLength(1);
   });
 
+  it('says the SOS was not delivered with no connection, sends nothing and offers to dial emergency services', async () => {
+    network.state = { isConnected: false, isInternetReachable: false };
+    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    view();
+    fireEvent.change(screen.getByLabelText('הודעה קצרה (אופציונלי)'), { target: { value: 'עזרה' } });
+    hold(SOS_HOLD_MS);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('ה-SOS לא נמסר');
+    expect(alert).toHaveTextContent(/אין חיבור/);
+    expect(posts('/sos')).toHaveLength(0);
+    expect(screen.getByLabelText('הודעה קצרה (אופציונלי)')).toHaveValue('עזרה');
+    fireEvent.click(screen.getByRole('button', { name: /חירום 112/ }));
+    expect(open).toHaveBeenCalledWith('tel:112');
+  });
+
+  it('sends on the next hold once the connection is back and the not-delivered card goes away', async () => {
+    network.state = { isConnected: false, isInternetReachable: false };
+    view();
+    hold(SOS_HOLD_MS);
+    expect(await screen.findByText('ה-SOS לא נמסר')).toBeInTheDocument();
+    fireEvent.mouseUp(sosButton());
+    network.state = { isConnected: true, isInternetReachable: true };
+    hold(SOS_HOLD_MS);
+    await waitFor(() => expect(screen.getByLabelText('SOS פעיל')).toBeInTheDocument());
+    expect(posts('/sos')).toHaveLength(1);
+    expect(screen.queryByText('ה-SOS לא נמסר')).toBeNull();
+  });
+
   it('shows an error and keeps the message when sending fails, and sends again on the next hold', async () => {
     fetchMock.mockImplementation(async (url: string, init?: { method?: string }) =>
       String(url).endsWith('/sos') && init?.method === 'POST'
@@ -105,7 +138,10 @@ describe('SosScreen activation', () => {
     view();
     fireEvent.change(screen.getByLabelText('הודעה קצרה (אופציונלי)'), { target: { value: 'עזרה' } });
     hold(SOS_HOLD_MS);
-    expect(await screen.findByText(/ה-SOS לא נשלח/)).toBeInTheDocument();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('ה-SOS לא נמסר');
+    expect(alert).toHaveTextContent(/השרת/);
+    expect(screen.getByRole('button', { name: /חירום 112/ })).toBeInTheDocument();
     expect(screen.getByLabelText('הודעה קצרה (אופציונלי)')).toHaveValue('עזרה');
     expect(screen.queryByLabelText('SOS פעיל')).toBeNull();
     fireEvent.mouseUp(sosButton());

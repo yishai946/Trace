@@ -2,6 +2,7 @@ import { spacing } from '@trace/design';
 import { StyleSheet, View } from 'react-native';
 import { useCurrentFix } from '../../location/useCurrentFix';
 import { endedSentence, ownActiveSos, ownClosedSos, sosLocationOf } from '../../sos/sosList';
+import { sosSendFailure } from '../../sos/sendFailure';
 import { useActivateSos } from '../../sos/useActivateSos';
 import { useCloseSos } from '../../sos/useCloseSos';
 import { useMissionSos } from '../../sos/useMissionSos';
@@ -49,7 +50,7 @@ export function SosScreen() {
             polygonName={polygonName}
             fix={fix}
             sending={activate.isPending}
-            failed={activate.isError}
+            failure={sosSendFailure(activate.error)}
             endedNote={endedNote}
             onActivate={send}
           />
