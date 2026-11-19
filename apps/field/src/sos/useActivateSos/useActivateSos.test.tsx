@@ -8,6 +8,9 @@ import { MISSION_ID } from '../../reports/fixtures';
 import { useSession } from '../../state/session';
 import { makeSos } from '../fixtures';
 
+const network = vi.hoisted(() => ({ state: { isConnected: true, isInternetReachable: true } }));
+vi.mock('expo-network', () => ({ getNetworkStateAsync: vi.fn(async () => network.state) }));
+
 let client: QueryClient;
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -20,6 +23,7 @@ beforeEach(() => {
   useSession.setState({ token: 'tok', missionId: MISSION_ID });
 });
 afterEach(() => {
+  network.state = { isConnected: true, isInternetReachable: true };
   vi.unstubAllGlobals();
   useSession.setState({ token: null, missionId: null });
 });
@@ -66,5 +70,19 @@ describe('useActivateSos', () => {
     result.current.mutate({ message: 'עזרה' });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(client.getQueryData(missionKeys.sos(MISSION_ID))).toBeUndefined();
+  });
+
+  it.each([
+    ['no network', { isConnected: false, isInternetReachable: false }],
+    ['a network without internet', { isConnected: true, isInternetReachable: false }],
+  ])('fails at once with a network error and sends nothing on %s', async (_, state) => {
+    network.state = state;
+    const fetch = vi.fn(async () => json(makeSos(), 201));
+    vi.stubGlobal('fetch', fetch);
+    const { result } = renderHook(() => useActivateSos(), { wrapper });
+    result.current.mutate({ message: 'עזרה' });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.error).toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(fetch).not.toHaveBeenCalled();
   });
 });
