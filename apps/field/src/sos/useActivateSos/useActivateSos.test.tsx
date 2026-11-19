@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,6 +24,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   network.state = { isConnected: true, isInternetReachable: true };
+  onlineManager.setOnline(true);
   vi.unstubAllGlobals();
   useSession.setState({ token: null, missionId: null });
 });
@@ -84,5 +85,18 @@ describe('useActivateSos', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.error).toMatchObject({ code: 'NETWORK_ERROR' });
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('is not paused when the query client thinks the phone is offline, so the searcher is told at once', async () => {
+    onlineManager.setOnline(false);
+    network.state = { isConnected: false, isInternetReachable: false };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(makeSos(), 201)),
+    );
+    const { result } = renderHook(() => useActivateSos(), { wrapper });
+    result.current.mutate({});
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.isPaused).toBe(false);
   });
 });

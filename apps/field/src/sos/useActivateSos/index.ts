@@ -17,6 +17,8 @@ export function useActivateSos() {
   const missionId = useSession((s) => s.missionId);
   const queryClient = useQueryClient();
   return useMutation({
+    // Not paused while the client thinks it is offline: the check below must run, so the searcher is told at once.
+    networkMode: 'always',
     mutationFn: async (body: CreateSosBody) => {
       const network = await getNetworkStateAsync();
       if (!network.isConnected || network.isInternetReachable === false) {
