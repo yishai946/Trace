@@ -1,5 +1,13 @@
-import { spacing, typography } from '@trace/design';
-import { Platform, Pressable, StyleSheet, Text, type GestureResponderEvent, type PressableProps } from 'react-native';
+import { radius, spacing, typography } from '@trace/design';
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type GestureResponderEvent,
+  type PressableProps,
+} from 'react-native';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 import { Icon, type IconName } from '../Icon';
@@ -9,6 +17,8 @@ export interface TabButtonProps {
   icon: IconName;
   /** SOS keeps its danger color, also when it is the current tab (Fm12). */
   tone?: 'danger';
+  /** A count on the tab, e.g. the messages that wait for the searcher (Fm11); nothing when zero. */
+  count?: number;
   /** From Expo Router's `TabTrigger` (asChild): the tab's URL, whether it is current, and its press handlers. */
   href?: string;
   isFocused?: boolean;
@@ -27,7 +37,16 @@ const hasModifier = (event: GestureResponderEvent) => {
  * browser treat it as a link. Used as the `asChild` of an Expo Router `TabTrigger`; the trigger's own row style is
  * deliberately not applied.
  */
-export function TabButton({ label, icon, tone, href, isFocused = false, onPress, onLongPress }: TabButtonProps) {
+export function TabButton({
+  label,
+  icon,
+  tone,
+  count = 0,
+  href,
+  isFocused = false,
+  onPress,
+  onLongPress,
+}: TabButtonProps) {
   const { color } = useTheme().theme;
   const ink = tone === 'danger' ? color.dangerInk : isFocused ? color.accent : color.inkSecondary;
   const web = Platform.OS === 'web';
@@ -44,7 +63,7 @@ export function TabButton({ label, icon, tone, href, isFocused = false, onPress,
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityLabel={label}
+      accessibilityLabel={count > 0 ? `${label}, ${count} חדשות` : label}
       accessibilityState={web ? undefined : { selected: isFocused }}
       onPress={handlePress}
       onLongPress={onLongPress}
@@ -53,6 +72,11 @@ export function TabButton({ label, icon, tone, href, isFocused = false, onPress,
     >
       <Icon name={icon} color={ink} large />
       <Text style={[typography.caption, isFocused && styles.focused, { color: ink }]}>{label}</Text>
+      {count > 0 ? (
+        <View style={[styles.count, { backgroundColor: color.accent }]}>
+          <Text style={[typography.caption, styles.countText, { color: color.surface }]}>{count}</Text>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -66,5 +90,18 @@ const styles = StyleSheet.create({
     gap: spacing.space1,
     minHeight: pendingTokens.touchTarget,
   },
+  count: {
+    position: 'absolute',
+    top: pendingTokens.tabBadgeTop,
+    start: '50%',
+    marginStart: spacing.space3,
+    minWidth: pendingTokens.tabBadge,
+    height: pendingTokens.tabBadge,
+    borderRadius: radius.radiusLg,
+    paddingHorizontal: spacing.space2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countText: { fontWeight: typography.bodyStrong.fontWeight },
   focused: { fontWeight: typography.bodyStrong.fontWeight },
 });
