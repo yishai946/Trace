@@ -33,4 +33,13 @@ describe('MissionTabBar', () => {
     render(<MissionTabBar current="board" onNavigate={vi.fn()} />);
     expect(screen.getByRole('link', { name: 'דיווחים' }).querySelector('span')).toBeNull();
   });
+
+  it('TB3: opens SOS and counts the active ones on its item', () => {
+    const onNavigate = vi.fn();
+    render(<MissionTabBar current="board" onNavigate={onNavigate} counts={{ sos: 1 }} />);
+    const link = screen.getByRole('link', { name: 'SOS, 1 פעילות' });
+    expect(link).toHaveTextContent('1');
+    fireEvent.click(link);
+    expect(onNavigate).toHaveBeenCalledWith('sos');
+  });
 });

@@ -8,8 +8,6 @@ export interface SosAlertProps {
   /** Newest first, as the API returns them. */
   sos: Sos[];
   onOpen: () => void;
-  /** Floats at the top centre of the live map instead of sitting in the page. */
-  floating?: boolean;
   /** The phone: one line under the top bar. */
   compact?: boolean;
 }
@@ -19,20 +17,14 @@ export interface SosAlertProps {
  * at least one SOS is active, so it survives a reload and is gone once every SOS is closed. Several are counted and
  * the newest is described.
  */
-export function SosAlert({ sos, onOpen, floating, compact }: SosAlertProps) {
+export function SosAlert({ sos, onOpen, compact }: SosAlertProps) {
   const active = sos.filter((s) => s.status === 'active');
   const latest = active[0];
   if (!latest) return null;
   const { callsign, name } = latest.sender;
 
   return (
-    <section
-      className={styles.alert}
-      data-floating={floating || undefined}
-      data-compact={compact || undefined}
-      role="alert"
-      aria-label="התראת SOS"
-    >
+    <section className={styles.alert} data-compact={compact || undefined} role="alert" aria-label="התראת SOS">
       <span className={styles.badge}>{active.length > 1 ? `SOS · ${active.length}` : 'SOS'}</span>
       <div className={styles.text}>
         <CallsignChip callsign={callsign} state="sos" /> <b>{name}</b>

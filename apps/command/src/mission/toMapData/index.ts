@@ -9,8 +9,8 @@ interface MapDataSource {
   participants: Participant[];
   sightings: Sighting[];
   reports: Report[];
-  /** The mission's SOS; the active ones with a location are marked. */
-  sos: Sos[];
+  /** The mission's SOS; the active ones with a location are marked. The Reports screens leave it out. */
+  sos?: Sos[];
   /** The LKP history, newest first. */
   lkps: LkpPoint[];
   selectedPolygonId: string | null;
@@ -25,7 +25,7 @@ export function toMapData({
   participants,
   sightings,
   reports,
-  sos,
+  sos = [],
   lkps,
   selectedPolygonId,
   editingPolygonId,

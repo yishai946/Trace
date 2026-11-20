@@ -154,7 +154,7 @@ describe('useCloseSos', () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
     const { result } = renderHook(() => useCloseSos(mission.id), { wrapper: clientWrapper });
-    await act(() => result.current.mutateAsync(sosActive.id));
+    await act(() => result.current.mutateAsync({ missionId: mission.id, sosId: sosActive.id }));
     expect(fetchMock).toHaveBeenCalledWith(
       `/api/missions/${mission.id}/sos/${sosActive.id}/close`,
       expect.objectContaining({ method: 'POST' }),

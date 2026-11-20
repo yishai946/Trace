@@ -17,7 +17,7 @@ export function useSosList(missionId: string | undefined) {
 export function useCloseSos(missionId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (sosId: string) =>
+    mutationFn: ({ sosId }: { missionId: string; sosId: string }) =>
       apiRequest(`/missions/${missionId}/sos/${sosId}/close`, { method: 'POST', schema: Sos }),
     onSuccess: (sos) => queryClient.setQueryData<Sos[]>(missionKeys.sos(missionId), replaceById(sos)),
   });

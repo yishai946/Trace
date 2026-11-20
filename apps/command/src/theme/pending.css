@@ -46,4 +46,7 @@
   --pending-report-thumb-h: 84px;
   /* The count badge on a tab-bar item (wireframe tcx-tabbar__n, 16px). */
   --pending-tabbar-badge: 16px;
+  /* The SOS card (wireframe Cd12 aside, 400px) and the label column of its facts. */
+  --pending-sos-card-w: 400px;
+  --pending-fact-label-w: 96px;
 }

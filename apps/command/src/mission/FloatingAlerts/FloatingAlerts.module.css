@@ -1,0 +1,12 @@
+.stack {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: var(--pending-alert-w);
+  max-width: calc(100% - var(--space-6) * 2);
+  transform: translateX(-50%);
+}

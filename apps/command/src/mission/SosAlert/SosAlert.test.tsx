@@ -43,10 +43,8 @@ describe('SosAlert', () => {
     expect(onOpen).toHaveBeenCalledOnce();
   });
 
-  it('is compact on the phone and floating on the desktop map', () => {
-    const { rerender } = render(<SosAlert compact sos={[sosActive]} onOpen={vi.fn()} />);
+  it('is compact on the phone', () => {
+    render(<SosAlert compact sos={[sosActive]} onOpen={vi.fn()} />);
     expect(screen.getByRole('alert', { name: 'התראת SOS' })).toHaveAttribute('data-compact');
-    rerender(<SosAlert floating sos={[sosActive]} onOpen={vi.fn()} />);
-    expect(screen.getByRole('alert', { name: 'התראת SOS' })).toHaveAttribute('data-floating');
   });
 });

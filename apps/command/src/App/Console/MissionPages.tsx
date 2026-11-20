@@ -6,9 +6,10 @@ import { MissionLayout } from '../../mission/MissionLayout';
 import { MessagesPage } from '../../pages/MessagesPage';
 import { ReportsPage } from '../../pages/ReportsPage';
 import { SearchersPage } from '../../pages/SearchersPage';
+import { SosPage } from '../../pages/SosPage';
 import { TimelinePage } from '../../pages/TimelinePage';
 import type { ConsoleNav } from './useConsoleNav';
-import type { MessageSending, ReportActions, SearcherActions } from './useMissionActions';
+import type { MessageSending, ReportActions, SearcherActions, SosActions } from './useMissionActions';
 import type { MissionData } from './useMissionData';
 
 interface MissionPagesProps {
@@ -18,6 +19,7 @@ interface MissionPagesProps {
   provider: MapProvider;
   themeId: ThemeId;
   reportActions: ReportActions;
+  sosActions: SosActions;
   searcherActions: SearcherActions;
   messageSending: MessageSending;
 }
@@ -30,6 +32,7 @@ export function MissionPages({
   provider,
   themeId,
   reportActions,
+  sosActions,
   searcherActions,
   messageSending,
 }: MissionPagesProps) {
@@ -40,7 +43,10 @@ export function MissionPages({
       missionName={mission.name}
       view={view}
       onNavigate={nav.setView}
-      counts={{ reports: data.reports.data?.filter((r) => r.status === 'new').length ?? 0 }}
+      counts={{
+        reports: data.reports.data?.filter((r) => r.status === 'new').length ?? 0,
+        sos: data.sos.data?.filter((s) => s.status === 'active').length ?? 0,
+      }}
       joinPanel={
         nav.panel === 'join' && <JoinCodePanel mission={mission} onClose={() => nav.setPanelOpen('join', false)} />
       }
@@ -82,6 +88,15 @@ export function MissionPages({
           participantsFailed={data.participants.isError}
           polygons={polygons}
           {...messageSending}
+        />
+      )}
+      {view === 'sos' && (
+        <SosPage
+          sos={data.sos.data}
+          loadFailed={data.sos.isError}
+          onRetry={() => void data.sos.refetch()}
+          participants={data.participants.data ?? []}
+          {...sosActions}
         />
       )}
       {view === 'timeline' && (
