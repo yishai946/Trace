@@ -5,6 +5,7 @@ import {
   type ClientToServerEvents,
   OwnParticipation,
   type Mission,
+  type OwnMessage,
   type Report,
   type Sos,
   type ServerToClientEvents,
@@ -14,6 +15,7 @@ import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { apiBaseUrl, apiRequest } from '../api';
 import { missionKeys } from '../mission/queries';
+import { upsertMessage } from '../messages/messageList';
 import { upsertSos } from '../sos/sosList';
 import { useSession } from '../state/session';
 
@@ -81,6 +83,12 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
       // An SOS the searcher sent, one sent to them, or the closing of either, by the sender or the commander (UC-F13).
       changeList<Sos>(queryClient, missionKeys.sos(event.missionId), (list) => upsertSos(list, event.sos));
       return;
+    case 'message.received':
+      // A message sent to this searcher; one sent while offline is read after the next join (decision 77).
+      changeList<OwnMessage>(queryClient, missionKeys.messages(event.missionId), (list) =>
+        upsertMessage(list, event.message),
+      );
+      return;
     case 'polygon.saved':
     case 'polygon.deleted':
       void queryClient.invalidateQueries({ queryKey: missionKeys.polygons(event.missionId) });
@@ -123,6 +131,8 @@ export function useMissionLive(): void {
           void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
           // An SOS sent or closed while away is not replayed either.
           void queryClient.invalidateQueries({ queryKey: missionKeys.sos(missionId) });
+          // A message sent while away is not replayed either (decision 77).
+          void queryClient.invalidateQueries({ queryKey: missionKeys.messages(missionId) });
           // An assignment made while away is not replayed either. The answer is dropped if the screen closed, the
           // mission changed or a live event came first (it is newer). A failure waits for the next reconnect.
           const seen = participationEvents;
