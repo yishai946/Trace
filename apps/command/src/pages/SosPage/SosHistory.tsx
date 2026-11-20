@@ -9,7 +9,10 @@ export function SosHistory({ closed }: { closed: Sos[] }) {
   return (
     <section className={styles.history} aria-labelledby="sos-history">
       <h2 id="sos-history" className={styles.sectionTitle}>
-        היסטוריית SOS <span className={styles.meta}>{closed.length} קריאות סגורות במסע</span>
+        היסטוריית SOS{' '}
+        <span className={styles.meta}>
+          {closed.length === 1 ? 'קריאה סגורה אחת במסע' : `${closed.length} קריאות סגורות במסע`}
+        </span>
       </h2>
       <ul className={styles.list}>
         {closed.map((sos) => (
