@@ -17,5 +17,6 @@ export const TIMELINE_EVENT_TYPES = [
   'coverage.threshold_reached',
   'contact.lost',
   'sos.activated',
+  'sos.closed',
 ] as const;
 export type TimelineEventType = (typeof TIMELINE_EVENT_TYPES)[number];

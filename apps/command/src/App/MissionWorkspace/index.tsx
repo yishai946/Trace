@@ -1,10 +1,10 @@
 import type { ThemeId } from '@trace/design';
 import { canChangeLkp, canChangePolygons } from '@trace/domain';
 import type { MapProvider } from '@trace/map';
-import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting } from '@trace/schemas';
+import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import styles from '../App.module.css';
 import { MissionMap, type MapFocus, type PointTarget } from '../../map/MissionMap';
-import { CriticalReportAlert } from '../../mission/CriticalReportAlert';
+import { FloatingAlerts } from '../../mission/FloatingAlerts';
 import { RallyPointPanel } from '../../mission/RallyPointPanel';
 import { usePolygonEdit } from './usePolygonEdit';
 import { useRallyPointEdit } from './useRallyPointEdit';
@@ -24,9 +24,13 @@ interface MissionWorkspaceProps {
   lkps: LkpPoint[] | undefined;
   /** Newest first. */
   reports: Report[];
+  /** The mission's SOS, newest first. */
+  sos: Sos[];
   /** Opens a report in the Reports page or screen. */
   onOpenReport: (id: string) => void;
-  /** The floating critical alert; the phone shows its own under the top bar. */
+  /** Opens the SOS page or screen. */
+  onOpenSos: () => void;
+  /** The floating alerts; the phone shows its own under the top bar. */
   alertOnMap: boolean;
   sightingsLoading: boolean;
   sightingsFailed: boolean;
@@ -51,7 +55,9 @@ export function MissionWorkspace({
   sightings,
   lkps,
   reports,
+  sos,
   onOpenReport,
+  onOpenSos,
   alertOnMap,
   sightingsLoading,
   sightingsFailed,
@@ -74,6 +80,7 @@ export function MissionWorkspace({
     sightings,
     lkps,
     reports,
+    sos,
     selectedPolygonId: polygon.selectedId,
     editingPolygonId: polygon.editing?.polygonId ?? null,
     draftPosition: sighting.draftPosition,
@@ -119,7 +126,7 @@ export function MissionWorkspace({
         onEditChange={polygon.changeBoundary}
       />
 
-      {alertOnMap && <CriticalReportAlert floating reports={reports} onOpen={onOpenReport} />}
+      {alertOnMap && <FloatingAlerts reports={reports} sos={sos} onOpenReport={onOpenReport} onOpenSos={onOpenSos} />}
 
       {rallyOpen && (
         <div className={styles.rallyPanel}>

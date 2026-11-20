@@ -47,6 +47,8 @@ export function useConsoleNav() {
     /** Opens the panel in place of any other, or closes it if it is the open one. */
     setPanelOpen: (target: ConsolePanel, open: boolean) =>
       setPanel((current) => (open ? target : current === target ? null : current)),
+    /** The alert opens the SOS page, or the SOS screen on the phone. */
+    openSos: () => setView('sos'),
     openReport: (id: string) => {
       setSelectedReportId(id);
       setView('reports');

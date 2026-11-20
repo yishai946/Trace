@@ -73,9 +73,10 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push
     async (request) => {
       const { missionId, sosId } = request.params;
       const actor = actorOf(request);
-      const { sos, changed, searcherIds } = await closeSos(db, { missionId, sosId, actor });
+      const { sos, changed, searcherIds, event } = await closeSos(db, { missionId, sosId, actor });
       if (changed) {
         realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
+        if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
         void push.notifySearchers({
           missionId,
           searcherIds: searcherIds.filter((id) => actor.role !== 'searcher' || id !== actor.searcherId),

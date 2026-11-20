@@ -405,6 +405,43 @@ function missionLayers(themeId: ThemeId, boldFont: string[], regularFont: string
       },
     },
     {
+      id: 'mission-sos-ring',
+      type: 'circle',
+      source: SOURCE.sos,
+      paint: {
+        'circle-radius': 18,
+        'circle-color': c.danger,
+        'circle-opacity': 0.18,
+        'circle-stroke-color': c.danger,
+        'circle-stroke-width': 1.5,
+      },
+    },
+    {
+      id: 'mission-sos',
+      type: 'circle',
+      source: SOURCE.sos,
+      paint: {
+        'circle-radius': 6,
+        'circle-color': c.danger,
+        'circle-stroke-color': c.mapHalo,
+        'circle-stroke-width': 2,
+      },
+    },
+    {
+      id: 'mission-sos-label',
+      type: 'symbol',
+      source: SOURCE.sos,
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-font': boldFont,
+        'text-size': labelSize,
+        'text-anchor': 'bottom',
+        'text-offset': [0, -1.8],
+        'text-allow-overlap': true,
+      },
+      paint: { 'text-color': c.onDanger, 'text-halo-color': c.danger, 'text-halo-width': 3 },
+    },
+    {
       id: 'mission-reports',
       type: 'symbol',
       source: SOURCE.reports,

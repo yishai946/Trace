@@ -1,0 +1,239 @@
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.page[data-phone] {
+  border: 0;
+  border-radius: 0;
+  background-color: var(--map-ground);
+  box-shadow: none;
+}
+
+.head {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.page[data-phone] .head {
+  height: var(--header-h);
+  padding-block: 0;
+  border-bottom-color: var(--border);
+  background-color: var(--surface);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.meta {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-6);
+  min-height: 0;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.empty,
+.quiet {
+  margin: 0;
+  padding: var(--space-7);
+  color: var(--ink-muted);
+  text-align: center;
+}
+
+.error {
+  margin: 0;
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  background-color: var(--danger-tint);
+  color: var(--danger-ink);
+}
+
+/* An active SOS: the danger frame of the AlertBanner (wireframe Cd12). */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: var(--pending-sos-card-w);
+  padding: var(--space-6);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--danger-surface);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.grow {
+  flex: 1;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: var(--pending-badge-h);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--danger);
+  color: var(--on-danger);
+  font: var(--text-caption);
+  font-weight: 700;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.name {
+  font: var(--text-body-strong);
+}
+
+.label {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.quote {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  font: var(--text-body);
+}
+
+.facts > div {
+  display: flex;
+  gap: var(--space-5);
+}
+
+.facts dt {
+  flex: 0 0 var(--pending-fact-label-w);
+  color: var(--ink-muted);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.num {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin: 0;
+  font: var(--text-title);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-6);
+  padding-block: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  font: var(--text-body);
+}
+
+.message {
+  flex: 1 1 var(--pending-fact-label-w);
+  min-width: 0;
+  color: var(--ink-secondary);
+}
+
+.closed {
+  color: var(--ink-secondary);
+}
+
+.badge {
+  display: inline-block;
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--chip);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+}
+
+/* The close confirmation, like the one of ending a participation. */
+.popover {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: var(--pending-alert-w);
+  padding: var(--space-6);
+  outline: none;
+}
+
+.confirmTitle {
+  margin: 0;
+  font: var(--text-title);
+}

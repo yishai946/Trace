@@ -1,0 +1,26 @@
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { FloatingAlerts } from '.';
+import { reportFinding, reportLocated, sosActive, sosClosed } from '../fixtures';
+
+const open = { onOpenReport: vi.fn(), onOpenSos: vi.fn() };
+
+describe('FloatingAlerts', () => {
+  it('shows nothing without an active SOS or a critical report', () => {
+    const { container } = render(<FloatingAlerts reports={[reportFinding]} sos={[sosClosed]} {...open} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('puts the SOS above the critical report when both are active', () => {
+    render(<FloatingAlerts reports={[reportLocated]} sos={[sosActive]} {...open} />);
+    const alerts = screen.getAllByRole('alert').map((a) => a.getAttribute('aria-label'));
+    expect(alerts).toEqual(['התראת SOS', 'התראה קריטית']);
+  });
+
+  it('shows the SOS alone, and the report alone', () => {
+    const { rerender } = render(<FloatingAlerts reports={[]} sos={[sosActive]} {...open} />);
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    rerender(<FloatingAlerts reports={[reportLocated]} sos={[]} {...open} />);
+    expect(screen.getByRole('alert', { name: 'התראה קריטית' })).toBeTruthy();
+  });
+});

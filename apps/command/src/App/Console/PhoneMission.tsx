@@ -7,8 +7,9 @@ import type { MapFocus } from '../../map/MissionMap';
 import { PlaceSearch } from '../../map/PlaceSearch';
 import { PhoneMissionScreen } from '../../mission/PhoneMissionScreen';
 import { PhoneReportsPage } from '../../pages/PhoneReportsPage';
+import { SosPage } from '../../pages/SosPage';
 import type { ConsoleNav } from './useConsoleNav';
-import type { ReportActions } from './useMissionActions';
+import type { ReportActions, SosActions } from './useMissionActions';
 import type { MissionData } from './useMissionData';
 
 interface PhoneMissionProps {
@@ -22,11 +23,12 @@ interface PhoneMissionProps {
   provider: MapProvider;
   themeId: ThemeId;
   reportActions: ReportActions;
+  sosActions: SosActions;
   /** The commander searched for a place: the map moves there. */
   onPlaceFound: (focus: MapFocus) => void;
 }
 
-/** The open mission on a phone (wireframe Cm04): the map stage, or the Reports screen in its place. */
+/** The open mission on a phone (wireframe Cm04): the map stage, or the Reports or SOS screen in its place. */
 export function PhoneMission({
   mission,
   missions,
@@ -37,6 +39,7 @@ export function PhoneMission({
   provider,
   themeId,
   reportActions,
+  sosActions,
   onPlaceFound,
 }: PhoneMissionProps) {
   const polygons = data.polygons.data ?? [];
@@ -55,11 +58,23 @@ export function PhoneMission({
       participantsFailed={data.participants.isError}
       polygons={polygons}
       workspace={workspace}
-      screen={nav.view === 'reports' ? 'reports' : 'map'}
+      screen={nav.view === 'reports' || nav.view === 'sos' ? nav.view : 'map'}
       onScreenChange={nav.setView}
       reports={data.reports.data}
       reportsFailed={data.reports.isError}
       onOpenReport={nav.openReport}
+      sos={data.sos.data}
+      onOpenSos={nav.openSos}
+      sosScreen={
+        <SosPage
+          phone
+          sos={data.sos.data}
+          loadFailed={data.sos.isError}
+          onRetry={() => void data.sos.refetch()}
+          participants={data.participants.data ?? []}
+          {...sosActions}
+        />
+      }
       reportsScreen={
         <PhoneReportsPage
           key={mission.id}

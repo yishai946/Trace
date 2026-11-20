@@ -43,4 +43,9 @@ describe('mission sources', () => {
       { id: 'found', hazard: false, located: true, label: 'אותר 16:51' },
     ]);
   });
+
+  it('labels an active SOS with its sender callsign', () => {
+    const sources = toMissionSources({ ...sampleData, sos: [{ id: 'sos1', position: [35.1, 31.7], callsign: 7 }] });
+    expect(sources[SOURCE.sos].features.map((f) => f.properties)).toEqual([{ id: 'sos1', label: 'SOS 07' }]);
+  });
 });

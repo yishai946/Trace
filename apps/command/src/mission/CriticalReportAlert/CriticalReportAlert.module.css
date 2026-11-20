@@ -10,17 +10,6 @@
   box-shadow: var(--shadow-panel);
 }
 
-/* Floating at the top centre of the live map, in the slot of the SOS alert. */
-.alert[data-floating] {
-  position: absolute;
-  top: calc(var(--space-6) * 2 + var(--header-h));
-  left: 50%;
-  z-index: 3;
-  width: var(--pending-alert-w);
-  max-width: calc(100% - var(--space-6) * 2);
-  transform: translateX(-50%);
-}
-
 .badge {
   display: inline-flex;
   flex: 0 0 auto;

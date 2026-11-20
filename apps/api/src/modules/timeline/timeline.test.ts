@@ -297,6 +297,13 @@ describe('timeline', () => {
           subject: subject('sos', null),
           details: { message: null },
         },
+        'sos.closed': {
+          missionId,
+          actor: bySearcher,
+          type: 'sos.closed',
+          subject: subject('sos', null),
+          details: {},
+        },
       };
 
       for (const type of TIMELINE_EVENT_TYPES) {

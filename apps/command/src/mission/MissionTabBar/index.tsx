@@ -3,12 +3,12 @@ import { Link } from 'react-aria-components';
 import styles from './MissionTabBar.module.css';
 import { Icon } from './Icon';
 
-export type MissionTab = 'board' | 'searchers' | 'reports';
+export type MissionTab = 'board' | 'searchers' | 'reports' | 'sos';
 
 interface MissionTabBarProps {
   current: MissionTab;
   onNavigate: (tab: MissionTab) => void;
-  /** The count on an item: New reports on "דיווחים". Nothing shows for 0. */
+  /** The count on an item: New reports on "דיווחים", active SOS on "SOS". Nothing shows for 0. */
   counts?: Partial<Record<MissionTab, number>>;
 }
 
@@ -43,7 +43,20 @@ const ITEMS: { tab: MissionTab; label: string; icon: ReactNode }[] = [
       </Icon>
     ),
   },
+  {
+    tab: 'sos',
+    label: 'SOS',
+    icon: (
+      <Icon>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v6M12 16h.01" />
+      </Icon>
+    ),
+  },
 ];
+
+/** What the number on an item counts, for screen readers. */
+const COUNT_NOUN: Partial<Record<MissionTab, string>> = { sos: 'פעילות' };
 
 /** The bottom tab bar of the phone mission screen (Console "Command בטלפון", wireframe Cm04). */
 export function MissionTabBar({ current, onNavigate, counts }: MissionTabBarProps) {
@@ -55,14 +68,14 @@ export function MissionTabBar({ current, onNavigate, counts }: MissionTabBarProp
           <Link
             key={tab}
             className={styles.item}
-            aria-label={count > 0 ? `${label}, ${count} חדשים` : undefined}
+            aria-label={count > 0 ? `${label}, ${count} ${COUNT_NOUN[tab] ?? 'חדשים'}` : undefined}
             aria-current={current === tab ? 'page' : undefined}
             onPress={() => onNavigate(tab)}
           >
             {icon}
             {label}
             {count > 0 && (
-              <span className={styles.count} aria-hidden="true">
+              <span className={styles.count} data-danger={tab === 'sos' || undefined} aria-hidden="true">
                 {count}
               </span>
             )}

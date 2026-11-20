@@ -6,6 +6,7 @@ import {
   usePolygons,
   useReports,
   useSightings,
+  useSosList,
   useTimeline,
 } from '../../mission/missionQueries';
 
@@ -23,6 +24,8 @@ export function useMissionData(missionId: string | undefined, view: MissionView)
     messages: useMessages(view === 'messages' ? missionId : undefined),
     // Always loaded: the map draws them, the navigation counts the New ones and the alert needs the located one.
     reports: useReports(missionId),
+    // Always loaded: the alert, the map marker and the navigation count read it from any view, and it survives a reload.
+    sos: useSosList(missionId),
   };
 }
 

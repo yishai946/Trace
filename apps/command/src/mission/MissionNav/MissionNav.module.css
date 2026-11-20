@@ -58,3 +58,9 @@
   font: var(--text-caption);
   font-variant-numeric: tabular-nums;
 }
+
+/* The active SOS count is a danger count (wireframe Cd12 tcx-nav__count--danger). */
+.count[data-danger] {
+  color: var(--danger-ink);
+  font-weight: 700;
+}
