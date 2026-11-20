@@ -202,6 +202,8 @@ export interface ClosedSos {
   sos: Sos;
   /** False when it was already closed: it is returned unchanged and nothing is sent. */
   changed: boolean;
+  /** The Timeline record to publish after the commit; null when nothing changed. */
+  event: TimelineEvent | null;
   /** The searchers to tell besides the commander: the sender and the recipients stored at activation (decision 99). */
   searcherIds: string[];
 }
@@ -217,9 +219,15 @@ export async function closeSos(
 ): Promise<ClosedSos> {
   return db.transaction(async (tx) => {
     const [locked] = await tx
-      .select({ id: sosAlerts.id, status: sosAlerts.status, senderId: participations.searcherId })
+      .select({
+        id: sosAlerts.id,
+        status: sosAlerts.status,
+        senderId: participations.searcherId,
+        polygonName: polygons.name,
+      })
       .from(sosAlerts)
       .innerJoin(participations, eq(participations.id, sosAlerts.participationId))
+      .leftJoin(polygons, eq(polygons.id, sosAlerts.polygonId))
       .where(and(eq(sosAlerts.id, sosId), eq(sosAlerts.missionId, missionId)))
       .for('update', { of: sosAlerts });
     if (!locked) throw notFound('SOS');
@@ -227,11 +235,19 @@ export async function closeSos(
     if (!canCloseSos({ role: actor.role, isSender })) throw forbidden();
 
     const changed = locked.status === 'active';
+    let event: TimelineEvent | null = null;
     if (changed) {
       await tx
         .update(sosAlerts)
         .set({ status: 'closed', closedAt: sql`now()`, closedBy: actor.userId })
         .where(eq(sosAlerts.id, sosId));
+      event = await recordEvent(tx, {
+        missionId,
+        type: 'sos.closed',
+        actor,
+        subject: { kind: 'sos', id: sosId, label: locked.polygonName },
+        details: {},
+      });
     }
     const recipients = await tx
       .select({ searcherId: sosAlertRecipients.searcherId })
@@ -240,6 +256,7 @@ export async function closeSos(
     return {
       sos: await readSos(tx, sosId),
       changed,
+      event,
       searcherIds: [locked.senderId, ...recipients.map((r) => r.searcherId)],
     };
   });
