@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RETRY_MS, useMissionLive } from '.';
 import { missionKeys } from '../mission/queries';
 import { makeReport } from '../reports/fixtures';
+import { makeMessage } from '../messages/fixtures';
 import { makeSos } from '../sos/fixtures';
 import { useSession } from '../state/session';
 
@@ -359,6 +360,25 @@ describe('useMissionLive: reports (UC-F11)', () => {
     queryClient.setQueryData(missionKeys.sos(missionId), []);
     await join(socket as FakeSocket);
     expect(queryClient.getQueryState(missionKeys.sos(missionId))?.isInvalidated).toBe(true);
+  });
+
+  it('shows a message sent to the searcher at once, newest first', () => {
+    const { socket, queryClient } = setup();
+    const key = missionKeys.messages(missionId);
+    const older = makeMessage({ sentAt: '2026-10-03T16:00:00.000Z' });
+    queryClient.setQueryData(key, [older]);
+    const message = makeMessage();
+    const event = { type: 'message.received', missionId, searcherId: '00000000-0000-4000-8000-0000000000c3', message };
+    act(() => socket?.fire('mission:event', event));
+    act(() => socket?.fire('mission:event', event));
+    expect(queryClient.getQueryData(key)).toEqual([message, older]);
+  });
+
+  it('refetches the messages after every join, for those sent while offline', async () => {
+    const { socket, queryClient } = setup();
+    queryClient.setQueryData(missionKeys.messages(missionId), []);
+    await join(socket as FakeSocket);
+    expect(queryClient.getQueryState(missionKeys.messages(missionId))?.isInvalidated).toBe(true);
   });
 
   it('refetches instead of writing when the list is not cached', async () => {

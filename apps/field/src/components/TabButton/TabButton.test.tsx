@@ -50,4 +50,15 @@ describe('TabButton', () => {
     render(<TabButton label="SOS" icon="sos" href="/sos" tone="danger" isFocused />, { wrapper: ThemeProvider });
     expect(screen.getByText('SOS')).toHaveStyle({ color: themes.day.color.dangerInk });
   });
+
+  it('shows how many messages wait, and says so to a screen reader', () => {
+    render(<TabButton label="הודעות" icon="messages" href="/messages" count={2} />, { wrapper: ThemeProvider });
+    const link = screen.getByRole('link', { name: 'הודעות, 2 חדשות' });
+    expect(link).toHaveTextContent('2');
+  });
+
+  it('shows no count when nothing waits', () => {
+    render(<TabButton label="הודעות" icon="messages" href="/messages" count={0} />, { wrapper: ThemeProvider });
+    expect(screen.getByRole('link', { name: 'הודעות' })).not.toHaveTextContent('0');
+  });
 });

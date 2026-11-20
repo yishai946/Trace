@@ -13,6 +13,9 @@ export const pendingTokens = {
   callsignH: 20,
   /** Bottom tab bar, wireframe `.tcx-tabbar`. */
   tabBarH: 64,
+  /** Fm11 `.tcx-tabbar__n`: the count on a tab, 16px high and 6px from the top, pill shaped (radius 8). */
+  tabBadge: 16,
+  tabBadgeTop: 6,
   /** Line icon, brand book "16px". */
   icon: 16,
   /** Large line icon in the tab bar and large buttons, wireframe `.tcx-i--lg`. */

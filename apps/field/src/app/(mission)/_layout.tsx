@@ -1,12 +1,11 @@
-import { useRouter } from 'expo-router';
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
-import { useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabButton } from '../../components/TabButton';
-import { routes, tabs } from '../../navigation/routes';
+import { useMessagesInbox } from '../../messages/useMessagesInbox';
+import { useLeaveWhenRemoved } from '../../navigation/useLeaveWhenRemoved';
+import { tabs } from '../../navigation/routes';
 import { useMissionLive } from '../../realtime';
-import { useSession } from '../../state/session';
 import { useLocationTracking } from '../../tracking';
 import { useGpsStatus } from '../../tracking/gpsStatus';
 import { useTheme } from '../../theme';
@@ -19,12 +18,8 @@ export default function MissionLayout() {
   useMissionLive();
   useLocationTracking();
   useGpsStatus();
-  // The commander ended the participation (UC-C18): from any tab, the searcher is taken to the map, which says so.
-  const router = useRouter();
-  const removed = useSession((s) => s.assignmentNotice?.kind === 'ended');
-  useEffect(() => {
-    if (removed) router.navigate(routes.map);
-  }, [removed, router]);
+  useLeaveWhenRemoved();
+  const { unread } = useMessagesInbox();
 
   return (
     <Tabs style={styles.fill}>
@@ -44,7 +39,7 @@ export default function MissionLayout() {
       >
         {tabs.map((tab) => (
           <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
-            <TabButton label={tab.label} icon={tab.icon} tone={tab.tone} />
+            <TabButton label={tab.label} icon={tab.icon} tone={tab.tone} count={tab.name === 'messages' ? unread : 0} />
           </TabTrigger>
         ))}
       </TabList>
