@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider, QueryObserver, useQuery } from '@tans
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Message, Report } from '@trace/schemas';
+import type { Message, Report, Sos } from '@trace/schemas';
 import {
   eventSamples,
   messageCritical,
@@ -14,6 +14,8 @@ import {
   reportLocated,
   sightingA,
   sightingC,
+  sosActive,
+  sosClosed,
 } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { useMissionLive } from '.';
@@ -519,6 +521,22 @@ describe('useMissionLive', () => {
     act(() => socket.fire('mission:event', { type: 'sighting.saved', missionId, sighting: sightingC }));
     expect(queryClient.getQueryData(missionKeys.sightings(missionId))).toEqual([sightingA, sightingC]);
     expect(queryClient.getQueryState(missionKeys.sightings(missionId))?.isInvalidated).toBe(false);
+  });
+
+  it('adds a saved SOS to the list newest first and replaces it when it is closed', async () => {
+    const { queryClient } = setup();
+    const socket = sockets[0] as FakeSocket;
+    await connectAndJoin(socket);
+    const key = missionKeys.sos(missionId);
+    queryClient.setQueryData<Sos[]>(key, [sosClosed]);
+
+    act(() => socket.fire('mission:event', { type: 'sos.saved', missionId, sos: sosActive }));
+    expect(queryClient.getQueryData(key)).toEqual([sosActive, sosClosed]);
+
+    const closed = { ...sosActive, status: 'closed' as const, closedAt: '2026-10-03T14:10:00.000Z' };
+    act(() => socket.fire('mission:event', { type: 'sos.saved', missionId, sos: closed }));
+    expect(queryClient.getQueryData(key)).toEqual([closed, sosClosed]);
+    expect(queryClient.getQueryState(key)?.isInvalidated).toBe(false);
   });
 
   it('updates the mission’s LKP and refetches the history when the LKP changes', async () => {

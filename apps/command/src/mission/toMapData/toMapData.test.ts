@@ -12,6 +12,8 @@ import {
   sightingA,
   sightingB,
   sightingC,
+  sosActive,
+  sosClosed,
 } from '../fixtures';
 
 describe('toMapData', () => {
@@ -24,6 +26,7 @@ describe('toMapData', () => {
     sightings: [],
     lkps: [],
     reports: [],
+    sos: [],
   };
 
   it('shows the rally point and the current LKP in Israel time', () => {
@@ -76,5 +79,12 @@ describe('toMapData', () => {
       { id: reportFinding.id, position: [35.1301, 31.7742], time: '16:44', hazard: false, located: false },
       { id: reportHazard.id, position: [35.1252, 31.7721], time: '16:31', hazard: true, located: false },
     ]);
+  });
+
+  it('marks each active SOS that has a location and leaves out closed ones and ones without a location', () => {
+    const withoutLocation = { ...sosActive, id: '00000000-0000-4000-8000-0000000009a3', location: null };
+    const closed = { ...sosActive, id: '00000000-0000-4000-8000-0000000009a4', status: 'closed' as const };
+    const data = toMapData({ ...base, sos: [sosActive, withoutLocation, closed, sosClosed] });
+    expect(data.sos).toEqual([{ id: sosActive.id, position: [35.1291, 31.7733], callsign: 4 }]);
   });
 });

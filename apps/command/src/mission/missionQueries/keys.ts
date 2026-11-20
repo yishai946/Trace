@@ -10,6 +10,7 @@ export const missionKeys = {
   timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,
   messages: (missionId: string) => ['missions', missionId, 'messages'] as const,
   reports: (missionId: string) => ['missions', missionId, 'reports'] as const,
+  sos: (missionId: string) => ['missions', missionId, 'sos'] as const,
 };
 
 /** The mission ended meanwhile: reload the missions, so the screen turns read-only. */

@@ -7,6 +7,7 @@ import type {
   Participant,
   Report,
   Sighting,
+  Sos,
   TimelineEvent,
 } from '@trace/schemas';
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
@@ -37,9 +38,11 @@ function updateOpened<T>(queryClient: QueryClient, key: QueryKey, update: ListUp
 // The sort is stable, so events of the same instant keep their arrival order, as the API orders them by recording order.
 const byOccurrence = (list: TimelineEvent[], event: TimelineEvent) =>
   [...list, event].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt));
+const sosNewestFirst = (list: Sos[], sos: Sos) =>
+  [...list, sos].sort((a, b) => Date.parse(b.activatedAt) - Date.parse(a.activatedAt));
 const newestFirst = (list: Report[], report: Report) => [...list, report].sort(compareReportsNewestFirst);
 
-/** The events of the lists that open with their screen: the Timeline, the messages and the reports. */
+/** The events of the lists that open with their screen: the Timeline, the messages, the reports and the SOS. */
 function applyFeedEvent(queryClient: QueryClient, event: MissionEvent) {
   const { missionId } = event;
   switch (event.type) {
@@ -62,6 +65,9 @@ function applyFeedEvent(queryClient: QueryClient, event: MissionEvent) {
     }
     case 'report.saved':
       updateOpened(queryClient, missionKeys.reports(missionId), upsertById(event.report, newestFirst));
+      return;
+    case 'sos.saved':
+      updateOpened(queryClient, missionKeys.sos(missionId), upsertById(event.sos, sosNewestFirst));
       return;
     case 'report.deleted':
       updateOpened(queryClient, missionKeys.reports(missionId), removeById<Report>(event.reportId));

@@ -1,5 +1,5 @@
 import { boundsOf, type LngLat } from '@trace/geo';
-import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting } from '@trace/schemas';
+import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import { useMemo, useState } from 'react';
 import { toMapData } from '../../mission/toMapData';
 
@@ -10,6 +10,7 @@ interface WorkspaceMapInput {
   sightings: Sighting[] | undefined;
   lkps: LkpPoint[] | undefined;
   reports: Report[];
+  sos: Sos[];
   selectedPolygonId: string | null;
   editingPolygonId: string | null;
   /** The spot chosen for a new sighting: it shows on the map before it is saved. */
@@ -24,6 +25,7 @@ export function useWorkspaceMapData({
   sightings,
   lkps,
   reports,
+  sos,
   selectedPolygonId,
   editingPolygonId,
   draftPosition,
@@ -47,10 +49,11 @@ export function useWorkspaceMapData({
         sightings: sightings ?? [],
         lkps: lkps ?? [],
         reports,
+        sos,
         selectedPolygonId,
         editingPolygonId,
       }),
-    [mission, polygons, participants, sightings, lkps, reports, selectedPolygonId, editingPolygonId],
+    [mission, polygons, participants, sightings, lkps, reports, sos, selectedPolygonId, editingPolygonId],
   );
   const data = useMemo(
     () =>

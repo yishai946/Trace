@@ -19,6 +19,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'search.started': 'search',
   'report.submitted': 'reports',
   'sos.activated': 'sos',
+  'sos.closed': 'sos',
   'coverage.threshold_reached': 'coverage',
   'contact.lost': 'contact',
   'mission.created': 'mission',
@@ -108,6 +109,11 @@ const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] 
   ...(event.subject.label === null ? [] : [`, ${label}`]),
 ];
 
+const sosClosedSegments = (event: EventOf<'sos.closed'>, label: string): Segment[] => {
+  const closer = event.actor.kind === 'commander' ? [event.actor.name] : searcherOf(event);
+  return [...closer, ' סגר את ה-SOS', ...(event.subject.label === null ? [] : [`, ${label}`])];
+};
+
 const segmented = (badge: string, segments: Segment[], danger = false): EventView => ({
   badge,
   danger,
@@ -145,5 +151,7 @@ export function describeEvent(event: TimelineEvent): EventView {
       return segmented('קשר', contactSegments(event, label));
     case 'sos.activated':
       return segmented('SOS', sosSegments(event, label), true);
+    case 'sos.closed':
+      return segmented('SOS', sosClosedSegments(event, label));
   }
 }

@@ -1,5 +1,5 @@
 import { emptyMissionMapData, type MissionMapData } from '@trace/map';
-import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting } from '@trace/schemas';
+import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import type { LngLat } from '@trace/geo';
 import { timeLabel } from '../timeLabel';
 
@@ -9,6 +9,8 @@ interface MapDataSource {
   participants: Participant[];
   sightings: Sighting[];
   reports: Report[];
+  /** The mission's SOS; the active ones with a location are marked. */
+  sos: Sos[];
   /** The LKP history, newest first. */
   lkps: LkpPoint[];
   selectedPolygonId: string | null;
@@ -23,6 +25,7 @@ export function toMapData({
   participants,
   sightings,
   reports,
+  sos,
   lkps,
   selectedPolygonId,
   editingPolygonId,
@@ -81,5 +84,10 @@ export function toMapData({
       hazard: r.type === 'hazard',
       located: r.type === 'located',
     })),
+    sos: sos.flatMap((s) =>
+      s.status === 'active' && s.location
+        ? [{ id: s.id, position: s.location.position.coordinates as LngLat, callsign: s.sender.callsign }]
+        : [],
+    ),
   };
 }

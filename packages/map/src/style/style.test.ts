@@ -81,6 +81,15 @@ describe.each(themeIds)('map style (%s)', (themeId) => {
     });
   });
 
+  it('draws an SOS in the danger color with a ring and its label', () => {
+    const c = themes[themeId].color;
+    const ids = style.layers.map((l) => l.id);
+    expect(ids).toEqual(expect.arrayContaining(['mission-sos-ring', 'mission-sos', 'mission-sos-label']));
+    expect(style.layers.find((l) => l.id === 'mission-sos')?.paint).toMatchObject({ 'circle-color': c.danger });
+    expect(style.layers.find((l) => l.id === 'mission-sos-label')?.paint).toMatchObject({ 'text-color': c.onDanger });
+    expect(ids.indexOf('mission-sos')).toBeGreaterThan(ids.indexOf('mission-units'));
+  });
+
   it('includes terrain, contours and every mission overlay', () => {
     expect(style.terrain).toBeDefined();
     const sources = Object.keys(style.sources);

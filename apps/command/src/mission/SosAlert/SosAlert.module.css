@@ -1,0 +1,74 @@
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-xl);
+  background-color: var(--danger-surface);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Floating at the top centre of the live map, above the critical report alert. */
+.alert[data-floating] {
+  position: absolute;
+  top: calc(var(--space-6) * 2 + var(--header-h));
+  left: 50%;
+  z-index: 4;
+  width: var(--pending-alert-w);
+  max-width: calc(100% - var(--space-6) * 2);
+  transform: translateX(-50%);
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--pending-badge-h);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--danger);
+  color: var(--on-danger);
+  font: var(--text-caption);
+  font-weight: 700;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  color: var(--danger-ink);
+}
+
+.where {
+  display: block;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* The phone: one line under the top bar. */
+.alert[data-compact] {
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+  padding-inline: var(--space-6);
+}
+
+.alert[data-compact] .text {
+  overflow: hidden;
+  font: var(--text-meta);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alert[data-compact] .where {
+  display: inline;
+}
+
+.alert[data-compact] .where::before {
+  content: ' · ';
+}

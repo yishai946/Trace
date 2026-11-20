@@ -2,8 +2,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { messageCritical, messageNormal, mission, reportFinding, reportHazard, sightingA } from '../fixtures';
-import { missionKeys, useReportMutations, useSendMessage, useSightingMutations } from '.';
+import {
+  messageCritical,
+  messageNormal,
+  mission,
+  reportFinding,
+  reportHazard,
+  sightingA,
+  sosActive,
+  sosClosed,
+} from '../fixtures';
+import { missionKeys, useCloseSos, useReportMutations, useSendMessage, useSightingMutations } from '.';
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
@@ -126,5 +135,30 @@ describe('useReportMutations', () => {
     );
     await act(() => result.current.remove.mutateAsync(reportFinding.id).catch(() => undefined));
     expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
+  });
+});
+
+describe('useCloseSos', () => {
+  it('posts the close and puts the closed SOS in the cached list', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    queryClient.setQueryData(missionKeys.sos(mission.id), [sosActive, sosClosed]);
+    const closed = {
+      ...sosActive,
+      status: 'closed' as const,
+      closedAt: '2026-10-03T14:10:00.000Z',
+      closedBy: sosClosed.closedBy,
+    };
+    const fetchMock = vi.fn(() => Promise.resolve(Response.json(closed)));
+    vi.stubGlobal('fetch', fetchMock);
+    const clientWrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useCloseSos(mission.id), { wrapper: clientWrapper });
+    await act(() => result.current.mutateAsync(sosActive.id));
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/missions/${mission.id}/sos/${sosActive.id}/close`,
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(queryClient.getQueryData(missionKeys.sos(mission.id))).toEqual([closed, sosClosed]);
   });
 });

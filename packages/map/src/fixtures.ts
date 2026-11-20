@@ -42,4 +42,5 @@ export const sampleData: MissionMapData = {
     { id: 'r1', position: [35.007, 31.707], hazard: true },
     { id: 'r2', position: [35.012, 31.712], hazard: false, located: true, time: '16:51' },
   ],
+  sos: [{ id: 'sos1', position: [35.008, 31.708], callsign: 7 }],
 };
