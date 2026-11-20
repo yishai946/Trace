@@ -1,5 +1,6 @@
 import { OwnMessage, type MessageReceipt } from '@trace/schemas';
 import { useMutation, useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useCallback, useRef } from 'react';
 import { apiBaseUrl, apiRequest } from '../../api';
 import { missionKeys } from '../../mission/queries';
 import { useSession } from '../../state/session';
@@ -29,8 +30,26 @@ export function sendReceipt(queryClient: QueryClient, { messageId, receipt }: Re
   });
 }
 
-/** The searcher opens a message (read) or confirms a critical one (acknowledged), UC-F12. */
+/**
+ * The searcher opens a message (read) or confirms a critical one (acknowledged), UC-F12. `send` drops a tap while a
+ * report is on its way, also a second tap that lands before the screen re-renders with `isPending`.
+ */
 export function useMessageReceipt() {
   const queryClient = useQueryClient();
-  return useMutation({ mutationFn: (input: ReceiptInput) => sendReceipt(queryClient, input) });
+  const mutation = useMutation({ mutationFn: (input: ReceiptInput) => sendReceipt(queryClient, input) });
+  const inFlight = useRef(false);
+  const { mutate } = mutation;
+  const send = useCallback(
+    (input: ReceiptInput) => {
+      if (inFlight.current) return;
+      inFlight.current = true;
+      mutate(input, {
+        onSettled: () => {
+          inFlight.current = false;
+        },
+      });
+    },
+    [mutate],
+  );
+  return { ...mutation, send };
 }

@@ -55,6 +55,16 @@ describe('MessageCard', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('sends one report for two taps before the screen updates', async () => {
+    show(makeMessage());
+    fetchMock.mockImplementation(() => new Promise(() => undefined));
+    const open = screen.getByRole('button', { name: 'פתח הודעה רגילה' });
+    fireEvent.click(open);
+    fireEvent.click(open);
+    await act(async () => undefined);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('has no "אישרתי" on a normal or important message', () => {
     show(makeMessage({ urgency: 'important' }));
     expect(screen.queryByRole('button', { name: 'אישרתי' })).toBeNull();

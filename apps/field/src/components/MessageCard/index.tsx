@@ -60,7 +60,7 @@ export function MessageCard({ message }: { message: OwnMessage }) {
           accessibilityRole="button"
           accessibilityLabel={`פתח הודעה ${urgencyLabel[message.urgency]}`}
           disabled={receipt.isPending}
-          onPress={() => receipt.mutate({ messageId: message.id, receipt: 'read' })}
+          onPress={() => receipt.send({ messageId: message.id, receipt: 'read' })}
           style={styles.content}
         >
           {content}
@@ -82,7 +82,7 @@ export function MessageCard({ message }: { message: OwnMessage }) {
             block
             icon="check"
             disabled={receipt.isPending}
-            onPress={() => receipt.mutate({ messageId: message.id, receipt: 'acknowledged' })}
+            onPress={() => receipt.send({ messageId: message.id, receipt: 'acknowledged' })}
           />
           <Text style={[typography.meta, styles.hint, { color: color.inkMuted }]}>נדרש אישור כדי להמשיך</Text>
         </View>
