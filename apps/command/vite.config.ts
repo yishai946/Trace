@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import packageJson from './package.json' with { type: 'json' };
-import { sourceMapUploadOptions } from './build/sourceMapUpload';
+import { sourceMapUploadOptions } from './config/sourceMapUpload';
 
 const port = Number(process.env.WEB_PORT ?? 5173);
 // 127.0.0.1 instead of localhost: on Windows "localhost" tries IPv6 first and the API listens on IPv4.

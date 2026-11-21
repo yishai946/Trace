@@ -90,7 +90,7 @@ New issues only, not every event, so one bug is one message.
 
 Minified stack traces are unreadable without them. Without the upload, errors are still reported, just with minified frames.
 
-- **Command.** `vite build` writes hidden source maps (`sourcemap: 'hidden'`: the files exist, but the bundle does not point to them). `@sentry/vite-plugin` (`apps/command/vite.config.ts`, options in `apps/command/build/sourceMapUpload`) then does the rest in the same build when `SENTRY_AUTH_TOKEN` is set in the build environment, with `SENTRY_ORG` (and `SENTRY_PROJECT` if it is not `trace-command`):
+- **Command.** `vite build` writes hidden source maps (`sourcemap: 'hidden'`: the files exist, but the bundle does not point to them). `@sentry/vite-plugin` (`apps/command/vite.config.ts`, options in `apps/command/config/sourceMapUpload`) then does the rest in the same build when `SENTRY_AUTH_TOKEN` is set in the build environment, with `SENTRY_ORG` (and `SENTRY_PROJECT` if it is not `trace-command`):
 
   1. adds the debug ids that match each bundle to its map;
   2. uploads the maps under `VITE_SENTRY_RELEASE` (or `trace-command@<package version>` when it is not set; the plugin then also injects that release into the bundle, so the app reports the same one);
