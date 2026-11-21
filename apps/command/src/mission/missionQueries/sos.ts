@@ -1,7 +1,7 @@
 import { Sos, SosList } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api';
-import { replaceById } from './cache';
+import { replaceById } from '@trace/mission-cache';
 import { missionKeys } from './keys';
 
 /** The mission's SOS, newest first (UC-C14). Realtime keeps the cached list current. */

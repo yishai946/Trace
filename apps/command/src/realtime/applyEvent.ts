@@ -13,14 +13,14 @@ import type {
 import type { QueryClient, QueryKey } from '@tanstack/react-query';
 import {
   addOnce,
-  missionKeys,
   patchById,
   prepend,
   removeById,
   replaceById,
   upsertById,
   type ListUpdate,
-} from '../mission/missionQueries';
+} from '@trace/mission-cache';
+import { missionKeys } from '../mission/missionQueries';
 
 /**
  * Changes a list that is fetched when its screen opens. Not cached means it was never opened, or its first fetch is in

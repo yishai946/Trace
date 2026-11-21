@@ -16,7 +16,7 @@ import {
 } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { apiRequest } from '../../api';
-import { addOnce, patchById } from './cache';
+import { addOnce, patchById } from '@trace/mission-cache';
 import { missionKeys } from './keys';
 
 export function useSightings(missionId: string | undefined) {

@@ -1,7 +1,7 @@
 import { Participant, ParticipantList } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api';
-import { replaceById } from './cache';
+import { replaceById } from '@trace/mission-cache';
 import { missionKeys } from './keys';
 
 export function useParticipants(missionId: string | undefined) {
