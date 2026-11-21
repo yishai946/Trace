@@ -1,6 +1,13 @@
 import type { Message, Participant, SendMessageBody } from '@trace/schemas';
 import { useEffect, useRef, useState } from 'react';
-import { emptyForm, recipientsOf, toSendBody, validate, type MessageForm, type MessageFormErrors } from './messageForm';
+import {
+  emptyForm,
+  recipientsOf,
+  toSendBody,
+  validate,
+  type MessageForm,
+  type MessageFormErrors,
+} from '../messageForm';
 
 interface ComposeInput {
   participants: Participant[] | undefined;
@@ -8,7 +15,7 @@ interface ComposeInput {
   /** Undefined while sending is blocked. `onSent` runs after the server saved the message. */
   onSend?: (body: SendMessageBody, onSent: (message: Message) => void) => void;
   sending: boolean;
-  onSent: (message: Message) => void;
+  onSent?: (message: Message) => void;
 }
 
 /** The new-message form's state: what was typed, what is wrong with it, and sending it once. */
@@ -49,7 +56,7 @@ export function useComposeMessage({ participants, sendError, onSend, sending, on
       formRef.current?.querySelector<HTMLElement>('textarea')?.focus();
       setForm((current) => ({ ...current, body: '' }));
       setAnnouncement(`ההודעה נשלחה ל-${message.recipients.length} מחפשים.`);
-      onSent(message);
+      onSent?.(message);
     });
   };
 

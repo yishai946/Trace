@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { messageCritical, messageNormal, messageToOne, polygonB } from '../../../mission/fixtures';
-import { byAttention, counts, isFinal, recipientsLabel, recipientStateLabel, sendLabel, statusSummary } from '.';
+import { messageCritical, messageNormal, messageToOne, polygonB } from '../fixtures';
+import {
+  byAttention,
+  counts,
+  isFinal,
+  lastStepTime,
+  readFractions,
+  recipientsLabel,
+  recipientState,
+  recipientStateLabel,
+  sendLabel,
+  statusSummary,
+} from '.';
 
 const [acknowledged, read, delivered] = messageCritical.recipients;
 const [normalRead, waiting] = messageNormal.recipients;
@@ -98,5 +109,33 @@ describe('sendLabel', () => {
     expect(sendLabel(0)).toBe('שלח');
     expect(sendLabel(1)).toBe('שלח למחפש אחד');
     expect(sendLabel(7)).toBe('שלח ל-7 מחפשים');
+  });
+});
+
+describe('recipientState', () => {
+  it('names the step: pending, delivered, read, acknowledged', () => {
+    expect(recipientState(waiting)).toBe('pending');
+    expect(recipientState(delivered)).toBe('delivered');
+    expect(recipientState(read)).toBe('read');
+    expect(recipientState(acknowledged)).toBe('acknowledged');
+  });
+});
+
+describe('lastStepTime', () => {
+  it('is the latest step, and null while waiting', () => {
+    expect(lastStepTime(acknowledged)).toBe(acknowledged.acknowledgedAt);
+    expect(lastStepTime(read)).toBe(read.readAt);
+    expect(lastStepTime(delivered)).toBe(delivered.deliveredAt);
+    expect(lastStepTime(waiting)).toBeNull();
+  });
+});
+
+describe('readFractions', () => {
+  it('adds the acknowledged fraction for a critical message only', () => {
+    expect(readFractions(messageCritical)).toEqual([
+      { label: 'נקראה', value: '2/3' },
+      { label: 'אושרה', value: '1/3' },
+    ]);
+    expect(readFractions(messageNormal)).toEqual([{ label: 'נקראה', value: '1/2' }]);
   });
 });

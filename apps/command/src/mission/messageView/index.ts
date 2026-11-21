@@ -67,3 +67,34 @@ export function sendLabel(count: number): string {
   if (count <= 0) return 'שלח';
   return count === 1 ? 'שלח למחפש אחד' : `שלח ל-${count} מחפשים`;
 }
+
+/** The recipient's step, for the state word and its colour: waiting for delivery, delivered, read or acknowledged. */
+export function recipientState(r: MessageRecipient): 'pending' | 'delivered' | 'read' | 'acknowledged' {
+  if (r.status === 'acknowledged') return 'acknowledged';
+  if (r.status === 'read') return 'read';
+  return r.deliveredAt ? 'delivered' : 'pending';
+}
+
+/** The time of the latest step: acknowledged, else read, else delivered. */
+export function lastStepTime(r: MessageRecipient): string | null {
+  return r.acknowledgedAt ?? r.readAt ?? r.deliveredAt;
+}
+
+/** "נקראה 2/3", and for a critical message also "אושרה 1/3" (decision 27; wireframe Cm11 card). */
+export function readFractions(message: Message): { label: string; value: string }[] {
+  const { total, read, acknowledged } = counts(message);
+  const fractions = [{ label: 'נקראה', value: `${read}/${total}` }];
+  return message.urgency === 'critical'
+    ? [...fractions, { label: 'אושרה', value: `${acknowledged}/${total}` }]
+    : fractions;
+}
+
+/** The sent list's loading, error and empty texts, shared by the desktop and phone screens. */
+export const SENT_MESSAGES_TEXT = {
+  failed: 'לא ניתן לטעון את ההודעות מהשרת.',
+  loading: 'טוען הודעות…',
+  empty: 'עוד לא נשלחו הודעות במסע הזה.',
+};
+
+/** Offline recipients still get the message when they reconnect (decision 77); the channel is one way. */
+export const OFFLINE_NOTE = 'הודעה למחפש לא מקוון נשמרת ותימסר בחיבור. הודעות חד-כיווניות; אין מענה מהמחפשים.';

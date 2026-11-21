@@ -1,9 +1,14 @@
 import type { Message } from '@trace/schemas';
-import styles from './MessagesPage.module.css';
-import { counts } from './messageView';
+import { counts } from '../messageView';
+import styles from './DeliveryCounts.module.css';
+
+interface DeliveryCountsProps {
+  message: Message;
+  className?: string;
+}
 
 /** How many recipients got, read and (for a critical message) acknowledged it. */
-export function DeliveryCounts({ message }: { message: Message }) {
+export function DeliveryCounts({ message, className }: DeliveryCountsProps) {
   const total = counts(message);
   const fraction = (n: number) => (
     <b className={styles.num}>
@@ -11,7 +16,7 @@ export function DeliveryCounts({ message }: { message: Message }) {
     </b>
   );
   return (
-    <div className={`${styles.counts} ${styles.fullRow}`}>
+    <div className={[styles.counts, className].filter(Boolean).join(' ')}>
       <span>נמסרה {fraction(total.delivered)}</span>
       <span>נקראה {fraction(total.read)}</span>
       {message.urgency === 'critical' && <span>אושרה {fraction(total.acknowledged)}</span>}

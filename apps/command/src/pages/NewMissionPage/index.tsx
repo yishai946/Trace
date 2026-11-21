@@ -5,6 +5,7 @@ import type { Mission } from '@trace/schemas';
 import { Form } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { DateTimeField } from '../../components/DateTimeField';
+import { BackIcon } from '../../components/icons';
 import { MissionMap } from '../../map/MissionMap';
 import styles from './NewMissionPage.module.css';
 import { MESSAGES, missionName } from './newMissionForm';
@@ -61,9 +62,7 @@ export function NewMissionPage({ provider, themeId, online, onCancel, onCreated 
       <Form className={styles.details} aria-label="פרטי מסע חדש" onSubmit={submit} validationBehavior="aria">
         <div className={styles.head}>
           <Button variant="icon" aria-label="חזרה לרשימת המסעות" onPress={onCancel}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            <BackIcon />
           </Button>
           <MissionNameTitle
             name={missionName(form)}

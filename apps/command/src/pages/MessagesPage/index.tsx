@@ -1,6 +1,6 @@
 import type { Message, MissionPolygon, Participant, SendMessageBody } from '@trace/schemas';
 import { useState } from 'react';
-import { ComposeMessage } from './ComposeMessage';
+import { ComposeMessage } from '../../mission/ComposeMessage';
 import styles from './MessagesPage.module.css';
 import { RecipientDetail } from './RecipientDetail';
 import { SentMessages } from './SentMessages';

@@ -1,0 +1,14 @@
+.counts {
+  display: flex;
+  gap: var(--space-7);
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+/* Times and numbers read left to right inside Hebrew text. */
+.num {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}

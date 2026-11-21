@@ -17,12 +17,6 @@
   box-shadow: var(--shadow-panel);
 }
 
-.compose {
-  flex: 0 0 auto;
-  align-self: flex-start;
-  width: var(--pending-message-panel-w);
-}
-
 .column {
   display: flex;
   flex: 1;
@@ -70,142 +64,6 @@
 .meta {
   color: var(--ink-muted);
   font: var(--text-meta);
-}
-
-.label {
-  color: var(--ink-muted);
-  font: var(--text-meta);
-}
-
-.hint {
-  margin: 0;
-  color: var(--ink-muted);
-  font: var(--text-caption);
-}
-
-.error {
-  margin: 0;
-  color: var(--danger-ink);
-  font: var(--text-meta);
-}
-
-.status {
-  margin: 0;
-  color: var(--ink-secondary);
-  font: var(--text-meta);
-}
-
-.formBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-7);
-  padding-block: var(--space-6);
-  padding-inline: var(--space-7);
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-/* A choice in a form is a radio group with the segmented-tabs look, as in the sighting form. */
-.seg {
-  display: flex;
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
-  background-color: var(--surface-sunken);
-}
-
-.segOption {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  height: var(--segment-h);
-  border-radius: var(--radius-md);
-  color: var(--ink-secondary);
-  cursor: pointer;
-  outline: none;
-}
-
-.segOption[data-hovered] {
-  background-color: var(--surface-hover);
-}
-
-.segOption[data-selected] {
-  background-color: var(--surface-raised);
-  color: var(--ink);
-  font-weight: 600;
-}
-
-.segOption[data-focus-visible] {
-  outline: 2px solid var(--focus);
-}
-
-.check {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  min-height: var(--control-h-sm);
-  padding-inline: var(--space-2);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  outline: none;
-}
-
-.check[data-hovered] {
-  background-color: var(--surface-hover);
-}
-
-.check[data-focus-visible] {
-  outline: 2px solid var(--focus);
-}
-
-.box {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: var(--pending-checkbox);
-  height: var(--pending-checkbox);
-  border: 1px solid var(--ink-muted);
-  border-radius: var(--radius-sm);
-}
-
-.radio .box {
-  border-radius: var(--radius-xl);
-}
-
-.box svg {
-  width: var(--pending-check-icon);
-  height: var(--pending-check-icon);
-  visibility: hidden;
-}
-
-.check[data-selected] .box {
-  border-color: var(--accent);
-  background-color: var(--accent);
-  color: var(--surface);
-}
-
-.check[data-selected] .box svg {
-  visibility: visible;
-}
-
-.block {
-  width: 100%;
-}
-
-.block svg {
-  width: var(--pending-icon-sm);
-  height: var(--pending-icon-sm);
 }
 
 .tableWrap {
@@ -321,35 +179,6 @@
   direction: ltr;
   unicode-bidi: isolate;
   font-variant-numeric: tabular-nums;
-}
-
-.badge {
-  display: inline-flex;
-  justify-content: center;
-  padding-block: var(--space-1);
-  padding-inline: var(--space-3);
-  border-radius: var(--radius-sm);
-  background-color: var(--chip);
-  color: var(--ink-secondary);
-  font: var(--text-caption);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.badge[data-urgency='important'] {
-  color: var(--accent);
-}
-
-.badge[data-urgency='critical'] {
-  background-color: var(--primary);
-  color: var(--on-primary);
-}
-
-.counts {
-  display: flex;
-  gap: var(--space-7);
-  color: var(--ink-secondary);
-  font: var(--text-meta);
 }
 
 .searcher {

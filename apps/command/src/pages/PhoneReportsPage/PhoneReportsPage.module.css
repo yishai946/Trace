@@ -6,27 +6,6 @@
   background-color: var(--map-ground);
 }
 
-.bar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--space-4);
-  height: var(--header-h);
-  padding-inline: var(--space-6);
-  border-bottom: 1px solid var(--border);
-  background-color: var(--surface);
-}
-
-.title {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  overflow: hidden;
-  font: var(--text-title);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .tabs {
   display: flex;
   flex: 1;
@@ -308,9 +287,4 @@
 .num {
   direction: ltr;
   unicode-bidi: isolate;
-}
-
-.title:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
 }
