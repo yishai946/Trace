@@ -4,14 +4,18 @@ import {
   REALTIME_PATH,
   type ClientToServerEvents,
   type Mission,
+  type OwnMessage,
   type Report,
+  type Sos,
   type ServerToClientEvents,
 } from '@trace/schemas';
-import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { apiBaseUrl } from '../api';
-import { fetchOwnParticipation, missionKeys } from '../mission/queries';
+import { apiBaseUrl, apiRequest } from '../api';
+import { missionKeys } from '../mission/queries';
+import { upsertMessage } from '../messages/messageList';
+import { upsertSos } from '../sos/sosList';
 import { useSession } from '../state/session';
 
 type MissionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -26,13 +30,12 @@ export const RETRY_MS = 5_000;
 let participationEvents = 0;
 
 /**
- * Changes the cached list of reports. A list that is not cached yet may be on its way, and the answer could miss this
- * change, so it is fetched again instead (UC-F11). The screen filters what it shows by the searcher's polygon.
+ * Changes a cached list (the reports, the SOS). A list that is not cached yet may be on its way, and the answer could
+ * miss this change, so it is fetched again instead (UC-F11). The screen filters what it shows.
  */
-function changeReports(queryClient: QueryClient, missionId: string, change: (list: Report[]) => Report[]): void {
-  const key = missionKeys.reports(missionId);
-  if (queryClient.getQueryData<Report[]>(key)) {
-    queryClient.setQueryData<Report[]>(key, (list) => list && change(list));
+function changeList<T>(queryClient: QueryClient, key: QueryKey, change: (list: T[]) => T[]): void {
+  if (queryClient.getQueryData<T[]>(key)) {
+    queryClient.setQueryData<T[]>(key, (list) => list && change(list));
     return;
   }
   void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
@@ -66,12 +69,24 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
       return;
     }
     case 'report.saved':
-      changeReports(queryClient, event.missionId, (list) =>
+      changeList<Report>(queryClient, missionKeys.reports(event.missionId), (list) =>
         [...list.filter((r) => r.id !== event.report.id), event.report].sort(compareReportsNewestFirst),
       );
       return;
     case 'report.deleted':
-      changeReports(queryClient, event.missionId, (list) => list.filter((r) => r.id !== event.reportId));
+      changeList<Report>(queryClient, missionKeys.reports(event.missionId), (list) =>
+        list.filter((r) => r.id !== event.reportId),
+      );
+      return;
+    case 'sos.saved':
+      // An SOS the searcher sent, one sent to them, or the closing of either, by the sender or the commander (UC-F13).
+      changeList<Sos>(queryClient, missionKeys.sos(event.missionId), (list) => upsertSos(list, event.sos));
+      return;
+    case 'message.received':
+      // A message sent to this searcher; one sent while offline is read after the next join (decision 77).
+      changeList<OwnMessage>(queryClient, missionKeys.messages(event.missionId), (list) =>
+        upsertMessage(list, event.message),
+      );
       return;
     case 'polygon.saved':
     case 'polygon.deleted':
@@ -113,6 +128,10 @@ export function useMissionLive(): void {
       socket.emit('mission:join', { missionId }, (result) => {
         if (result.ok) {
           void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+          // An SOS sent or closed while away is not replayed either.
+          void queryClient.invalidateQueries({ queryKey: missionKeys.sos(missionId) });
+          // A message sent while away is not replayed either (decision 77).
+          void queryClient.invalidateQueries({ queryKey: missionKeys.messages(missionId) });
           // An assignment made while away is not replayed either. The answer is dropped if the screen closed, the
           // mission changed or a live event came first (it is newer). A failure waits for the next reconnect.
           const seen = participationEvents;

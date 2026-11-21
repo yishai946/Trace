@@ -12,12 +12,14 @@
   },
   "dependencies": {
     "@internationalized/date": "^3.12.4",
+    "@sentry/react": "^11.12.0",
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
     "@trace/api-client": "workspace:*",
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
+    "@trace/monitoring": "workspace:*",
     "@trace/schemas": "workspace:*",
     "maplibre-contour": "^0.1.1",
     "maplibre-gl": "^6.16.0",
@@ -31,6 +33,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "11.11.0",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",

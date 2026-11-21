@@ -80,6 +80,8 @@ export const TimelineEvent = z
     z.object({ ...base, type: z.literal('contact.lost'), details: empty }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
     z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
+    /** Subject: the SOS (label = polygon name or null). Actor: the commander, or the searcher who sent it. */
+    z.object({ ...base, type: z.literal('sos.closed'), details: empty }),
   ])
   .meta({ id: 'TimelineEvent' });
 

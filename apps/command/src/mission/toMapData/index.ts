@@ -1,6 +1,5 @@
 import { emptyMissionMapData, type MissionMapData } from '@trace/map';
-import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting } from '@trace/schemas';
-import type { LngLat } from '@trace/geo';
+import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import { timeLabel } from '../timeLabel';
 
 interface MapDataSource {
@@ -9,6 +8,8 @@ interface MapDataSource {
   participants: Participant[];
   sightings: Sighting[];
   reports: Report[];
+  /** The mission's SOS; the active ones with a location are marked. The Reports screens leave it out. */
+  sos?: Sos[];
   /** The LKP history, newest first. */
   lkps: LkpPoint[];
   selectedPolygonId: string | null;
@@ -23,6 +24,7 @@ export function toMapData({
   participants,
   sightings,
   reports,
+  sos = [],
   lkps,
   selectedPolygonId,
   editingPolygonId,
@@ -48,7 +50,7 @@ export function toMapData({
     lkp: mission.lkp
       ? {
           id: 'lkp',
-          position: mission.lkp.position.coordinates as LngLat,
+          position: mission.lkp.position.coordinates,
           time: timeLabel(mission.lkp.observedAt),
         }
       : null,
@@ -56,7 +58,7 @@ export function toMapData({
       .filter((p) => !p.current)
       .map((p) => ({
         id: p.id,
-        position: p.position.coordinates as LngLat,
+        position: p.position.coordinates,
         time: timeLabel(p.observedAt),
       })),
     // An accepted sighting is drawn as the LKP or as a past LKP, so it does not also show as a diamond.
@@ -66,20 +68,25 @@ export function toMapData({
         const time = timeLabel(s.observedAt);
         return {
           id: s.id,
-          position: s.position.coordinates as LngLat,
+          position: s.position.coordinates,
           time,
           label: `${s.number} ${time}`,
           suggested: s.lkpCandidate,
         };
       }),
-    rally: mission.rallyPoint.coordinates as LngLat,
+    rally: mission.rallyPoint.coordinates,
     // New and Handled reports both stay on the map (decision 81).
     reports: reports.map((r) => ({
       id: r.id,
-      position: r.position.coordinates as LngLat,
+      position: r.position.coordinates,
       time: timeLabel(r.reportedAt),
       hazard: r.type === 'hazard',
       located: r.type === 'located',
     })),
+    sos: sos.flatMap((s) =>
+      s.status === 'active' && s.location
+        ? [{ id: s.id, position: s.location.position.coordinates, callsign: s.sender.callsign }]
+        : [],
+    ),
   };
 }

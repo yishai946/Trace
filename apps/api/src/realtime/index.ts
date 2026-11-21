@@ -15,6 +15,7 @@ import { resolveSession, type Actor } from '../auth/auth.plugin';
 import type { Db } from '../db';
 import type { Env } from '../env';
 import { AppError } from '../errors';
+import { logAndReport } from '../monitoring';
 
 /** Sends live updates to the users connected to a mission. */
 export interface Realtime {
@@ -47,11 +48,11 @@ function roomsFor(actor: Actor, missionId: string): string[] {
  * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
  * A message and its receipts go to the commander; each recipient gets only their own copy (decision 32). Reports go
  * to the commander, the author and the searchers assigned to the report's polygon (UC-C11, UC-F11, decision 80); the
- * route passes the searchers as `searcherIds`.
+ * service passes the searchers as `searcherIds`.
  */
 function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): string[] {
   // An SOS goes to the commander, the sender and the searchers it was sent to: an exception to decision 32, made on
-  // purpose (decisions 98, 99). The route passes the sender and the recipients stored at activation.
+  // purpose (decisions 98, 99). The service passes the sender and the recipients stored at activation.
   const withSearchers = () => [
     commanderRoom(event.missionId),
     ...[...new Set(searcherIds)].map((id) => searcherRoom(event.missionId, id)),
@@ -119,12 +120,17 @@ export function createRealtime({
           .then((current) => {
             if (!current || current.expiresAt.getTime() <= Date.now()) socket.disconnect(true);
           })
-          .catch((error: unknown) => app.log.error(error, 'Realtime session check failed'));
+          .catch((error: unknown) =>
+            logAndReport(app.log, error, {
+              source: 'realtime.session-check',
+              message: 'Realtime session check failed',
+            }),
+          );
       }, revalidateMs);
       socket.on('disconnect', () => clearInterval(timer));
       next();
     } catch (error) {
-      app.log.error(error, 'Realtime sign-in failed');
+      logAndReport(app.log, error, { source: 'realtime.sign-in', message: 'Realtime sign-in failed' });
       next(new Error('INTERNAL_ERROR'));
     }
   });
@@ -141,7 +147,7 @@ export function createRealtime({
         await checkMissionAccess(db, actor, missionId, 'member');
       } catch (error) {
         if (error instanceof AppError) return ack({ ok: false, code: error.code });
-        app.log.error(error, 'Realtime join failed');
+        logAndReport(app.log, error, { source: 'realtime.join', message: 'Realtime join failed' });
         return ack({ ok: false, code: 'INTERNAL_ERROR' });
       }
       const rooms = roomsFor(actor, missionId);

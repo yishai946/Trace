@@ -10,7 +10,7 @@ import { AppBar } from './AppBar';
 import { Lobby } from './Lobby';
 import { MissionPages } from './MissionPages';
 import type { ConsoleNav } from './useConsoleNav';
-import type { MessageSending, ReportActions, SearcherActions } from './useMissionActions';
+import type { MessageSending, ReportActions, SearcherActions, SosActions } from './useMissionActions';
 import type { MissionData } from './useMissionData';
 
 interface DesktopProps {
@@ -35,6 +35,7 @@ interface DesktopProps {
   phone: boolean;
   onPlaceFound: (focus: MapFocus) => void;
   reportActions: ReportActions;
+  sosActions: SosActions;
   searcherActions: SearcherActions;
   messageSending: MessageSending;
 }

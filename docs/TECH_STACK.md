@@ -7,16 +7,17 @@
 - **Monorepo אחד עם pnpm workspaces.** שלוש אפליקציות ב-`apps/*` וקוד משותף ב-`packages/*`. כל אפליקציה נבנית ונפרסת בנפרד.
 - **שרת אחד, מונולית מודולרי.** כל תחום הוא מודול בתוך `apps/api` (missions, polygons, searchers, reports, sos, tracking, notifications). אין מיקרו-סרוויסים: צוות קטן, MVP, ופעולות כמו SOS, שיבוץ ו-Coverage צריכות עקביות של בסיס נתונים אחד.
 
-| חבילה            | תפקיד                                                                          |
-| ---------------- | ------------------------------------------------------------------------------ |
-| `@trace/api`     | השרת: REST, WebSocket, עבודות רקע                                              |
-| `@trace/command` | מערכת ה-Web של מנהל המסע                                                       |
-| `@trace/field`   | אפליקציית המחפש (React Native)                                                 |
-| `@trace/schemas` | סכמות zod לבקשות ותשובות, משותפות לשרת ולשתי האפליקציות                        |
-| `@trace/domain`  | לוגיקה עסקית טהורה, בלי framework ובלי בסיס נתונים                             |
-| `@trace/design`  | מערכת העיצוב Trace Console: tokens ל-Web ול-React Native, מסונכרנת מה-artifact |
-| `@trace/geo`     | גיאומטריה ו-ITM: המרות, בתוך/מחוץ לפוליגון, מרחק מגבול, שטח                    |
-| `@trace/map`     | סגנון המפה ושכבות המסע, נבנים מה-tokens; משותף ל-Web ול-React Native           |
+| חבילה               | תפקיד                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------- |
+| `@trace/api`        | השרת: REST, WebSocket, עבודות רקע                                                       |
+| `@trace/command`    | מערכת ה-Web של מנהל המסע                                                                |
+| `@trace/field`      | אפליקציית המחפש (React Native)                                                          |
+| `@trace/schemas`    | סכמות zod לבקשות ותשובות, משותפות לשרת ולשתי האפליקציות                                 |
+| `@trace/domain`     | לוגיקה עסקית טהורה, בלי framework ובלי בסיס נתונים                                      |
+| `@trace/design`     | מערכת העיצוב Trace Console: tokens ל-Web ול-React Native, מסונכרנת מה-artifact          |
+| `@trace/geo`        | גיאומטריה ו-ITM: המרות, בתוך/מחוץ לפוליגון, מרחק מגבול, שטח                             |
+| `@trace/monitoring` | ניקוי מידע אישי מאירועי Sentry, רשימת השדות הרגישים ודגימה; משותף לשרת ולשתי האפליקציות |
+| `@trace/map`        | סגנון המפה ושכבות המסע, נבנים מה-tokens; משותף ל-Web ול-React Native                    |
 
 ## משותף
 
@@ -29,17 +30,17 @@
 
 ## שרת (`apps/api`)
 
-| תחום        | בחירה                                     | למה                                                                              |
-| ----------- | ----------------------------------------- | -------------------------------------------------------------------------------- |
-| Framework   | Fastify 5 + `fastify-type-provider-zod`   | כתיבה קרובה ל-Express; בדיקת קלט, טיפוסים ו-OpenAPI מובנים מתוך סכמות zod        |
-| תיעוד API   | `@fastify/swagger`, `@fastify/swagger-ui` | OpenAPI שנוצר מהסכמות ולא מתיישן                                                 |
-| בסיס נתונים | PostgreSQL + PostGIS                      | פוליגונים, יציאה מגבול, Coverage מתוך מסלולים                                    |
-| ORM         | Drizzle, migrations ב-`apps/api/drizzle`  | תמיכה טבעית ב-SQL ובטיפוסי PostGIS (Prisma כמעט לא תומך)                         |
-| זמן אמת     | Socket.IO, room לכל מסע                   | מפה חיה, SOS, הודעות, התחברות מחדש אוטומטית                                      |
-| עבודות רקע  | pg-boss                                   | הסלמות והתראות (UC-S04) על Postgres, בלי Redis                                   |
-| אימות       | Better Auth                               | ספרייה פתוחה בתוך השרת: OTP בטלפון למחפשים, אימייל וסיסמה למנהלים. הנתונים אצלנו |
-| Push        | Expo Push                                 | שירות אחד מעל FCM ו-APNs                                                         |
-| ניטור       | pino (מובנה ב-Fastify), Sentry            |                                                                                  |
+| תחום        | בחירה                                              | למה                                                                                                                                                                                                                    |
+| ----------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework   | Fastify 5 + `fastify-type-provider-zod`            | כתיבה קרובה ל-Express; בדיקת קלט, טיפוסים ו-OpenAPI מובנים מתוך סכמות zod                                                                                                                                              |
+| תיעוד API   | `@fastify/swagger`, `@fastify/swagger-ui`          | OpenAPI שנוצר מהסכמות ולא מתיישן                                                                                                                                                                                       |
+| בסיס נתונים | PostgreSQL + PostGIS                               | פוליגונים, יציאה מגבול, Coverage מתוך מסלולים                                                                                                                                                                          |
+| ORM         | Drizzle, migrations ב-`apps/api/drizzle`           | תמיכה טבעית ב-SQL ובטיפוסי PostGIS (Prisma כמעט לא תומך)                                                                                                                                                               |
+| זמן אמת     | Socket.IO, room לכל מסע                            | מפה חיה, SOS, הודעות, התחברות מחדש אוטומטית                                                                                                                                                                            |
+| עבודות רקע  | pg-boss                                            | הסלמות והתראות (UC-S04) על Postgres, בלי Redis                                                                                                                                                                         |
+| אימות       | Better Auth                                        | ספרייה פתוחה בתוך השרת: OTP בטלפון למחפשים, אימייל וסיסמה למנהלים. הנתונים אצלנו                                                                                                                                       |
+| Push        | Expo Push                                          | שירות אחד מעל FCM ו-APNs                                                                                                                                                                                               |
+| ניטור       | pino (מובנה ב-Fastify), Sentry, Grafana Cloud Loki | שגיאות בשלוש האפליקציות ב-Sentry (חינמי), לוגי ה-API נשלחים ב-`pino-loki` ל-Loki (חינמי, 14 יום). שניהם כבויים בלי משתני סביבה; ניקוי מידע אישי משותף ב-`@trace/monitoring`. הפרטים ב-[`MONITORING.md`](MONITORING.md) |
 
 ## Command (`apps/command`)
 

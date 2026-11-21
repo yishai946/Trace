@@ -2,7 +2,17 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { PhoneMissionScreen } from '.';
-import { mission, participants, polygonA, polygonB, reportFinding, reportLocated, reports } from '../fixtures';
+import {
+  mission,
+  participants,
+  polygonA,
+  polygonB,
+  reportFinding,
+  reportLocated,
+  reports,
+  sosActive,
+  sosClosed,
+} from '../fixtures';
 
 type Props = Parameters<typeof PhoneMissionScreen>[0];
 
@@ -15,6 +25,7 @@ function Harness(props: Props) {
 function renderScreen(props: Partial<Props> = {}) {
   const onJoinOpenChange = vi.fn();
   const onOpenReport = vi.fn();
+  const onOpenSos = vi.fn();
   const view = render(
     <Harness
       mission={mission}
@@ -36,10 +47,13 @@ function renderScreen(props: Partial<Props> = {}) {
       reports={reports}
       reportsFailed={false}
       onOpenReport={onOpenReport}
+      sos={[sosClosed]}
+      onOpenSos={onOpenSos}
+      sosScreen={<div>מסך ה-SOS</div>}
       {...props}
     />,
   );
-  return { onJoinOpenChange, onOpenReport, ...view };
+  return { onJoinOpenChange, onOpenReport, onOpenSos, ...view };
 }
 
 describe('PhoneMissionScreen', () => {
@@ -177,6 +191,9 @@ describe('PhoneMissionScreen', () => {
         reports={reports}
         reportsFailed={false}
         onOpenReport={vi.fn()}
+        sos={[]}
+        onOpenSos={vi.fn()}
+        sosScreen={<div>מסך ה-SOS</div>}
       />,
     );
     expect(screen.getByRole('alert', { name: 'התראה קריטית' })).toBeInTheDocument();
@@ -185,5 +202,32 @@ describe('PhoneMissionScreen', () => {
   it('PM6: shows no critical alert once the mission ended', () => {
     renderScreen({ mission: { ...mission, status: 'ended_stopped' } });
     expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+  });
+
+  it('PM7: shows the SOS alert compact, above the critical report alert, and opens the SOS screen', () => {
+    const { onOpenSos } = renderScreen({ sos: [sosActive] });
+    const alerts = screen.getAllByRole('alert').map((a) => a.getAttribute('aria-label'));
+    expect(alerts).toEqual(['התראת SOS', 'התראה קריטית']);
+    const alert = screen.getByRole('alert', { name: 'התראת SOS' });
+    expect(alert).toHaveAttribute('data-compact');
+    fireEvent.click(within(alert).getByRole('button', { name: 'פתח' }));
+    expect(onOpenSos).toHaveBeenCalledOnce();
+  });
+
+  it('PM8: the SOS alert stays in an ended mission, because safety continues', () => {
+    renderScreen({ sos: [sosActive], mission: { ...mission, status: 'ended_located' } });
+    expect(screen.getByRole('alert', { name: 'התראת SOS' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+  });
+
+  it('PM9: the SOS item shows the SOS screen in place of the map, with the active count, and has no alert', () => {
+    renderScreen({ sos: [sosActive] });
+    fireEvent.click(screen.getByRole('link', { name: 'SOS, 1 פעילות' }));
+    expect(screen.getByText('מסך ה-SOS')).toBeInTheDocument();
+    expect(screen.queryByText('המפה')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert', { name: 'התראת SOS' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'SOS, 1 פעילות' })).toHaveAttribute('aria-current', 'page');
+    fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
+    expect(screen.getByText('המפה')).toBeInTheDocument();
   });
 });

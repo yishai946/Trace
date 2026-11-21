@@ -3,6 +3,7 @@ import { and, eq, gt, inArray, ne, notInArray, sql } from 'drizzle-orm';
 import type { FastifyBaseLogger } from 'fastify';
 import type { Db } from '../../db';
 import { participations, pushTokens, sessions } from '../../db/schema';
+import { logAndReport } from '../../monitoring';
 import type { PushMessage, PushSender } from './pushSender';
 
 /**
@@ -88,7 +89,11 @@ export function createPushNotifier({ db, sender, log }: { db: Db; sender: PushSe
         if (failedTokens.length > 0) log.warn({ failed: failedTokens.length }, 'Some push notifications failed');
         return { sent: tokens.length, removed: invalidTokens.length };
       } catch (error) {
-        log.error({ err: error, missionId: recipients.missionId }, 'Sending push notifications failed');
+        logAndReport(log, error, {
+          source: 'push.send',
+          message: 'Sending push notifications failed',
+          fields: { missionId: recipients.missionId },
+        });
         return { sent: 0, removed: 0 };
       }
     },

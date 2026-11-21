@@ -17,7 +17,7 @@ interface MapSlotProps {
   onPlaceFound: (focus: MapFocus) => void;
   /** New operational actions are allowed: there is a connection and the mission is live. */
   operational: boolean;
-  /** The floating critical alert; the phone shows its own under the top bar. */
+  /** The floating critical alerts; the phone shows its own under the top bar. */
   alertOnMap: boolean;
 }
 
@@ -46,7 +46,9 @@ export function MapSlot({
       sightings={sightings.data}
       lkps={lkps.data}
       reports={data.reports.data ?? []}
+      sos={data.sos.data ?? []}
       onOpenReport={nav.openReport}
+      onOpenSos={nav.openSos}
       alertOnMap={alertOnMap}
       sightingsLoading={sightings.isPending || lkps.isPending}
       sightingsFailed={sightings.isError || lkps.isError}

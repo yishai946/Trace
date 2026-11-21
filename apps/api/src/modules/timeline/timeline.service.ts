@@ -55,7 +55,7 @@ function toEvent(row: EventRow): TimelineEvent {
 
 /**
  * Records one significant event on the mission's Timeline (UC-C19). Call it inside the transaction of the change it
- * records, so a rejected change records nothing; after the commit, the route publishes `timeline.recorded`.
+ * records, so a rejected change records nothing; after the commit, the calling service publishes `timeline.recorded`.
  */
 export async function recordEvent(db: Db | Tx, input: RecordEventInput): Promise<TimelineEvent> {
   const actor = await snapshotOf(db, input.missionId, input.actor);

@@ -54,7 +54,7 @@ export function toReportItems({ reports, pending, participation, polygons, from 
 
   const sent = visibleReports(reports, participation).map((report) => {
     const mine = isMine(report, participation);
-    const position = report.position.coordinates as LngLat;
+    const position = report.position.coordinates;
     return {
       sortKey: report.reportedAt,
       item: {
@@ -87,7 +87,7 @@ export function toReportItems({ reports, pending, participation, polygons, from 
         typeLabel: REPORT_TYPE_LABELS[body.type],
         text: body.text,
         time: formatTime(body.reportedAt),
-        position: body.position.coordinates as LngLat,
+        position: body.position.coordinates,
         mine: true,
         callsign: participation.callsign,
         name: '',

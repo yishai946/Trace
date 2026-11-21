@@ -45,6 +45,13 @@ describe('describeEvent', () => {
     expect(text(eventSamples['sos.activated'])).toBe('[7] אלון שגיא הפעיל SOS, חורשת אורנים');
   });
 
+  it('words a closed SOS with who closed it, and not as danger', () => {
+    expect(describeEvent(eventSamples['sos.closed']).danger).toBe(false);
+    expect(text(eventSamples['sos.closed'])).toBe('מנהל סגר את ה-SOS, חורשת אורנים');
+    const bySender = { ...eventSamples['sos.activated'], type: 'sos.closed' as const, details: {} };
+    expect(text(bySender)).toBe('[7] אלון שגיא סגר את ה-SOS, חורשת אורנים');
+  });
+
   it('words the events whose actions come later', () => {
     expect(text(eventSamples['mission.paused'])).toBe('המסע הושהה');
     expect(text(eventSamples['mission.resumed'])).toBe('המסע חודש');

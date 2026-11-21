@@ -58,3 +58,9 @@
   font: var(--text-callsign);
   font-variant-numeric: tabular-nums;
 }
+
+/* The active SOS count is danger red. */
+.count[data-danger] {
+  background-color: var(--danger);
+  color: var(--on-danger);
+}

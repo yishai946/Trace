@@ -5,6 +5,7 @@ import {
   type FastifyServerOptions,
   type LogLevel,
 } from 'fastify';
+import { SENSITIVE_KEYS } from '@trace/monitoring';
 import type { Env } from '../env';
 
 /** Where log lines go; Fastify writes to stdout when none is given. */
@@ -29,14 +30,12 @@ export function defaultLogLevel(nodeEnv: 'development' | 'test' | 'production'):
 }
 
 /**
- * Fields that never reach the log: credentials, phone numbers and searchers' exact locations. Pino replaces them with
- * `[Redacted]`, at the top level of a log object and one level down.
+ * Fields that never reach the log (`SENSITIVE_KEYS` of `@trace/monitoring`, the list the error reports use too). Pino
+ * replaces them with `[Redacted]`, at the top level of a log object and one level down.
  */
-const SENSITIVE_KEYS = ['authorization', 'cookie', 'password', 'token', 'phoneNumber', 'phone', 'lat', 'lng'];
+const accessor = (key: string) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `["${key}"]`);
 export const REDACT_PATHS = [
-  ...SENSITIVE_KEYS.flatMap((key) => [key, `*.${key}`]),
-  'coordinates',
-  '*.coordinates',
+  ...SENSITIVE_KEYS.flatMap((key) => [accessor(key).replace(/^\./, ''), `*${accessor(key)}`]),
   'req.headers.authorization',
   'req.headers.cookie',
   'res.headers["set-cookie"]',
@@ -58,10 +57,47 @@ class RequestLogController extends LogController {
   }
 }
 
-/** Fastify's logging: level from the environment, sensitive fields censored. Tests pass a stream to read the log. */
-export function serverLogOptions(env: Env, stream?: LogStream): Pick<FastifyServerOptions, 'logger' | 'logController'> {
+interface LogTarget {
+  target: string;
+  level: string;
+  options: Record<string, unknown>;
+}
+
+/**
+ * Ships every line to Grafana Cloud Loki through `pino-loki` (a worker thread, so a slow network never blocks a
+ * request). Only `app`, `environment` and `level` are labels; `reqId` stays a JSON field, searched with `| json`.
+ * Null unless all of LOKI_URL, LOKI_USER and LOKI_TOKEN are set.
+ */
+export function logShippingTarget(env: Env): LogTarget | null {
+  if (!env.LOKI_URL || !env.LOKI_USER || !env.LOKI_TOKEN) return null;
   return {
-    logger: { level: env.LOG_LEVEL, redact: REDACT_PATHS, ...(stream ? { stream } : {}) },
+    target: 'pino-loki',
+    level: env.LOG_LEVEL,
+    options: {
+      host: env.LOKI_URL,
+      basicAuth: { username: env.LOKI_USER, password: env.LOKI_TOKEN },
+      labels: { app: 'trace-api', environment: env.SENTRY_ENVIRONMENT },
+    },
+  };
+}
+
+/**
+ * Fastify's logging: level from the environment, sensitive fields censored, lines on stdout and in Loki when it is
+ * configured. Tests pass a stream to read the log; nothing is shipped then.
+ */
+export function serverLogOptions(env: Env, stream?: LogStream): Pick<FastifyServerOptions, 'logger' | 'logController'> {
+  const shipping = stream ? null : logShippingTarget(env);
+  const destination = stream
+    ? { stream }
+    : shipping
+      ? {
+          transport: {
+            targets: [{ target: 'pino/file', level: env.LOG_LEVEL, options: { destination: 1 } }, shipping],
+          },
+        }
+      : {};
+  return {
+    logger: { level: env.LOG_LEVEL, redact: REDACT_PATHS, ...destination },
     logController: new RequestLogController(),
   };
 }

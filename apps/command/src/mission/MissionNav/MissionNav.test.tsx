@@ -37,7 +37,7 @@ describe('MissionNav', () => {
     const onNavigate = vi.fn();
     render(<MissionNav missionName="מסע 0412" view="map" onNavigate={onNavigate} />);
     const names = screen.getAllByRole('link').map((link) => link.textContent);
-    expect(names).toEqual(['לוח מבצעי', 'מחפשים', 'דיווחים', 'הודעות', 'ציר זמן']);
+    expect(names).toEqual(['לוח מבצעי', 'מחפשים', 'דיווחים', 'הודעות', 'SOS', 'ציר זמן']);
     fireEvent.click(screen.getByRole('link', { name: 'דיווחים' }));
     expect(onNavigate).toHaveBeenLastCalledWith('reports');
   });
@@ -50,5 +50,14 @@ describe('MissionNav', () => {
     expect(link.textContent).toContain('3');
     rerender(<MissionNav missionName="מסע 0412" view="map" onNavigate={vi.fn()} counts={{ reports: 0 }} />);
     expect(screen.getByRole('link', { name: 'דיווחים' }).textContent).toBe('דיווחים');
+  });
+
+  it('opens SOS and counts the active ones as active, not new', () => {
+    const onNavigate = vi.fn();
+    render(<MissionNav missionName="מסע 0412" view="map" onNavigate={onNavigate} counts={{ sos: 2 }} />);
+    const link = screen.getByRole('link', { name: 'SOS, 2 פעילות' });
+    expect(link.textContent).toContain('2');
+    fireEvent.click(link);
+    expect(onNavigate).toHaveBeenLastCalledWith('sos');
   });
 });

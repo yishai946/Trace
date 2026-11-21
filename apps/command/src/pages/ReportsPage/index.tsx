@@ -1,5 +1,4 @@
 import { REPORT_TYPE_LABELS, REPORT_TYPES } from '@trace/domain';
-import type { LngLat } from '@trace/geo';
 import type { MapProvider } from '@trace/map';
 import type {
   LkpPoint,
@@ -83,7 +82,7 @@ export function ReportsPage({
     onSelect(id);
     setClosed(false);
     const report = all.find((r) => r.id === id);
-    if (report) setFocus({ center: report.position.coordinates as LngLat });
+    if (report) setFocus({ center: report.position.coordinates });
   };
 
   const { initialView, data } = useReportsMap({ mission, polygons, participants, sightings, lkps, reports });

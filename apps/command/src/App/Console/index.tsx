@@ -6,6 +6,7 @@ import { useSignOut } from '../../auth';
 import { ProfileMenu } from '../../components/ProfileMenu';
 import { usePhoneLayout } from '../../hooks/usePhoneLayout';
 import type { MapFocus } from '../../map/MissionMap';
+import type { MissionView } from '../../mission/MissionNav';
 import { useMissions } from '../../mission/missionQueries';
 import { useMissionLive } from '../../realtime';
 import { useTheme } from '../../theme/theme';
@@ -14,8 +15,11 @@ import { Desktop } from './Desktop';
 import { MapSlot } from './MapSlot';
 import { PhoneMission } from './PhoneMission';
 import { useConsoleNav } from './useConsoleNav';
-import { useMessageSending, useReportActions, useSearcherActions } from './useMissionActions';
+import { useMessageSending, useReportActions, useSearcherActions, useSosActions } from './useMissionActions';
 import { useMissionData } from './useMissionData';
+
+/** The phone views that replace the map. */
+const PHONE_SCREENS: MissionView[] = ['reports', 'sos'];
 
 /** The signed-in console: the mission list, a new mission, or the live map of the mission the commander opened. */
 export function Console({ provider, user }: { provider: MapProvider; user: SessionUser }) {
@@ -34,14 +38,15 @@ export function Console({ provider, user }: { provider: MapProvider; user: Sessi
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const reportActions = useReportActions(mission, operational);
   const searcherActions = useSearcherActions(mission, operational);
+  const sosActions = useSosActions(mission, operational);
   const messageSending = useMessageSending(mission, operational);
   const connection = connectionOf(network, mission ? live : null);
   /** The mission on screen: none on the mission list and while a new mission is created. */
   const shown = nav.creating ? undefined : mission;
-  const shared = { nav, provider, themeId: theme, data, connection, reportActions, onPlaceFound: setFocus };
+  const shared = { nav, provider, themeId: theme, data, connection, reportActions, sosActions, onPlaceFound: setFocus };
 
-  // The phone shows the map under everything but its Reports screen; the desktop only in the map view.
-  const showMap = nav.view === 'map' || (phone && nav.view !== 'reports');
+  // The phone shows the map under everything but its Reports and SOS screens; the desktop only in the map view.
+  const showMap = nav.view === 'map' || (phone && !PHONE_SCREENS.includes(nav.view));
   const workspace = shown && showMap && (
     <MapSlot
       nav={nav}

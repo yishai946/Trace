@@ -19,6 +19,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'search.started': 'search',
   'report.submitted': 'reports',
   'sos.activated': 'sos',
+  'sos.closed': 'sos',
   'coverage.threshold_reached': 'coverage',
   'contact.lost': 'contact',
   'mission.created': 'mission',
@@ -108,12 +109,38 @@ const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] 
   ...(event.subject.label === null ? [] : [`, ${label}`]),
 ];
 
+const sosClosedSegments = (event: EventOf<'sos.closed'>, label: string): Segment[] => {
+  const closer = event.actor.kind === 'commander' ? [event.actor.name] : searcherOf(event);
+  return [...closer, ' סגר את ה-SOS', ...(event.subject.label === null ? [] : [`, ${label}`])];
+};
+
 const segmented = (badge: string, segments: Segment[], danger = false): EventView => ({
   badge,
   danger,
   segments,
   destination: null,
 });
+
+function describePolygon(
+  event: EventOf<'polygon.created'> | EventOf<'polygon.boundary_changed'> | EventOf<'polygon.deleted'>,
+  label: string,
+): EventView {
+  switch (event.type) {
+    case 'polygon.created':
+      return plain('פוליגון', `${label} נוצר`, 'map');
+    case 'polygon.boundary_changed':
+      return plain('פוליגון', boundaryText(label, event.details.searchersOutside), 'map');
+    case 'polygon.deleted':
+      return plain('פוליגון', `${label} נמחק מהמפה`);
+  }
+}
+
+const PAUSE_TEXT = { 'mission.paused': 'המסע הושהה', 'mission.resumed': 'המסע חודש' } as const;
+
+const describeSos = (event: EventOf<'sos.activated'> | EventOf<'sos.closed'>, label: string): EventView =>
+  event.type === 'sos.activated'
+    ? segmented('SOS', sosSegments(event, label), true)
+    : segmented('SOS', sosClosedSegments(event, label));
 
 /** How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. */
 export function describeEvent(event: TimelineEvent): EventView {
@@ -122,19 +149,12 @@ export function describeEvent(event: TimelineEvent): EventView {
     case 'mission.created':
       return plain('מסע', `המסע נוצר, ${label}`);
     case 'mission.paused':
-      return plain('השהיה', 'המסע הושהה');
     case 'mission.resumed':
-      return plain('השהיה', 'המסע חודש');
+      return plain('השהיה', PAUSE_TEXT[event.type]);
     case 'mission.ended':
       return plain('מסע', endedText(event));
     case 'lkp.changed':
       return plain('LKP', lkpText(event), 'map');
-    case 'polygon.created':
-      return plain('פוליגון', `${label} נוצר`, 'map');
-    case 'polygon.boundary_changed':
-      return plain('פוליגון', boundaryText(label, event.details.searchersOutside), 'map');
-    case 'polygon.deleted':
-      return plain('פוליגון', `${label} נמחק מהמפה`);
     case 'search.started':
       return segmented('חיפוש', bySearcher(event, `התחיל חיפוש ב${label}`));
     case 'report.submitted':
@@ -144,6 +164,9 @@ export function describeEvent(event: TimelineEvent): EventView {
     case 'contact.lost':
       return segmented('קשר', contactSegments(event, label));
     case 'sos.activated':
-      return segmented('SOS', sosSegments(event, label), true);
+    case 'sos.closed':
+      return describeSos(event, label);
+    default:
+      return describePolygon(event, label);
   }
 }

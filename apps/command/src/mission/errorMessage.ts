@@ -74,3 +74,14 @@ const REPORT_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
 export function reportErrorMessage(error: unknown): string {
   return (error instanceof ApiRequestError && REPORT_MESSAGES[error.code]) || 'השינוי לא נשמר. נסו שוב.';
 }
+
+const SOS_MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
+  NETWORK_ERROR: 'אין חיבור לשרת. ה-SOS לא נסגר.',
+  NOT_FOUND: 'קריאת ה-SOS כבר לא קיימת. רעננו את הרשימה.',
+  FORBIDDEN: 'אין הרשאה לסגור את ה-SOS.',
+};
+
+/** A Hebrew message for a failed SOS close (UC-C14). */
+export function sosErrorMessage(error: unknown): string {
+  return (error instanceof ApiRequestError && SOS_MESSAGES[error.code]) || 'ה-SOS לא נסגר. נסו שוב.';
+}

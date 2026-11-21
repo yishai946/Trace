@@ -1,78 +1,20 @@
 import { canActivateSos, canCloseSos } from '@trace/domain';
 import { PointGeometry, type CreateSosBody, type Sos, type TimelineEvent } from '@trace/schemas';
-import { and, desc, eq, exists, ne, or, sql } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
-import type { Db, Tx } from '../../db';
+import type { Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { participations, polygons, searchers, sosAlertRecipients, sosAlerts, users } from '../../db/schema';
+import { participations, polygons, sosAlertRecipients, sosAlerts } from '../../db/schema';
 import { forbidden, notFound, participationEnded } from '../../errors';
+import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
+import { readSos } from './sos.read';
+import { sosPushMessage } from './sosPush';
 
 /** The searcher who acts: the route has checked that they have a profile and are in the mission. */
 export type SosActor = { userId: string; searcherId: string };
 type Body = z.output<typeof CreateSosBody>;
-
-const sosColumns = {
-  id: sosAlerts.id,
-  missionId: sosAlerts.missionId,
-  status: sosAlerts.status,
-  participantId: participations.id,
-  searcherId: participations.searcherId,
-  callsign: participations.callsign,
-  name: searchers.name,
-  polygonId: polygons.id,
-  polygonName: polygons.name,
-  message: sosAlerts.message,
-  position: asGeoJson(sosAlerts.position),
-  positionRecordedAt: sosAlerts.positionRecordedAt,
-  positionAccuracy: sosAlerts.positionAccuracy,
-  recipientCount: sql<number>`(select count(*) from ${sosAlertRecipients} where ${sosAlertRecipients.sosId} = ${sosAlerts.id})::int`,
-  activatedAt: sosAlerts.activatedAt,
-  closedAt: sosAlerts.closedAt,
-  closedByRole: users.role,
-  closedByName: users.name,
-};
-
-const selectSos = (db: Db | Tx) =>
-  db
-    .select(sosColumns)
-    .from(sosAlerts)
-    .innerJoin(participations, eq(participations.id, sosAlerts.participationId))
-    .innerJoin(searchers, eq(searchers.id, participations.searcherId))
-    .leftJoin(polygons, eq(polygons.id, sosAlerts.polygonId))
-    .leftJoin(users, eq(users.id, sosAlerts.closedBy))
-    .$dynamic();
-type SosRow = Awaited<ReturnType<typeof selectSos>>[number];
-
-function toSos(row: SosRow): Sos {
-  return {
-    id: row.id,
-    missionId: row.missionId,
-    status: row.status,
-    sender: { participantId: row.participantId, searcherId: row.searcherId, callsign: row.callsign, name: row.name },
-    polygon: row.polygonId && row.polygonName ? { id: row.polygonId, name: row.polygonName } : null,
-    message: row.message,
-    location:
-      row.position && row.positionRecordedAt
-        ? {
-            position: PointGeometry.parse(JSON.parse(row.position)),
-            recordedAt: row.positionRecordedAt.toISOString(),
-            accuracy: row.positionAccuracy,
-          }
-        : null,
-    recipientCount: row.recipientCount,
-    activatedAt: row.activatedAt.toISOString(),
-    closedAt: row.closedAt?.toISOString() ?? null,
-    closedBy: row.closedByRole && row.closedByName ? { role: row.closedByRole, name: row.closedByName } : null,
-  };
-}
-
-async function readSos(db: Db | Tx, id: string): Promise<Sos> {
-  const [row] = await selectSos(db).where(eq(sosAlerts.id, id));
-  if (!row) throw new Error('SOS not found after saving');
-  return toSos(row);
-}
 
 /** The searchers assigned to the sender's polygon, without the sender, and the polygon's name. */
 async function polygonAudience(
@@ -110,12 +52,14 @@ function sosFix(
   };
 }
 
-export interface ActivatedSos {
+interface ActivatedSos {
   sos: Sos;
   /** False when the searcher already had an active SOS: it is returned unchanged and nothing else happens. */
   created: boolean;
   /** The searchers to tell besides the commander: the sender and the recipients stored now. */
   searcherIds: string[];
+  /** The recipients stored now, without the sender: the ones to push to. */
+  recipientIds: string[];
   /** The Timeline record to publish after the commit; null when nothing was created. */
   event: TimelineEvent | null;
 }
@@ -128,10 +72,10 @@ export interface ActivatedSos {
  * last known position is used; with none, the SOS is saved without one.
  */
 export async function activateSos(
-  db: Db,
+  { db, realtime, push }: ServiceDeps,
   { missionId, actor, message, location }: { missionId: string; actor: SosActor } & Body,
-): Promise<ActivatedSos> {
-  return db.transaction(async (tx) => {
+): Promise<{ sos: Sos; created: boolean }> {
+  const result: ActivatedSos = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({
         id: participations.id,
@@ -152,7 +96,8 @@ export async function activateSos(
       .select({ id: sosAlerts.id })
       .from(sosAlerts)
       .where(and(eq(sosAlerts.participationId, participation.id), eq(sosAlerts.status, 'active')));
-    if (active) return { sos: await readSos(tx, active.id), created: false, searcherIds: [], event: null };
+    if (active)
+      return { sos: await readSos(tx, active.id), created: false, searcherIds: [], recipientIds: [], event: null };
 
     // Only an assigned searcher has a polygon.
     const polygonId = participation.status === 'assigned' ? participation.polygonId : null;
@@ -184,19 +129,34 @@ export async function activateSos(
       subject: { kind: 'sos', id: row.id, label: polygonName },
       details: { message },
     });
+    const recipientIds = recipients.map((r) => r.searcherId);
     return {
       sos: await readSos(tx, row.id),
       created: true,
-      searcherIds: [actor.searcherId, ...recipients.map((r) => r.searcherId)],
+      searcherIds: [actor.searcherId, ...recipientIds],
+      recipientIds,
       event,
     };
   });
+  const { sos, created, event } = result;
+  if (created) {
+    realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds: result.searcherIds });
+    if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+    void push.notifySearchers({
+      missionId,
+      searcherIds: result.recipientIds,
+      message: sosPushMessage(sos, 'activated'),
+    });
+  }
+  return { sos, created };
 }
 
-export interface ClosedSos {
+interface ClosedSos {
   sos: Sos;
   /** False when it was already closed: it is returned unchanged and nothing is sent. */
   changed: boolean;
+  /** The Timeline record to publish after the commit; null when nothing changed. */
+  event: TimelineEvent | null;
   /** The searchers to tell besides the commander: the sender and the recipients stored at activation (decision 99). */
   searcherIds: string[];
 }
@@ -207,14 +167,20 @@ export interface ClosedSos {
  * checked before the state, so another searcher is refused on a closed SOS as well.
  */
 export async function closeSos(
-  db: Db,
+  { db, realtime, push }: ServiceDeps,
   { missionId, sosId, actor }: { missionId: string; sosId: string; actor: Actor },
-): Promise<ClosedSos> {
-  return db.transaction(async (tx) => {
+): Promise<Sos> {
+  const result: ClosedSos = await db.transaction(async (tx) => {
     const [locked] = await tx
-      .select({ id: sosAlerts.id, status: sosAlerts.status, senderId: participations.searcherId })
+      .select({
+        id: sosAlerts.id,
+        status: sosAlerts.status,
+        senderId: participations.searcherId,
+        polygonName: polygons.name,
+      })
       .from(sosAlerts)
       .innerJoin(participations, eq(participations.id, sosAlerts.participationId))
+      .leftJoin(polygons, eq(polygons.id, sosAlerts.polygonId))
       .where(and(eq(sosAlerts.id, sosId), eq(sosAlerts.missionId, missionId)))
       .for('update', { of: sosAlerts });
     if (!locked) throw notFound('SOS');
@@ -222,11 +188,19 @@ export async function closeSos(
     if (!canCloseSos({ role: actor.role, isSender })) throw forbidden();
 
     const changed = locked.status === 'active';
+    let event: TimelineEvent | null = null;
     if (changed) {
       await tx
         .update(sosAlerts)
         .set({ status: 'closed', closedAt: sql`now()`, closedBy: actor.userId })
         .where(eq(sosAlerts.id, sosId));
+      event = await recordEvent(tx, {
+        missionId,
+        type: 'sos.closed',
+        actor,
+        subject: { kind: 'sos', id: sosId, label: locked.polygonName },
+        details: {},
+      });
     }
     const recipients = await tx
       .select({ searcherId: sosAlertRecipients.searcherId })
@@ -235,32 +209,19 @@ export async function closeSos(
     return {
       sos: await readSos(tx, sosId),
       changed,
+      event,
       searcherIds: [locked.senderId, ...recipients.map((r) => r.searcherId)],
     };
   });
-}
-
-/**
- * The mission's SOS, newest first. The commander sees all of them; a searcher sees those they sent and those sent to
- * them. The route's access check has already answered 404 for a mission the user has no part in.
- */
-export async function listSos(db: Db, { missionId, actor }: { missionId: string; actor: Actor }): Promise<Sos[]> {
-  const visible =
-    actor.role === 'commander' || !actor.searcherId
-      ? undefined
-      : or(
-          eq(participations.searcherId, actor.searcherId),
-          exists(
-            db
-              .select({ one: sql`1` })
-              .from(sosAlertRecipients)
-              .where(
-                and(eq(sosAlertRecipients.sosId, sosAlerts.id), eq(sosAlertRecipients.searcherId, actor.searcherId)),
-              ),
-          ),
-        );
-  const rows = await selectSos(db)
-    .where(and(eq(sosAlerts.missionId, missionId), visible))
-    .orderBy(desc(sosAlerts.activatedAt), desc(sosAlerts.id));
-  return rows.map(toSos);
+  const { sos, changed, searcherIds, event } = result;
+  if (changed) {
+    realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
+    if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+    void push.notifySearchers({
+      missionId,
+      searcherIds: searcherIds.filter((id) => actor.role !== 'searcher' || id !== actor.searcherId),
+      message: sosPushMessage(sos, 'closed'),
+    });
+  }
+  return sos;
 }

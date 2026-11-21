@@ -92,6 +92,12 @@ export default defineConfig(
     },
   },
   {
+    // Metro loads its config with `require`, so it is a CommonJS file.
+    files: ['apps/field/metro.config.js'],
+    languageOptions: { sourceType: 'commonjs' },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
     // Applies to every React app (Command web, Field mobile) once they exist.
     files: ['apps/**/*.{ts,tsx}'],
     extends: [reactHooks.configs.flat.recommended],

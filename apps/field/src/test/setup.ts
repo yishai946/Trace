@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 import * as secureStore from './secureStore';
 import * as sqlite from './sqlite';
@@ -12,6 +12,11 @@ vi.mock('expo-crypto', () => ({
 }));
 // expo-sqlite is native only; tests use an in-memory database on node:sqlite.
 vi.mock('expo-sqlite', () => import('./sqlite'));
+
+// `findBy*` and `waitFor` give up after 1 s by default. A full `pnpm check` runs every package's tests at once, and
+// on a loaded machine the first render of a screen (location fix, database, queries) can take longer than that.
+// The limit only matters when a test fails; a passing test still finishes as soon as its condition holds.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();

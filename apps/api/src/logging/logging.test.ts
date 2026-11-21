@@ -5,7 +5,7 @@ import { createDb } from '../db';
 import { loadEnv } from '../env';
 import { resetDb } from '../testing';
 import { TEST_DATABASE_URL } from '../testing/testing.config';
-import { defaultLogLevel } from '.';
+import { defaultLogLevel, logShippingTarget, serverLogOptions } from '.';
 
 /** Collects every JSON line the logger writes. */
 function captureLogs() {
@@ -30,6 +30,37 @@ describe('defaultLogLevel', () => {
     expect(loadEnv({ NODE_ENV: 'development' }).LOG_LEVEL).toBe('debug');
     expect(loadEnv({ NODE_ENV: 'test' }).LOG_LEVEL).toBe('silent');
     expect(loadEnv({ NODE_ENV: 'development', LOG_LEVEL: 'warn' }).LOG_LEVEL).toBe('warn');
+  });
+});
+
+describe('log shipping to Loki', () => {
+  const loki = { LOKI_URL: 'https://logs.example.net', LOKI_USER: '123', LOKI_TOKEN: 'glc_secret' };
+
+  it('has no target unless Loki is configured', () => {
+    expect(logShippingTarget(loadEnv({}))).toBeNull();
+    expect(serverLogOptions(loadEnv({})).logger).not.toHaveProperty('transport');
+  });
+
+  it('labels lines with the app and environment and signs in with the user and token', () => {
+    const env = loadEnv({ ...loki, SENTRY_ENVIRONMENT: 'staging' });
+    expect(logShippingTarget(env)).toMatchObject({
+      target: 'pino-loki',
+      options: {
+        host: 'https://logs.example.net',
+        basicAuth: { username: '123', password: 'glc_secret' },
+        labels: { app: 'trace-api', environment: 'staging' },
+      },
+    });
+  });
+
+  it('keeps writing to stdout and adds the Loki target', () => {
+    const { logger } = serverLogOptions(loadEnv(loki));
+    expect(logger).toMatchObject({ transport: { targets: [{ target: 'pino/file' }, { target: 'pino-loki' }] } });
+  });
+
+  it('does not ship when a test reads the log through a stream', () => {
+    const { logger } = serverLogOptions(loadEnv(loki), captureLogs().stream);
+    expect(logger).not.toHaveProperty('transport');
   });
 });
 

@@ -63,6 +63,7 @@ const icons = {
   map: <Path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14" />,
   sighting: <Path d="M12 3l9 9-9 9-9-9z" />,
   send: <Path d="m3 11 18-8-8 18-2-8z" />,
+  phone: <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
 } as const;
 
 export type IconName = keyof typeof icons;

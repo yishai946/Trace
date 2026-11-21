@@ -68,6 +68,8 @@ export async function createTestApp() {
     db: database.db,
     sentCodes,
     sentOtps,
+    /** Ends the database connection, so every later query fails. */
+    closeDb: () => database.close(),
     close: async () => {
       await app.close();
       await database.close();

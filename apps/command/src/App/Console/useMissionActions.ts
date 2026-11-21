@@ -6,8 +6,15 @@ import {
   endErrorMessage,
   messageErrorMessage,
   reportErrorMessage,
+  sosErrorMessage,
 } from '../../mission/errorMessage';
-import { useAssign, useEndParticipation, useReportMutations, useSendMessage } from '../../mission/missionQueries';
+import {
+  useAssign,
+  useCloseSos,
+  useEndParticipation,
+  useReportMutations,
+  useSendMessage,
+} from '../../mission/missionQueries';
 
 // The mutations here live with the console, not with a page: a failure stays on screen when the commander leaves the
 // page and comes back. A handler is undefined when the action is not allowed now (offline, or an ended mission), and
@@ -104,6 +111,22 @@ export function useMessageSending(mission: Mission | undefined, operational: boo
   };
 }
 
+/**
+ * Closing an SOS (UC-C14). Safety continues until the searcher finishes the activity, so it stays possible in an ended
+ * mission; only a missing connection blocks it.
+ */
+export function useSosActions(mission: Mission | undefined, operational: boolean) {
+  const close = useCloseSos(mission?.id ?? '');
+  // A mutation outlives a switch of mission: only this mission's state shows.
+  const here = close.variables?.missionId === mission?.id;
+  return {
+    onClose: mission && operational ? (sosId: string) => close.mutate({ missionId: mission.id, sosId }) : undefined,
+    closingId: close.isPending && here ? (close.variables?.sosId ?? null) : null,
+    error: close.isError && here ? sosErrorMessage(close.error) : null,
+  };
+}
+
 export type ReportActions = ReturnType<typeof useReportActions>;
 export type SearcherActions = ReturnType<typeof useSearcherActions>;
+export type SosActions = ReturnType<typeof useSosActions>;
 export type MessageSending = ReturnType<typeof useMessageSending>;

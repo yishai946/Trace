@@ -7,6 +7,7 @@ import type {
   Participant,
   Report,
   Sighting,
+  Sos,
   TimelineEvent,
   TimelineSubject,
 } from '@trace/schemas';
@@ -295,6 +296,15 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     subject: subjectOf('sos', 'חורשת אורנים'),
     details: { message: 'נפלתי, כאב ברגל' },
   },
+  'sos.closed': {
+    id: '00000000-0000-4000-8000-00000000030e',
+    missionId: mission.id,
+    occurredAt: '2026-10-03T14:05:00.000Z',
+    type: 'sos.closed',
+    actor: commanderActor,
+    subject: subjectOf('sos', 'חורשת אורנים'),
+    details: {},
+  },
 };
 
 /** A short mission history, oldest first, as the API returns it. */
@@ -436,3 +446,47 @@ export const reportLocated: Report = {
 
 /** The mission's reports, newest first. */
 export const reports: Report[] = [reportLocated, reportFinding, reportHazard];
+
+const sosSender = { participantId: participants[0]?.id ?? '', searcherId: participants[0]?.searcherId ?? '' };
+
+/** An active SOS from searcher 04 (דנה כהן) in polygon A, with a location and a message. */
+export const sosActive: Sos = {
+  id: '00000000-0000-4000-8000-0000000009a1',
+  missionId: mission.id,
+  status: 'active',
+  sender: { ...sosSender, callsign: 4, name: 'דנה כהן' },
+  polygon: { id: polygonA.id, name: polygonA.name },
+  message: 'נפלתי, כאב ברגל',
+  location: {
+    position: { type: 'Point', coordinates: [35.1291, 31.7733] },
+    recordedAt: '2026-10-03T13:58:00.000Z',
+    accuracy: 8,
+  },
+  recipientCount: 3,
+  activatedAt: '2026-10-03T13:58:10.000Z',
+  closedAt: null,
+  closedBy: null,
+};
+
+/** An SOS from searcher 09 closed by the commander: history. No message, no location. */
+export const sosClosed: Sos = {
+  id: '00000000-0000-4000-8000-0000000009a2',
+  missionId: mission.id,
+  status: 'closed',
+  sender: {
+    participantId: '00000000-0000-4000-8000-000000000009',
+    searcherId: '00000000-0000-4000-8000-000000000109',
+    callsign: 9,
+    name: 'מיכל פרץ',
+  },
+  polygon: null,
+  message: null,
+  location: null,
+  recipientCount: 0,
+  activatedAt: '2026-10-03T12:20:00.000Z',
+  closedAt: '2026-10-03T12:26:00.000Z',
+  closedBy: { role: 'commander', name: 'מנהל' },
+};
+
+/** The mission's SOS, newest first. */
+export const sosList: Sos[] = [sosActive, sosClosed];

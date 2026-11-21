@@ -88,7 +88,12 @@
   color: var(--ink-secondary);
 }
 
-/* The compact critical alert: a 44px button, padding space-4 on both sides and its border, then the column gap. */
-.stage[data-alert] {
+/* A compact alert: a 44px button, padding space-4 on both sides and its border, then the column gap. */
+.stage[data-alerts='1'] {
   --map-overlay-top: calc(var(--pending-touch-target) + var(--space-4) * 3 + 2px);
+}
+
+/* The SOS alert and the critical report alert stacked. */
+.stage[data-alerts='2'] {
+  --map-overlay-top: calc((var(--pending-touch-target) + var(--space-4) * 3 + 2px) * 2);
 }

@@ -8,3 +8,4 @@ export * from './participants';
 export * from './polygons';
 export * from './reports';
 export * from './sightings';
+export * from './sos';

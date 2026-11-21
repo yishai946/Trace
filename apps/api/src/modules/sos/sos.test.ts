@@ -206,21 +206,50 @@ describe('SOS (UC-F13)', () => {
     expect(closed?.searcherIds).toContain(a1.searcherId);
   });
 
-  it('records one activation on the Timeline and publishes it, and none on close', async () => {
+  const timelineOf = async () =>
+    TimelineEventList.parse((await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json());
+
+  it('records one activation on the Timeline and publishes it', async () => {
     const sos = Sos.parse((await activate(sender, { message: 'עזרה', location })).json());
-    await close(sos.id);
-    const timeline = TimelineEventList.parse(
-      (await commander({ method: 'GET', url: `/api/missions/${mission.id}/timeline` })).json(),
-    );
-    const events = timeline.filter((e) => e.type === 'sos.activated');
+    const events = (await timelineOf()).filter((e) => e.type === 'sos.activated');
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({
       actor: { kind: 'searcher', callsign: 7 },
       subject: { kind: 'sos', id: sos.id, label: 'A' },
       details: { message: 'עזרה' },
     });
-    expect(timeline.filter((e) => e.subject.id === sos.id)).toHaveLength(1);
     expect(published.filter((p) => p.event.type === 'timeline.recorded')).toHaveLength(1);
+  });
+
+  it('records the close by the sender with the searcher as actor, and publishes it', async () => {
+    const sos = Sos.parse((await activate()).json());
+    await close(sos.id);
+    const closed = (await timelineOf()).filter((e) => e.type === 'sos.closed');
+    expect(closed).toHaveLength(1);
+    expect(closed[0]).toMatchObject({
+      actor: { kind: 'searcher', callsign: 7 },
+      subject: { kind: 'sos', id: sos.id, label: 'A' },
+    });
+    expect(published.filter((p) => p.event.type === 'timeline.recorded')).toHaveLength(2);
+  });
+
+  it('records the close by the commander with the commander as actor', async () => {
+    const sos = Sos.parse((await activate()).json());
+    await close(sos.id, commanderUser);
+    const closed = (await timelineOf()).filter((e) => e.type === 'sos.closed');
+    expect(closed).toHaveLength(1);
+    expect(closed[0]).toMatchObject({ actor: { kind: 'commander' }, subject: { kind: 'sos', id: sos.id } });
+  });
+
+  it('records nothing when it is closed again or by another searcher', async () => {
+    const sos = Sos.parse((await activate()).json());
+    expect((await close(sos.id, a1)).statusCode).toBe(403);
+    expect((await timelineOf()).filter((e) => e.type === 'sos.closed')).toHaveLength(0);
+    await close(sos.id);
+    published = [];
+    await close(sos.id, commanderUser);
+    expect((await timelineOf()).filter((e) => e.type === 'sos.closed')).toHaveLength(1);
+    expect(published).toEqual([]);
   });
 
   it('answers 401 without a session', async () => {

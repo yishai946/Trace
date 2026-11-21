@@ -1,8 +1,12 @@
+import * as Sentry from '@sentry/node';
 import { ApiError, Mission, MissionPolygon } from '@trace/schemas';
 import { eq, sql } from 'drizzle-orm';
 import type { Polygon } from 'geojson';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { pushTokens, sessions } from '../../db/schema';
+import { loadEnv } from '../../env';
+import { flushMonitoring, initMonitoring } from '../../monitoring';
+import { createFakeSentryTransport } from '../../testing/sentryTransport';
 import {
   addParticipant,
   createTestApp,
@@ -32,16 +36,28 @@ const errorCode = (res: { json: () => unknown }) => ApiError.parse(res.json()).e
 
 describe('notifications', () => {
   let ctx: TestContext;
+  const sentry = createFakeSentryTransport();
 
   beforeAll(async () => {
+    initMonitoring(loadEnv({ SENTRY_DSN: 'https://publickey@o1.ingest.sentry.io/2' }), sentry.factory);
     ctx = await createTestApp();
   });
   beforeEach(async () => {
     await resetDb(ctx.db);
     ctx.pushSender.sent.length = 0;
     ctx.pushSender.invalid.clear();
+    sentry.events.length = 0;
   });
-  afterAll(() => ctx.close());
+  afterAll(async () => {
+    await ctx.close();
+    await Sentry.close();
+  });
+
+  /** The Sentry events sent so far, once the queue is flushed. */
+  const reported = async () => {
+    await flushMonitoring();
+    return sentry.events;
+  };
 
   const put = (user: TestUser, token: unknown) =>
     injectAs(ctx, user)({ method: 'PUT', url: '/api/push-token', payload: { token } });
@@ -226,6 +242,7 @@ describe('notifications', () => {
       const none = await ctx.push.notifySearchers({ missionId, searcherIds: [], message });
       expect(none).toEqual({ sent: 0, removed: 0 });
       expect(ctx.pushSender.sent).toHaveLength(0);
+      expect(await reported()).toEqual([]);
     });
 
     it('skips searchers whose session has expired', async () => {
@@ -257,6 +274,7 @@ describe('notifications', () => {
 
       expect(result).toEqual({ sent: 2, removed: 1 });
       expect((await rows()).map((row) => row.token)).toEqual([tokenOf('ok')]);
+      expect(await reported()).toEqual([]);
     });
 
     it('resolves and keeps every token when the sender throws', async () => {
@@ -267,6 +285,9 @@ describe('notifications', () => {
 
       expect(result).toEqual({ sent: 0, removed: 0 });
       expect(await rows()).toHaveLength(1);
+      const events = await reported();
+      expect(events).toHaveLength(1);
+      expect(events[0]?.tags).toEqual(expect.objectContaining({ source: 'push.send' }));
     });
   });
 });

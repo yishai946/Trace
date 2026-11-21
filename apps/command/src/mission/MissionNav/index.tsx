@@ -1,13 +1,13 @@
 import { Link } from 'react-aria-components';
 import styles from './MissionNav.module.css';
 
-export type MissionView = 'map' | 'searchers' | 'reports' | 'messages' | 'timeline';
+export type MissionView = 'map' | 'searchers' | 'reports' | 'messages' | 'sos' | 'timeline';
 
 interface MissionNavProps {
   missionName: string;
   view: MissionView;
   onNavigate: (view: MissionView) => void;
-  /** A number after a label, e.g. the New reports; shown only above zero. */
+  /** A number after a label, e.g. the New reports or the active SOS; shown only above zero. */
   counts?: Partial<Record<MissionView, number>>;
 }
 
@@ -32,6 +32,12 @@ const icons: Record<MissionView, React.ReactNode> = {
     </>
   ),
   messages: <path d="M4 5h16v11H9l-5 4z" />,
+  sos: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v6M12 16h.01" />
+    </>
+  ),
   timeline: (
     <>
       <path d="M12 3v18" />
@@ -41,11 +47,15 @@ const icons: Record<MissionView, React.ReactNode> = {
   ),
 };
 
+/** What the number after a label counts, for screen readers: the New reports, the active SOS. */
+const countNoun: Partial<Record<MissionView, string>> = { sos: 'פעילות' };
+
 const items: { view: MissionView; label: string }[] = [
   { view: 'map', label: 'לוח מבצעי' },
   { view: 'searchers', label: 'מחפשים' },
   { view: 'reports', label: 'דיווחים' },
   { view: 'messages', label: 'הודעות' },
+  { view: 'sos', label: 'SOS' },
   { view: 'timeline', label: 'ציר זמן' },
 ];
 
@@ -61,7 +71,7 @@ export function MissionNav({ missionName, view, onNavigate, counts }: MissionNav
             key={item.view}
             className={styles.item}
             aria-current={item.view === view ? 'page' : undefined}
-            aria-label={count > 0 ? `${item.label}, ${count} חדשים` : undefined}
+            aria-label={count > 0 ? `${item.label}, ${count} ${countNoun[item.view] ?? 'חדשים'}` : undefined}
             onPress={() => onNavigate(item.view)}
           >
             <svg
@@ -76,7 +86,11 @@ export function MissionNav({ missionName, view, onNavigate, counts }: MissionNav
               {icons[item.view]}
             </svg>
             {item.label}
-            {count > 0 && <span className={styles.count}>{count}</span>}
+            {count > 0 && (
+              <span className={styles.count} data-danger={item.view === 'sos' || undefined}>
+                {count}
+              </span>
+            )}
           </Link>
         );
       })}

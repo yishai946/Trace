@@ -50,6 +50,13 @@ export interface MapReport extends MapPoint {
   located?: boolean;
 }
 
+/** An active SOS (UC-C14): where the searcher sent it from. */
+export interface MapSos {
+  id: string;
+  position: LngLat;
+  callsign: number;
+}
+
 /** Everything a mission shows on the map. */
 export interface MissionMapData {
   polygons: MapPolygon[];
@@ -60,6 +67,7 @@ export interface MissionMapData {
   sightings: MapSighting[];
   rally: LngLat | null;
   reports: MapReport[];
+  sos: MapSos[];
 }
 
 export const emptyMissionMapData: MissionMapData = {
@@ -71,6 +79,7 @@ export const emptyMissionMapData: MissionMapData = {
   sightings: [],
   rally: null,
   reports: [],
+  sos: [],
 };
 
 export const SOURCE = {
@@ -82,6 +91,7 @@ export const SOURCE = {
   sightings: 'trace-sightings',
   rally: 'trace-rally',
   reports: 'trace-reports',
+  sos: 'trace-sos',
 } as const;
 
 type SourceId = (typeof SOURCE)[keyof typeof SOURCE];
@@ -152,6 +162,9 @@ export function toMissionSources(data: MissionMapData): Record<SourceId, Feature
           label: r.located ? `אותר ${r.time ?? ''}`.trim() : '',
         }),
       ),
+    ),
+    [SOURCE.sos]: collection(
+      data.sos.map((s) => point(s.position, { id: s.id, label: `SOS ${formatCallsign(s.callsign)}` })),
     ),
   };
 }

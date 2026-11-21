@@ -70,6 +70,12 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('sos', null),
     details: { message: null },
   },
+  'sos.closed': {
+    type: 'sos.closed',
+    actor: searcher,
+    subject: subject('sos', 'A'),
+    details: {},
+  },
 };
 
 const event = (sample: unknown) => ({ id: ID, missionId: OTHER_ID, occurredAt: AT, ...(sample as object) });

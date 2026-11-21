@@ -12,17 +12,13 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import type { Db } from '../../db';
 import { forbidden } from '../../errors';
-import type { Realtime } from '../../realtime';
-import type { PushNotifier } from '../notifications/notifications.service';
+import type { ServiceDeps } from '../serviceDeps';
 import { listMessages, listOwnMessages } from './messages.read';
-import { PUSH_TITLES, recordReceipt, sendMessage } from './messages.service';
+import { recordReceipt, sendMessage } from './messages.service';
 
-export const messageRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push: PushNotifier }> = async (
-  app,
-  { db, realtime, push },
-) => {
+export const messageRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   app.post(
     '/missions/:missionId/messages',
     {
@@ -42,29 +38,10 @@ export const messageRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; 
     },
     async (request, reply) => {
       const { missionId } = request.params;
-      const { message, deliveries } = await sendMessage(db, {
+      const message = await sendMessage(deps, {
         missionId,
         sentBy: actorOf(request).userId,
         message: request.body,
-      });
-      realtime.publish({ type: 'message.sent', missionId, message });
-      for (const delivery of deliveries) {
-        realtime.publish({
-          type: 'message.received',
-          missionId,
-          searcherId: delivery.searcherId,
-          message: delivery.message,
-        });
-      }
-      // Best effort: push never fails or delays the send.
-      void push.notifySearchers({
-        missionId,
-        searcherIds: deliveries.map((delivery) => delivery.searcherId),
-        message: {
-          title: PUSH_TITLES[message.urgency],
-          body: message.body,
-          data: { missionId, screen: 'messages' },
-        },
       });
       return reply.status(201).send(message);
     },
@@ -128,14 +105,12 @@ export const messageRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; 
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { missionId, messageId } = request.params;
-      const { message, recipient, changed } = await recordReceipt(db, {
+      return recordReceipt(deps, {
         missionId,
         searcherId: actor.searcherId,
         messageId,
         receipt: request.body.receipt,
       });
-      if (changed) realtime.publish({ type: 'message.receipt', missionId, messageId, recipient });
-      return message;
     },
   );
 };

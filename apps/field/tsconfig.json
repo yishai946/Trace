@@ -4,6 +4,8 @@
     "expo/tsconfig.base"
   ],
   "include": [
-    "src"
+    "src",
+    "app.config.ts",
+    "app.config.test.ts"
   ]
 }
