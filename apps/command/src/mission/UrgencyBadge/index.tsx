@@ -1,6 +1,6 @@
 import type { MessageUrgency } from '@trace/domain';
-import styles from './MessagesPage.module.css';
-import { URGENCY_LABEL } from './messageView';
+import { URGENCY_LABEL } from '../messageView';
+import styles from './UrgencyBadge.module.css';
 
 /** The urgency as a word on a badge: colour only adds to it (brand book). */
 export function UrgencyBadge({ urgency }: { urgency: MessageUrgency }) {

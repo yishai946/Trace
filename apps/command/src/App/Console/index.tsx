@@ -6,8 +6,8 @@ import { useSignOut } from '../../auth';
 import { ProfileMenu } from '../../components/ProfileMenu';
 import { usePhoneLayout } from '../../hooks/usePhoneLayout';
 import type { MapFocus } from '../../map/MissionMap';
-import type { MissionView } from '../../mission/MissionNav';
 import { useMissions } from '../../mission/missionQueries';
+import { phoneScreenOf } from '../../mission/phoneScreen';
 import { useMissionLive } from '../../realtime';
 import { useTheme } from '../../theme/theme';
 import { connectionOf, useNetwork } from './connection';
@@ -17,9 +17,6 @@ import { PhoneMission } from './PhoneMission';
 import { useConsoleNav } from './useConsoleNav';
 import { useMessageSending, useReportActions, useSearcherActions, useSosActions } from './useMissionActions';
 import { useMissionData } from './useMissionData';
-
-/** The phone views that replace the map. */
-const PHONE_SCREENS: MissionView[] = ['reports', 'sos'];
 
 /** The signed-in console: the mission list, a new mission, or the live map of the mission the commander opened. */
 export function Console({ provider, user }: { provider: MapProvider; user: SessionUser }) {
@@ -45,8 +42,8 @@ export function Console({ provider, user }: { provider: MapProvider; user: Sessi
   const shown = nav.creating ? undefined : mission;
   const shared = { nav, provider, themeId: theme, data, connection, reportActions, sosActions, onPlaceFound: setFocus };
 
-  // The phone shows the map under everything but its Reports and SOS screens; the desktop only in the map view.
-  const showMap = nav.view === 'map' || (phone && !PHONE_SCREENS.includes(nav.view));
+  // The phone shows the map under everything but its Reports, Messages and SOS screens; the desktop only in the map view.
+  const showMap = nav.view === 'map' || (phone && phoneScreenOf(nav.view) === 'map');
   const workspace = shown && showMap && (
     <MapSlot
       nav={nav}
@@ -65,7 +62,13 @@ export function Console({ provider, user }: { provider: MapProvider; user: Sessi
     <main className={styles.screen}>
       {phone && shown ? (
         // The phone gets its own mission screen (Cm04). Its mission list and the new-mission screen use the desktop's.
-        <PhoneMission {...shared} mission={shown} missions={missions.data ?? []} workspace={workspace} />
+        <PhoneMission
+          {...shared}
+          mission={shown}
+          missions={missions.data ?? []}
+          workspace={workspace}
+          messageSending={messageSending}
+        />
       ) : (
         <Desktop
           {...shared}

@@ -1,0 +1,217 @@
+.page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background-color: var(--map-ground);
+}
+
+.tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-height: 0;
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  overflow: auto;
+}
+
+/* The new / sent switch (SegmentedTabs look, 44px for touch). */
+.seg {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.segTab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: var(--pending-touch-target);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  font: var(--text-body);
+  cursor: pointer;
+  outline: none;
+}
+
+.segTab[data-pressed] {
+  background-color: var(--surface-hover);
+}
+
+.segTab[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segTab[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  outline: none;
+}
+
+.card,
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.meta {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.body {
+  margin: 0;
+  color: var(--ink);
+  font: var(--text-body);
+}
+
+.ell {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Times and numbers read left to right inside Hebrew text. */
+.num {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+.detailLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--pending-touch-target);
+  color: var(--accent);
+  cursor: pointer;
+  outline: none;
+}
+
+.detailLink[data-focus-visible] {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.list {
+  outline: none;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recipients {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recipient {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: var(--pending-list-item-h);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.recipient:first-child {
+  border-top: 0;
+}
+
+.who {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.where {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.state {
+  display: inline-flex;
+  gap: var(--space-2);
+  color: var(--ink-secondary);
+}
+
+.state[data-state='pending'] {
+  color: var(--warning);
+}
+
+.state[data-state='acknowledged'] {
+  color: var(--ink);
+}
+
+.state svg {
+  width: var(--pending-icon-sm);
+  height: var(--pending-icon-sm);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin: 0;
+  padding: var(--space-7);
+  color: var(--ink-secondary);
+}
+
+.empty p {
+  margin: 0;
+}

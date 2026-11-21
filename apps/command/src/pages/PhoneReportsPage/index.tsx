@@ -15,7 +15,7 @@ import { MissionMap } from '../../map/MissionMap';
 import { ReportRow } from '../../mission/ReportRow';
 import { ReportCard } from './ReportCard';
 import { ListState } from '../../components/ListState';
-import { ScreenBar } from './ScreenBar';
+import { PhoneScreenBar } from '../../mission/PhoneScreenBar';
 import { ReportControls } from './ReportControls';
 import { usePhoneReports } from './usePhoneReports';
 import { choose } from '../../choose';
@@ -119,7 +119,7 @@ export function PhoneReportsPage({
 
   return (
     <div ref={root} className={styles.page}>
-      <ScreenBar heading={heading} connection={connection} />
+      <PhoneScreenBar title="דיווחים" heading={heading} connection={connection} />
       <Tabs selectedKey={view} onSelectionChange={(key) => setView(choose(VIEWS, key, 'list'))} className={styles.tabs}>
         <ReportControls chip={chip} counts={counts} onChip={setChip} />
         <TabPanel id="list" className={styles.listPanel}>

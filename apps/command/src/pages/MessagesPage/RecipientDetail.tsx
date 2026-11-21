@@ -1,10 +1,18 @@
 import type { Message, MissionPolygon, Participant } from '@trace/schemas';
 import { CallsignChip } from '../../components/CallsignChip';
+import { DeliveryCounts } from '../../mission/DeliveryCounts';
+import {
+  byAttention,
+  isFinal,
+  lastStepTime,
+  OFFLINE_NOTE,
+  recipientsLabel,
+  recipientState,
+  recipientStateLabel,
+} from '../../mission/messageView';
 import { timeLabel } from '../../mission/timeLabel';
+import { UrgencyBadge } from '../../mission/UrgencyBadge';
 import styles from './MessagesPage.module.css';
-import { UrgencyBadge } from './UrgencyBadge';
-import { byAttention, isFinal, recipientsLabel, recipientStateLabel } from './messageView';
-import { DeliveryCounts } from './DeliveryCounts';
 
 const BODY_PREVIEW = 40;
 
@@ -13,12 +21,6 @@ export interface RecipientDetailProps {
   participants: Participant[];
   polygons: MissionPolygon[];
 }
-
-const stateOf = (r: Message['recipients'][number]) =>
-  r.status === 'acknowledged' ? 'acknowledged' : r.status === 'read' ? 'read' : r.deliveredAt ? 'delivered' : 'pending';
-
-/** The time of the latest step: acknowledged, else read, else delivered. */
-const lastTime = (r: Message['recipients'][number]) => r.acknowledgedAt ?? r.readAt ?? r.deliveredAt;
 
 /** Who got the selected message and where each one stands (wireframe Cd11 "פירוט לפי נמען"). */
 export function RecipientDetail({ message, participants, polygons }: RecipientDetailProps) {
@@ -34,7 +36,7 @@ export function RecipientDetail({ message, participants, polygons }: RecipientDe
           {recipientsLabel(message)}, <span className={styles.num}>{timeLabel(message.sentAt)}</span>, &quot;{preview}
           &quot;
         </p>
-        <DeliveryCounts message={message} />
+        <DeliveryCounts message={message} className={styles.fullRow} />
       </div>
       <div className={styles.scroll}>
         <table className={`${styles.table} ${styles.fixed}`}>
@@ -61,8 +63,8 @@ export function RecipientDetail({ message, participants, polygons }: RecipientDe
             {rows.map((recipient) => {
               const participant = participants.find((p) => p.id === recipient.participantId);
               const polygon = polygons.find((p) => p.id === participant?.polygonId);
-              const time = lastTime(recipient);
-              const state = stateOf(recipient);
+              const time = lastStepTime(recipient);
+              const state = recipientState(recipient);
               return (
                 <tr key={recipient.participantId}>
                   <td>
@@ -130,7 +132,7 @@ export function RecipientDetail({ message, participants, polygons }: RecipientDe
         </table>
       </div>
       <div className={`${styles.section} ${styles.footer}`}>
-        <p className={styles.meta}>הודעה למחפש לא מקוון נשמרת ותימסר בחיבור. הודעות חד-כיווניות; אין מענה מהמחפשים.</p>
+        <p className={styles.meta}>{OFFLINE_NOTE}</p>
       </div>
     </section>
   );

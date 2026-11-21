@@ -102,3 +102,10 @@ const REPORT_TYPE_PATHS: Record<ReportType, React.ReactNode> = {
   ),
   located: <path d="M6 21V4M6 4h11l-2.5 4L17 12H6" />,
 };
+
+/** Back, as the wireframes draw it: in RTL the arrow points right. */
+export const BackIcon = () => (
+  <svg {...base}>
+    <path d="M5 12h14M13 6l6 6-6 6" />
+  </svg>
+);

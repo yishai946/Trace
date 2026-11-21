@@ -1,0 +1,21 @@
+.badge {
+  display: inline-flex;
+  justify-content: center;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--chip);
+  color: var(--ink-secondary);
+  font: var(--text-caption);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge[data-urgency='important'] {
+  color: var(--accent);
+}
+
+.badge[data-urgency='critical'] {
+  background-color: var(--primary);
+  color: var(--on-primary);
+}

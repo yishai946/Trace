@@ -6,10 +6,12 @@ import type { Connection } from '../../components/ConnectionStatus';
 import type { MapFocus } from '../../map/MissionMap';
 import { PlaceSearch } from '../../map/PlaceSearch';
 import { PhoneMissionScreen } from '../../mission/PhoneMissionScreen';
+import { phoneScreenOf } from '../../mission/phoneScreen';
+import { PhoneMessagesPage } from '../../pages/PhoneMessagesPage';
 import { PhoneReportsPage } from '../../pages/PhoneReportsPage';
 import { SosPage } from '../../pages/SosPage';
 import type { ConsoleNav } from './useConsoleNav';
-import type { ReportActions, SosActions } from './useMissionActions';
+import type { MessageSending, ReportActions, SosActions } from './useMissionActions';
 import type { MissionData } from './useMissionData';
 
 interface PhoneMissionProps {
@@ -24,11 +26,12 @@ interface PhoneMissionProps {
   themeId: ThemeId;
   reportActions: ReportActions;
   sosActions: SosActions;
+  messageSending: MessageSending;
   /** The commander searched for a place: the map moves there. */
   onPlaceFound: (focus: MapFocus) => void;
 }
 
-/** The open mission on a phone (wireframe Cm04): the map stage, or the Reports or SOS screen in its place. */
+/** The open mission on a phone (wireframe Cm04): the map stage, or the Reports, Messages or SOS screen in its place. */
 export function PhoneMission({
   mission,
   missions,
@@ -40,6 +43,7 @@ export function PhoneMission({
   themeId,
   reportActions,
   sosActions,
+  messageSending,
   onPlaceFound,
 }: PhoneMissionProps) {
   const polygons = data.polygons.data ?? [];
@@ -58,7 +62,7 @@ export function PhoneMission({
       participantsFailed={data.participants.isError}
       polygons={polygons}
       workspace={workspace}
-      screen={nav.view === 'reports' || nav.view === 'sos' ? nav.view : 'map'}
+      screen={phoneScreenOf(nav.view)}
       onScreenChange={nav.setView}
       reports={data.reports.data}
       reportsFailed={data.reports.isError}
@@ -73,6 +77,19 @@ export function PhoneMission({
           onRetry={() => void data.sos.refetch()}
           participants={data.participants.data ?? []}
           {...sosActions}
+        />
+      }
+      messagesScreen={
+        <PhoneMessagesPage
+          key={mission.id}
+          messages={data.messages.data}
+          loadFailed={data.messages.isError}
+          onRetry={() => void data.messages.refetch()}
+          participants={data.participants.data}
+          participantsFailed={data.participants.isError}
+          polygons={polygons}
+          connection={connection}
+          {...messageSending}
         />
       }
       reportsScreen={
