@@ -8,8 +8,7 @@ import {
 } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
-import { actorOf } from '../../auth/auth.plugin';
-import { forbidden } from '../../errors';
+import { searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { getTrack, recordTrackPoints } from './tracking.service';
 
@@ -35,11 +34,9 @@ export const trackingRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, de
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     async (request) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { searcherId } = searcherOf(request);
       const { missionId } = request.params;
-      return recordTrackPoints(deps, { missionId, searcherId: actor.searcherId, body: request.body });
+      return recordTrackPoints(deps, { missionId, searcherId, body: request.body });
     },
   );
 

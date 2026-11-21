@@ -11,8 +11,7 @@ import {
 } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
-import { actorOf } from '../../auth/auth.plugin';
-import { forbidden } from '../../errors';
+import { actorOf, searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { listMessages, listOwnMessages } from './messages.read';
 import { recordReceipt, sendMessage } from './messages.service';
@@ -77,10 +76,8 @@ export const messageRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     (request) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
-      return listOwnMessages(db, { missionId: request.params.missionId, searcherId: actor.searcherId });
+      const { searcherId } = searcherOf(request);
+      return listOwnMessages(db, { missionId: request.params.missionId, searcherId });
     },
   );
 
@@ -101,13 +98,11 @@ export const messageRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     async (request) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { searcherId } = searcherOf(request);
       const { missionId, messageId } = request.params;
       return recordReceipt(deps, {
         missionId,
-        searcherId: actor.searcherId,
+        searcherId,
         messageId,
         receipt: request.body.receipt,
       });

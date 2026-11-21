@@ -1,8 +1,7 @@
 import { ApiError, CreateSosBody, MissionParams, Sos, SosList, SosParams } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
-import { actorOf } from '../../auth/auth.plugin';
-import { forbidden } from '../../errors';
+import { actorOf, searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { listSos } from './sos.read';
 import { activateSos, closeSos } from './sos.service';
@@ -28,9 +27,7 @@ export const sosRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) =
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     async (request, reply) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const actor = searcherOf(request);
       const { missionId } = request.params;
       const { sos, created } = await activateSos(deps, {
         ...request.body,

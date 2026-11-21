@@ -2,7 +2,7 @@ import { ApiError, RegisterPushTokenBody } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { searchersOnly } from '../../auth/auth.access';
-import { actorOf, sessionIdOf } from '../../auth/auth.plugin';
+import { searcherOf, sessionIdOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { registerPushToken, removePushToken } from './notifications.service';
 
@@ -21,10 +21,9 @@ export const notificationRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app,
       preHandler: searchersOnly,
     },
     async (request, reply) => {
-      const actor = actorOf(request);
-      if (actor.role !== 'searcher' || actor.searcherId === null) throw new Error('Unreachable: searchersOnly');
+      const { searcherId } = searcherOf(request);
       await registerPushToken(db, {
-        searcherId: actor.searcherId,
+        searcherId,
         sessionId: sessionIdOf(request),
         token: request.body.token,
       });
