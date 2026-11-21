@@ -9,13 +9,12 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import type { Db } from '../../db';
 import { forbidden } from '../../errors';
-import type { Realtime } from '../../realtime';
-import { listParticipants } from '../participants/participants.service';
+import type { ServiceDeps } from '../serviceDeps';
 import { getTrack, recordTrackPoints } from './tracking.service';
 
-export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
+export const trackingRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   app.post(
     '/missions/:missionId/track-points',
     {
@@ -40,29 +39,7 @@ export const trackingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { missionId } = request.params;
-      const result = await recordTrackPoints(db, { missionId, searcherId: actor.searcherId, body: request.body });
-      if (result.moved) {
-        realtime.publish({
-          type: 'participant.moved',
-          missionId,
-          participantId: result.participantId,
-          searcherId: actor.searcherId,
-          ...result.moved,
-        });
-      }
-      if (result.storedPoints.length > 0) {
-        realtime.publish({
-          type: 'participant.tracked',
-          missionId,
-          participantId: result.participantId,
-          points: result.storedPoints,
-        });
-      }
-      if (result.gpsBack) {
-        const participant = (await listParticipants(db, missionId)).find((p) => p.id === result.participantId);
-        if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
-      }
-      return { stored: result.stored, duplicates: result.duplicates };
+      return recordTrackPoints(deps, { missionId, searcherId: actor.searcherId, body: request.body });
     },
   );
 

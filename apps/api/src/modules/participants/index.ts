@@ -16,26 +16,13 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import type { Db } from '../../db';
 import { forbidden } from '../../errors';
-import type { Realtime } from '../../realtime';
-import { getMission } from '../missions/missions.read';
-import { listPolygons } from '../polygons/polygons.service';
-import {
-  assignParticipant,
-  endParticipation,
-  getOwnParticipation,
-  joinMission,
-  listParticipants,
-  previewJoin,
-  setBattery,
-  setGpsStatus,
-} from './participants.service';
+import type { ServiceDeps } from '../serviceDeps';
+import { getOwnParticipation, listParticipants, previewJoin } from './participants.read';
+import { assignParticipant, endParticipation, joinMission, setBattery, setGpsStatus } from './participants.service';
 
-export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (
-  app,
-  { db, realtime },
-) => {
+export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   app.get(
     '/missions/:missionId/participants',
     {
@@ -91,12 +78,7 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { missionId } = request.params;
-      const participant = await setGpsStatus(db, {
-        missionId,
-        searcherId: actor.searcherId,
-        available: request.body.available,
-      });
-      if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+      await setGpsStatus(deps, { missionId, searcherId: actor.searcherId, available: request.body.available });
       return reply.status(204).send(null);
     },
   );
@@ -122,8 +104,7 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { missionId } = request.params;
-      const participant = await setBattery(db, { missionId, searcherId: actor.searcherId, ...request.body });
-      if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+      await setBattery(deps, { missionId, searcherId: actor.searcherId, ...request.body });
       return reply.status(204).send(null);
     },
   );
@@ -147,17 +128,12 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
     },
     async (request) => {
       const { missionId, participantId } = request.params;
-      const { participant, activatedPolygonId } = await assignParticipant(db, {
+      return assignParticipant(deps, {
         missionId,
         participantId,
         polygonId: request.body.polygonId,
         commanderId: actorOf(request).userId,
       });
-      realtime.publish({ type: 'participant.updated', missionId, participant });
-      const polygon =
-        activatedPolygonId && (await listPolygons(db, missionId)).find((p) => p.id === activatedPolygonId);
-      if (polygon) realtime.publish({ type: 'polygon.saved', missionId, polygon });
-      return participant;
     },
   );
 
@@ -175,12 +151,7 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    async (request) => {
-      const { missionId } = request.params;
-      const participant = await endParticipation(db, request.params);
-      realtime.publish({ type: 'participant.updated', missionId, participant });
-      return participant;
-    },
+    (request) => endParticipation(deps, request.params),
   );
 
   app.get(
@@ -227,12 +198,8 @@ export const participantRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realti
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { searcherId } = actor;
-      const { missionId, participation, joined } = await joinMission(db, searcherId, request.params.code);
-      if (joined) {
-        const participant = (await listParticipants(db, missionId)).find((p) => p.id === participation.id);
-        if (participant) realtime.publish({ type: 'participant.joined', missionId, participant });
-      }
-      return reply.status(joined ? 201 : 200).send({ mission: await getMission(db, missionId), participation });
+      const { joined, mission, participation } = await joinMission(deps, searcherId, request.params.code);
+      return reply.status(joined ? 201 : 200).send({ mission, participation });
     },
   );
 };

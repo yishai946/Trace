@@ -47,11 +47,11 @@ function roomsFor(actor: Actor, missionId: string): string[] {
  * the commander: searchers see the LKP, not sightings (decisions 31, 32). An LKP change reaches every member.
  * A message and its receipts go to the commander; each recipient gets only their own copy (decision 32). Reports go
  * to the commander, the author and the searchers assigned to the report's polygon (UC-C11, UC-F11, decision 80); the
- * route passes the searchers as `searcherIds`.
+ * service passes the searchers as `searcherIds`.
  */
 function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): string[] {
   // An SOS goes to the commander, the sender and the searchers it was sent to: an exception to decision 32, made on
-  // purpose (decisions 98, 99). The route passes the sender and the recipients stored at activation.
+  // purpose (decisions 98, 99). The service passes the sender and the recipients stored at activation.
   const withSearchers = () => [
     commanderRoom(event.missionId),
     ...[...new Set(searcherIds)].map((id) => searcherRoom(event.missionId, id)),

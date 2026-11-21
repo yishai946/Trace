@@ -1,51 +1,15 @@
 import { acceptsTrackPoints, canJoinMission, isMissionEnded, nextCallsign } from '@trace/domain';
-import { PointGeometry, type JoinPreview, type OwnParticipation, type Participant } from '@trace/schemas';
-import type { LngLat } from '@trace/geo';
-import { and, asc, eq, isNull } from 'drizzle-orm';
-import type { Db } from '../../db';
-import { asGeoJson } from '../../db/geometry';
-import { assignments, missions, participations, polygons, searchers } from '../../db/schema';
+import type { Mission, OwnParticipation, Participant } from '@trace/schemas';
+import { and, eq, isNull } from 'drizzle-orm';
+import { assignments, missions, participations, polygons } from '../../db/schema';
 import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
+import { getMission } from '../missions/missions.read';
+import { listPolygons } from '../polygons/polygons.service';
+import type { ServiceDeps } from '../serviceDeps';
 import { CLOCK_SKEW_MS } from '../tracking/tracking.service';
+import { findParticipant, ownColumns } from './participants.read';
 
-/** The mission behind a join code, as shown before the searcher confirms (UC-F02). 404 for a code no mission has. */
-export async function previewJoin(db: Db, code: string): Promise<JoinPreview> {
-  const [mission] = await db
-    .select({
-      name: missions.name,
-      status: missions.status,
-      missingPersonName: missions.missingPersonName,
-      missingPersonAge: missions.missingPersonAge,
-    })
-    .from(missions)
-    .where(eq(missions.joinCode, code));
-  if (!mission) throw notFound('Mission');
-  return {
-    name: mission.name,
-    status: mission.status,
-    missingPerson: { name: mission.missingPersonName, age: mission.missingPersonAge },
-  };
-}
-
-const ownColumns = {
-  id: participations.id,
-  callsign: participations.callsign,
-  status: participations.status,
-  polygonId: participations.polygonId,
-  taskStatus: participations.taskStatus,
-};
-
-/** The signed-in searcher's own participation in the mission (UC-F05). The route's access check found the mission. */
-export async function getOwnParticipation(db: Db, missionId: string, searcherId: string): Promise<OwnParticipation> {
-  const [participation] = await db
-    .select(ownColumns)
-    .from(participations)
-    .where(and(eq(participations.missionId, missionId), eq(participations.searcherId, searcherId)));
-  if (!participation) throw notFound('Mission');
-  return participation;
-}
-
-export interface JoinResult {
+interface JoinResult {
   missionId: string;
   participation: OwnParticipation;
   /** True when the searcher became Available now: a new participation, or one that had ended. */
@@ -59,8 +23,12 @@ export interface JoinResult {
  * returns to Available with its callsign (State and Rules §2), never a second one. The mission row is locked, so two
  * joins never take one callsign and a mission being paused or ended cannot be joined meanwhile.
  */
-export async function joinMission(db: Db, searcherId: string, code: string): Promise<JoinResult> {
-  return db.transaction(async (tx) => {
+export async function joinMission(
+  { db, realtime }: ServiceDeps,
+  searcherId: string,
+  code: string,
+): Promise<{ joined: boolean; mission: Mission; participation: OwnParticipation }> {
+  const result: JoinResult = await db.transaction(async (tx) => {
     const [mission] = await tx
       .select({ id: missions.id, status: missions.status })
       .from(missions)
@@ -102,47 +70,12 @@ export async function joinMission(db: Db, searcherId: string, code: string): Pro
     if (!participation) throw new Error('Participation insert returned no row');
     return { missionId: mission.id, participation, joined: true };
   });
-}
-
-/** The mission's searchers. The route's access check has already answered 404 for an unknown mission. */
-export async function listParticipants(db: Db, missionId: string): Promise<Participant[]> {
-  const rows = await db
-    .select({
-      id: participations.id,
-      searcherId: participations.searcherId,
-      name: searchers.name,
-      phone: searchers.phone,
-      callsign: participations.callsign,
-      status: participations.status,
-      polygonId: participations.polygonId,
-      taskStatus: participations.taskStatus,
-      position: asGeoJson(participations.lastPosition),
-      positionAt: participations.lastPositionAt,
-      gpsUnavailableSince: participations.gpsUnavailableSince,
-      batteryLevel: participations.batteryLevel,
-      batteryMeasuredAt: participations.batteryMeasuredAt,
-    })
-    .from(participations)
-    .innerJoin(searchers, eq(searchers.id, participations.searcherId))
-    .where(eq(participations.missionId, missionId))
-    .orderBy(asc(participations.callsign));
-
-  return rows.map(({ batteryLevel, batteryMeasuredAt, ...row }) => ({
-    ...row,
-    battery:
-      batteryLevel === null || batteryMeasuredAt === null
-        ? null
-        : { level: batteryLevel, measuredAt: batteryMeasuredAt.toISOString() },
-    position: row.position ? (PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat) : null,
-    positionAt: row.positionAt?.toISOString() ?? null,
-    gpsUnavailableSince: row.gpsUnavailableSince?.toISOString() ?? null,
-  }));
-}
-
-export interface AssignResult {
-  participant: Participant;
-  /** The polygon whose status changed (it became active with its first searcher), to send to the mission. */
-  activatedPolygonId: string | null;
+  const { missionId, participation, joined } = result;
+  if (joined) {
+    const participant = await findParticipant(db, missionId, participation.id);
+    if (participant) realtime.publish({ type: 'participant.joined', missionId, participant });
+  }
+  return { joined, mission: await getMission(db, missionId), participation };
 }
 
 /**
@@ -153,9 +86,10 @@ export interface AssignResult {
  * row is locked, so two assignments at once cannot both win.
  */
 export async function assignParticipant(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: { missionId: string; participantId: string; polygonId: string; commanderId: string },
-): Promise<AssignResult> {
+): Promise<Participant> {
+  // The polygon that became active with its first searcher, to send to the mission.
   const activatedPolygonId = await db.transaction(async (tx) => {
     // Shared lock: polygon deletes and boundary changes lock the mission for update, so they wait for this assignment
     // (and it for them); assignments in parallel do not block one another.
@@ -206,9 +140,13 @@ export async function assignParticipant(
     return polygon.id;
   });
 
-  const participant = (await listParticipants(db, input.missionId)).find((p) => p.id === input.participantId);
+  const participant = await findParticipant(db, input.missionId, input.participantId);
   if (!participant) throw notFound('Searcher');
-  return { participant, activatedPolygonId };
+  realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
+  const polygon =
+    activatedPolygonId && (await listPolygons(db, input.missionId)).find((p) => p.id === activatedPolygonId);
+  if (polygon) realtime.publish({ type: 'polygon.saved', missionId: input.missionId, polygon });
+  return participant;
 }
 
 /**
@@ -217,7 +155,7 @@ export async function assignParticipant(
  * join the active mission again later and return as Available with the same participation.
  */
 export async function endParticipation(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: { missionId: string; participantId: string },
 ): Promise<Participant> {
   await db.transaction(async (tx) => {
@@ -237,41 +175,43 @@ export async function endParticipation(
       .set({ status: 'ended', polygonId: null, taskStatus: null })
       .where(eq(participations.id, participation.id));
   });
-  const participant = (await listParticipants(db, input.missionId)).find((p) => p.id === input.participantId);
+  const participant = await findParticipant(db, input.missionId, input.participantId);
   if (!participant) throw notFound('Searcher');
+  realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
   return participant;
 }
 
 /**
  * Records whether the searcher's phone has GPS (UC-S01, decision 42). Losing it keeps the first moment it was lost, so
- * the commander sees for how long; getting it back clears it. Returns the participant only when the state changed.
+ * the commander sees for how long; getting it back clears it. The mission hears of it only when the state changed.
  */
 export async function setGpsStatus(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: { missionId: string; searcherId: string; available: boolean },
-): Promise<Participant | null> {
+): Promise<void> {
   const [participation] = await db
     .select({ id: participations.id, since: participations.gpsUnavailableSince })
     .from(participations)
     .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)));
   if (!participation) throw notFound('Mission');
-  if (input.available === (participation.since === null)) return null;
+  if (input.available === (participation.since === null)) return;
   await db
     .update(participations)
     .set({ gpsUnavailableSince: input.available ? null : new Date() })
     .where(eq(participations.id, participation.id));
-  return (await listParticipants(db, input.missionId)).find((p) => p.id === participation.id) ?? null;
+  const participant = await findParticipant(db, input.missionId, participation.id);
+  if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
 }
 
 /**
  * Records the phone's battery (UC-C10, decision 13). The newest reading wins, whatever order uploads arrive in; one
- * dated past the clock-skew tolerance is ignored, like a track point. Returns the participant only when the stored
+ * dated past the clock-skew tolerance is ignored, like a track point. The mission hears of it only when the stored
  * reading changed. 409 once the searcher's activity ended.
  */
 export async function setBattery(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: { missionId: string; searcherId: string; level: number; measuredAt: string },
-): Promise<Participant | null> {
+): Promise<void> {
   const measuredAt = new Date(input.measuredAt);
   const participationId = await db.transaction(async (tx) => {
     const [participation] = await tx
@@ -296,6 +236,7 @@ export async function setBattery(
       .where(eq(participations.id, participation.id));
     return participation.id;
   });
-  if (!participationId) return null;
-  return (await listParticipants(db, input.missionId)).find((p) => p.id === participationId) ?? null;
+  if (!participationId) return;
+  const participant = await findParticipant(db, input.missionId, participationId);
+  if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
 }
