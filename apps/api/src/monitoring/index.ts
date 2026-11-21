@@ -31,9 +31,35 @@ export function initMonitoring(env: Env, transport?: Transport): boolean {
   return true;
 }
 
-/** Reports an unexpected error, tagged with the request id so its log lines can be found. A no-op when off. */
-export function reportError(error: unknown, { requestId }: { requestId: string }) {
-  Sentry.captureException(error, { tags: { request_id: requestId } });
+/** Where a reported error came from: the request whose log lines hold it, and the part of the API that failed. */
+export interface ErrorContext {
+  requestId?: string;
+  /** For example `realtime.join` or `push.send`, for errors that no HTTP request answers. */
+  source?: string;
+}
+
+/** Reports an unexpected error, tagged so its log lines can be found. A no-op when off. */
+export function reportError(error: unknown, { requestId, source }: ErrorContext) {
+  const tags = { ...(requestId ? { request_id: requestId } : {}), ...(source ? { source } : {}) };
+  Sentry.captureException(error, { tags });
+}
+
+/** The part of a pino logger that `logAndReport` writes to. */
+interface ErrorLogger {
+  error(fields: Record<string, unknown>, message: string): void;
+}
+
+/**
+ * Logs an unexpected failure that is handled without throwing (realtime handlers, push sending) and reports it, so it
+ * reaches Sentry and not only the logs. Expected outcomes (a refused request, a dead push token) are not passed here.
+ */
+export function logAndReport(
+  log: ErrorLogger,
+  error: unknown,
+  { source, message, fields = {} }: { source: string; message: string; fields?: Record<string, unknown> },
+) {
+  log.error({ err: error, ...fields }, message);
+  reportError(error, { source });
 }
 
 /** Waits for queued events to be sent; call before the process exits. */
