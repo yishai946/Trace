@@ -18,7 +18,7 @@ The decisions behind it: Sentry for errors in all three apps; Loki (not a log dr
 1. Create a Sentry account (the free Developer plan) and an organization.
 2. Create **three projects**, one per app, so quotas, alerts and releases stay separate: `trace-api` (platform Node.js), `trace-command` (React) and `trace-field` (React Native). Each project's **Client Keys (DSN)** page has its DSN.
 3. In each project, **Settings > Spike Protection**: keep it on. Under **Client Keys > Configure**, set a **rate limit** per key (for example 100 events per hour), so one crash loop cannot use the month's quota.
-4. Create an **auth token** for source maps (Settings > Developer Settings > Organization token). It is a secret: it goes in CI and EAS only, never in a `.env` file or the repository.
+4. Create an **auth token** for source maps (Settings > Developer Settings > Organization token). It is a secret: it goes in the Command build environment and EAS only, never in a `.env` file or the repository.
 5. Create the alert rule below.
 
 ### Grafana Cloud (Loki)
@@ -31,21 +31,20 @@ The decisions behind it: Sentry for errors in all three apps; Loki (not a log dr
 
 None is a secret except the ones marked. Nothing here goes in the repository: use the host's environment settings.
 
-| Variable                              | App     | Set in                              | Meaning                                                                                 |
-| ------------------------------------- | ------- | ----------------------------------- | --------------------------------------------------------------------------------------- |
-| `SENTRY_DSN`                          | API     | API host environment                | `trace-api` DSN. Without it Sentry stays off.                                           |
-| `SENTRY_ENVIRONMENT`                  | API     | API host environment                | `production` or `staging`. Defaults to `NODE_ENV`. Also the Loki `environment` label.   |
-| `SENTRY_RELEASE`                      | API     | API host environment (deploy)       | Defaults to `trace-api@<package version>`. Set it to the git SHA to tell deploys apart. |
-| `SENTRY_TRACES_SAMPLE_RATE`           | API     | API host environment                | 0 to 1. Defaults to 0.05 in production, 0 elsewhere.                                    |
-| `LOKI_URL`, `LOKI_USER`, `LOKI_TOKEN` | API     | API host environment (token secret) | All three or none; the API refuses to start with only some. Without them, stdout only.  |
-| `VITE_SENTRY_DSN`                     | Command | Build environment of Command        | `trace-command` DSN, inlined into the bundle. Public by design.                         |
-| `VITE_SENTRY_ENVIRONMENT`             | Command | Build environment of Command        | Defaults to the Vite mode (`production` for a build).                                   |
-| `VITE_SENTRY_RELEASE`                 | Command | Build environment and the upload    | For example `trace-command@<git sha>`; must equal the release the source maps go under. |
-| `EXPO_PUBLIC_SENTRY_DSN`              | Field   | EAS environment variable            | `trace-field` DSN, inlined into the app. Public by design.                              |
-| `EXPO_PUBLIC_SENTRY_ENVIRONMENT`      | Field   | EAS environment variable            | Defaults to `development` in dev builds and `production` otherwise.                     |
-| `SENTRY_AUTH_TOKEN`                   | CI, EAS | CI secret, EAS secret (secret)      | Uploads source maps. Never in a `.env` file.                                            |
-| `SENTRY_ORG`, `SENTRY_PROJECT`        | CI, EAS | CI and EAS environment              | Organization slug and project slug (`trace-command` or `trace-field`) for the upload.   |
-| `SENTRY_DISABLE_AUTO_UPLOAD`          | Field   | Local builds                        | `true` skips the upload, so a build works without a token.                              |
+| Variable                              | App            | Set in                                     | Meaning                                                                                                      |
+| ------------------------------------- | -------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `SENTRY_DSN`                          | API            | API host environment                       | `trace-api` DSN. Without it Sentry stays off.                                                                |
+| `SENTRY_ENVIRONMENT`                  | API            | API host environment                       | `production` or `staging`. Defaults to `NODE_ENV`. Also the Loki `environment` label.                        |
+| `SENTRY_RELEASE`                      | API            | API host environment (deploy)              | Defaults to `trace-api@<package version>`. Set it to the git SHA to tell deploys apart.                      |
+| `SENTRY_TRACES_SAMPLE_RATE`           | API            | API host environment                       | 0 to 1. Defaults to 0.05 in production, 0 elsewhere.                                                         |
+| `LOKI_URL`, `LOKI_USER`, `LOKI_TOKEN` | API            | API host environment (token secret)        | All three or none; the API refuses to start with only some. Without them, stdout only.                       |
+| `VITE_SENTRY_DSN`                     | Command        | Build environment of Command               | `trace-command` DSN, inlined into the bundle. Public by design.                                              |
+| `VITE_SENTRY_ENVIRONMENT`             | Command        | Build environment of Command               | Defaults to the Vite mode (`production` for a build).                                                        |
+| `VITE_SENTRY_RELEASE`                 | Command        | Build environment and the upload           | For example `trace-command@<git sha>`; must equal the release the source maps go under.                      |
+| `EXPO_PUBLIC_SENTRY_DSN`              | Field          | EAS environment variable                   | `trace-field` DSN, inlined into the app. Public by design.                                                   |
+| `EXPO_PUBLIC_SENTRY_ENVIRONMENT`      | Field          | EAS environment variable                   | Defaults to `development` in dev builds and `production` otherwise.                                          |
+| `SENTRY_AUTH_TOKEN`                   | Command, Field | Command build secret, EAS secret (secret)  | Turns the source map upload on. Without it builds pass and upload nothing. Never in a `.env` file.           |
+| `SENTRY_ORG`, `SENTRY_PROJECT`        | Command, Field | Command build environment, EAS environment | Organization slug (required with the token) and project slug (defaults to `trace-command` or `trace-field`). |
 
 The example files list the same variables, commented out: `apps/api/.env.example`, `apps/command/.env.example`, `apps/field/.env.example`.
 
@@ -91,25 +90,31 @@ New issues only, not every event, so one bug is one message.
 
 Minified stack traces are unreadable without them. Without the upload, errors are still reported, just with minified frames.
 
-- **Command.** `vite build` writes hidden source maps (`sourcemap: 'hidden'`: the files exist, but the bundle does not point to them). After the build, with `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT=trace-command` set and the same release as `VITE_SENTRY_RELEASE`:
+- **Command.** `vite build` writes hidden source maps (`sourcemap: 'hidden'`: the files exist, but the bundle does not point to them). `@sentry/vite-plugin` (`apps/command/vite.config.ts`, options in `apps/command/build/sourceMapUpload`) then does the rest in the same build when `SENTRY_AUTH_TOKEN` is set in the build environment, with `SENTRY_ORG` (and `SENTRY_PROJECT` if it is not `trace-command`):
+
+  1. adds the debug ids that match each bundle to its map;
+  2. uploads the maps under `VITE_SENTRY_RELEASE` (or `trace-command@<package version>` when it is not set; the plugin then also injects that release into the bundle, so the app reports the same one);
+  3. deletes every `.map` file in `apps/command/dist`, so the server never serves them.
 
   ```bash
-  npx @sentry/cli sourcemaps inject apps/command/dist
-  npx @sentry/cli sourcemaps upload --release "trace-command@<git sha>" apps/command/dist
-  find apps/command/dist -name '*.map' -delete   # do not serve the maps
+  SENTRY_AUTH_TOKEN=<token> SENTRY_ORG=<org slug> VITE_SENTRY_RELEASE="trace-command@$(git rev-parse --short HEAD)" \
+    pnpm --filter @trace/command build
   ```
 
-  Run `inject` before the upload and before deploying: it adds the debug ids that match a bundle to its map.
+  Without the token the plugin is off: the build passes, the maps stay in `dist` (unreferenced) and nothing is sent. A token without `SENTRY_ORG` fails the build, so a half-configured deploy is noticed. Plugin telemetry is off. A failed upload (Sentry down, a revoked token) is logged and does not fail the build; look for `sentry-vite-plugin` warnings in the build log.
 
-- **Field.** The `@sentry/react-native/expo` config plugin and `metro.config.js` (`getSentryExpoConfig`) add debug ids and upload the maps and native symbols during `eas build`. Create the EAS secrets once:
+- **Field.** `apps/field/app.config.ts` extends `app.json` and configures the `@sentry/react-native/expo` config plugin from the build environment; `metro.config.js` (`getSentryExpoConfig`) adds the debug ids. During `eas build`, with `SENTRY_AUTH_TOKEN` and `SENTRY_ORG` set, the native build uploads the JS source maps and the native debug symbols (dSYMs, ProGuard mappings) to `trace-field` (`SENTRY_PROJECT` overrides it). The token is read from the environment by sentry-cli and never written into the native project. `apps/field/eas.json` has the `development`, `preview` and `production` profiles; each reads the EAS environment of the same name. Create the variables once, in the environments that should upload (at least `production`):
 
   ```bash
-  npx eas-cli@latest env:create --name SENTRY_AUTH_TOKEN --value <token> --visibility secret
-  npx eas-cli@latest env:create --name SENTRY_ORG --value <org slug>
-  npx eas-cli@latest env:create --name SENTRY_PROJECT --value trace-field
+  cd apps/field
+  npx eas-cli@latest env:create --environment production --name SENTRY_AUTH_TOKEN --value <token> --visibility secret
+  npx eas-cli@latest env:create --environment production --name SENTRY_ORG --value <org slug> --visibility plaintext
+  npx eas-cli@latest env:create --environment production --name SENTRY_PROJECT --value trace-field --visibility plaintext
   ```
 
-  A build without the token (a fork, a local build) must not fail: set `SENTRY_DISABLE_AUTO_UPLOAD=true` and the upload is skipped. The same applies to `eas update`, which needs the token to upload its own maps.
+  Without the token (a fork, a local `expo prebuild`, the unsigned iOS workflow) `app.config.ts` turns the upload off (`disableAutoUpload`, the same as `SENTRY_DISABLE_AUTO_UPLOAD=true`) and the build passes; errors are then reported with minified frames. `eas update` needs the same token to upload the maps of an update.
+
+- **Check it once after setting up.** In a production build, trigger a test error (Sentry > the project > "Verify installation", or a throw behind a debug action), then open the event: the stack trace shows file names and lines from `src/`, not `index-<hash>.js:1:23456` or `index.android.bundle`. If not, compare the event's release and debug id with Sentry > Settings > the project > Source Maps.
 
 ## Local development
 
