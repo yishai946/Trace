@@ -36,6 +36,7 @@ describe('counts', () => {
 
   it('counts the reports by type, zero for the others', () => {
     expect(typeCounts(reports)).toEqual({ finding: 1, hazard: 1, inaccessible: 0, general: 0, located: 1 });
+    expect(typeCounts([])).toEqual({ finding: 0, hazard: 0, inaccessible: 0, general: 0, located: 0 });
   });
 });
 

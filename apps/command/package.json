@@ -19,6 +19,7 @@
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
+    "@trace/mission-cache": "workspace:*",
     "@trace/monitoring": "workspace:*",
     "@trace/schemas": "workspace:*",
     "maplibre-contour": "^0.1.1",

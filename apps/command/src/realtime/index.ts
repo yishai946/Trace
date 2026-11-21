@@ -35,7 +35,7 @@ export function useMissionLive(missionId: string | undefined): LiveState {
           return;
         }
         // Events sent before the join (while the first fetch ran, or while disconnected) are not replayed: refetch.
-        void queryClient.invalidateQueries({ queryKey: ['missions', missionId] });
+        void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
         // The missions list holds the current LKP, which may have changed while away.
         void queryClient.invalidateQueries({ queryKey: missionKeys.all, exact: true });
         set('live');

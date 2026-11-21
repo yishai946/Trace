@@ -2,10 +2,12 @@ import type { MissionPolygon, Participant, Report } from '@trace/schemas';
 import { Button, Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import styles from './MissionSheet.module.css';
 import { CallsignChip } from '../../components/CallsignChip';
+import { choose } from '../../choose';
 import { ReportRow } from '../ReportRow';
 import { statusCounts } from '../reportView';
 
-export type SheetTab = 'alerts' | 'searchers' | 'reports';
+export const SHEET_TABS = ['alerts', 'searchers', 'reports'] as const;
+export type SheetTab = (typeof SHEET_TABS)[number];
 
 export interface MissionSheetProps {
   tab: SheetTab;
@@ -98,7 +100,11 @@ export function MissionSheet({
         <span className={styles.handle} aria-hidden="true" />
       </Button>
       {expanded && (
-        <Tabs selectedKey={tab} onSelectionChange={(key) => onTabChange(key as SheetTab)} className={styles.tabsRoot}>
+        <Tabs
+          selectedKey={tab}
+          onSelectionChange={(key) => onTabChange(choose(SHEET_TABS, key, tab))}
+          className={styles.tabsRoot}
+        >
           <TabList className={styles.tabs} aria-label="תצוגה">
             <Tab id="alerts" className={styles.tab}>
               התראות

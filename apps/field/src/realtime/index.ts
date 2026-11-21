@@ -1,21 +1,18 @@
-import { compareReportsNewestFirst } from '@trace/domain';
 import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
   type Mission,
   type OwnMessage,
-  type Report,
-  type Sos,
   type ServerToClientEvents,
 } from '@trace/schemas';
-import { useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
+import { applySharedEvent, updateOpened, type MissionCacheShape } from '@trace/mission-cache';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { apiBaseUrl } from '../api';
 import { fetchOwnParticipation, missionKeys } from '../mission/queries';
 import { upsertMessage } from '../messages/messageList';
-import { upsertSos } from '../sos/sosList';
 import { useSession } from '../state/session';
 
 type MissionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
@@ -29,33 +26,19 @@ export const RETRY_MS = 5_000;
  */
 let participationEvents = 0;
 
-/**
- * Changes a cached list (the reports, the SOS). A list that is not cached yet may be on its way, and the answer could
- * miss this change, so it is fetched again instead (UC-F11). The screen filters what it shows.
- */
-function changeList<T>(queryClient: QueryClient, key: QueryKey, change: (list: T[]) => T[]): void {
-  if (queryClient.getQueryData<T[]>(key)) {
-    queryClient.setQueryData<T[]>(key, (list) => list && change(list));
-    return;
-  }
-  void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
-}
+/** Field keeps the one mission the searcher is in (`missionKeys.mission`). */
+const ownMission: MissionCacheShape = {
+  patchMission: (queryClient, missionId, change) =>
+    queryClient.setQueryData<Mission>(missionKeys.mission(missionId), (mission) => mission && change(mission)),
+  // As before: the whole mission is put even when it is not cached yet.
+  replaceMission: (queryClient, missionId, mission) =>
+    queryClient.setQueryData<Mission>(missionKeys.mission(missionId), mission),
+};
 
 /** Applies a mission event to the cached data, so the screens and the map change at once. */
 export function applyEvent(queryClient: QueryClient, event: MissionEvent): void {
-  const key = missionKeys.mission(event.missionId);
-  const patch = (change: (mission: Mission) => Mission) =>
-    queryClient.setQueryData<Mission>(key, (mission) => mission && change(mission));
+  applySharedEvent(queryClient, ownMission, event);
   switch (event.type) {
-    case 'lkp.changed':
-      patch((m) => ({ ...m, lkp: event.lkp }));
-      return;
-    case 'rally.changed':
-      patch((m) => ({ ...m, rallyPoint: event.rallyPoint, updatedAt: event.updatedAt }));
-      return;
-    case 'mission.updated':
-      queryClient.setQueryData<Mission>(key, event.mission);
-      return;
     case 'participant.updated': {
       // Only the searcher's own participation reaches Field (decision 32).
       const { id, callsign, status, polygonId, taskStatus } = event.participant;
@@ -68,24 +51,12 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
       useSession.getState().updateParticipation({ id, callsign, status, polygonId, taskStatus });
       return;
     }
-    case 'report.saved':
-      changeList<Report>(queryClient, missionKeys.reports(event.missionId), (list) =>
-        [...list.filter((r) => r.id !== event.report.id), event.report].sort(compareReportsNewestFirst),
-      );
-      return;
-    case 'report.deleted':
-      changeList<Report>(queryClient, missionKeys.reports(event.missionId), (list) =>
-        list.filter((r) => r.id !== event.reportId),
-      );
-      return;
-    case 'sos.saved':
-      // An SOS the searcher sent, one sent to them, or the closing of either, by the sender or the commander (UC-F13).
-      changeList<Sos>(queryClient, missionKeys.sos(event.missionId), (list) => upsertSos(list, event.sos));
-      return;
     case 'message.received':
       // A message sent to this searcher; one sent while offline is read after the next join (decision 77).
-      changeList<OwnMessage>(queryClient, missionKeys.messages(event.missionId), (list) =>
-        upsertMessage(list, event.message),
+      updateOpened<OwnMessage>(
+        queryClient,
+        missionKeys.messages(event.missionId),
+        (list) => list && upsertMessage(list, event.message),
       );
       return;
     case 'polygon.saved':
@@ -93,7 +64,7 @@ export function applyEvent(queryClient: QueryClient, event: MissionEvent): void 
       void queryClient.invalidateQueries({ queryKey: missionKeys.polygons(event.missionId) });
       return;
     default:
-      // Events for the commander only, or the searcher's own position, which Field already knows.
+      // Handled by applySharedEvent, for the commander only, or the searcher's own position, which Field already knows.
       return;
   }
 }

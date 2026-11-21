@@ -21,7 +21,16 @@ function encode(body: unknown): { headers?: Record<string, string>; body?: BodyI
 /** Calls the TRACE API through the Vite proxy and validates the response with the shared zod schema. */
 export function apiRequest<S extends z.ZodType>(
   path: string,
+  options: RequestOptions<S> & { schema: S },
+): Promise<z.infer<S>>;
+/** A response without a body: resolves to undefined. */
+export function apiRequest(
+  path: string,
+  options?: RequestOptions<z.ZodType> & { schema?: undefined },
+): Promise<undefined>;
+export function apiRequest<S extends z.ZodType>(
+  path: string,
   { method = 'GET', body, schema, signal }: RequestOptions<S> = {},
-): Promise<z.infer<S>> {
+): Promise<z.infer<S> | undefined> {
   return request(`/api${path}`, { method, schema, signal, ...encode(body) });
 }

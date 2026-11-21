@@ -4,6 +4,7 @@ import { SIGHTING_SOURCES } from '@trace/domain';
 import type { CreateSightingBody, SightingSource } from '@trace/schemas';
 import { useState } from 'react';
 import { Radio, RadioGroup, Label } from 'react-aria-components';
+import { choose } from '../../choose';
 import { Button } from '../../components/Button';
 import { DateTimeField } from '../../components/DateTimeField';
 import { TextField } from '../../components/TextField';
@@ -51,7 +52,7 @@ export function AddSightingForm({ position, busy, onSubmit, onCancel, onEdit }: 
         orientation="horizontal"
         value={source}
         onChange={(value) => {
-          setSource(value as SightingSource);
+          setSource(choose(SIGHTING_SOURCES, value, null));
           onEdit();
         }}
         isInvalid={!!errors.source && !source}

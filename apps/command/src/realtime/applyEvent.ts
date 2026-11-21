@@ -1,48 +1,43 @@
-import { compareReportsNewestFirst } from '@trace/domain';
 import type {
   Message,
   Mission,
   MissionEvent,
   MissionPolygon,
   Participant,
-  Report,
   Sighting,
-  Sos,
   TimelineEvent,
 } from '@trace/schemas';
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 import {
   addOnce,
-  missionKeys,
+  applySharedEvent,
   patchById,
   prepend,
   removeById,
   replaceById,
+  updateOpened,
   upsertById,
   type ListUpdate,
-} from '../mission/missionQueries';
+  type MissionCacheShape,
+} from '@trace/mission-cache';
+import { missionKeys } from '../mission/missionQueries';
 
-/**
- * Changes a list that is fetched when its screen opens. Not cached means it was never opened, or its first fetch is in
- * flight and may have read the server before this event: that fetch is cancelled and started again (an in-flight first
- * fetch is otherwise reused), so it cannot leave the list without the event. Nothing happens if it was never opened.
- */
-function updateOpened<T>(queryClient: QueryClient, key: QueryKey, update: ListUpdate<T>) {
-  if (!queryClient.getQueryData(key)) {
-    void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
-    return;
-  }
-  queryClient.setQueryData<T[]>(key, update);
-}
+/** Command keeps every mission in one list (`missionKeys.all`). */
+const missionList: MissionCacheShape = {
+  patchMission: (queryClient, missionId, change) =>
+    queryClient.setQueryData<Mission[]>(missionKeys.all, patchById(missionId, change)),
+  replaceMission: (queryClient, missionId, mission) =>
+    queryClient.setQueryData<Mission[]>(
+      missionKeys.all,
+      patchById(missionId, () => mission),
+    ),
+};
 
 // The sort is stable, so events of the same instant keep their arrival order, as the API orders them by recording order.
 const byOccurrence = (list: TimelineEvent[], event: TimelineEvent) =>
   [...list, event].sort((a, b) => Date.parse(a.occurredAt) - Date.parse(b.occurredAt));
-const sosNewestFirst = (list: Sos[], sos: Sos) =>
-  [...list, sos].sort((a, b) => Date.parse(b.activatedAt) - Date.parse(a.activatedAt));
-const newestFirst = (list: Report[], report: Report) => [...list, report].sort(compareReportsNewestFirst);
 
-/** The events of the lists that open with their screen: the Timeline, the messages, the reports and the SOS. */
+/** The events of the lists that open with their screen: the Timeline and the messages. */
 function applyFeedEvent(queryClient: QueryClient, event: MissionEvent) {
   const { missionId } = event;
   switch (event.type) {
@@ -63,23 +58,12 @@ function applyFeedEvent(queryClient: QueryClient, event: MissionEvent) {
       );
       return;
     }
-    case 'report.saved':
-      updateOpened(queryClient, missionKeys.reports(missionId), upsertById(event.report, newestFirst));
-      return;
-    case 'sos.saved':
-      updateOpened(queryClient, missionKeys.sos(missionId), upsertById(event.sos, sosNewestFirst));
-      return;
-    case 'report.deleted':
-      updateOpened(queryClient, missionKeys.reports(missionId), removeById<Report>(event.reportId));
-      return;
   }
 }
 
 /** The events of what the map shows: the mission, its polygons, sightings and searchers. */
 function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
   const { missionId } = event;
-  const patchMission = (change: (mission: Mission) => Mission) =>
-    queryClient.setQueryData<Mission[]>(missionKeys.all, patchById(missionId, change));
   const participants = (update: ListUpdate<Participant>) =>
     queryClient.setQueryData<Participant[]>(missionKeys.participants(missionId), update);
   switch (event.type) {
@@ -93,16 +77,10 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
       queryClient.setQueryData<Sighting[]>(missionKeys.sightings(missionId), upsertById(event.sighting));
       return;
     case 'lkp.changed':
-      patchMission((mission) => ({ ...mission, lkp: event.lkp }));
-      // Whether a sighting is suggested depends on the current LKP, so refetch it instead of patching it by hand.
+      // The mission's LKP is patched by applySharedEvent; whether a sighting is suggested depends on it, so refetch
+      // them instead of patching by hand.
       void queryClient.invalidateQueries({ queryKey: missionKeys.lkps(missionId) });
       void queryClient.invalidateQueries({ queryKey: missionKeys.sightings(missionId) });
-      return;
-    case 'rally.changed':
-      patchMission((mission) => ({ ...mission, rallyPoint: event.rallyPoint, updatedAt: event.updatedAt }));
-      return;
-    case 'mission.updated':
-      patchMission(() => event.mission);
       return;
     case 'participant.moved':
       participants(
@@ -124,6 +102,7 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
  * searchers only: Command never joins a searcher's room.
  */
 export function applyEvent(queryClient: QueryClient, event: MissionEvent) {
+  applySharedEvent(queryClient, missionList, event);
   applyMapEvent(queryClient, event);
   applyFeedEvent(queryClient, event);
 }

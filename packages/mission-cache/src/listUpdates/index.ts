@@ -1,4 +1,4 @@
-interface WithId {
+export interface WithId {
   id: string;
 }
 

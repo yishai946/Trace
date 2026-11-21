@@ -1,7 +1,7 @@
 import { Message, MessageList, TimelineEventList, type SendMessageBody } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api';
-import { addOnce, prepend } from './cache';
+import { addOnce, prepend } from '@trace/mission-cache';
 import { missionKeys, reloadIfMissionEnded } from './keys';
 
 /** The mission's Timeline, oldest first (UC-C19). A successful realtime join invalidates it, so a reconnect refetches. */

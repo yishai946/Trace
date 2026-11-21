@@ -11,8 +11,8 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
-import { actorOf } from '../../auth/auth.plugin';
-import { forbidden, unsupportedPhoto } from '../../errors';
+import { actorOf, searcherOf } from '../../auth/auth.plugin';
+import { unsupportedPhoto } from '../../errors';
 import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import type { ServiceDeps } from '../serviceDeps';
 import { getReportPhoto, listReports } from './reports.read';
@@ -47,9 +47,7 @@ export const reportRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     async (request, reply) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const actor = searcherOf(request);
       const { missionId } = request.params;
       const { report, created } = await createReport(deps, {
         missionId,

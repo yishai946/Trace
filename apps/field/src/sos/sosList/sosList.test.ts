@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { endedSentence, ownActiveSos, ownClosedSos, sosLocationOf, upsertSos } from '.';
+import { endedSentence, ownActiveSos, ownClosedSos, sosLocationOf } from '.';
 import { makeSos, OWN_PARTICIPANT_ID } from '../fixtures';
 
 const other = {
@@ -8,22 +8,6 @@ const other = {
   callsign: 9,
   name: 'אלון',
 };
-
-describe('upsertSos', () => {
-  it('adds a new SOS and keeps the newest first', () => {
-    const old = makeSos({ id: '00000000-0000-4000-8000-000000000001', activatedAt: '2026-10-03T10:00:00.000Z' });
-    const fresh = makeSos({ id: '00000000-0000-4000-8000-000000000002' });
-    expect(upsertSos([old], fresh).map((s) => s.id)).toEqual([fresh.id, old.id]);
-  });
-
-  it('replaces an SOS it already has', () => {
-    const active = makeSos();
-    const closed = makeSos({ status: 'closed', closedAt: '2026-10-03T17:10:00.000Z' });
-    const list = upsertSos([active], closed);
-    expect(list).toHaveLength(1);
-    expect(list[0]?.status).toBe('closed');
-  });
-});
 
 describe('own SOS', () => {
   it('finds the active SOS of this participant and ignores one sent to them', () => {

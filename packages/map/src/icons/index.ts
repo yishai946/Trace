@@ -1,7 +1,8 @@
 import { themes, type ThemeId } from '@trace/design';
 
 /** Map symbols drawn as SVG from the theme's tokens (Trace Console MapSymbols). Rendered at 2x for sharp edges. */
-export type MapIconName = 'lkp' | 'sighting' | 'suggest' | 'rally' | 'report' | 'hazard' | 'located';
+export const MAP_ICON_NAMES = ['lkp', 'sighting', 'suggest', 'rally', 'report', 'hazard', 'located'] as const;
+export type MapIconName = (typeof MAP_ICON_NAMES)[number];
 
 export const ICON_PIXEL_RATIO = 2;
 
@@ -82,5 +83,5 @@ export function mapIcons(themeId: ThemeId): Record<string, MapIcon> {
       ),
     },
   };
-  return Object.fromEntries(Object.entries(icons).map(([name, icon]) => [iconId(themeId, name as MapIconName), icon]));
+  return Object.fromEntries(MAP_ICON_NAMES.map((name) => [iconId(themeId, name), icons[name]]));
 }

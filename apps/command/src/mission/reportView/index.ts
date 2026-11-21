@@ -28,9 +28,9 @@ export function statusCounts(reports: Report[]): Record<StatusFilter, number> {
 
 /** How many reports each category chip holds. */
 export function typeCounts(reports: Report[]): Record<ReportType, number> {
-  return Object.fromEntries(
-    REPORT_TYPES.map((type) => [type, reports.filter((r) => r.type === type).length]),
-  ) as Record<ReportType, number>;
+  const counts: Record<ReportType, number> = { finding: 0, hazard: 0, inaccessible: 0, general: 0, located: 0 };
+  for (const report of reports) counts[report.type] += 1;
+  return counts;
 }
 
 /** `04 דנה כהן`: the callsign with its leading zero, then the name; the name alone for the commander. */

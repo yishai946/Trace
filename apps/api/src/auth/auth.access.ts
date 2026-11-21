@@ -4,7 +4,7 @@ import type { FastifyRequest } from 'fastify';
 import type { Db } from '../db';
 import { missions, participations } from '../db/schema';
 import { forbidden, notFound } from '../errors';
-import { actorOf, type Actor } from './auth.plugin';
+import { actorOf, searcherOf, type Actor } from './auth.plugin';
 
 /** Route guard: only commanders may call the route (permission matrix, spec §7). */
 export async function commandersOnly(request: FastifyRequest) {
@@ -13,8 +13,7 @@ export async function commandersOnly(request: FastifyRequest) {
 
 /** Route guard: only searchers with a profile may call the route. */
 export async function searchersOnly(request: FastifyRequest) {
-  const actor = actorOf(request);
-  if (actor.role !== 'searcher' || actor.searcherId === null) throw forbidden();
+  searcherOf(request);
 }
 
 /** Route guard: any searcher session, with or without a profile yet (their own profile, UC-F01). */

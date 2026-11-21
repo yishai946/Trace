@@ -15,8 +15,7 @@ import {
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
-import { actorOf } from '../../auth/auth.plugin';
-import { forbidden } from '../../errors';
+import { actorOf, searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { getOwnParticipation, listParticipants, previewJoin } from './participants.read';
 import { assignParticipant, endParticipation, joinMission, setBattery, setGpsStatus } from './participants.service';
@@ -51,10 +50,8 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     (request) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
-      return getOwnParticipation(db, request.params.missionId, actor.searcherId);
+      const { searcherId } = searcherOf(request);
+      return getOwnParticipation(db, request.params.missionId, searcherId);
     },
   );
 
@@ -74,11 +71,9 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     async (request, reply) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { searcherId } = searcherOf(request);
       const { missionId } = request.params;
-      await setGpsStatus(deps, { missionId, searcherId: actor.searcherId, available: request.body.available });
+      await setGpsStatus(deps, { missionId, searcherId, available: request.body.available });
       return reply.status(204).send(null);
     },
   );
@@ -100,11 +95,9 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
       preHandler: [searchersOnly, missionAccess(db, 'member')],
     },
     async (request, reply) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+      const { searcherId } = searcherOf(request);
       const { missionId } = request.params;
-      await setBattery(deps, { missionId, searcherId: actor.searcherId, ...request.body });
+      await setBattery(deps, { missionId, searcherId, ...request.body });
       return reply.status(204).send(null);
     },
   );
@@ -194,10 +187,7 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
       preHandler: searchersOnly,
     },
     async (request, reply) => {
-      const actor = actorOf(request);
-      // `searchersOnly` already refused anyone else; this narrows the type.
-      if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
-      const { searcherId } = actor;
+      const { searcherId } = searcherOf(request);
       const { joined, mission, participation } = await joinMission(deps, searcherId, request.params.code);
       return reply.status(joined ? 201 : 200).send({ mission, participation });
     },

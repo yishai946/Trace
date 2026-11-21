@@ -1,7 +1,7 @@
 import { Report, ReportList, type UpdateReportBody } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiRequestError, apiRequest } from '../../api';
-import { removeById, replaceById } from './cache';
+import { removeById, replaceById } from '@trace/mission-cache';
 import { missionKeys } from './keys';
 
 /** The mission's reports, newest first (UC-C11). Realtime keeps the cached list current. */

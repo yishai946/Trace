@@ -15,12 +15,12 @@ export interface ItmPoint {
 }
 
 export function toItm([lng, lat]: LngLat): ItmPoint {
-  const [easting, northing] = converter.forward([lng, lat]) as [number, number];
+  const [easting, northing] = converter.forward<[number, number]>([lng, lat]);
   return { easting, northing };
 }
 
 export function fromItm({ easting, northing }: ItmPoint): LngLat {
-  const [lng, lat] = converter.inverse([easting, northing]) as [number, number];
+  const [lng, lat] = converter.inverse<[number, number]>([easting, northing]);
   return [lng, lat];
 }
 

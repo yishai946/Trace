@@ -12,6 +12,7 @@
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
+    "@trace/mission-cache": "workspace:*",
     "@trace/monitoring": "workspace:*",
     "@trace/schemas": "workspace:*",
     "expo": "~58.0.23",

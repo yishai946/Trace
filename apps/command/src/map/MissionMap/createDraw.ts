@@ -48,14 +48,14 @@ export function createDraw(map: MapLibreMap, themeId: ThemeId, refs: DrawRefs): 
     const editId = editFeatureRef.current;
     if (type !== 'update' || !editId || !ids.includes(editId)) return;
     const feature = draw.getSnapshotFeature(editId);
-    if (feature?.geometry.type === 'Polygon') onEditChangeRef.current?.(feature.geometry as Polygon);
+    if (feature?.geometry.type === 'Polygon') onEditChangeRef.current?.(feature.geometry);
   });
   // Terra Draw also reports "finish" when a vertex drag ends in select mode; only drawing creates polygons.
   draw.on('finish', (id, { mode }) => {
     if (mode !== 'polygon') return;
     const feature = draw.getSnapshotFeature(id);
     draw.removeFeatures([id]);
-    if (feature?.geometry.type === 'Polygon') onDrawnRef.current?.(feature.geometry as Polygon);
+    if (feature?.geometry.type === 'Polygon') onDrawnRef.current?.(feature.geometry);
   });
   return draw;
 }

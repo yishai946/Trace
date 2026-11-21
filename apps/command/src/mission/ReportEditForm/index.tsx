@@ -3,6 +3,7 @@ import { REPORT_TYPE_LABELS, REPORT_TYPES } from '@trace/domain';
 import type { Report, ReportType, UpdateReportBody } from '@trace/schemas';
 import { useEffect, useRef, useState } from 'react';
 import { Label, Radio, RadioGroup } from 'react-aria-components';
+import { choose } from '../../choose';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
 import styles from './ReportEditForm.module.css';
@@ -49,7 +50,12 @@ export function ReportEditForm({ report, onSave, onCancel, busy }: ReportEditFor
         submit();
       }}
     >
-      <RadioGroup className={styles.editField} aria-label="סוג" value={type} onChange={(v) => setType(v as ReportType)}>
+      <RadioGroup
+        className={styles.editField}
+        aria-label="סוג"
+        value={type}
+        onChange={(v) => setType(choose(REPORT_TYPES, v, type))}
+      >
         <Label className={styles.label}>סוג</Label>
         <div className={styles.chips}>
           {REPORT_TYPES.map((t) => (

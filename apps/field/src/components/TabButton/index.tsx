@@ -26,9 +26,17 @@ export interface TabButtonProps {
   onLongPress?: PressableProps['onLongPress'];
 }
 
-const hasModifier = (event: GestureResponderEvent) => {
-  const e = event.nativeEvent as unknown as Partial<MouseEvent>;
-  return !!(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) || (e.button ?? 0) !== 0;
+/** A press the browser should handle itself (open in a new tab or window): a modifier key or a non-primary button. */
+const hasModifier = (event: GestureResponderEvent): boolean => {
+  // On the web the native event is the DOM MouseEvent; on Android and iOS it has none of these fields.
+  const e: object = event.nativeEvent;
+  const modifier =
+    ('metaKey' in e && e.metaKey === true) ||
+    ('ctrlKey' in e && e.ctrlKey === true) ||
+    ('shiftKey' in e && e.shiftKey === true) ||
+    ('altKey' in e && e.altKey === true);
+  const button = 'button' in e && typeof e.button === 'number' ? e.button : 0;
+  return modifier || button !== 0;
 };
 
 /**

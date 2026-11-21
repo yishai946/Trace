@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addOnce, patchById, prepend, removeById, replaceById, upsertById } from './cache';
+import { addOnce, patchById, prepend, removeById, replaceById, upsertById } from '.';
 
 const a = { id: 'a', n: 1 };
 const b = { id: 'b', n: 2 };

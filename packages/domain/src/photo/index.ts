@@ -19,7 +19,7 @@ export function detectPhotoType(bytes: Uint8Array): PhotoType | null {
 }
 
 export function isPhotoType(type: string): type is PhotoType {
-  return (PHOTO_TYPES as readonly string[]).includes(type);
+  return PHOTO_TYPES.some((t) => t === type);
 }
 
 /** The long side of a photo after shrinking: sharp on a phone screen, a few hundred KB as JPEG. */

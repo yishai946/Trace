@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { FastifyInstance, FastifyPluginAsync, FastifyRequest } from 'fastify';
 import type { Db } from '../db';
 import { searchers } from '../db/schema';
-import { unauthenticated } from '../errors';
+import { forbidden, unauthenticated } from '../errors';
 import type { Auth } from '.';
 
 /** The signed-in user a request acts for. */
@@ -21,9 +21,22 @@ declare module 'fastify' {
 }
 
 /** The request's actor. Use inside `authenticated` routes, where it is always set. */
-export function actorOf(request: FastifyRequest): Actor {
+export function actorOf(request: Pick<FastifyRequest, 'actor'>): Actor {
   if (!request.actor) throw unauthenticated();
   return request.actor;
+}
+
+/** A signed-in searcher who has a profile (UC-F01): the only searcher who may act in a mission. */
+export type SearcherActor = { role: 'searcher'; userId: string; searcherId: string };
+
+/**
+ * The request's actor as a searcher with a profile; anyone else gets 403. Use after the `searchersOnly` guard, where
+ * it only narrows the type.
+ */
+export function searcherOf(request: Pick<FastifyRequest, 'actor'>): SearcherActor {
+  const actor = actorOf(request);
+  if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
+  return { role: 'searcher', userId: actor.userId, searcherId: actor.searcherId };
 }
 
 /** The id of the session the request signed in with. Use inside `authenticated` routes, where it is always set. */

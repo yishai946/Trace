@@ -34,10 +34,19 @@ function headersOf({ token, body, upload }: Pick<RequestOptions<z.ZodType>, 'tok
 }
 
 /** Calls the TRACE API with the searcher's bearer token and validates the response with the shared zod schema. */
+export function apiRequest<S extends z.ZodType>(
+  path: string,
+  options: RequestOptions<S> & { schema: S },
+): Promise<z.infer<S>>;
+/** A response without a body: resolves to undefined. */
+export function apiRequest(
+  path: string,
+  options: RequestOptions<z.ZodType> & { schema?: undefined },
+): Promise<undefined>;
 export async function apiRequest<S extends z.ZodType>(
   path: string,
   { baseUrl, token, method = 'GET', body, upload, schema, signal }: RequestOptions<S>,
-): Promise<z.infer<S>> {
+): Promise<z.infer<S> | undefined> {
   if (!baseUrl) throw new ApiRequestError(0, 'NETWORK_ERROR', 'EXPO_PUBLIC_API_URL is not set');
   return request(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
     method,

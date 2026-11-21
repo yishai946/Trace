@@ -2,7 +2,7 @@ import type { LngLat } from '@trace/geo';
 import { Mission, MissionList, type CreateMissionBody, type UpdateMissionDetailsBody } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api';
-import { replaceById } from './cache';
+import { replaceById } from '@trace/mission-cache';
 import { missionKeys, reloadIfMissionEnded } from './keys';
 
 export function useMissions() {
