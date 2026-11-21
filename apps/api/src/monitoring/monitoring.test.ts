@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadEnv } from '../env';
 import { createFakeSentryTransport } from '../testing/sentryTransport';
 import { VERSION } from '../version';
-import { flushMonitoring, initMonitoring, reportError, sentryOptions } from '.';
+import { flushMonitoring, initMonitoring, logAndReport, reportError, sentryOptions } from '.';
 
 const DSN = 'https://publickey@o1.ingest.sentry.io/2';
 const PRODUCTION = {
@@ -72,5 +72,21 @@ describe('with a DSN', () => {
     expect(event?.tags).toMatchObject({ request_id: 'req-9' });
     const text = JSON.stringify(event);
     for (const secret of ['+972501234567', '31.7712', '35.2134', 'token=abc']) expect(text).not.toContain(secret);
+  });
+  it('logs a failure once at error level and sends one event tagged with its source, without a request id', async () => {
+    const before = transport.events.length;
+    const logged: Array<{ fields: Record<string, unknown>; message: string }> = [];
+    const log = {
+      error: (fields: Record<string, unknown>, message: string) => logged.push({ fields, message }),
+    };
+    const error = new Error('push failed for +972501234567');
+    logAndReport(log, error, { source: 'push.send', message: 'Sending failed', fields: { missionId: 'm-1' } });
+    await flushMonitoring();
+    expect(logged).toEqual([{ fields: { err: error, missionId: 'm-1' }, message: 'Sending failed' }]);
+    expect(transport.events).toHaveLength(before + 1);
+    const event = transport.events.at(-1);
+    expect(event?.tags).toEqual(expect.objectContaining({ source: 'push.send' }));
+    expect(event?.tags).not.toHaveProperty('request_id');
+    expect(JSON.stringify(event)).not.toContain('+972501234567');
   });
 });

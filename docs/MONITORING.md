@@ -9,7 +9,8 @@ The decisions behind it: Sentry for errors in all three apps; Loki (not a log dr
 - **Errors.** Everything unexpected: API 5xx and unhandled exceptions, uncaught errors and React render errors in Command, JS and native crashes in Field, and server failures or response-shape bugs in a Command or Field query. **Not sent:** 4xx answers (they are expected outcomes) and being offline (`NETWORK_ERROR`), in every app.
 - **No personal data.** `sendDefaultPii` is off, and every event and breadcrumb passes the shared scrubber in `packages/monitoring` before it leaves the process: it removes phone numbers, OTP codes, tokens and cookies, `Authorization` headers, coordinates and `lat`/`lng`, and the same values inside URLs and messages. The API logger uses the same key list (`SENSITIVE_KEYS`) for its redaction, so there is one list to extend.
 - **Sampling.** Every error is sent (`sampleRate: 1`). Performance traces: 5% in `production`, none elsewhere (the API's `SENTRY_TRACES_SAMPLE_RATE` overrides it). No Session Replay and no profiling. At most 30 breadcrumbs per event.
-- **Not covered yet:** errors that are only logged and never thrown (realtime handlers, push sending). They are in the Loki logs at level `error` but not in Sentry.
+- **Errors that are logged and not thrown.** A failure the API handles without answering an HTTP request with 500 (a realtime sign-in, session check or join, sending push notifications, the report-recipients lookup) goes through `logAndReport` in `apps/api/src/monitoring`: one `error` log line and one Sentry event, tagged `source` (`realtime.sign-in`, `realtime.session-check`, `realtime.join`, `push.send`, `reports.recipients`). Expected outcomes are not reported there either: a refused join, a dead push token, a device Expo could not reach (logged at `warn`). New code that catches an unexpected error and carries on calls `logAndReport`, not `log.error` alone.
+- **Sentry's pino integration is off** in the API, on purpose. Reporting `error` log lines automatically would send each HTTP 500 twice (the error handler logs and reports it) and would send events without the `request_id` and `source` tags. Errors are reported by explicit calls only. Sentry's default dedupe still drops an event identical to the one just before it, so a failure that repeats in a loop (a database outage seen by every session check) is one event, not a flood.
 
 ## One-time setup
 
@@ -59,7 +60,7 @@ Check the current limits on each service's pricing page before relying on them; 
 ## Finding an error
 
 1. **By issue.** Sentry > Issues, filter `environment:production`. Each issue is one distinct error with its count, first and last time, and the release it first appeared in.
-2. **By request.** An API event has the tag `request_id`, which is also the `reqId` of every log line of that request and the `x-request-id` response header. From a client report ("it failed at 14:03"), find the request in the logs; from a Sentry event, copy its `request_id`.
+2. **By request or source.** An event for an HTTP request has the tag `request_id`, which is also the `reqId` of every log line of that request and the `x-request-id` response header. From a client report ("it failed at 14:03"), find the request in the logs; from a Sentry event, copy its `request_id`. An event outside a request has the tag `source` instead; filter `source:push.send` to see every push failure.
 3. **By release.** Filter `release:trace-api@0.1.0` (or the git SHA) to see what a deploy introduced; an issue's "First seen in" release shows the deploy that broke it.
 
 ## Finding logs (Grafana Cloud)

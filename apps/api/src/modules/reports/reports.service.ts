@@ -6,6 +6,7 @@ import type { Actor } from '../../auth/auth.plugin';
 import type { Tx } from '../../db';
 import { missions, participations, reportPhotos, reports } from '../../db/schema';
 import { AppError, forbidden, notFound, missionEnded, participationEnded, unsupportedPhoto } from '../../errors';
+import { logAndReport } from '../../monitoring';
 import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
 import { findReport, isReportVisible, reportRecipients } from './reports.read';
@@ -28,7 +29,7 @@ async function publishSaved({ db, realtime, log }: ServiceDeps, missionId: strin
     options = { searcherIds: await reportRecipients(db, { reportId: report.id }) };
   } catch (error) {
     // The report is saved: a failed lookup must not fail the response. The commander still hears of it.
-    log.error(error, 'Report recipients lookup failed');
+    logAndReport(log, error, { source: 'reports.recipients', message: 'Report recipients lookup failed' });
   }
   realtime.publish({ type: 'report.saved', missionId, report }, options);
 }
