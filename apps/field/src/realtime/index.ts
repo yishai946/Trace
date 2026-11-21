@@ -12,8 +12,8 @@ import {
 import { useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { apiBaseUrl, apiRequest } from '../api';
-import { missionKeys } from '../mission/queries';
+import { apiBaseUrl } from '../api';
+import { fetchOwnParticipation, missionKeys } from '../mission/queries';
 import { upsertMessage } from '../messages/messageList';
 import { upsertSos } from '../sos/sosList';
 import { useSession } from '../state/session';

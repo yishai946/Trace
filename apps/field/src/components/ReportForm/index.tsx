@@ -30,30 +30,8 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
   });
   const leading = <Button label="ביטול" icon="close" variant="ghost" onPress={onCancel} />;
 
-  if (phase === 'rejected') {
-    return (
-      <Screen
-        title="דיווח חדש"
-        footer={<Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
-      >
-        <Notice tone="warn" icon="alert" live>
-          {type === 'located' ? LOCATED_REJECTED : REJECTED}
-        </Notice>
-      </Screen>
-    );
-  }
-
-  if (phase === 'located-pending') {
-    return (
-      <Screen
-        title="דיווח חדש"
-        footer={<Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
-      >
-        <Notice tone="warn" icon="wifiOff" live>
-          {LOCATED_NOT_SENT}
-        </Notice>
-      </Screen>
-    );
+  if (phase === 'rejected' || phase === 'located-pending') {
+    return <ReportOutcome outcome={phase} type={type} onDone={onDone} />;
   }
 
   return (

@@ -2,6 +2,7 @@ import { themes, typography, type ThemeId } from '@trace/design';
 import type { ExpressionSpecification, LayerSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { SOURCE } from '../data';
 import { iconId } from '../icons';
+import { sosLayers } from './sosLayers';
 import type { ThemeColors } from './types';
 
 const labelSize = typography.mapLabel.fontSize;
@@ -205,5 +206,10 @@ function pointLayers(themeId: ThemeId, c: ThemeColors, boldFont: string[]): Laye
 /** Mission overlays from the Trace Console MapSymbols guidelines. */
 export function missionLayers(themeId: ThemeId, boldFont: string[], regularFont: string[]): LayerSpecification[] {
   const c = themes[themeId].color;
-  return [...areaLayers(c, boldFont, regularFont), ...unitLayers(c, boldFont), ...pointLayers(themeId, c, boldFont)];
+  return [
+    ...areaLayers(c, boldFont, regularFont),
+    ...unitLayers(c, boldFont),
+    ...sosLayers(c, boldFont),
+    ...pointLayers(themeId, c, boldFont),
+  ];
 }

@@ -20,7 +20,10 @@ interface ReportOutcomeProps {
 export function ReportOutcome({ outcome, type, onDone }: ReportOutcomeProps) {
   const rejected = outcome === 'rejected';
   return (
-    <Screen title="דיווח חדש" footer={<Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}>
+    <Screen
+      title="דיווח חדש"
+      footer={<Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />}
+    >
       <Notice tone="warn" icon={rejected ? 'alert' : 'wifiOff'} live>
         {rejected ? (type === 'located' ? LOCATED_REJECTED : REJECTED) : LOCATED_NOT_SENT}
       </Notice>
