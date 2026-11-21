@@ -21,17 +21,20 @@ export function SightingFooter({ status, onSubmit, onDone }: SightingFooterProps
       <Text accessibilityLiveRegion="polite" style={[typography.body, { color: color.ink }]}>
         אין חיבור. התצפית נשמרה בטלפון ותישלח אוטומטית כשהחיבור יחזור.
       </Text>
-      <Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
+      <Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
     </>
   ) : status === 'rejected' ? (
     <>
       <FieldError message="התצפית לא נשלחה: המסע הסתיים או שהפעילות שלך בו הסתיימה." />
-      <Button label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
+      <Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
     </>
   ) : (
     <>
       {status === 'save-failed' ? <FieldError message="לא ניתן לשמור את התצפית בטלפון. נסה שוב." /> : null}
+      {/* A key of its own: react-native-web applies a reused button's new press handler only after paint, so "חזרה
+          למפה" must not reuse the disabled "שולח…" button. */}
       <Button
+        key="send"
         label={sending ? 'שולח…' : 'שלח תצפית'}
         variant="primary"
         size="lg"

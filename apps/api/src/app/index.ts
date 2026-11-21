@@ -32,8 +32,7 @@ import { timelineRoutes } from '../modules/timeline';
 import { trackingRoutes } from '../modules/tracking';
 import type { ServiceDeps } from '../modules/serviceDeps';
 import { createRealtime } from '../realtime';
-
-const VERSION = '0.1.0';
+import { VERSION } from '../version';
 
 interface AppOptions {
   env: Env;
@@ -68,6 +67,10 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
   registerErrorHandlers(app);
+  // The id in every log line (`reqId`) and Sentry tag (`request_id`), so a client or a report leads to its logs.
+  app.addHook('onSend', async (request, reply) => {
+    reply.header('x-request-id', request.id);
+  });
   const realtime = createRealtime({ app, auth, db, env, revalidateMs: realtimeRevalidateMs });
 
   const push = createPushNotifier({

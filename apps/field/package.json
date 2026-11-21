@@ -5,11 +5,13 @@
   "dependencies": {
     "@expo/metro-runtime": "~58.0.17",
     "@maplibre/maplibre-react-native": "^11.5.1",
+    "@sentry/react-native": "~8.28.0",
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
+    "@trace/monitoring": "workspace:*",
     "@trace/schemas": "workspace:*",
     "expo": "~58.0.23",
     "expo-battery": "~58.0.3",

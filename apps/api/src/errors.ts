@@ -1,6 +1,7 @@
 import type { ApiError, ErrorCode } from '@trace/schemas';
 import type { FastifyInstance } from 'fastify';
 import { hasZodFastifySchemaValidationErrors } from 'fastify-type-provider-zod';
+import { reportError } from './monitoring';
 
 /** An expected failure with a status, a stable code for clients and optional details. */
 export class AppError extends Error {
@@ -29,7 +30,7 @@ const body = (code: ErrorCode, message: string, details?: unknown): ApiError => 
   error: details === undefined ? { code, message } : { code, message, details },
 });
 
-/** One error shape for every endpoint. Unexpected errors are logged and never reach the client. */
+/** One error shape for every endpoint. Unexpected errors are logged and reported to Sentry, and never reach the client. */
 export function registerErrorHandlers(app: FastifyInstance) {
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof AppError) {
@@ -44,6 +45,7 @@ export function registerErrorHandlers(app: FastifyInstance) {
       return reply.status(status).send(body('VALIDATION_ERROR', 'The request is invalid'));
     }
     request.log.error(error);
+    reportError(error, { requestId: request.id });
     return reply.status(500).send(body('INTERNAL_ERROR', 'Something went wrong'));
   });
 

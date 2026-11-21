@@ -12,11 +12,13 @@
   },
   "dependencies": {
     "@internationalized/date": "^3.12.4",
+    "@sentry/react": "^11.12.0",
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
+    "@trace/monitoring": "workspace:*",
     "@trace/schemas": "workspace:*",
     "maplibre-contour": "^0.1.1",
     "maplibre-gl": "^6.16.0",

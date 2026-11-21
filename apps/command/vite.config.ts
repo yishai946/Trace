@@ -9,6 +9,8 @@ export default defineConfig({
   plugins: [react()],
   // MAPTILER_ variables reach the browser: the MapTiler key is a public, domain-restricted client key.
   envPrefix: ['VITE_', 'MAPTILER_'],
+  // Source maps are built for Sentry but not referenced from the files served to browsers (docs/MONITORING.md).
+  build: { sourcemap: 'hidden' },
   // The MapLibre worker is bundled as an ES module worker (see src/map/maplibre-worker.ts).
   worker: { format: 'es' },
   // ws: the realtime channel (Socket.IO) upgrades to a WebSocket under /api/realtime.

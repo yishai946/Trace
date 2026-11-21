@@ -1,11 +1,15 @@
 import { z } from 'zod';
-import { defaultLogLevel, LOG_LEVELS } from './logging';
+import { defaultLogLevel, LOG_LEVELS } from '../logging';
 
 /** The database from docker-compose.yml. Every other environment sets DATABASE_URL. */
 export const LOCAL_DATABASE_URL = 'postgres://trace:trace@localhost:5433/trace';
 
 /** Signs session cookies outside production only. Production must set its own AUTH_SECRET. */
 const DEV_AUTH_SECRET = 'trace-development-secret-not-for-production-use';
+
+/** A variable left blank in a `.env` file counts as unset. */
+const optional = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
 
 const EnvInput = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -20,9 +24,34 @@ const EnvInput = z.object({
   AUTH_SECRET: z.string().min(32).default(DEV_AUTH_SECRET),
   /** Expo's access token for enhanced push security. Optional: push is sent without it when unset. */
   EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
+  /** Error tracking is off without a DSN. */
+  SENTRY_DSN: optional(z.url()),
+  /** Defaults to NODE_ENV. */
+  SENTRY_ENVIRONMENT: optional(z.string().min(1)),
+  /** Defaults to `trace-api@<package version>`. */
+  SENTRY_RELEASE: optional(z.string().min(1)),
+  /** Share of requests traced, 0 to 1. Defaults to 0.05 in production and 0 elsewhere. */
+  SENTRY_TRACES_SAMPLE_RATE: optional(z.coerce.number().min(0).max(1)),
+  /** Grafana Cloud Loki: the push host, the user (instance id) and a token that may only write logs. All or none. */
+  LOKI_URL: optional(z.url()),
+  LOKI_USER: optional(z.string().min(1)),
+  LOKI_TOKEN: optional(z.string().min(1)),
 });
 
-const Env = EnvInput.transform((env) => ({ ...env, LOG_LEVEL: env.LOG_LEVEL ?? defaultLogLevel(env.NODE_ENV) }));
+const LOKI_VARIABLES = ['LOKI_URL', 'LOKI_USER', 'LOKI_TOKEN'] as const;
+
+const Env = EnvInput.superRefine((env, ctx) => {
+  const missing = LOKI_VARIABLES.filter((name) => !env[name]);
+  if (missing.length === 0 || missing.length === LOKI_VARIABLES.length) return;
+  ctx.addIssue({
+    code: 'custom',
+    message: `Set all of ${LOKI_VARIABLES.join(', ')} or none; missing ${missing.join(', ')}`,
+  });
+}).transform((env) => ({
+  ...env,
+  LOG_LEVEL: env.LOG_LEVEL ?? defaultLogLevel(env.NODE_ENV),
+  SENTRY_ENVIRONMENT: env.SENTRY_ENVIRONMENT ?? env.NODE_ENV,
+}));
 
 export type Env = z.infer<typeof Env>;
 
