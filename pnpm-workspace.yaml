@@ -2,6 +2,7 @@ packages:
   - apps/*
   - packages/*
 allowBuilds:
+  '@sentry/cli': false
   esbuild: true
 minimumReleaseAgeExclude:
   - '@expo/cli@58.1.18'

@@ -5,6 +5,15 @@ interface ImportMetaEnv {
   readonly VITE_JOIN_LINK_BASE?: string;
 }
 
+interface ImportMetaEnv {
+  /** Sentry DSN of the Command project. Error tracking is off without it. */
+  readonly VITE_SENTRY_DSN?: string;
+  /** Defaults to the Vite mode (`production` for a build). */
+  readonly VITE_SENTRY_ENVIRONMENT?: string;
+  /** The release the build is uploaded under, e.g. `trace-command@<git sha>`. */
+  readonly VITE_SENTRY_RELEASE?: string;
+}
+
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
