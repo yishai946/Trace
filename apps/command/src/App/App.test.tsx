@@ -1,7 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mission, participants, reportFinding, reportLocated } from '../mission/fixtures';
+import {
+  messageCritical,
+  messageNormal,
+  mission,
+  participants,
+  reportFinding,
+  reportLocated,
+} from '../mission/fixtures';
 import { ThemeProvider } from '../theme/theme';
 import { App } from '.';
 
@@ -201,5 +208,73 @@ describe('App on the phone: reports', () => {
     );
     fireEvent.click(screen.getByRole('link', { name: /לוח/ }));
     await waitFor(() => expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument());
+  });
+});
+
+describe('App on the phone: messages', () => {
+  const messagesUrl = `/missions/${mission.id}/messages`;
+  const calls = () => vi.mocked(globalThis.fetch).mock.calls;
+  const isMessages = ([input]: Parameters<typeof fetch>) => String(input).endsWith(messagesUrl);
+
+  beforeEach(() => {
+    layout.phone = true;
+    window.matchMedia ??= ((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    })) as never;
+  });
+  afterEach(() => {
+    layout.phone = false;
+    vi.restoreAllMocks();
+  });
+
+  function renderPhone() {
+    renderApp();
+    vi.mocked(globalThis.fetch).mockImplementation(((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith('/messages') && init?.method === 'POST') return Promise.resolve(json(messageNormal));
+      if (url.endsWith('/messages')) return Promise.resolve(json([messageCritical]));
+      if (url.endsWith('/reports')) return Promise.resolve(json([]));
+      if (url.endsWith('/health'))
+        return Promise.resolve(json({ status: 'ok', version: '1', time: '2026-11-08T00:00:00Z' }));
+      if (url.endsWith('/polygons')) return Promise.resolve(json([]));
+      if (url.endsWith('/participants')) return Promise.resolve(json(participants));
+      return Promise.resolve(json([mission]));
+    }) as never);
+  }
+
+  it('AP4: the tab bar opens the Messages screen with the latest message, and the board item returns', async () => {
+    renderPhone();
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('link', { name: 'הודעות' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'הודעות' })).toBeInTheDocument();
+    const card = await screen.findByRole('region', { name: 'נשלחה לאחרונה' });
+    expect(within(card).getByText(messageCritical.body)).toBeInTheDocument();
+    expect(calls().some(([input, init]) => isMessages([input]) && (init?.method ?? 'GET') === 'GET')).toBe(true);
+    fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
+    expect(screen.queryByRole('heading', { level: 1, name: 'הודעות' })).not.toBeInTheDocument();
+  });
+
+  it('AP5: sends one message on a double click and shows it as the latest', async () => {
+    renderPhone();
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('link', { name: 'הודעות' }));
+    fireEvent.change(await screen.findByRole('textbox', { name: 'טקסט חופשי' }), { target: { value: 'שלום' } });
+    const send = screen.getByRole('button', { name: /^שלח/ });
+    fireEvent.click(send);
+    fireEvent.click(send);
+    await waitFor(() =>
+      expect(calls().filter(([input, init]) => isMessages([input]) && init?.method === 'POST')).toHaveLength(1),
+    );
+    const post = calls().find(([input, init]) => isMessages([input]) && init?.method === 'POST');
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({
+      target: { kind: 'mission' },
+      urgency: 'normal',
+      body: 'שלום',
+    });
+    const card = await screen.findByRole('region', { name: 'נשלחה לאחרונה' });
+    await waitFor(() => expect(within(card).getByText(messageNormal.body)).toBeInTheDocument());
   });
 });

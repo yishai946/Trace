@@ -3,7 +3,7 @@ import { Link } from 'react-aria-components';
 import styles from './MissionTabBar.module.css';
 import { Icon } from './Icon';
 
-export type MissionTab = 'board' | 'searchers' | 'reports' | 'sos';
+export type MissionTab = 'board' | 'searchers' | 'reports' | 'messages' | 'sos';
 
 interface MissionTabBarProps {
   current: MissionTab;
@@ -44,6 +44,15 @@ const ITEMS: { tab: MissionTab; label: string; icon: ReactNode }[] = [
     ),
   },
   {
+    tab: 'messages',
+    label: 'הודעות',
+    icon: (
+      <Icon>
+        <path d="M4 5h16v11H9l-5 4z" />
+      </Icon>
+    ),
+  },
+  {
     tab: 'sos',
     label: 'SOS',
     icon: (
@@ -58,7 +67,7 @@ const ITEMS: { tab: MissionTab; label: string; icon: ReactNode }[] = [
 /** What the number on an item counts, for screen readers. */
 const COUNT_NOUN: Partial<Record<MissionTab, string>> = { sos: 'פעילות' };
 
-/** The bottom tab bar of the phone mission screen (Console "Command בטלפון", wireframe Cm04). */
+/** The bottom tab bar of the phone mission screen (Console "Command בטלפון", wireframes Cm04 and Cm11): board, searchers, reports, messages and SOS. */
 export function MissionTabBar({ current, onNavigate, counts }: MissionTabBarProps) {
   return (
     <nav className={styles.bar} aria-label="ניווט ראשי">

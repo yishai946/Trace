@@ -7,6 +7,7 @@ import styles from './PhoneMissionScreen.module.css';
 import type { Connection } from '../../components/ConnectionStatus';
 import { MissionSheet, type SheetTab } from '../MissionSheet';
 import { MissionTabBar, type MissionTab } from '../MissionTabBar';
+import { PHONE_SCREENS, type PhoneScreen } from '../phoneScreen';
 import { statusCounts } from '../reportView';
 
 interface PhoneMissionScreenProps {
@@ -26,10 +27,11 @@ interface PhoneMissionScreenProps {
   workspace: ReactNode;
   /** The place search, shown under the bar; `close` hides it. */
   renderSearch: (close: () => void) => ReactNode;
-  /** The map stage, or the Reports or SOS screen in its place. */
-  screen: 'map' | 'reports' | 'sos';
-  onScreenChange: (screen: 'map' | 'reports' | 'sos') => void;
+  /** The map stage, or the Reports, Messages or SOS screen in its place. */
+  screen: PhoneScreen;
+  onScreenChange: (screen: PhoneScreen) => void;
   reportsScreen: ReactNode;
+  messagesScreen: ReactNode;
   sosScreen: ReactNode;
   /** The mission's SOS, newest first. Undefined while they load. */
   sos: Sos[] | undefined;
@@ -43,7 +45,8 @@ interface PhoneMissionScreenProps {
 /**
  * Command on the phone, the mission screen (Console "Command בטלפון", wireframe Cm04): the map full screen, a compact
  * top bar, a bottom sheet with alerts, searchers and reports, and a bottom tab bar. The "דיווחים" item replaces the map
- * with the Reports screen (wireframe Cm10), and the "SOS" item with the SOS screen (wireframe Cm12). Remount it per mission.
+ * with the Reports screen (wireframe Cm10), the "הודעות" item with the Messages screen (Cm11), and the "SOS" item with
+ * the SOS screen (Cm12). Remount it per mission.
  */
 export function PhoneMissionScreen({
   mission,
@@ -62,6 +65,7 @@ export function PhoneMissionScreen({
   screen,
   onScreenChange,
   reportsScreen,
+  messagesScreen,
   sosScreen,
   sos,
   onOpenSos,
@@ -74,11 +78,12 @@ export function PhoneMissionScreen({
   const [searchOpen, setSearchOpen] = useState(false);
 
   const navigate = (next: MissionTab) => {
-    if (next === 'reports' || next === 'sos') {
-      onScreenChange(next);
+    const target = PHONE_SCREENS.find((s) => s === next);
+    if (target) {
+      onScreenChange(target);
       return;
     }
-    setTab(next === 'board' ? 'alerts' : next);
+    setTab(next === 'searchers' ? 'searchers' : 'alerts');
     setExpanded(true);
     onScreenChange('map');
   };
@@ -90,14 +95,11 @@ export function PhoneMissionScreen({
   // Safety continues until Finish Activity, so an active SOS shows in an ended mission too.
   const activeSos = (sos ?? []).filter((s) => s.status === 'active').length;
   const alerts = activeSos > 0 ? (critical ? 2 : 1) : critical ? 1 : 0;
+  const screens = { reports: reportsScreen, messages: messagesScreen, sos: sosScreen };
 
   return (
     <div className={styles.phone}>
-      {screen === 'reports' ? (
-        reportsScreen
-      ) : screen === 'sos' ? (
-        sosScreen
-      ) : (
+      {screen === 'map' ? (
         <div
           className={styles.stage}
           data-sheet={expanded ? 'expanded' : 'collapsed'}
@@ -149,6 +151,8 @@ export function PhoneMissionScreen({
             }}
           />
         </div>
+      ) : (
+        screens[screen]
       )}
 
       <MissionTabBar current={current} onNavigate={navigate} counts={{ reports: newReports, sos: activeSos }} />
