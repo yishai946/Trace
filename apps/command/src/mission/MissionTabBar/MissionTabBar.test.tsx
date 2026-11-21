@@ -42,4 +42,23 @@ describe('MissionTabBar', () => {
     fireEvent.click(link);
     expect(onNavigate).toHaveBeenCalledWith('sos');
   });
+
+  it('TB4: lists five items, opens Messages and shows no count on it', () => {
+    const onNavigate = vi.fn();
+    const { rerender } = render(<MissionTabBar current="board" onNavigate={onNavigate} />);
+    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'לוח',
+      'מחפשים',
+      'דיווחים',
+      'הודעות',
+      'SOS',
+    ]);
+    fireEvent.click(screen.getByRole('link', { name: 'הודעות' }));
+    expect(onNavigate).toHaveBeenCalledWith('messages');
+
+    rerender(<MissionTabBar current="messages" onNavigate={onNavigate} counts={{ reports: 3 }} />);
+    const link = screen.getByRole('link', { name: 'הודעות' });
+    expect(link).toHaveAttribute('aria-current', 'page');
+    expect(link).not.toHaveTextContent(/\d/);
+  });
 });

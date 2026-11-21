@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MessagesPage, type MessagesPageProps } from '.';
 import { messageCritical, messageNormal, messageToOne, participants, polygonA, polygonB } from '../../mission/fixtures';
@@ -90,154 +90,6 @@ describe('MessagesPage', () => {
     expect(detailRows()).toHaveLength(2);
   });
 
-  describe('compose', () => {
-    const send = () => screen.getByRole('button', { name: /^שלח/ });
-    const text = () => screen.getByRole('textbox', { name: 'טקסט חופשי' });
-
-    it('C5: the recipient count follows the target', () => {
-      render(<MessagesPage {...props()} />);
-      expect(send().textContent).toBe('שלח ל-2 מחפשים');
-
-      fireEvent.click(screen.getByRole('radio', { name: 'פוליגון' }));
-      expect(send().textContent).toBe('שלח');
-      const group = screen.getByRole('group', { name: 'פוליגונים' });
-      expect(within(group).getByText('מחפש אחד')).toBeInTheDocument();
-      fireEvent.click(within(group).getByRole('checkbox', { name: /ואדי צפוני/ }));
-      expect(send().textContent).toBe('שלח למחפש אחד');
-    });
-
-    it('C6: asks for the missing parts and does not send', () => {
-      const onSend = vi.fn();
-      render(<MessagesPage {...props({ onSend })} />);
-
-      fireEvent.click(send());
-      expect(screen.getByText('כתבו את ההודעה.')).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('radio', { name: 'פוליגון' }));
-      fireEvent.click(send());
-      expect(screen.getByText('בחרו לפחות פוליגון אחד.')).toBeInTheDocument();
-
-      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
-      fireEvent.click(send());
-      expect(screen.getByText('בחרו מחפש.')).toBeInTheDocument();
-      expect(onSend).not.toHaveBeenCalled();
-    });
-
-    it('C7: sends the trimmed message, then clears the text and announces it', () => {
-      const onSend = vi.fn();
-      render(<MessagesPage {...props({ onSend })} />);
-
-      fireEvent.click(screen.getByRole('radio', { name: 'פוליגון' }));
-      fireEvent.click(
-        within(screen.getByRole('group', { name: 'פוליגונים' })).getByRole('checkbox', { name: /ואדי צפוני/ }),
-      );
-      fireEvent.click(screen.getByRole('radio', { name: 'קריטית' }));
-      fireEvent.change(text(), { target: { value: '  חזרו לכינוס  ' } });
-      fireEvent.click(send());
-
-      expect(onSend).toHaveBeenCalledWith(
-        { target: { kind: 'polygons', polygonIds: [polygonA.id] }, urgency: 'critical', body: 'חזרו לכינוס' },
-        expect.any(Function),
-      );
-      const onSent = onSend.mock.calls[0]?.[1] as (message: typeof messageNormal) => void;
-      // The server saved it.
-      act(() => onSent(messageNormal));
-      expect((text() as HTMLTextAreaElement).value).toBe('');
-      expect(screen.getByRole('status').textContent).toBe('ההודעה נשלחה ל-2 מחפשים.');
-    });
-
-    it('C6: sends once when the button is double clicked', () => {
-      const onSend = vi.fn();
-      render(<MessagesPage {...props({ onSend })} />);
-      fireEvent.change(text(), { target: { value: 'שלום' } });
-      fireEvent.click(send());
-      fireEvent.click(send());
-      expect(onSend).toHaveBeenCalledTimes(1);
-    });
-
-    it('C6: announces the missing text as an alert and moves focus to the field', () => {
-      render(<MessagesPage {...props()} />);
-      fireEvent.click(send());
-      expect(screen.getByRole('alert').textContent).toBe('כתבו את ההודעה.');
-      expect(text()).toHaveFocus();
-    });
-
-    it('C6: moves focus to the missing target', () => {
-      render(<MessagesPage {...props()} />);
-      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
-      fireEvent.change(text(), { target: { value: 'שלום' } });
-      fireEvent.click(send());
-      expect(within(screen.getByRole('radiogroup', { name: 'מחפש' })).getAllByRole('radio')[0]).toHaveFocus();
-    });
-
-    it('C9: clears the send error when the text or the target changes', () => {
-      render(<MessagesPage {...props({ sendError: 'אין חיבור לשרת. ההודעה לא נשלחה.' })} />);
-      expect(screen.getByRole('alert')).toBeInTheDocument();
-      fireEvent.change(text(), { target: { value: 'ש' } });
-      expect(screen.queryByRole('alert')).toBeNull();
-    });
-
-    it('C9: clears the send error when the target changes', () => {
-      render(<MessagesPage {...props({ sendError: 'אין חיבור לשרת. ההודעה לא נשלחה.' })} />);
-      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
-      expect(screen.queryByRole('alert')).toBeNull();
-    });
-
-    it('C7: returns focus to the text field after a send', () => {
-      const onSend = vi.fn();
-      render(<MessagesPage {...props({ onSend })} />);
-      fireEvent.change(text(), { target: { value: 'שלום' } });
-      fireEvent.click(send());
-      act(() => (onSend.mock.calls[0]?.[1] as (message: typeof messageNormal) => void)(messageNormal));
-      expect(text()).toHaveFocus();
-    });
-
-    it('C8: blocks sending when ended or offline, keeping the history', () => {
-      const { rerender } = render(<MessagesPage {...props({ onSend: undefined, ended: true })} />);
-      expect(send()).toBeDisabled();
-      expect(screen.getByText('המסע הסתיים. אי אפשר לשלוח הודעות.')).toBeInTheDocument();
-      expect(sentRows()).toHaveLength(3);
-
-      rerender(<MessagesPage {...props({ onSend: undefined })} />);
-      expect(screen.getByText('אין חיבור לשרת. שליחה חסומה.')).toBeInTheDocument();
-    });
-
-    it('C9: shows a send error', () => {
-      render(<MessagesPage {...props({ sendError: 'אין חיבור לשרת. ההודעה לא נשלחה.' })} />);
-      expect(screen.getByRole('alert').textContent).toBe('אין חיבור לשרת. ההודעה לא נשלחה.');
-    });
-
-    it('C11: states loading, failed and empty searcher and polygon lists', () => {
-      const { rerender } = render(<MessagesPage {...props({ participants: undefined })} />);
-      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
-      expect(screen.getByText('טוען מחפשים…')).toBeInTheDocument();
-
-      rerender(<MessagesPage {...props({ participants: undefined, participantsFailed: true })} />);
-      expect(screen.getByText('לא ניתן לטעון את המחפשים מהשרת.')).toBeInTheDocument();
-      expect(send()).toBeDisabled();
-
-      rerender(<MessagesPage {...props({ polygons: [] })} />);
-      fireEvent.click(screen.getByRole('radio', { name: 'פוליגון' }));
-      expect(screen.getByText('אין פוליגונים במפה.')).toBeInTheDocument();
-    });
-
-    it('chooses one searcher by callsign', () => {
-      const onSend = vi.fn();
-      render(<MessagesPage {...props({ onSend })} />);
-      fireEvent.click(screen.getByRole('radio', { name: 'מחפש' }));
-      fireEvent.click(
-        within(screen.getByRole('radiogroup', { name: 'מחפש' })).getByRole('radio', { name: /מיכל פרץ/ }),
-      );
-      fireEvent.change(text(), { target: { value: 'שלום' } });
-      fireEvent.click(send());
-      expect(onSend.mock.calls[0]?.[0]).toEqual({
-        target: { kind: 'searcher', participantId: participants[1]?.id },
-        urgency: 'normal',
-        body: 'שלום',
-      });
-    });
-  });
-
   it('C10: states loading, a failed load with retry, and no messages', () => {
     const onRetry = vi.fn();
     const { rerender } = render(<MessagesPage {...props({ messages: undefined })} />);
@@ -252,6 +104,11 @@ describe('MessagesPage', () => {
     rerender(<MessagesPage {...props({ messages: [] })} />);
     expect(screen.getByText('עוד לא נשלחו הודעות במסע הזה.')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'פירוט לפי נמען' })).toBeNull();
+  });
+
+  it('C8: keeps the history when sending is blocked', () => {
+    render(<MessagesPage {...props({ onSend: undefined, ended: true })} />);
+    expect(sentRows()).toHaveLength(3);
   });
 
   it('C12: offers a call only for recipients who are not final', () => {

@@ -1,8 +1,8 @@
 import type { MissionPolygon, Participant } from '@trace/schemas';
 import { Checkbox, CheckboxGroup, Radio, RadioGroup } from 'react-aria-components';
 import { CallsignChip } from '../../components/CallsignChip';
-import styles from './MessagesPage.module.css';
-import { activeParticipants, countInPolygon, type MessageForm } from './messageForm';
+import styles from './ComposeMessage.module.css';
+import { activeParticipants, countInPolygon, type MessageForm } from '../messageForm';
 
 const checkIcon = (
   <svg

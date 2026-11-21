@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { participants, polygonA, polygonB } from '../../../mission/fixtures';
+import { participants, polygonA, polygonB } from '../fixtures';
 import { activeParticipants, countInPolygon, emptyForm, recipientsOf, targetRule, toSendBody, validate } from '.';
 
 const [dana, michal] = participants;

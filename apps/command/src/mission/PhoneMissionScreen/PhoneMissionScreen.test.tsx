@@ -50,6 +50,7 @@ function renderScreen(props: Partial<Props> = {}) {
       sos={[sosClosed]}
       onOpenSos={onOpenSos}
       sosScreen={<div>מסך ה-SOS</div>}
+      messagesScreen={<div>מסך ההודעות</div>}
       {...props}
     />,
   );
@@ -194,6 +195,7 @@ describe('PhoneMissionScreen', () => {
         sos={[]}
         onOpenSos={vi.fn()}
         sosScreen={<div>מסך ה-SOS</div>}
+        messagesScreen={<div>מסך ההודעות</div>}
       />,
     );
     expect(screen.getByRole('alert', { name: 'התראה קריטית' })).toBeInTheDocument();
@@ -229,5 +231,17 @@ describe('PhoneMissionScreen', () => {
     expect(screen.getByRole('link', { name: 'SOS, 1 פעילות' })).toHaveAttribute('aria-current', 'page');
     fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
     expect(screen.getByText('המפה')).toBeInTheDocument();
+  });
+
+  it('PM10: the Messages item shows the Messages screen in place of the map, with no alert', () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole('link', { name: 'הודעות' }));
+    expect(screen.getByText('מסך ההודעות')).toBeInTheDocument();
+    expect(screen.queryByText('המפה')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'הודעות' })).toHaveAttribute('aria-current', 'page');
+    fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
+    expect(screen.getByText('המפה')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: /התראות/, selected: true })).toBeInTheDocument();
   });
 });

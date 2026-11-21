@@ -1,10 +1,10 @@
 import type { Message } from '@trace/schemas';
 import { Link } from 'react-aria-components';
-import { timeLabel } from '../../mission/timeLabel';
-import styles from './MessagesPage.module.css';
-import { recipientsLabel, statusSummary } from './messageView';
-import { UrgencyBadge } from './UrgencyBadge';
 import { ListState } from '../../components/ListState';
+import { recipientsLabel, SENT_MESSAGES_TEXT, statusSummary } from '../../mission/messageView';
+import { timeLabel } from '../../mission/timeLabel';
+import { UrgencyBadge } from '../../mission/UrgencyBadge';
+import styles from './MessagesPage.module.css';
 
 export interface SentMessagesProps {
   /** Newest first. `undefined` while loading. */
@@ -28,11 +28,7 @@ export function SentMessages({ messages, loadFailed, onRetry, selectedId, onSele
         loadFailed={loadFailed}
         onRetry={onRetry}
         className={styles.empty}
-        text={{
-          failed: 'לא ניתן לטעון את ההודעות מהשרת.',
-          loading: 'טוען הודעות…',
-          empty: 'עוד לא נשלחו הודעות במסע הזה.',
-        }}
+        text={SENT_MESSAGES_TEXT}
       >
         {(messages) => (
           <div className={styles.tableWrap}>

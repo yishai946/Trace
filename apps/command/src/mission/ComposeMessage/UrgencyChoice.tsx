@@ -1,7 +1,7 @@
 import { MESSAGE_URGENCIES, type MessageUrgency } from '@trace/domain';
 import { Label, Radio, RadioGroup } from 'react-aria-components';
-import styles from './MessagesPage.module.css';
-import { URGENCY_LABEL } from './messageView';
+import styles from './ComposeMessage.module.css';
+import { URGENCY_LABEL } from '../messageView';
 
 interface UrgencyChoiceProps {
   value: MessageUrgency;

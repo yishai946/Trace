@@ -1,14 +1,12 @@
-import { MESSAGE_TARGET_KINDS } from '@trace/domain';
 import type { Message, MissionPolygon, Participant, SendMessageBody } from '@trace/schemas';
-import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
-import { choose } from '../../choose';
-import styles from './MessagesPage.module.css';
+import styles from './ComposeMessage.module.css';
+import { TargetChoice } from './TargetChoice';
+import { TargetKindChoice } from './TargetKindChoice';
 import { UrgencyChoice } from './UrgencyChoice';
 import { useComposeMessage } from './useComposeMessage';
-import { TargetChoice } from './TargetChoice';
-import { sendLabel, TARGET_KIND_LABEL } from './messageView';
+import { sendLabel } from '../messageView';
 
 export interface ComposeMessageProps {
   participants: Participant[] | undefined;
@@ -20,7 +18,9 @@ export interface ComposeMessageProps {
   sending: boolean;
   sendError: string | null;
   /** The message the server saved, to select it in the list. */
-  onSent: (message: Message) => void;
+  onSent?: (message: Message) => void;
+  /** The phone layout (Cm11): no panel frame or header, a shorter text field and a large send button. */
+  phone?: boolean;
 }
 
 const sendIcon = (
@@ -37,6 +37,12 @@ const sendIcon = (
   </svg>
 );
 
+/** Why sending is closed, if it is: the mission ended, or there is no connection. */
+function blockedHint(ended: boolean, onSend: ComposeMessageProps['onSend']): string | null {
+  if (ended) return 'המסע הסתיים. אי אפשר לשלוח הודעות.';
+  return onSend ? null : 'אין חיבור לשרת. שליחה חסומה.';
+}
+
 /** The new-message form (wireframe Cd11 "הודעה חדשה"): target, urgency and free text, sent one way to searchers. */
 export function ComposeMessage({
   participants,
@@ -47,6 +53,7 @@ export function ComposeMessage({
   sending,
   sendError,
   onSent,
+  phone,
 }: ComposeMessageProps) {
   const { form, errors, setErrors, announcement, dismissedError, formRef, change, submit, count } = useComposeMessage({
     participants,
@@ -56,12 +63,16 @@ export function ComposeMessage({
     onSent,
   });
 
+  const hint = blockedHint(ended, onSend);
+
   return (
-    <section className={`${styles.panel} ${styles.compose}`} aria-label="הודעה חדשה">
-      <div className={styles.section}>
-        <h2 className={styles.title}>הודעה חדשה</h2>
-        <span className={styles.meta}>חד-כיוונית: מנהל ← מחפשים</span>
-      </div>
+    <section className={phone ? styles.phone : `${styles.panel} ${styles.compose}`} aria-label="הודעה חדשה">
+      {!phone && (
+        <div className={styles.section}>
+          <h2 className={styles.title}>הודעה חדשה</h2>
+          <span className={styles.meta}>חד-כיוונית: מנהל ← מחפשים</span>
+        </div>
+      )}
       <form
         ref={formRef}
         aria-label="הודעה חדשה"
@@ -72,24 +83,13 @@ export function ComposeMessage({
           submit();
         }}
       >
-        <RadioGroup
-          className={styles.field}
-          orientation="horizontal"
+        <TargetKindChoice
           value={form.kind}
-          onChange={(value) => {
-            change({ kind: choose(MESSAGE_TARGET_KINDS, value, 'mission') });
+          onChange={(kind) => {
+            change({ kind });
             setErrors((current) => ({ ...current, target: undefined }));
           }}
-        >
-          <Label className={styles.label}>נמענים</Label>
-          <div className={styles.seg}>
-            {MESSAGE_TARGET_KINDS.map((kind) => (
-              <Radio key={kind} value={kind} className={styles.segOption}>
-                {TARGET_KIND_LABEL[kind]}
-              </Radio>
-            ))}
-          </div>
-        </RadioGroup>
+        />
 
         <TargetChoice
           form={form}
@@ -119,7 +119,7 @@ export function ComposeMessage({
 
         <TextField
           label="טקסט חופשי"
-          rows={4}
+          rows={phone ? 3 : 4}
           maxLength={2000}
           value={form.body}
           onChange={(body) => change({ body })}
@@ -132,14 +132,11 @@ export function ComposeMessage({
             {sendError}
           </p>
         )}
-        {ended ? (
-          <p className={styles.hint}>המסע הסתיים. אי אפשר לשלוח הודעות.</p>
-        ) : (
-          !onSend && <p className={styles.hint}>אין חיבור לשרת. שליחה חסומה.</p>
-        )}
+        {hint && <p className={styles.hint}>{hint}</p>}
 
         <Button
           variant="primary"
+          size={phone ? 'lg' : undefined}
           type="submit"
           className={styles.block}
           isDisabled={!onSend || sending || participantsFailed}
