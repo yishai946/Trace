@@ -1,5 +1,6 @@
 import { Report, type UpdateReportBody } from '@trace/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { replaceById } from '@trace/mission-cache';
 import { apiBaseUrl, apiRequest } from '../../api';
 import { missionKeys } from '../../mission/queries';
 import { useSession } from '../../state/session';
@@ -23,9 +24,7 @@ export function useUpdateReport() {
       }),
     onSuccess: (saved) => {
       if (!missionId) return;
-      queryClient.setQueryData<Report[]>(missionKeys.reports(missionId), (list) =>
-        list?.map((report) => (report.id === saved.id ? saved : report)),
-      );
+      queryClient.setQueryData<Report[]>(missionKeys.reports(missionId), replaceById(saved));
     },
   });
 }

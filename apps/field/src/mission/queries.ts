@@ -1,16 +1,10 @@
 import { JoinedMission, JoinPreview, Mission, MissionPolygonList, OwnParticipation } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { missionDataKeys } from '@trace/mission-cache';
 import { apiBaseUrl, apiRequest } from '../api';
 import { useSession } from '../state/session';
 
-export const missionKeys = {
-  mission: (missionId: string) => ['missions', missionId] as const,
-  polygons: (missionId: string) => ['missions', missionId, 'polygons'] as const,
-  reports: (missionId: string) => ['missions', missionId, 'reports'] as const,
-  messages: (missionId: string) => ['missions', missionId, 'messages'] as const,
-  sos: (missionId: string) => ['missions', missionId, 'sos'] as const,
-  joinPreview: (code: string) => ['join', code] as const,
-};
+export const missionKeys = { ...missionDataKeys, joinPreview: (code: string) => ['join', code] as const };
 
 /** The polygons of the searcher's mission. Waits until the searcher signed in and joined a mission. */
 /** The searcher's own participation in a mission (their assignment and status), read from the server. */

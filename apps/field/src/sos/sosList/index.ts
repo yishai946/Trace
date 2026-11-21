@@ -2,11 +2,6 @@ import type { CreateSosBody, Sos } from '@trace/schemas';
 import type { CurrentFix } from '../../location/useCurrentFix';
 import { formatTime } from '../../mission/missionArea';
 
-/** Puts an SOS in the list (replacing the one with its id), newest first, as the server lists them. */
-export function upsertSos(list: Sos[], sos: Sos): Sos[] {
-  return [...list.filter((item) => item.id !== sos.id), sos].sort((a, b) => b.activatedAt.localeCompare(a.activatedAt));
-}
-
 function ownNewest(list: Sos[], participantId: string | undefined): Sos | null {
   if (!participantId) return null;
   return list.find((sos) => sos.sender.participantId === participantId) ?? null;

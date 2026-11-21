@@ -1,9 +1,9 @@
 import { Sos } from '@trace/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { upsertSos } from '@trace/mission-cache';
 import { apiBaseUrl, apiRequest } from '../../api';
 import { missionKeys } from '../../mission/queries';
 import { useSession } from '../../state/session';
-import { upsertSos } from '../sosList';
 
 /** The searcher closes their own SOS (UC-F13, decision 99). The closed SOS replaces the active one in the cached list. */
 export function useCloseSos() {
@@ -20,7 +20,7 @@ export function useCloseSos() {
       }),
     onSuccess: (sos) => {
       if (!missionId) return;
-      queryClient.setQueryData<Sos[]>(missionKeys.sos(missionId), (list) => upsertSos(list ?? [], sos));
+      queryClient.setQueryData<Sos[]>(missionKeys.sos(missionId), (list) => upsertSos(sos)(list ?? []));
     },
   });
 }

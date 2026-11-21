@@ -1,10 +1,10 @@
 import { Sos, type CreateSosBody } from '@trace/schemas';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { upsertSos } from '@trace/mission-cache';
 import { getNetworkStateAsync } from 'expo-network';
 import { apiBaseUrl, apiRequest, ApiRequestError } from '../../api';
 import { missionKeys } from '../../mission/queries';
 import { useSession } from '../../state/session';
-import { upsertSos } from '../sosList';
 
 /**
  * Sends an SOS (UC-F13). It needs the server. With no connection it fails at once with `NETWORK_ERROR` instead of
@@ -34,7 +34,7 @@ export function useActivateSos() {
     },
     onSuccess: (sos) => {
       if (!missionId) return;
-      queryClient.setQueryData<Sos[]>(missionKeys.sos(missionId), (list) => upsertSos(list ?? [], sos));
+      queryClient.setQueryData<Sos[]>(missionKeys.sos(missionId), (list) => upsertSos(sos)(list ?? []));
     },
   });
 }
