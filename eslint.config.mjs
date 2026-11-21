@@ -124,7 +124,8 @@ export default defineConfig(
     rules: { 'no-restricted-syntax': ['error', ...DESIGN_SYNTAX, ONE_COMPONENT] },
   },
   {
-    // Size and structure limits. A file or function over a limit is split, never exempted. See AGENTS.md.
+    // Size and structure limits, and no type assertions (`as`) or `!`. A file or function over a limit is split, never
+    // exempted. See AGENTS.md.
     files: ['apps/**/*.{ts,tsx}', 'packages/**/*.{ts,tsx}'],
     ignores: NOT_PRODUCT_CODE,
     linterOptions: { reportUnusedDisableDirectives: 'error' },
@@ -136,10 +137,8 @@ export default defineConfig(
       'max-params': ['error', 4],
       'max-statements': ['error', 30],
       '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/consistent-type-assertions': [
-        'error',
-        { assertionStyle: 'as', objectLiteralTypeAssertions: 'never' },
-      ],
+      // `as const` stays allowed: typescript-eslint always permits const assertions.
+      '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
     },
   },
   {
