@@ -60,7 +60,7 @@ export function listMeta(report: Report, polygons: MissionPolygon[]): string {
 
 /** `31.7452, 35.0118, ±5 מ׳`; the accuracy only when the phone reported it. */
 export function positionLabel(report: Pick<Report, 'position' | 'accuracy'>): string {
-  const position = formatLatLng(report.position.coordinates as LngLat);
+  const position = formatLatLng(report.position.coordinates);
   return report.accuracy === null ? position : `${position}, ±${Math.round(report.accuracy)} מ׳`;
 }
 
@@ -111,5 +111,5 @@ export function initialReportsView({
     type: 'GeometryCollection',
     geometries: [...points, ...polygons.map((p) => p.geometry)],
   });
-  return { center: mission.rallyPoint.coordinates as LngLat, zoom: 14, bounds };
+  return { center: mission.rallyPoint.coordinates, zoom: 14, bounds };
 }

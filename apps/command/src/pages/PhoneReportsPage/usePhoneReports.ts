@@ -1,5 +1,4 @@
 import { isCriticalReport } from '@trace/domain';
-import type { LngLat } from '@trace/geo';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting } from '@trace/schemas';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MapFocus } from '../../map/MissionMap';
@@ -86,7 +85,7 @@ export function usePhoneReports({
     setFocusId(id);
     setFitted(true);
     const report = all.find((r) => r.id === id);
-    if (report) setFocus({ center: report.position.coordinates as LngLat });
+    if (report) setFocus({ center: report.position.coordinates });
   };
 
   // The map opens on everything the mission placed: polygons, rally point, LKP and reports. Read once, at mount.
