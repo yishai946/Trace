@@ -1,7 +1,6 @@
 import { MESSAGE_RECEIPTS, MESSAGE_URGENCIES, RECIPIENT_STATUSES } from '@trace/domain';
 import { z } from 'zod';
-
-const instant = z.iso.datetime({ offset: true });
+import { IsoDateTime } from '../datetime';
 
 export const MessageUrgency = z.enum(MESSAGE_URGENCIES).meta({ id: 'MessageUrgency' });
 export const RecipientStatus = z.enum(RECIPIENT_STATUSES).meta({ id: 'RecipientStatus' });
@@ -50,9 +49,9 @@ export const MessageRecipient = z
     name: z.string(),
     status: RecipientStatus,
     /** When the searcher's app got the message; null while it waits for delivery (decision 77). */
-    deliveredAt: instant.nullable(),
-    readAt: instant.nullable(),
-    acknowledgedAt: instant.nullable(),
+    deliveredAt: IsoDateTime.nullable(),
+    readAt: IsoDateTime.nullable(),
+    acknowledgedAt: IsoDateTime.nullable(),
   })
   .meta({ id: 'MessageRecipient' });
 
@@ -63,7 +62,7 @@ export const Message = z
     urgency: MessageUrgency,
     body: z.string(),
     target: MessageTarget,
-    sentAt: instant,
+    sentAt: IsoDateTime,
     /** Fixed when sent, ordered by callsign. */
     recipients: z.array(MessageRecipient),
   })
@@ -77,12 +76,12 @@ export const OwnMessage = z
     missionId: z.uuid(),
     urgency: MessageUrgency,
     body: z.string(),
-    sentAt: instant,
+    sentAt: IsoDateTime,
     requiresAcknowledgement: z.boolean(),
     status: RecipientStatus,
-    deliveredAt: instant.nullable(),
-    readAt: instant.nullable(),
-    acknowledgedAt: instant.nullable(),
+    deliveredAt: IsoDateTime.nullable(),
+    readAt: IsoDateTime.nullable(),
+    acknowledgedAt: IsoDateTime.nullable(),
   })
   .meta({ id: 'OwnMessage' });
 export const OwnMessageList = z.array(OwnMessage).meta({ id: 'OwnMessageList' });

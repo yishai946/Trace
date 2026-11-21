@@ -1,5 +1,6 @@
 import { SOS_STATUSES, USER_ROLES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { PointGeometry } from '../geo';
 
 export const SosStatus = z.enum(SOS_STATUSES).meta({ id: 'SosStatus' });
@@ -11,7 +12,7 @@ export const SOS_MESSAGE_MAX_LENGTH = 500;
 export const SosLocation = z
   .object({
     position: PointGeometry,
-    recordedAt: z.iso.datetime({ offset: true }),
+    recordedAt: IsoDateTime,
     /** Meters; null when the phone gave none. */
     accuracy: z.number().nullable(),
   })
@@ -34,7 +35,7 @@ export const CreateSosBody = z.object({
   location: z
     .object({
       position: PointGeometry,
-      recordedAt: z.iso.datetime({ offset: true }),
+      recordedAt: IsoDateTime,
       accuracy: z.number().min(0).max(100_000).nullable().default(null),
     })
     .nullable()
@@ -58,8 +59,8 @@ export const Sos = z
     location: SosLocation.nullable(),
     /** How many searchers it was sent to (the sender's polygon, without the sender); the commander always gets it. */
     recipientCount: z.number().int().min(0),
-    activatedAt: z.iso.datetime({ offset: true }),
-    closedAt: z.iso.datetime({ offset: true }).nullable(),
+    activatedAt: IsoDateTime,
+    closedAt: IsoDateTime.nullable(),
     closedBy: z.object({ role: z.enum(USER_ROLES), name: z.string() }).nullable(),
   })
   .meta({ id: 'Sos' });

@@ -3,6 +3,7 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
+import requireDisableReason from './eslint-rules/require-disable-reason.mjs';
 import { fontWeights } from './packages/design/scripts/lint-values.mjs';
 
 // Raw design values that must come from @trace/design instead.
@@ -57,11 +58,10 @@ const ONE_COMPONENT = {
 };
 
 const NOT_PRODUCT_CODE = ['**/*.test.{ts,tsx}', '**/fixtures.ts', '**/testing/**', '**/test/**', '**/scripts/**'];
-const API_CLIENT_ONLY_IN_DATA_MODULES = {
-  group: ['**/api'],
-  importNames: ['apiRequest'],
-  message: 'Components, pages and routes do not call the API: use a query, mutation or sender module. See AGENTS.md.',
-};
+const API_CALL_MESSAGE =
+  'Components, pages and routes do not call the API: use a query, mutation or sender module. See AGENTS.md.';
+const API_CLIENT_ONLY_IN_DATA_MODULES = { group: ['**/api'], importNames: ['apiRequest'], message: API_CALL_MESSAGE };
+const API_CLIENT_PACKAGE_ONLY_IN_API_MODULES = { group: ['@trace/api-client'], message: API_CALL_MESSAGE };
 
 export default defineConfig(
   {
@@ -78,6 +78,12 @@ export default defineConfig(
   },
   js.configs.recommended,
   tseslint.configs.recommended,
+  {
+    // Every eslint-disable states its reason (ESLint core has no rule for it).
+    files: ['**/*.{js,mjs,cjs,jsx,ts,tsx}'],
+    plugins: { trace: { rules: { 'require-disable-reason': requireDisableReason } } },
+    rules: { 'trace/require-disable-reason': 'error' },
+  },
   {
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
     rules: {
@@ -137,9 +143,9 @@ export default defineConfig(
     },
   },
   {
-    // Declarative data (the tables, the map style): one long list, with no logic to split.
-    files: ['apps/api/src/db/schema.ts', 'packages/map/src/style/**'],
-    rules: { 'max-lines': 'off', 'max-lines-per-function': 'off' },
+    // A test file past this size is split by area, with its setup in a fixtures file.
+    files: ['**/*.test.{ts,tsx}'],
+    rules: { 'max-lines': ['error', { max: 600, skipBlankLines: true, skipComments: true }] },
   },
   {
     // A route file is one plugin function that registers its routes; the file limit bounds it.
@@ -158,16 +164,31 @@ export default defineConfig(
     },
   },
   {
-    files: ['apps/*/src/components/**', 'apps/*/src/pages/**', 'apps/command/src/App/**'],
+    files: [
+      'apps/*/src/components/**',
+      'apps/*/src/pages/**',
+      'apps/command/src/App/**',
+      'apps/field/src/realtime/**',
+      'apps/field/src/reports/senders/**',
+      'apps/field/src/sightings/sender/**',
+    ],
     ignores: NOT_PRODUCT_CODE,
-    rules: { 'no-restricted-imports': ['error', { patterns: [API_CLIENT_ONLY_IN_DATA_MODULES] }] },
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        { patterns: [API_CLIENT_ONLY_IN_DATA_MODULES, API_CLIENT_PACKAGE_ONLY_IN_API_MODULES] },
+      ],
+    },
   },
   {
     // An Expo Router file only wires a route to its screen component.
     files: ['apps/field/src/app/**'],
     rules: {
       'max-lines': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
-      'no-restricted-imports': ['error', { patterns: [API_CLIENT_ONLY_IN_DATA_MODULES] }],
+      'no-restricted-imports': [
+        'error',
+        { patterns: [API_CLIENT_ONLY_IN_DATA_MODULES, API_CLIENT_PACKAGE_ONLY_IN_API_MODULES] },
+      ],
     },
   },
   {

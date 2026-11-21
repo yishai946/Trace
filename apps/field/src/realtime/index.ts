@@ -3,7 +3,6 @@ import {
   MissionEvent,
   REALTIME_PATH,
   type ClientToServerEvents,
-  OwnParticipation,
   type Mission,
   type OwnMessage,
   type Report,
@@ -13,8 +12,8 @@ import {
 import { useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { apiBaseUrl, apiRequest } from '../api';
-import { missionKeys } from '../mission/queries';
+import { apiBaseUrl } from '../api';
+import { fetchOwnParticipation, missionKeys } from '../mission/queries';
 import { upsertMessage } from '../messages/messageList';
 import { upsertSos } from '../sos/sosList';
 import { useSession } from '../state/session';
@@ -136,11 +135,7 @@ export function useMissionLive(): void {
           // An assignment made while away is not replayed either. The answer is dropped if the screen closed, the
           // mission changed or a live event came first (it is newer). A failure waits for the next reconnect.
           const seen = participationEvents;
-          apiRequest(`/missions/${missionId}/participation`, {
-            baseUrl: apiBaseUrl,
-            token,
-            schema: OwnParticipation,
-          }).then(
+          fetchOwnParticipation(missionId, token).then(
             (own) => {
               const current = !closed && seen === participationEvents && useSession.getState().missionId === missionId;
               if (current) useSession.getState().updateParticipation(own);

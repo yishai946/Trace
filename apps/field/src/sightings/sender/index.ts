@@ -1,8 +1,9 @@
-import { CreateSightingBody, Sighting } from '@trace/schemas';
+import { CreateSightingBody } from '@trace/schemas';
 import { z } from 'zod';
-import { ApiRequestError, apiBaseUrl, apiRequest } from '../../api';
+import { ApiRequestError } from '../../api';
 import type { OutboxSender } from '../../outbox';
 import { useSession } from '../../state/session';
+import { postSighting } from '../requests';
 
 /** A sighting as the outbox keeps it: the id is made on the phone, so a retry cannot add it twice (UC-F10). */
 export const QueuedSighting = CreateSightingBody.extend({ id: z.uuid() });
@@ -17,20 +18,17 @@ export type QueuedSighting = z.infer<typeof QueuedSighting>;
 export const sightingSender: OutboxSender = {
   batchSize: 1,
   async send(missionId, items) {
-    const parsed = items.map((item) => QueuedSighting.safeParse(item.payload));
+    const sightings = items.flatMap((item) => {
+      const result = QueuedSighting.safeParse(item.payload);
+      return result.success ? [result.data] : [];
+    });
     // A stored sighting the schema rejects would be rejected by the server every time.
-    if (parsed.some((result) => !result.success)) return 'drop-batch';
+    if (sightings.length !== items.length) return 'drop-batch';
     const { token } = useSession.getState();
     if (!token) throw new Error('Not signed in');
-    for (const result of parsed) {
+    for (const sighting of sightings) {
       try {
-        await apiRequest(`/missions/${missionId}/sightings`, {
-          baseUrl: apiBaseUrl,
-          token,
-          method: 'POST',
-          body: result.data,
-          schema: Sighting,
-        });
+        await postSighting(missionId, token, sighting);
       } catch (error) {
         if (!(error instanceof ApiRequestError)) throw error;
         if (error.code === 'SIGHTING_ID_TAKEN' || error.status === 400) return 'drop-batch';

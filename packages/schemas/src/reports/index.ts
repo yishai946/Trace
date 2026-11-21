@@ -1,5 +1,6 @@
 import { REPORT_STATUSES, REPORT_TYPES, USER_ROLES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { PointGeometry } from '../geo';
 
 /** The longest report text: a technical bound, the same as a sighting's description. */
@@ -20,7 +21,7 @@ export const CreateReportBody = z.object({
   /** Horizontal accuracy in meters, when the phone reports it. */
   accuracy: z.number().min(0).max(100_000).nullable().default(null),
   /** When the searcher sent it on the phone, not when it arrived: an offline report arrives later. */
-  reportedAt: z.iso.datetime({ offset: true }),
+  reportedAt: IsoDateTime,
 });
 
 export const Report = z
@@ -34,7 +35,7 @@ export const Report = z
     text: z.string(),
     position: PointGeometry,
     accuracy: z.number().nullable(),
-    reportedAt: z.iso.datetime({ offset: true }),
+    reportedAt: IsoDateTime,
     reportedBy: z.object({
       role: z.enum(USER_ROLES),
       name: z.string(),
@@ -44,7 +45,7 @@ export const Report = z
     hasPhoto: z.boolean(),
     /** The photo's address with its version (`?v=`), null without one. */
     photoUrl: z.string().nullable(),
-    createdAt: z.iso.datetime({ offset: true }),
+    createdAt: IsoDateTime,
   })
   .meta({ id: 'Report' });
 

@@ -1,5 +1,6 @@
 import { PARTICIPATION_STATUSES, TASK_STATUSES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 import { LngLat } from '../geo';
 import { Mission, MissionStatus } from '../missions';
 
@@ -20,12 +21,12 @@ export const Participant = z
     taskStatus: TaskStatus.nullable(),
     /** Last reported position, or null before the first GPS fix. */
     position: LngLat.nullable(),
-    positionAt: z.iso.datetime({ offset: true }).nullable(),
+    positionAt: IsoDateTime.nullable(),
     /** Since when the phone reports no GPS (decision 42); null while it works. */
-    gpsUnavailableSince: z.iso.datetime({ offset: true }).nullable().default(null),
+    gpsUnavailableSince: IsoDateTime.nullable().default(null),
     /** The phone's last reported battery (decision 13); null before the first report. */
     battery: z
-      .object({ level: z.number().int().min(0).max(100), measuredAt: z.iso.datetime({ offset: true }) })
+      .object({ level: z.number().int().min(0).max(100), measuredAt: IsoDateTime })
       .nullable()
       .default(null),
   })
@@ -69,7 +70,7 @@ export const GpsStatusBody = z.object({ available: z.boolean() }).meta({ id: 'Gp
 
 /** PUT /missions/:id/participation/battery: the phone's battery level in percent and when it was measured (decision 13). */
 export const BatteryBody = z
-  .object({ level: z.number().int().min(0).max(100), measuredAt: z.iso.datetime({ offset: true }) })
+  .object({ level: z.number().int().min(0).max(100), measuredAt: IsoDateTime })
   .meta({ id: 'BatteryBody' });
 
 export const ParticipantParams = z.object({ missionId: z.uuid(), participantId: z.uuid() });

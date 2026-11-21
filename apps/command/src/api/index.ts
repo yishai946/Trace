@@ -1,18 +1,7 @@
-import { ApiError, type ErrorCode } from '@trace/schemas';
+import { request } from '@trace/api-client';
 import type { z } from 'zod';
 
-/** A failed API call. `code` and `details` come from the server's shared error shape. */
-export class ApiRequestError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: ErrorCode | 'NETWORK_ERROR',
-    message: string,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = 'ApiRequestError';
-  }
-}
+export { ApiRequestError } from '@trace/api-client';
 
 interface RequestOptions<S extends z.ZodType> {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -23,32 +12,16 @@ interface RequestOptions<S extends z.ZodType> {
   signal?: AbortSignal;
 }
 
-function encode(body: unknown): RequestInit {
+function encode(body: unknown): { headers?: Record<string, string>; body?: BodyInit } {
   if (body === undefined) return {};
   if (body instanceof Blob) return { headers: { 'content-type': body.type }, body };
   return { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) };
 }
 
 /** Calls the TRACE API through the Vite proxy and validates the response with the shared zod schema. */
-export async function apiRequest<S extends z.ZodType>(
+export function apiRequest<S extends z.ZodType>(
   path: string,
   { method = 'GET', body, schema, signal }: RequestOptions<S> = {},
 ): Promise<z.infer<S>> {
-  let res: Response;
-  try {
-    res = await fetch(`/api${path}`, { method, signal, ...encode(body) });
-  } catch (error) {
-    if (signal?.aborted) throw error;
-    throw new ApiRequestError(0, 'NETWORK_ERROR', 'The server is not reachable');
-  }
-
-  if (!res.ok) {
-    const parsed = ApiError.safeParse(await res.json().catch(() => null));
-    if (parsed.success) {
-      const { code, message, details } = parsed.data.error;
-      throw new ApiRequestError(res.status, code, message, details);
-    }
-    throw new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`);
-  }
-  return (schema ? schema.parse(await res.json()) : undefined) as z.infer<S>;
+  return request(`/api${path}`, { method, schema, signal, ...encode(body) });
 }

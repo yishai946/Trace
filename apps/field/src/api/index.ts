@@ -1,5 +1,7 @@
-import { ApiError, type ErrorCode } from '@trace/schemas';
+import { ApiRequestError, request } from '@trace/api-client';
 import type { z } from 'zod';
+
+export { ApiRequestError };
 
 /** The TRACE API address, e.g. `http://192.168.1.20:3001` in development. Set in `apps/field/.env.local`. */
 export const apiBaseUrl: string | undefined = process.env.EXPO_PUBLIC_API_URL?.trim() || undefined;
@@ -8,22 +10,6 @@ export const apiBaseUrl: string | undefined = process.env.EXPO_PUBLIC_API_URL?.t
 export const REQUEST_TIMEOUT_MS = 15_000;
 /** The same for an upload (a photo's bytes), which needs longer on a weak connection. */
 export const UPLOAD_TIMEOUT_MS = 60_000;
-
-/** A failed API call. `code` and `details` come from the server's shared error shape. */
-export class ApiRequestError extends Error {
-  // eslint-disable-next-line max-params -- positional by design: every call site builds it from a response's fields
-  constructor(
-    readonly status: number,
-    readonly code: ErrorCode | 'NETWORK_ERROR',
-    message: string,
-    readonly details?: unknown,
-    /** Seconds the server asks to wait before trying again (`Retry-After`). */
-    readonly retryAfter?: number,
-  ) {
-    super(message);
-    this.name = 'ApiRequestError';
-  }
-}
 
 interface RequestOptions<S extends z.ZodType> {
   baseUrl: string | undefined;
@@ -39,31 +25,6 @@ interface RequestOptions<S extends z.ZodType> {
   signal?: AbortSignal;
 }
 
-function parseRetryAfter(value: string | null): number | undefined {
-  return value !== null && /^\d+$/.test(value.trim()) ? Number(value) : undefined;
-}
-
-/** A time limit for one request: it aborts after `ms`, or when the caller's own signal aborts. Call `dispose` when done. */
-function withTimeout(signal: AbortSignal | undefined, ms: number) {
-  const controller = new AbortController();
-  let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, ms);
-  const abortWithCaller = () => controller.abort();
-  if (signal?.aborted) controller.abort();
-  else signal?.addEventListener('abort', abortWithCaller, { once: true });
-  return {
-    signal: controller.signal,
-    timedOut: () => timedOut,
-    dispose: () => {
-      clearTimeout(timer);
-      signal?.removeEventListener('abort', abortWithCaller);
-    },
-  };
-}
-
 function headersOf({ token, body, upload }: Pick<RequestOptions<z.ZodType>, 'token' | 'body' | 'upload'>) {
   const headers: Record<string, string> = {};
   if (token) headers.authorization = `Bearer ${token}`;
@@ -72,48 +33,20 @@ function headersOf({ token, body, upload }: Pick<RequestOptions<z.ZodType>, 'tok
   return headers;
 }
 
-/** The failure the server answered with, in its shared error shape. */
-async function failureOf(res: Response): Promise<ApiRequestError> {
-  const retryAfter = parseRetryAfter(res.headers.get('retry-after'));
-  const parsed = ApiError.safeParse(await res.json().catch(() => null));
-  if (!parsed.success) {
-    return new ApiRequestError(res.status, 'INTERNAL_ERROR', `API responded ${res.status}`, undefined, retryAfter);
-  }
-  const { code, message, details } = parsed.data.error;
-  return new ApiRequestError(res.status, code, message, details, retryAfter);
-}
-
 /** Calls the TRACE API with the searcher's bearer token and validates the response with the shared zod schema. */
 export async function apiRequest<S extends z.ZodType>(
   path: string,
   { baseUrl, token, method = 'GET', body, upload, schema, signal }: RequestOptions<S>,
 ): Promise<z.infer<S>> {
   if (!baseUrl) throw new ApiRequestError(0, 'NETWORK_ERROR', 'EXPO_PUBLIC_API_URL is not set');
-
-  // One timer covers the request and reading the answer; the caller's own signal still aborts it.
-  const limit = withTimeout(signal, upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS);
-  try {
-    let res: Response;
-    try {
-      res = await fetch(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
-        method,
-        signal: limit.signal,
-        // The bearer token is the only credential: the sign-in response also sets a cookie that must not outlive sign-out.
-        credentials: 'omit',
-        headers: headersOf({ token, body, upload }),
-        body: upload ? upload.data : body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch (error) {
-      if (signal?.aborted && !limit.timedOut()) throw error;
-      throw new ApiRequestError(
-        0,
-        'NETWORK_ERROR',
-        limit.timedOut() ? 'The server did not answer in time' : 'The server is not reachable',
-      );
-    }
-    if (!res.ok) throw await failureOf(res);
-    return (schema ? schema.parse(await res.json()) : undefined) as z.infer<S>;
-  } finally {
-    limit.dispose();
-  }
+  return request(`${baseUrl.replace(/\/$/, '')}/api${path}`, {
+    method,
+    schema,
+    signal,
+    // The bearer token is the only credential: the sign-in response also sets a cookie that must not outlive sign-out.
+    credentials: 'omit',
+    headers: headersOf({ token, body, upload }),
+    body: upload ? upload.data : body === undefined ? undefined : JSON.stringify(body),
+    timeoutMs: upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS,
+  });
 }

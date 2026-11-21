@@ -1,3 +1,4 @@
+import { localDateTimeOf } from '@trace/domain';
 import type { LngLat } from '@trace/geo';
 import type { CreateSightingBody, SightingSource } from '@trace/schemas';
 
@@ -21,11 +22,8 @@ export const MESSAGES = {
 
 export const emptyForm: SightingForm = { source: null, position: null, observedAt: '', description: '' };
 
-const two = (value: number) => String(value).padStart(2, '0');
-
 /** The local date and time as the date field holds it, to the minute. */
-export const nowLocal = (date = new Date()) =>
-  `${date.getFullYear()}-${two(date.getMonth() + 1)}-${two(date.getDate())}T${two(date.getHours())}:${two(date.getMinutes())}`;
+export const nowLocal = (date = new Date()) => localDateTimeOf(date);
 
 /** The fields to fix before the sighting can be saved. */
 export function validate(form: SightingForm): SightingFormErrors {

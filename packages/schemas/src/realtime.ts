@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { IsoDateTime } from './datetime';
 import { ErrorCode } from './errors';
 import { LngLat, PointGeometry } from './geo';
 import { Message, MessageRecipient, OwnMessage } from './messages';
@@ -41,7 +42,7 @@ const RallyChanged = z.object({
   type: z.literal('rally.changed'),
   missionId: z.uuid(),
   rallyPoint: PointGeometry,
-  updatedAt: z.iso.datetime({ offset: true }),
+  updatedAt: IsoDateTime,
 });
 
 /**
@@ -57,7 +58,7 @@ const ParticipantMoved = z.object({
   participantId: z.uuid(),
   searcherId: z.uuid(),
   position: LngLat,
-  positionAt: z.iso.datetime({ offset: true }),
+  positionAt: IsoDateTime,
 });
 
 /**

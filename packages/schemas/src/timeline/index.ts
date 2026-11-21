@@ -1,7 +1,7 @@
 import { TIMELINE_EVENT_TYPES } from '@trace/domain';
 import { z } from 'zod';
+import { IsoDateTime } from '../datetime';
 
-const iso = z.iso.datetime({ offset: true });
 const callsign = z.number().int().min(0).max(99);
 
 export const TimelineEventType = z.enum(TIMELINE_EVENT_TYPES).meta({ id: 'TimelineEventType' });
@@ -26,7 +26,13 @@ export const TimelineSubject = z
   })
   .meta({ id: 'TimelineSubject' });
 
-const base = { id: z.uuid(), missionId: z.uuid(), occurredAt: iso, actor: TimelineActor, subject: TimelineSubject };
+const base = {
+  id: z.uuid(),
+  missionId: z.uuid(),
+  occurredAt: IsoDateTime,
+  actor: TimelineActor,
+  subject: TimelineSubject,
+};
 const empty = z.object({});
 
 // The issue that records a type may add fields to its details.
@@ -48,7 +54,7 @@ export const TimelineEvent = z
     z.object({
       ...base,
       type: z.literal('lkp.changed'),
-      details: z.object({ observedAt: iso, previousObservedAt: iso.nullable() }),
+      details: z.object({ observedAt: IsoDateTime, previousObservedAt: IsoDateTime.nullable() }),
     }),
     /** Subject: the polygon (label = its name). Actor: the commander. */
     z.object({ ...base, type: z.literal('polygon.created'), details: empty }),

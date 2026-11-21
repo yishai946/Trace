@@ -15,6 +15,7 @@
     "@sentry/react": "^11.12.0",
     "@tanstack/react-query": "^5.105.0",
     "@trace/design": "workspace:*",
+    "@trace/api-client": "workspace:*",
     "@trace/domain": "workspace:*",
     "@trace/geo": "workspace:*",
     "@trace/map": "workspace:*",
