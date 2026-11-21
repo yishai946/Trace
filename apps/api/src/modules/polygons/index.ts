@@ -11,11 +11,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import type { Db } from '../../db';
-import type { Realtime } from '../../realtime';
+import type { ServiceDeps } from '../serviceDeps';
 import { createPolygon, deletePolygon, listPolygons, updatePolygon } from './polygons.service';
 
-export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
+export const polygonRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   app.get(
     '/missions/:missionId/polygons',
     {
@@ -44,10 +44,7 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request, reply) => {
       const { missionId } = request.params;
-      const { polygon, event } = await createPolygon(db, missionId, request.body, actorOf(request));
-      realtime.publish({ type: 'polygon.saved', missionId, polygon });
-      realtime.publish({ type: 'timeline.recorded', missionId, event });
-      return reply.status(201).send(polygon);
+      return reply.status(201).send(await createPolygon(deps, missionId, request.body, actorOf(request)));
     },
   );
 
@@ -68,15 +65,7 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request) => {
       const { missionId, polygonId } = request.params;
-      const { polygon, event } = await updatePolygon(db, {
-        missionId,
-        polygonId,
-        input: request.body,
-        actor: actorOf(request),
-      });
-      realtime.publish({ type: 'polygon.saved', missionId, polygon });
-      if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
-      return polygon;
+      return updatePolygon(deps, { missionId, polygonId, input: request.body, actor: actorOf(request) });
     },
   );
 
@@ -93,9 +82,7 @@ export const polygonRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     },
     async (request, reply) => {
       const { missionId, polygonId } = request.params;
-      const { event } = await deletePolygon(db, missionId, polygonId, actorOf(request));
-      realtime.publish({ type: 'polygon.deleted', missionId, polygonId });
-      realtime.publish({ type: 'timeline.recorded', missionId, event });
+      await deletePolygon(deps, missionId, polygonId, actorOf(request));
       return reply.status(204).send(null);
     },
   );

@@ -13,11 +13,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import { forbidden } from '../../errors';
-import type { Db } from '../../db';
-import type { Realtime } from '../../realtime';
+import type { ServiceDeps } from '../serviceDeps';
 import { createSighting, decideLkp, listLkps, listSightings } from './sightings.service';
 
-export const sightingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
+export const sightingRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   app.get(
     '/missions/:missionId/sightings',
     {
@@ -61,13 +61,12 @@ export const sightingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
       const { missionId } = request.params;
       const actor = actorOf(request);
       if (actor.role === 'searcher' && actor.searcherId === null) throw forbidden();
-      const { sighting, created } = await createSighting(db, {
+      const { sighting, created } = await createSighting(deps, {
         ...request.body,
         missionId,
         reportedBy: actor.userId,
         searcherId: actor.role === 'searcher' ? actor.searcherId : null,
       });
-      if (created) realtime.publish({ type: 'sighting.saved', missionId, sighting });
       return reply.status(created ? 201 : 200).send(sighting);
     },
   );
@@ -89,15 +88,12 @@ export const sightingRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime 
     },
     async (request) => {
       const { missionId, sightingId } = request.params;
-      const result = await decideLkp(db, {
+      return decideLkp(deps, {
         missionId,
         sightingId,
         decision: request.body.decision,
         userId: actorOf(request).userId,
       });
-      realtime.publish({ type: 'sighting.saved', missionId, sighting: result.sighting });
-      if (request.body.decision === 'accepted') realtime.publish({ type: 'lkp.changed', missionId, lkp: result.lkp });
-      return result;
     },
   );
 

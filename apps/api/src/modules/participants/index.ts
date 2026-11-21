@@ -19,7 +19,7 @@ import { actorOf } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { forbidden } from '../../errors';
 import type { Realtime } from '../../realtime';
-import { getMission } from '../missions/missions.service';
+import { getMission } from '../missions/missions.read';
 import { listPolygons } from '../polygons/polygons.service';
 import {
   assignParticipant,

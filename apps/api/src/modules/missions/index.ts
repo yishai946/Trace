@@ -12,21 +12,14 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { commandersOnly, missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import type { Db } from '../../db';
 import { unsupportedPhoto } from '../../errors';
-import type { Realtime } from '../../realtime';
 import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
-import {
-  createMission,
-  getMission,
-  getMissionPhoto,
-  listMissions,
-  setMissionPhoto,
-  updateMissionDetails,
-  updateRallyPoint,
-} from './missions.service';
+import type { ServiceDeps } from '../serviceDeps';
+import { getMission, getMissionPhoto, listMissions } from './missions.read';
+import { createMission, setMissionPhoto, updateMissionDetails, updateRallyPoint } from './missions.service';
 
-export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }> = async (app, { db, realtime }) => {
+export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   acceptPhotoBodies(app);
 
   app.get(
@@ -87,17 +80,7 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    async (request) => {
-      const { missionId } = request.params;
-      const mission = await updateRallyPoint(db, missionId, request.body.rallyPoint);
-      realtime.publish({
-        type: 'rally.changed',
-        missionId,
-        rallyPoint: mission.rallyPoint,
-        updatedAt: mission.updatedAt,
-      });
-      return mission;
-    },
+    (request) => updateRallyPoint(deps, request.params.missionId, request.body.rallyPoint),
   );
 
   app.put(
@@ -117,12 +100,7 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    async (request) => {
-      const { missionId } = request.params;
-      const mission = await updateMissionDetails(db, missionId, request.body);
-      realtime.publish({ type: 'mission.updated', missionId, mission });
-      return mission;
-    },
+    (request) => updateMissionDetails(deps, request.params.missionId, request.body),
   );
 
   app.put(
@@ -156,9 +134,7 @@ export const missionRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime }
     async (request) => {
       const body: unknown = request.body;
       if (!Buffer.isBuffer(body)) throw unsupportedPhoto('Send the photo as an image');
-      const mission = await setMissionPhoto(db, request.params.missionId, body);
-      realtime.publish({ type: 'mission.updated', missionId: mission.id, mission });
-      return mission;
+      return setMissionPhoto(deps, request.params.missionId, body);
     },
   );
 

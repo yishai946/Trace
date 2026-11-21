@@ -15,6 +15,7 @@ import { asGeoJson } from '../../db/geometry';
 import { lkpPoints, participations, searchers, sightings, users } from '../../db/schema';
 import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
 import { lockMission } from '../lockMission';
+import type { ServiceDeps } from '../serviceDeps';
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 export type CreateSightingInput = z.output<typeof CreateSightingBody> & {
@@ -131,10 +132,10 @@ async function findSighting(tx: Tx, missionId: string, sightingId: string): Prom
  * belongs to another reporter or mission is refused.
  */
 export async function createSighting(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: CreateSightingInput,
 ): Promise<{ sighting: Sighting; created: boolean }> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     await lockLkp(tx, input.missionId);
     if (input.searcherId !== null) {
       const [participation] = await tx
@@ -176,6 +177,9 @@ export async function createSighting(
     const row = await findSighting(tx, input.missionId, id);
     return { sighting: toSighting(row, await currentLkp(tx, input.missionId)), created: false };
   });
+  if (result.created)
+    realtime.publish({ type: 'sighting.saved', missionId: input.missionId, sighting: result.sighting });
+  return result;
 }
 
 /**
@@ -183,10 +187,10 @@ export async function createSighting(
  * rejecting changes nothing but the sighting. Only an undecided sighting later than the current LKP can be decided.
  */
 export async function decideLkp(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: { missionId: string; sightingId: string; decision: LkpDecision; userId: string },
 ): Promise<LkpDecisionResult> {
-  return db.transaction(async (tx) => {
+  const result = await db.transaction(async (tx) => {
     await lockLkp(tx, input.missionId);
     const found = await findSighting(tx, input.missionId, input.sightingId);
     const current = await currentLkp(tx, input.missionId);
@@ -217,6 +221,11 @@ export async function decideLkp(
     const updated = await findSighting(tx, input.missionId, found.id);
     return { sighting: toSighting(updated, lkp), lkp: toLkp(lkp) };
   });
+  realtime.publish({ type: 'sighting.saved', missionId: input.missionId, sighting: result.sighting });
+  if (input.decision === 'accepted') {
+    realtime.publish({ type: 'lkp.changed', missionId: input.missionId, lkp: result.lkp });
+  }
+  return result;
 }
 
 /** Every LKP the mission had, newest first. The first is the current one (decision 58). */
