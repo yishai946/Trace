@@ -56,14 +56,25 @@ async function send<S extends z.ZodType>(
 }
 
 /** Calls a TRACE API URL and validates the response with the shared zod schema. Failures are `ApiRequestError`s. */
-export async function request<S extends z.ZodType>(url: string, options: RequestOptions<S> = {}): Promise<z.infer<S>> {
+export function request<S extends z.ZodType>(
+  url: string,
+  options: RequestOptions<S> & { schema: S },
+): Promise<z.infer<S>>;
+/** A response without a body: resolves to undefined. */
+export function request(url: string, options?: RequestOptions<z.ZodType> & { schema?: undefined }): Promise<undefined>;
+/** Either, for wrappers that pass an optional schema through. */
+export function request<S extends z.ZodType>(url: string, options?: RequestOptions<S>): Promise<z.infer<S> | undefined>;
+export async function request<S extends z.ZodType>(
+  url: string,
+  options: RequestOptions<S> = {},
+): Promise<z.infer<S> | undefined> {
   const { schema, signal, timeoutMs } = options;
   // One timer covers the request and reading the answer; the caller's own signal still aborts it.
   const limit = timeoutMs === undefined ? undefined : withTimeout(signal, timeoutMs);
   try {
     const res = await send(url, options, limit);
     if (!res.ok) throw await failureOf(res);
-    return (schema ? schema.parse(await res.json()) : undefined) as z.infer<S>;
+    return schema ? schema.parse(await res.json()) : undefined;
   } finally {
     limit?.dispose();
   }

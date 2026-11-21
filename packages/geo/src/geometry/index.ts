@@ -47,7 +47,7 @@ export function areaSquareMeters(polygon: Polygon): number {
 
 export function boundsOf(geojson: GeoJSON): Bounds {
   const [west, south, east, north] = turfBbox(geojson);
-  return [west, south, east, north] as Bounds;
+  return [west, south, east, north];
 }
 
 /**

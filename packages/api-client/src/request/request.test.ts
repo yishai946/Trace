@@ -22,6 +22,11 @@ describe('request', () => {
     await expect(request('/api/x')).resolves.toBeUndefined();
   });
 
+  it('resolves to undefined without a schema, even when the answer has a body', async () => {
+    respond(200, { x: 1 });
+    await expect(request('/api/x')).resolves.toBeUndefined();
+  });
+
   it('passes the method, headers, body and credentials to fetch, and the caller signal when there is no timeout', async () => {
     const fetch = respond(200, {});
     const signal = new AbortController().signal;
