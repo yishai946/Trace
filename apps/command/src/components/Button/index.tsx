@@ -4,7 +4,8 @@ import { buttonClasses, type ButtonVariant } from './buttonClasses';
 export type { ButtonVariant };
 export { LinkButton, type LinkButtonProps } from './LinkButton';
 
-export interface ButtonProps extends AriaButtonProps {
+export interface ButtonProps extends Omit<AriaButtonProps, 'className'> {
+  className?: string;
   /**
    * Trace Console Button: one `primary` per area. `danger` and `danger-ghost` belong in the SOS AlertBanner;
    * `danger-outline` is a destructive action elsewhere (delete, sign out), and `danger` confirms a delete.
@@ -17,5 +18,5 @@ export interface ButtonProps extends AriaButtonProps {
 }
 
 export function Button({ variant, size, className, ...props }: ButtonProps) {
-  return <AriaButton {...props} className={buttonClasses({ variant, size, className: className as string })} />;
+  return <AriaButton {...props} className={buttonClasses({ variant, size, className })} />;
 }

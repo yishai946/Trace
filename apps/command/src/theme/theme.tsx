@@ -1,10 +1,10 @@
-import { themeIds, type ThemeId } from '@trace/design';
+import type { ThemeId } from '@trace/design';
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { parseThemePreference, type ThemePreference } from './themePreference';
 
 const STORAGE_KEY = 'trace.theme';
 
-/** A theme, or `system` to follow the device's light/dark setting. */
-export type ThemePreference = ThemeId | 'system';
+export type { ThemePreference } from './themePreference';
 
 interface ThemeContextValue {
   /** The theme on screen. */
@@ -17,10 +17,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function readStoredPreference(): ThemePreference {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === 'system' || (stored && (themeIds as readonly string[]).includes(stored))) {
-      return stored as ThemePreference;
-    }
+    return parseThemePreference(localStorage.getItem(STORAGE_KEY));
   } catch {
     // Storage can be blocked; fall back to the device setting.
   }

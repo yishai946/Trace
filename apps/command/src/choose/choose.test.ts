@@ -11,6 +11,12 @@ describe('choose', () => {
     expect(choose(options, 3, 'all')).toBe('all');
   });
 
+  it('accepts a null key and a fallback outside the options', () => {
+    expect(choose(options, null, 'all')).toBe('all');
+    expect(choose(options, 'other', null)).toBeNull();
+    expect(choose(options, 'new', null)).toBe('new');
+  });
+
   it('reads the first key of a selection', () => {
     expect(chooseFirst(options, new Set(['new']), 'all')).toBe('new');
     expect(chooseFirst(options, new Set(), 'all')).toBe('all');

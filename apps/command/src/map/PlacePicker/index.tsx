@@ -2,6 +2,7 @@ import type { LngLat } from '@trace/geo';
 import type { MapProvider } from '@trace/map';
 import { useState } from 'react';
 import { Tab, TabList, TabPanel, Tabs, type Key } from 'react-aria-components';
+import { choose } from '../../choose';
 import { TextField } from '../../components/TextField';
 import { formatCoordinate, parseLatLng } from '../../pages/NewMissionPage/newMissionForm';
 import type { Place } from '../geocoding';
@@ -11,7 +12,8 @@ import styles from './PlacePicker.module.css';
 export const COORDS_ERROR = 'קואורדינטות לא תקינות: קו רוחב בין ‎-90 ל-90, קו אורך בין ‎-180 ל-180.';
 
 /** How a point is placed (decisions 2, 91): a click on the map, a place search or typed coordinates. */
-export type PlaceMode = 'map' | 'search' | 'coords';
+const PLACE_MODES = ['map', 'search', 'coords'] as const;
+export type PlaceMode = (typeof PLACE_MODES)[number];
 
 interface PlacePickerProps {
   provider: MapProvider;
@@ -67,7 +69,7 @@ export function PlacePicker({
   };
 
   return (
-    <Tabs selectedKey={mode} onSelectionChange={(key: Key) => onModeChange(key as PlaceMode)}>
+    <Tabs selectedKey={mode} onSelectionChange={(key: Key) => onModeChange(choose(PLACE_MODES, key, mode))}>
       <TabList className={styles.seg} aria-label={`אופן הגדרת ${pointName}`}>
         <Tab id="map" className={styles.segTab}>
           מפה
