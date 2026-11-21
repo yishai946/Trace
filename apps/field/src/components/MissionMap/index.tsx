@@ -33,7 +33,7 @@ type MapLibreModule = typeof MapLibre;
 function loadMapLibre(): MapLibreModule | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily: the native module is missing on web and in tests
-    return require('@maplibre/maplibre-react-native') as MapLibreModule;
+    return require('@maplibre/maplibre-react-native');
   } catch {
     return null;
   }
@@ -151,7 +151,7 @@ export function MissionMap({
       accessibilityLabel={accessibilityLabel}
       logo={false}
       compass={false}
-      onPress={onPressMap ? (event) => onPressMap(event.nativeEvent.lngLat as LngLat) : undefined}
+      onPress={onPressMap ? (event) => onPressMap(event.nativeEvent.lngLat) : undefined}
     >
       <Camera bounds={area.bounds ?? ISRAEL_BOUNDS} padding={framePadding} duration={0} />
       {area.data.rally ? symbol('rally', 'כינוס', area.data.rally) : null}

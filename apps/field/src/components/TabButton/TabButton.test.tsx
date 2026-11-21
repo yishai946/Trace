@@ -46,6 +46,20 @@ describe('TabButton', () => {
     expect(notPrevented).toBe(false);
   });
 
+  it.each([{ metaKey: true }, { ctrlKey: true }, { shiftKey: true }, { button: 1 }])(
+    'lets the browser open the link itself when %j is held',
+    (init) => {
+      const onPress = vi.fn();
+      render(<TabButton label="SOS" icon="sos" href="/sos" tone="danger" onPress={onPress} />, {
+        wrapper: ThemeProvider,
+      });
+
+      const notPrevented = fireEvent.click(screen.getByRole('link', { name: 'SOS' }), init);
+      expect(onPress).toHaveBeenCalledOnce();
+      expect(notPrevented).toBe(true);
+    },
+  );
+
   it('keeps SOS in its danger color, also when it is the current tab', () => {
     render(<TabButton label="SOS" icon="sos" href="/sos" tone="danger" isFocused />, { wrapper: ThemeProvider });
     expect(screen.getByText('SOS')).toHaveStyle({ color: themes.day.color.dangerInk });
