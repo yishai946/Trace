@@ -37,7 +37,7 @@ export function useWorkspaceMapData({
       type: 'GeometryCollection',
       geometries: [...points, ...polygons.map((p) => p.geometry)],
     });
-    return { center: mission.rallyPoint.coordinates as LngLat, zoom: 14, bounds };
+    return { center: mission.rallyPoint.coordinates, zoom: 14, bounds };
   });
 
   const saved = useMemo(

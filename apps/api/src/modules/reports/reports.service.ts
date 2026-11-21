@@ -3,13 +3,14 @@ import type { CreateReportBody, Report, TimelineEvent, UpdateReportBody } from '
 import { and, eq } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
-import type { Db, Tx } from '../../db';
+import type { Tx } from '../../db';
 import { missions, participations, reportPhotos, reports } from '../../db/schema';
 import { AppError, forbidden, notFound, missionEnded, participationEnded, unsupportedPhoto } from '../../errors';
+import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
 import { findReport, isReportVisible, reportRecipients } from './reports.read';
 
-export interface CreateReportResult {
+interface CreateReportResult {
   report: Report;
   /** False when the id was already saved: the report is the one saved before and nothing was recorded. */
   created: boolean;
@@ -18,20 +19,36 @@ export interface CreateReportResult {
 }
 
 /**
+ * Tells the mission a report was saved: the commander and, besides them, the searchers who may see it (decision 80),
+ * read after the change is saved.
+ */
+async function publishSaved({ db, realtime, log }: ServiceDeps, missionId: string, report: Report) {
+  let options: { searcherIds?: string[] } = {};
+  try {
+    options = { searcherIds: await reportRecipients(db, { reportId: report.id }) };
+  } catch (error) {
+    // The report is saved: a failed lookup must not fail the response. The commander still hears of it.
+    log.error(error, 'Report recipients lookup failed');
+  }
+  realtime.publish({ type: 'report.saved', missionId, report }, options);
+}
+
+/**
  * Saves a searcher's field report (UC-F09) as New, with the searcher's polygon at this moment. The id comes from the
  * phone, so a report sent again (a lost answer, an offline retry) returns the one already saved. The mission and the
  * participation are checked first, so a report that reaches the server after the mission ended is refused.
  */
 export async function createReport(
-  db: Db,
+  deps: ServiceDeps,
   {
     missionId,
     searcherId,
     actor,
     body,
   }: { missionId: string; searcherId: string; actor: Actor; body: z.output<typeof CreateReportBody> },
-): Promise<CreateReportResult> {
-  return db.transaction(async (tx) => {
+): Promise<{ report: Report; created: boolean }> {
+  const { db, realtime } = deps;
+  const result: CreateReportResult = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({ status: participations.status, polygonId: participations.polygonId })
       .from(participations)
@@ -78,6 +95,12 @@ export async function createReport(
     });
     return { report: await findReport(tx, body.id), created: true, event };
   });
+  const { report, created, event } = result;
+  if (created) {
+    await publishSaved(deps, missionId, report);
+    if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+  }
+  return { report, created };
 }
 
 /**
@@ -85,9 +108,10 @@ export async function createReport(
  * its existence is not revealed. An ended mission is read-only.
  */
 export async function setReportPhoto(
-  db: Db,
+  deps: ServiceDeps,
   { missionId, reportId, userId, data }: { missionId: string; reportId: string; userId: string; data: Buffer },
 ): Promise<Report> {
+  const { db } = deps;
   const [row] = await db
     .select({ missionId: reports.missionId, reportedBy: reports.reportedBy, missionStatus: missions.status })
     .from(reports)
@@ -103,7 +127,9 @@ export async function setReportPhoto(
     .insert(reportPhotos)
     .values({ reportId, contentType, data })
     .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data, updatedAt: new Date() } });
-  return findReport(db, reportId);
+  const report = await findReport(db, reportId);
+  await publishSaved(deps, missionId, report);
+  return report;
 }
 
 /**
@@ -124,13 +150,13 @@ const reportsLocked = () => missionEnded('The reports of an ended mission cannot
 
 /**
  * The commander marks a report Handled, one way (decision 17). Marking a handled report again returns it as it is;
- * `changed` tells the route whether to publish.
+ * the mission hears of it only when it changed.
  */
 export async function markReportHandled(
-  db: Db,
+  deps: ServiceDeps,
   { missionId, reportId }: { missionId: string; reportId: string },
-): Promise<{ report: Report; changed: boolean }> {
-  return db.transaction(async (tx) => {
+): Promise<Report> {
+  const { report, changed } = await deps.db.transaction(async (tx) => {
     const row = await lockReport(tx, missionId, reportId);
     if (!canChangeReport(row.missionStatus)) throw reportsLocked();
     const updated = await tx
@@ -140,6 +166,8 @@ export async function markReportHandled(
       .returning({ id: reports.id });
     return { report: await findReport(tx, reportId), changed: updated.length > 0 };
   });
+  if (changed) await publishSaved(deps, missionId, report);
+  return report;
 }
 
 /**
@@ -147,7 +175,7 @@ export async function markReportHandled(
  * searcher who may see the report gets 403; one who may not gets 404, so its existence is not revealed.
  */
 export async function updateReport(
-  db: Db,
+  deps: ServiceDeps,
   {
     missionId,
     reportId,
@@ -155,7 +183,7 @@ export async function updateReport(
     body,
   }: { missionId: string; reportId: string; actor: Actor; body: z.output<typeof UpdateReportBody> },
 ): Promise<Report> {
-  return db.transaction(async (tx) => {
+  const report = await deps.db.transaction(async (tx) => {
     const row = await lockReport(tx, missionId, reportId);
     if (actor.role !== 'commander' && row.reportedBy !== actor.userId) {
       throw (await isReportVisible(tx, { missionId, reportId, actor })) ? forbidden() : notFound('Report');
@@ -170,21 +198,24 @@ export async function updateReport(
       .where(eq(reports.id, reportId));
     return findReport(tx, reportId);
   });
+  await publishSaved(deps, missionId, report);
+  return report;
 }
 
 /**
- * The commander deletes a report; its photo goes with it (decision 89). Returns the searchers to tell, read before the
+ * The commander deletes a report; its photo goes with it (decision 89). The searchers to tell are read before the
  * report is gone.
  */
 export async function deleteReport(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   { missionId, reportId }: { missionId: string; reportId: string },
-): Promise<{ searcherIds: string[] }> {
-  return db.transaction(async (tx) => {
+): Promise<void> {
+  const searcherIds = await db.transaction(async (tx) => {
     const row = await lockReport(tx, missionId, reportId);
     if (!canChangeReport(row.missionStatus)) throw reportsLocked();
     const searcherIds = await reportRecipients(tx, { reportId });
     await tx.delete(reports).where(eq(reports.id, reportId));
-    return { searcherIds };
+    return searcherIds;
   });
+  realtime.publish({ type: 'report.deleted', missionId, reportId }, { searcherIds });
 }

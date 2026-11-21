@@ -1,8 +1,8 @@
-import { formatLatLng, type LngLat } from '@trace/geo';
-import type { Sighting } from '@trace/schemas';
+import { formatLatLng } from '@trace/geo';
+import type { PointGeometry, Sighting } from '@trace/schemas';
 import styles from './LkpPanel.module.css';
 
-export const coordinates = (point: { coordinates: number[] }) => formatLatLng(point.coordinates as LngLat);
+export const coordinates = (point: PointGeometry) => formatLatLng(point.coordinates);
 
 /** "LKP" is Latin inside Hebrew text: isolated, and kept on the line with its Hebrew prefix (wireframe tcx-nw). */
 export const lkpWord = (prefix: string) => (

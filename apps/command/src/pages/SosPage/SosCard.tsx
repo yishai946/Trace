@@ -1,4 +1,4 @@
-import { formatLatLng, type LngLat } from '@trace/geo';
+import { formatLatLng } from '@trace/geo';
 import type { Sos } from '@trace/schemas';
 import { CallButton } from '../../components/CallButton';
 import { CallsignChip } from '../../components/CallsignChip';
@@ -52,7 +52,7 @@ export function SosCard({ sos, phone, onClose, closing }: SosCardProps) {
           <dd>
             {location ? (
               <>
-                <span className={styles.num}>{formatLatLng(location.position.coordinates as LngLat)}</span>
+                <span className={styles.num}>{formatLatLng(location.position.coordinates)}</span>
                 {accuracyText(location.accuracy)}
               </>
             ) : (

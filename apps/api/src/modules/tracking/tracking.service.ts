@@ -13,6 +13,8 @@ import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { participations, trackPoints } from '../../db/schema';
 import { notFound, participationEnded } from '../../errors';
+import { findParticipant } from '../participants/participants.read';
+import type { ServiceDeps } from '../serviceDeps';
 
 /**
  * How far past the server's clock a point may be dated and still move the last position. A phone whose clock runs
@@ -21,7 +23,7 @@ import { notFound, participationEnded } from '../../errors';
  */
 export const CLOCK_SKEW_MS = 2 * 60 * 1000;
 
-export interface RecordTrackResult extends TrackPointsResult {
+interface RecordTrackResult extends TrackPointsResult {
   participantId: string;
   /** The points saved now (not the duplicates), as the commander sees them. */
   storedPoints: TrackPoint[];
@@ -37,10 +39,10 @@ export interface RecordTrackResult extends TrackPointsResult {
  * participation's last position, unless a newer one is already there or it is dated in the future. A searcher whose activity ended sends nothing.
  */
 export async function recordTrackPoints(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   { missionId, searcherId, body }: { missionId: string; searcherId: string; body: z.output<typeof TrackPointsBody> },
-): Promise<RecordTrackResult> {
-  return db.transaction(async (tx) => {
+): Promise<TrackPointsResult> {
+  const result: RecordTrackResult = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({ id: participations.id, status: participations.status })
       .from(participations)
@@ -119,9 +121,31 @@ export async function recordTrackPoints(
       stored: inserted.length,
       duplicates: body.points.length - inserted.length,
       storedPoints,
-      moved: updated ? { position: newest.position as LngLat, positionAt: newestAt.toISOString() } : null,
+      moved: updated ? { position: newest.position, positionAt: newestAt.toISOString() } : null,
     };
   });
+  if (result.moved) {
+    realtime.publish({
+      type: 'participant.moved',
+      missionId,
+      participantId: result.participantId,
+      searcherId,
+      ...result.moved,
+    });
+  }
+  if (result.storedPoints.length > 0) {
+    realtime.publish({
+      type: 'participant.tracked',
+      missionId,
+      participantId: result.participantId,
+      points: result.storedPoints,
+    });
+  }
+  if (result.gpsBack) {
+    const participant = await findParticipant(db, missionId, result.participantId);
+    if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+  }
+  return { stored: result.stored, duplicates: result.duplicates };
 }
 
 /**
@@ -151,7 +175,7 @@ export async function getTrack(
   return {
     participantId: participation.id,
     points: rows.map((row) => ({
-      position: PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat,
+      position: PointGeometry.parse(JSON.parse(row.position)).coordinates,
       recordedAt: row.recordedAt.toISOString(),
       accuracy: row.accuracy,
       context: row.context,

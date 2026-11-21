@@ -7,17 +7,17 @@ import {
   type MessageTargetRule,
   type MessageUrgency,
 } from '@trace/domain';
-import type { Message, MessageRecipient, OwnMessage, SendMessageBody } from '@trace/schemas';
+import type { Message, OwnMessage, SendMessageBody } from '@trace/schemas';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
-import type { Db } from '../../db';
 import { messageRecipients, messages, participations, polygons } from '../../db/schema';
 import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
 import { lockMission } from '../lockMission';
+import type { ServiceDeps } from '../serviceDeps';
 import { loadMessages, toOwnMessage } from './messages.read';
 
 /** The push notification title per urgency. Sound and importance per urgency belong to push infrastructure (#126). */
-export const PUSH_TITLES: Record<MessageUrgency, string> = {
+const PUSH_TITLES: Record<MessageUrgency, string> = {
   normal: 'הודעה מהמנהל',
   important: 'הודעה חשובה מהמנהל',
   critical: 'הודעה קריטית מהמנהל',
@@ -28,11 +28,11 @@ export const PUSH_TITLES: Record<MessageUrgency, string> = {
  * stored, so a searcher who is offline reads it when they are back (decision 77).
  */
 export async function sendMessage(
-  db: Db,
+  { db, realtime, push }: ServiceDeps,
   input: { missionId: string; sentBy: string; message: z.output<typeof SendMessageBody> },
-): Promise<{ message: Message; deliveries: { searcherId: string; message: OwnMessage }[] }> {
+): Promise<Message> {
   const { missionId, sentBy, message: request } = input;
-  return db.transaction(async (tx) => {
+  const { message, deliveries } = await db.transaction(async (tx) => {
     await lockMission(tx, missionId, {
       allowed: canSendMessage,
       refusal: () => missionEnded('Messages cannot be sent in an ended mission'),
@@ -103,6 +103,26 @@ export async function sendMessage(
     }));
     return { message, deliveries };
   });
+  realtime.publish({ type: 'message.sent', missionId, message });
+  for (const delivery of deliveries) {
+    realtime.publish({
+      type: 'message.received',
+      missionId,
+      searcherId: delivery.searcherId,
+      message: delivery.message,
+    });
+  }
+  // Best effort: push never fails or delays the send.
+  void push.notifySearchers({
+    missionId,
+    searcherIds: deliveries.map((delivery) => delivery.searcherId),
+    message: {
+      title: PUSH_TITLES[message.urgency],
+      body: message.body,
+      data: { missionId, screen: 'messages' },
+    },
+  });
+  return message;
 }
 
 /**
@@ -110,11 +130,11 @@ export async function sendMessage(
  * (`changed: false`). Accepted whatever the mission status: a searcher may read a message after the mission ended.
  */
 export async function recordReceipt(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   input: { missionId: string; searcherId: string; messageId: string; receipt: MessageReceipt },
-): Promise<{ message: OwnMessage; recipient: MessageRecipient; changed: boolean }> {
+): Promise<OwnMessage> {
   const { missionId, searcherId, messageId, receipt } = input;
-  return db.transaction(async (tx) => {
+  const { message, recipient, changed } = await db.transaction(async (tx) => {
     const [row] = await tx
       .select({
         participationId: messageRecipients.participationId,
@@ -155,4 +175,6 @@ export async function recordReceipt(
     if (!message || !recipient) throw new Error('Saved message not found');
     return { message: toOwnMessage(message, recipient), recipient, changed };
   });
+  if (changed) realtime.publish({ type: 'message.receipt', missionId, messageId, recipient });
+  return message;
 }

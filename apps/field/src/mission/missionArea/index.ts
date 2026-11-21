@@ -1,4 +1,4 @@
-import { boundsOf, type Bounds, type LngLat } from '@trace/geo';
+import { boundsOf, type Bounds } from '@trace/geo';
 import { emptyMissionMapData, type MapReport, type MissionMapData } from '@trace/map';
 import type { Mission, MissionPolygon } from '@trace/schemas';
 import type { Feature, Point } from 'geojson';
@@ -62,9 +62,9 @@ export function toMissionArea(
         geometry: p.geometry,
         selected: p.id === assignedPolygonId,
       })),
-      lkp: lkp ? { id: 'lkp', position: lkp.position.coordinates as LngLat, time: formatTime(lkp.observedAt) } : null,
+      lkp: lkp ? { id: 'lkp', position: lkp.position.coordinates, time: formatTime(lkp.observedAt) } : null,
       reports,
-      rally: mission ? (mission.rallyPoint.coordinates as LngLat) : null,
+      rally: mission ? mission.rallyPoint.coordinates : null,
     },
     bounds: features.length ? frame(features) : null,
   };

@@ -30,6 +30,7 @@ import { sosRoutes } from '../modules/sos';
 import { searcherRoutes } from '../modules/searchers';
 import { timelineRoutes } from '../modules/timeline';
 import { trackingRoutes } from '../modules/tracking';
+import type { ServiceDeps } from '../modules/serviceDeps';
 import { createRealtime } from '../realtime';
 import { VERSION } from '../version';
 
@@ -78,6 +79,8 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
     log: app.log,
   });
 
+  const deps: ServiceDeps = { db, realtime, push, log: app.log };
+
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
   await app.register(swagger, {
     openapi: { info: { title: 'TRACE API', version: VERSION } },
@@ -93,14 +96,14 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
       await api.register(authRoutes, { auth });
       await api.register(async (signedIn) => {
         requireSignIn(signedIn, { auth, db });
-        await signedIn.register(missionRoutes, { db, realtime });
-        await signedIn.register(polygonRoutes, { db, realtime });
-        await signedIn.register(sightingRoutes, { db, realtime });
-        await signedIn.register(messageRoutes, { db, realtime, push });
-        await signedIn.register(sosRoutes, { db, realtime, push });
-        await signedIn.register(participantRoutes, { db, realtime });
-        await signedIn.register(trackingRoutes, { db, realtime });
-        await signedIn.register(reportRoutes, { db, realtime });
+        await signedIn.register(missionRoutes, deps);
+        await signedIn.register(polygonRoutes, deps);
+        await signedIn.register(sightingRoutes, deps);
+        await signedIn.register(messageRoutes, deps);
+        await signedIn.register(sosRoutes, deps);
+        await signedIn.register(participantRoutes, deps);
+        await signedIn.register(trackingRoutes, deps);
+        await signedIn.register(reportRoutes, deps);
         await signedIn.register(searcherRoutes, { db });
         await signedIn.register(notificationRoutes, { db });
         await signedIn.register(timelineRoutes, { db });

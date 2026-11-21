@@ -2,17 +2,13 @@ import { ApiError, CreateSosBody, MissionParams, Sos, SosList, SosParams } from 
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import type { Db } from '../../db';
 import { forbidden } from '../../errors';
-import type { Realtime } from '../../realtime';
-import type { PushNotifier } from '../notifications/notifications.service';
-import { activateSos, closeSos, listSos } from './sos.service';
-import { sosPushMessage } from './sosPush';
+import type { ServiceDeps } from '../serviceDeps';
+import { listSos } from './sos.read';
+import { activateSos, closeSos } from './sos.service';
 
-export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push: PushNotifier }> = async (
-  app,
-  { db, realtime, push },
-) => {
+export const sosRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
+  const { db } = deps;
   app.post(
     '/missions/:missionId/sos',
     {
@@ -36,20 +32,11 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push
       // `searchersOnly` already refused anyone else; this narrows the type.
       if (actor.role !== 'searcher' || !actor.searcherId) throw forbidden();
       const { missionId } = request.params;
-      const { sos, created, searcherIds, recipientIds, event } = await activateSos(db, {
+      const { sos, created } = await activateSos(deps, {
         ...request.body,
         missionId,
         actor: { userId: actor.userId, searcherId: actor.searcherId },
       });
-      if (created) {
-        realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
-        if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
-        void push.notifySearchers({
-          missionId,
-          searcherIds: recipientIds,
-          message: sosPushMessage(sos, 'activated'),
-        });
-      }
       return reply.status(created ? 201 : 200).send(sos);
     },
   );
@@ -73,17 +60,7 @@ export const sosRoutes: FastifyPluginAsyncZod<{ db: Db; realtime: Realtime; push
     async (request) => {
       const { missionId, sosId } = request.params;
       const actor = actorOf(request);
-      const { sos, changed, searcherIds, event } = await closeSos(db, { missionId, sosId, actor });
-      if (changed) {
-        realtime.publish({ type: 'sos.saved', missionId, sos }, { searcherIds });
-        if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
-        void push.notifySearchers({
-          missionId,
-          searcherIds: searcherIds.filter((id) => actor.role !== 'searcher' || id !== actor.searcherId),
-          message: sosPushMessage(sos, 'closed'),
-        });
-      }
-      return sos;
+      return closeSos(deps, { missionId, sosId, actor });
     },
   );
 

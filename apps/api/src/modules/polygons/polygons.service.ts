@@ -1,12 +1,11 @@
 import { canChangePolygons, isActiveInPolygon, nextPolygonName } from '@trace/domain';
-import { findOutside, isValidPolygon, type LngLat } from '@trace/geo';
+import { findOutside, isValidPolygon } from '@trace/geo';
 import {
   PointGeometry,
   PolygonGeometry,
   type CreatePolygonBody,
   type MissionPolygon,
   type SearchersOutsideDetails,
-  type TimelineEvent,
   type UpdatePolygonBody,
 } from '@trace/schemas';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
@@ -17,6 +16,7 @@ import { participations, polygons, searchers } from '../../db/schema';
 import type { Actor } from '../../auth/auth.plugin';
 import { AppError, notFound } from '../../errors';
 import { lockMission } from '../lockMission';
+import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
 
 export type CreatePolygonInput = z.output<typeof CreatePolygonBody>;
@@ -102,7 +102,7 @@ async function searchersOutside(
 
   const located = rows
     .filter((row) => isActiveInPolygon(row, polygonId) && row.position)
-    .map((row) => ({ ...row, position: PointGeometry.parse(JSON.parse(row.position)).coordinates as LngLat }));
+    .map((row) => ({ ...row, position: PointGeometry.parse(JSON.parse(row.position)).coordinates }));
   const byId = new Map(located.map((row) => [row.participantId, row]));
 
   return findOutside(
@@ -124,13 +124,13 @@ export async function listPolygons(db: Db, missionId: string): Promise<MissionPo
 
 /** Draws a new polygon (UC-C06). Unnamed, it is called "פוליגון N"; it starts unassigned. Overlap is allowed. */
 export async function createPolygon(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   missionId: string,
   input: CreatePolygonInput,
   actor: Actor,
-): Promise<{ polygon: MissionPolygon; event: TimelineEvent }> {
+): Promise<MissionPolygon> {
   await assertValid(db, input.geometry);
-  return db.transaction(async (tx) => {
+  const { polygon, event } = await db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     // Deleted polygons count, so a default name is never reused within the mission.
     const used = await tx.select({ name: polygons.name }).from(polygons).where(eq(polygons.missionId, missionId));
@@ -152,6 +152,9 @@ export async function createPolygon(
     });
     return { polygon: toPolygon(await findPolygon(tx, missionId, created.id)), event };
   });
+  realtime.publish({ type: 'polygon.saved', missionId, polygon });
+  realtime.publish({ type: 'timeline.recorded', missionId, event });
+  return polygon;
 }
 
 /**
@@ -159,16 +162,16 @@ export async function createPolygon(
  * with their list, until the commander confirms it.
  */
 export async function updatePolygon(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   {
     missionId,
     polygonId,
     input,
     actor,
   }: { missionId: string; polygonId: string; input: UpdatePolygonInput; actor: Actor },
-): Promise<{ polygon: MissionPolygon; event: TimelineEvent | null }> {
+): Promise<MissionPolygon> {
   if (input.geometry) await assertValid(db, input.geometry);
-  return db.transaction(async (tx) => {
+  const { polygon, event } = await db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     const existing = await findPolygon(tx, missionId, polygonId);
 
@@ -204,16 +207,19 @@ export async function updatePolygon(
       : null;
     return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), event };
   });
+  realtime.publish({ type: 'polygon.saved', missionId, polygon });
+  if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+  return polygon;
 }
 
 /** Removes a polygon from the active map (UC-C06). Blocked while a searcher is assigned; history stays. */
 export async function deletePolygon(
-  db: Db,
+  { db, realtime }: ServiceDeps,
   missionId: string,
   polygonId: string,
   actor: Actor,
-): Promise<{ event: TimelineEvent }> {
-  return db.transaction(async (tx) => {
+): Promise<void> {
+  const event = await db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     const polygon = await findPolygon(tx, missionId, polygonId);
     if (polygon.activeSearchers > 0) {
@@ -229,6 +235,8 @@ export async function deletePolygon(
       subject: { kind: 'polygon', id: polygonId, label: polygon.name },
       details: {},
     });
-    return { event };
+    return event;
   });
+  realtime.publish({ type: 'polygon.deleted', missionId, polygonId });
+  realtime.publish({ type: 'timeline.recorded', missionId, event });
 }
