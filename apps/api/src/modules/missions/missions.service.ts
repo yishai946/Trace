@@ -5,7 +5,7 @@ import {
   generateJoinCode,
   type RandomInt,
 } from '@trace/domain';
-import type { PointGeometry} from '@trace/schemas';
+import type { PointGeometry } from '@trace/schemas';
 import { type CreateMissionBody, type Mission, type UpdateMissionDetailsBody } from '@trace/schemas';
 import type { z } from 'zod';
 import { eq } from 'drizzle-orm';
