@@ -6,7 +6,7 @@ vi.mock('expo-battery', () => ({ getBatteryLevelAsync: vi.fn(async () => 0.5) })
 
 const missionId = '00000000-0000-4000-8000-000000000001';
 const BATTERY = `https://api.test/api/missions/${missionId}/participation/battery`;
-const participation = { status: 'active' } as never;
+const participation = { id: 'p1', status: 'active' } as never;
 
 const okFetch = () => vi.fn(async (_url: string, _init: RequestInit) => new Response(null, { status: 204 }));
 const bodies = (fetch: ReturnType<typeof okFetch>) => fetch.mock.calls.map(([, init]) => JSON.parse(String(init.body)));
@@ -60,6 +60,15 @@ describe('reportBattery', () => {
     vi.advanceTimersByTime(BATTERY_REPORT_MS);
     await reportBattery(async () => 0.49);
     expect(fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it('reports again for another participant with the same level', async () => {
+    const fetch = okFetch();
+    vi.stubGlobal('fetch', fetch);
+    await reportBattery(async () => 0.5);
+    useSession.setState({ participation: { id: 'p2', status: 'active' } as never });
+    await reportBattery(async () => 0.5);
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 
   it('tries again on the next call when the server could not be reached, and never throws', async () => {

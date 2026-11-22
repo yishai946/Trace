@@ -9,9 +9,9 @@ import { useSession } from '../../state/session';
 export const BATTERY_REPORT_MS = 5 * 60_000;
 
 /** What the server was last told, so an unchanged level is not sent on every batch of GPS points. */
-let reported: { missionId: string; level: number; at: number } | null = null;
+let reported: { participantId: string; missionId: string; level: number; at: number } | null = null;
 
-/** Forgets what was reported (a new session; a new mission is told apart by its id). */
+/** Forgets what was reported (a new mission or participant is told apart by its ids). */
 export function resetBatteryReport(): void {
   reported = null;
 }
@@ -28,14 +28,20 @@ export async function reportBattery(readLevel: () => Promise<number> = getBatter
     if (!(fraction >= 0)) return;
     const level = Math.round(fraction * 100);
     const now = Date.now();
-    if (reported?.missionId === missionId && reported.level === level && now - reported.at < BATTERY_REPORT_MS) return;
+    if (
+      reported?.participantId === participation.id &&
+      reported.missionId === missionId &&
+      reported.level === level &&
+      now - reported.at < BATTERY_REPORT_MS
+    )
+      return;
     await apiRequest(`/missions/${missionId}/participation/battery`, {
       baseUrl: apiBaseUrl,
       token,
       method: 'PUT',
       body: { level, measuredAt: new Date(now).toISOString() },
     });
-    reported = { missionId, level, at: now };
+    reported = { participantId: participation.id, missionId, level, at: now };
   } catch {
     // The next batch tries again.
   }
