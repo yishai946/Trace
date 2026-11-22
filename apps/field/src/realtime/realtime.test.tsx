@@ -9,9 +9,11 @@ import { makeReport } from '../reports/fixtures';
 import { makeMessage } from '../messages/fixtures';
 import { makeSos } from '../sos/fixtures';
 import { clearOfflinePackages } from '../offline/store';
+import { requestOfflineRefresh } from '../offline/refreshPackage';
 import { useSession } from '../state/session';
 
 vi.mock('../offline/store', () => ({ clearOfflinePackages: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../offline/refreshPackage', () => ({ requestOfflineRefresh: vi.fn().mockResolvedValue(undefined) }));
 
 type Handler = (...args: never[]) => void;
 
@@ -122,6 +124,43 @@ describe('useMissionLive', () => {
     await join(socket as FakeSocket);
     expect(queryClient.getQueryState(missionKeys.mission(missionId))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(missionKeys.polygons(missionId))?.isInvalidated).toBe(true);
+  });
+
+  it('refreshes the saved offline package after every join, for edits made while offline', async () => {
+    const { socket } = setup();
+    await join(socket as FakeSocket);
+    expect(requestOfflineRefresh).toHaveBeenCalledWith(expect.objectContaining({ missionId, token: 't1' }));
+  });
+
+  it.each([
+    ['mission.updated', { mission }],
+    ['rally.changed', { rallyPoint: mission.rallyPoint, updatedAt: '2026-10-03T14:30:00.000Z' }],
+    [
+      'lkp.changed',
+      { lkp: { position: { type: 'Point', coordinates: [35.14, 31.77] }, observedAt: '2026-10-03T14:22:00.000Z' } },
+    ],
+    ['polygon.deleted', { polygonId: '00000000-0000-4000-8000-0000000000a1' }],
+  ])('refreshes the saved offline package on %s', (type, rest) => {
+    const { socket } = setup();
+    vi.mocked(requestOfflineRefresh).mockClear();
+    act(() => socket?.fire('mission:event', { type, missionId, ...rest }));
+    expect(requestOfflineRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh the offline package for an event that does not change it', () => {
+    const { socket } = setup();
+    vi.mocked(requestOfflineRefresh).mockClear();
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: makeSos() }));
+    expect(requestOfflineRefresh).not.toHaveBeenCalled();
+  });
+
+  it('stops a refresh in flight when the searcher leaves', async () => {
+    const { socket, unmount } = setup();
+    await join(socket as FakeSocket);
+    const signal = vi.mocked(requestOfflineRefresh).mock.calls.at(-1)?.[0].signal;
+    expect(signal?.aborted).toBe(false);
+    unmount();
+    expect(signal?.aborted).toBe(true);
   });
 
   it('shows a new LKP and a moved rally point at once', async () => {
