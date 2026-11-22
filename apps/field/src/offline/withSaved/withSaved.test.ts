@@ -5,7 +5,7 @@ import { withSaved } from './index';
 
 type Q = Pick<
   UseQueryResult<string>,
-  'data' | 'isPending' | 'isError' | 'isFetching' | 'fetchStatus' | 'refetch' | 'failureCount'
+  'data' | 'isPending' | 'isError' | 'isFetching' | 'fetchStatus' | 'refetch' | 'failureCount' | 'error'
 >;
 const query = (over: Partial<Q> = {}) =>
   ({
@@ -16,6 +16,7 @@ const query = (over: Partial<Q> = {}) =>
     fetchStatus: 'fetching',
     refetch: () => Promise.reject(new Error('unused')),
     failureCount: 0,
+    error: null,
     ...over,
   }) as UseQueryResult<string>;
 const saved = (data: string | null | undefined, isLoading = false) => ({ data, isLoading });

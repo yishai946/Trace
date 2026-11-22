@@ -7,6 +7,13 @@ import { useSession } from '../state/session';
 import { useTheme } from '../theme';
 import { pendingTokens } from '../theme/pending';
 
+/** The saved photo, when it is the one the mission points to: a photo saved for an older version must not show. */
+function useSavedPhoto(url: string | null): string | null {
+  const savedUri = useSavedPhotoUri().data;
+  const savedFor = useSavedMission().data?.missingPerson.photoUrl;
+  return savedFor === url ? (savedUri ?? null) : null;
+}
+
 /**
  * The missing person's photo, fetched with the searcher's token (members only, UC-F04). When it cannot be fetched
  * (no connection) the copy saved by the offline package shows. The wireframes' placeholder (`.tcx-ph`) stands in when
@@ -25,10 +32,7 @@ export function MissingPersonPhoto({
   const { color } = useTheme().theme;
   const token = useSession((s) => s.token);
   const [failed, setFailed] = useState(false);
-  const savedUri = useSavedPhotoUri().data;
-  // The saved photo belongs to the saved mission: it shows only for the photo that mission points to.
-  const savedFor = useSavedMission().data?.missingPerson.photoUrl;
-  const saved = savedFor === url ? savedUri : null;
+  const saved = useSavedPhoto(url);
   const size = large ? styles.large : styles.small;
   const alt = 'תמונת הנעדר';
   const showSaved = !!url && !!saved && (fromPhone || failed || !apiBaseUrl || !token);
