@@ -1,4 +1,4 @@
-import { canStartSearch, type StartSearchReadiness } from '@trace/domain';
+import { canStartSearch, type SavedOfflineParts, type StartSearchReadiness } from '@trace/domain';
 import { useSession } from '../../state/session';
 import { offlineProgress, savedParts, type OfflineProgress } from '../progress';
 import { useOfflineState } from '../state';
@@ -8,6 +8,8 @@ export type OfflineStatus = 'checking' | 'downloading' | 'interrupted' | 'ready'
 export interface OfflinePackage {
   status: OfflineStatus;
   progress: OfflineProgress;
+  /** What the device holds completely, for the combined Start Search blockers of Fm03. */
+  savedParts: SavedOfflineParts;
   /** Whether Start Search is open (decision 85): only with the whole package saved. */
   startSearch: StartSearchReadiness;
   /** An interrupted download that will not resume by itself. */
@@ -23,6 +25,7 @@ export function useOfflinePackage(): OfflinePackage {
   const current = state.missionId === missionId && missionId !== null;
   const saved = current ? state.saved : [];
   const progress = offlineProgress(saved);
+  const parts = savedParts(saved);
   const status: OfflineStatus =
     !current || !state.loaded
       ? 'checking'
@@ -34,7 +37,8 @@ export function useOfflinePackage(): OfflinePackage {
   return {
     status,
     progress,
-    startSearch: canStartSearch(savedParts(saved)),
+    savedParts: parts,
+    startSearch: canStartSearch(parts),
     refused: state.refused,
     retry: state.retry,
   };

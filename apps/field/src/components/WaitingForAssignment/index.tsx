@@ -15,6 +15,7 @@ import { MissingPersonPhoto } from '../MissingPersonPhoto';
 import { MissionMap } from '../MissionMap';
 import { Notice } from '../Notice';
 import { OfflineDownload } from '../OfflineDownload';
+import { ReadinessPermissions } from '../ReadinessPermissions';
 import { Screen } from '../Screen';
 
 export interface WaitingForAssignmentProps {
@@ -64,6 +65,7 @@ export function WaitingForAssignment({
         </Notice>
       ) : null}
       <OfflineDownload />
+      <ReadinessPermissions />
       <View style={[styles.map, { borderColor: color.border }]}>
         <MissionMap area={area} />
       </View>
