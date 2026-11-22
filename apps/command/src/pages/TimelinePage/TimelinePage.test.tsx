@@ -2,7 +2,7 @@ import type { TimelineEvent } from '@trace/schemas';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PAGE_SIZE, TimelinePage, type TimelinePageProps } from '.';
-import { eventSamples, timelineEvents } from '../../mission/fixtures';
+import { eventSamples, sosActive, timelineEvents } from '../../mission/fixtures';
 import { formatEventTime } from '../../mission/timelineEvent';
 
 const props = (overrides: Partial<TimelinePageProps> = {}): TimelinePageProps => ({
@@ -25,6 +25,15 @@ const manyEvents = (count: number): TimelineEvent[] =>
   }));
 
 describe('TimelinePage', () => {
+  it('names the sender of an SOS the commander closed', () => {
+    const closed = { ...eventSamples['sos.closed'], subject: { ...eventSamples['sos.closed'].subject, id: sosActive.id } };
+    render(<TimelinePage {...props({ events: [closed], sos: [sosActive] })} />);
+    const row = rows()[0] as HTMLElement;
+    expect(row.textContent).toContain('סגר את ה-SOS של');
+    expect(row.textContent).toContain(sosActive.sender.name);
+    expect(within(row).getByText('04')).toBeTruthy();
+  });
+
   it('lists the newest event first', () => {
     render(<TimelinePage {...props()} />);
 

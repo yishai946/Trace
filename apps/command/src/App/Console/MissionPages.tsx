@@ -105,6 +105,7 @@ export function MissionPages({
           loadFailed={data.timeline.isError}
           onRetry={() => void data.timeline.refetch()}
           onGoToMap={() => nav.setView('map')}
+          sos={data.sos.data}
         />
       )}
     </MissionLayout>

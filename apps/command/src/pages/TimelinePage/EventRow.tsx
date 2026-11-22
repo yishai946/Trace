@@ -3,18 +3,20 @@ import type { TimelineEvent } from '@trace/schemas';
 import { Link } from 'react-aria-components';
 import styles from './TimelinePage.module.css';
 import { EventText } from '../../mission/EventText';
-import { describeEvent, formatEventTime } from '../../mission/timelineEvent';
+import { describeEvent, formatEventTime, type SosSenderOf } from '../../mission/timelineEvent';
 
 export function EventRow({
   event,
   withDate,
   onGoToMap,
+  senderOf,
 }: {
   event: TimelineEvent;
   withDate: boolean;
   onGoToMap: () => void;
+  senderOf: SosSenderOf;
 }) {
-  const view = describeEvent(event);
+  const view = describeEvent(event, senderOf);
   // Every row's link says what it leads from, so links in a list are told apart.
   const plainText = view.segments
     .map((segment) => (typeof segment === 'string' ? segment : formatCallsign(segment.callsign)))
