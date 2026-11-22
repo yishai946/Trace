@@ -80,6 +80,15 @@ describe('UpdateMissionDetailsBody', () => {
     });
   });
 
+  it('does not notify the searchers unless the commander says so', () => {
+    const body = (notifySearchers?: unknown) =>
+      UpdateMissionDetailsBody.safeParse({ name: 'מסע', missingPerson: {}, notifySearchers });
+    expect(body().data?.notifySearchers).toBe(false);
+    expect(body(true).data?.notifySearchers).toBe(true);
+    expect(body('yes').success).toBe(false);
+    expect(body(1).success).toBe(false);
+  });
+
   it('rejects an impossible age or a time without an offset', () => {
     const body = (missingPerson: object) => UpdateMissionDetailsBody.safeParse({ name: 'מסע', missingPerson }).success;
     expect(body({ age: 131 })).toBe(false);

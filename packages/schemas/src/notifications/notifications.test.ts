@@ -31,6 +31,7 @@ describe('PushData', () => {
 
   it('accepts a mission and a known screen', () => {
     expect(PushData.safeParse({ missionId, screen: 'sos' }).success).toBe(true);
+    expect(PushData.safeParse({ missionId, screen: 'missing-person' }).success).toBe(true);
   });
 
   it('rejects an unknown screen or a mission that is not a uuid', () => {

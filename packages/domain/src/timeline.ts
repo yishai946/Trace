@@ -18,5 +18,6 @@ export const TIMELINE_EVENT_TYPES = [
   'contact.lost',
   'sos.activated',
   'sos.closed',
+  'mission.details_changed',
 ] as const;
 export type TimelineEventType = (typeof TIMELINE_EVENT_TYPES)[number];

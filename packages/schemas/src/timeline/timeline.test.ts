@@ -17,6 +17,12 @@ const subject = (kind: string, label: string | null, callsign: number | null = n
 });
 
 const samples: Record<TimelineEventType, unknown> = {
+  'mission.details_changed': {
+    type: 'mission.details_changed',
+    actor: commander,
+    subject: subject('mission', 'מסע 0412'),
+    details: { fields: ['description'] },
+  },
   'mission.created': {
     type: 'mission.created',
     actor: commander,
@@ -88,6 +94,12 @@ describe('TimelineEvent', () => {
   it('rejects an lkp.changed event without observedAt', () => {
     const sample = { ...(samples['lkp.changed'] as object), details: { previousObservedAt: null } };
     expect(TimelineEvent.safeParse(event(sample)).success).toBe(false);
+  });
+
+  it('rejects a mission.details_changed event with an unknown field or no fields', () => {
+    const sample = samples['mission.details_changed'] as object;
+    expect(TimelineEvent.safeParse(event({ ...sample, details: { fields: ['photo'] } })).success).toBe(false);
+    expect(TimelineEvent.safeParse(event({ ...sample, details: {} })).success).toBe(false);
   });
 
   it('rejects an unknown type', () => {

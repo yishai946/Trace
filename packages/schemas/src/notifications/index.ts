@@ -10,8 +10,11 @@ export const ExpoPushToken = z
 export const RegisterPushTokenBody = z.object({ token: ExpoPushToken }).meta({ id: 'RegisterPushTokenBody' });
 export type RegisterPushTokenBody = z.infer<typeof RegisterPushTokenBody>;
 
-/** What a push notification carries so Field can open the right screen when it is tapped. */
+/**
+ * What a push notification carries so Field can open the right screen when it is tapped. `missing-person` opens the
+ * missing person's details (UC-F04).
+ */
 export const PushData = z
-  .object({ missionId: z.uuid(), screen: z.enum(['map', 'messages', 'sos']) })
+  .object({ missionId: z.uuid(), screen: z.enum(['map', 'messages', 'sos', 'missing-person']) })
   .meta({ id: 'PushData' });
 export type PushData = z.infer<typeof PushData>;
