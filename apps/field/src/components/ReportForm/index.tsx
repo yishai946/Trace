@@ -28,7 +28,9 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
     missionId,
     onDone,
   });
-  const leading = <Button label="ביטול" icon="close" variant="ghost" onPress={onCancel} />;
+  const leading = (
+    <Button label="ביטול" icon="close" variant="ghost" onPress={onCancel} disabled={phase === 'sending'} />
+  );
 
   if (phase === 'rejected' || phase === 'located-pending') {
     return <ReportOutcome outcome={phase} type={type} onDone={onDone} />;

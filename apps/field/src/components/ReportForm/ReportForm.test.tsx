@@ -259,6 +259,7 @@ describe('ReportForm', () => {
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'צרף תמונה' }));
     expect(await screen.findByText('תמונה מצורפת')).toBeInTheDocument();
+    expect(screen.getByLabelText('תצוגה מקדימה של התמונה המצורפת')).toBeInTheDocument();
     fireEvent.click(send());
 
     await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
@@ -266,6 +267,40 @@ describe('ReportForm', () => {
       expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST', 'PUT']),
     );
     expect(fetch.mock.calls[1]?.[0]).toMatch(/\/reports\/[0-9a-f-]+\/photo$/);
+  });
+
+  it('disables cancel while the report is being sent', async () => {
+    let release: (response: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => (release = resolve))),
+    );
+    const onCancel = vi.fn();
+    setup({ onCancel });
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    const cancel = await screen.findByRole('button', { name: 'ביטול' });
+    expect(cancel).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(cancel);
+    expect(onCancel).not.toHaveBeenCalled();
+    release(json(201, saved({})));
+  });
+
+  it('does not say the connection is down for a "הנעדר אותר" report the server did not take', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(500, { error: { code: 'INTERNAL_ERROR', message: 'boom' } })),
+    );
+    setup();
+    await ready();
+    fill('הנעדר אותר', 'נמצא ליד העץ');
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('לא הגיע למנהל');
+    expect(warning).toHaveTextContent('השרת לא זמין');
   });
 
   it('saves one report when send is pressed twice', async () => {

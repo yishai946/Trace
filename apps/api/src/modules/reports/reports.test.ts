@@ -31,6 +31,18 @@ describe('field reports (UC-F09)', () => {
       expect(await rows()).toHaveLength(1);
     });
 
+    it('does not trust a reportedAt in the future: it counts as the moment the report arrived', async () => {
+      const before = Date.now();
+      const future = new Date(before + 24 * 3_600_000).toISOString();
+      const res = await send(body({ reportedAt: future }));
+      expect(res.statusCode).toBe(201);
+      const saved = Date.parse(Report.parse(res.json()).reportedAt);
+      expect(saved).toBeGreaterThanOrEqual(before);
+      expect(saved).toBeLessThan(before + 60_000);
+      const [event] = await rt.ctx.db.select().from(timelineEvents).where(eq(timelineEvents.type, 'report.submitted'));
+      expect(event?.occurredAt.getTime()).toBe(saved);
+    });
+
     it('refuses an unknown type', async () => {
       const res = await send(body({ type: 'rumor' }));
       expect(res.statusCode).toBe(400);
@@ -224,6 +236,17 @@ describe('field reports (UC-F09)', () => {
       const big = await putPhoto(Buffer.concat([JPEG, Buffer.alloc(MAX_PHOTO_BYTES)]));
       expect(big.statusCode).toBe(413);
       expect(ApiError.parse(big.json()).error.code).toBe('PHOTO_TOO_LARGE');
+      expect(await photoRows()).toHaveLength(0);
+    });
+
+    it('refuses a photo from a searcher who finished the activity', async () => {
+      await rt.ctx.db
+        .update(participations)
+        .set({ status: 'ended' })
+        .where(eq(participations.missionId, rt.mission.id));
+      const res = await putPhoto(JPEG);
+      expect(res.statusCode).toBe(409);
+      expect(ApiError.parse(res.json()).error.code).toBe('PARTICIPATION_ENDED');
       expect(await photoRows()).toHaveLength(0);
     });
 

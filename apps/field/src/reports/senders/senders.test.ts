@@ -122,6 +122,13 @@ describe('reportPhotoSender', () => {
     await expect(reportPhotoSender.send(missionId, [item('report-photo', photo)])).rejects.toThrow();
   });
 
+  it('drops a photo whose base64 is corrupt instead of blocking the queue', async () => {
+    const fetch = stubFetch(json(200, saved));
+    const broken = { reportId, base64: '***not base64***' };
+    await expect(reportPhotoSender.send(missionId, [item('report-photo', broken)])).resolves.toBe('drop-batch');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it('drops an invalid payload without calling the server', async () => {
     const fetch = stubFetch(json(200, saved));
     await expect(reportPhotoSender.send(missionId, [item('report-photo', { reportId: 'x' })])).resolves.toBe(
