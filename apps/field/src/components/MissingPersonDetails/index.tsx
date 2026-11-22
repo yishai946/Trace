@@ -4,21 +4,25 @@ import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { formatDateTime } from '../../mission/missionArea';
+import { NOT_UP_TO_DATE } from '../../mission/mapWarning';
 import { useTheme } from '../../theme';
 import { MissingPersonPhoto } from '../MissingPersonPhoto';
+import { Notice } from '../Notice';
 import { Screen } from '../Screen';
 
 export interface MissingPersonDetailsProps {
   mission: Mission;
   /** "סגור", at the start of the bar. */
   closeAction: ReactNode;
+  /** The details are the copy saved on the phone and the server could not be reached (UC-F04). */
+  notUpToDate?: boolean;
 }
 
 /**
  * "פרטי נעדר מלאים" (Fm04): everything the commander entered about the missing person, read-only for the searcher
  * for the whole mission (UC-F04, decision 33). Fields the commander left empty are not shown.
  */
-export function MissingPersonDetails({ mission, closeAction }: MissingPersonDetailsProps) {
+export function MissingPersonDetails({ mission, closeAction, notUpToDate = false }: MissingPersonDetailsProps) {
   const { color } = useTheme().theme;
   const person = mission.missingPerson;
   const rows: { label: string; value: string }[] = [
@@ -31,7 +35,12 @@ export function MissingPersonDetails({ mission, closeAction }: MissingPersonDeta
 
   return (
     <Screen title="פרטי הנעדר" leading={closeAction}>
-      <MissingPersonPhoto url={person.photoUrl} large />
+      {notUpToDate ? (
+        <Notice icon="wifiOff" tone="warn" live>
+          {NOT_UP_TO_DATE}
+        </Notice>
+      ) : null}
+      <MissingPersonPhoto url={person.photoUrl} large fromPhone={notUpToDate} />
       <Text accessibilityRole="header" style={[typography.title, { color: color.ink }]}>
         {person.name ?? 'שם הנעדר לא הוזן'}
       </Text>

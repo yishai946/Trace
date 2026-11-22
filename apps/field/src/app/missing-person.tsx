@@ -22,7 +22,8 @@ export default function MissingPersonScreen() {
   if (!mission.data && (!inMission || mission.fetchStatus === 'idle') && !mission.isError) {
     return <Redirect href={routes.map} />;
   }
-  if (mission.data) return <MissingPersonDetails mission={mission.data} closeAction={close} />;
+  if (mission.data)
+    return <MissingPersonDetails mission={mission.data} closeAction={close} notUpToDate={mission.notUpToDate} />;
   return (
     <Screen title="פרטי הנעדר" leading={close}>
       {mission.isError ? (

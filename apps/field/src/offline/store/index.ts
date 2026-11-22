@@ -109,3 +109,12 @@ export async function clearOfflinePackages(): Promise<void> {
   const db = await database();
   await db.runAsync('DELETE FROM offline_steps');
 }
+
+/** Replaces a step that is already saved with a newer answer from the server; a step not saved yet is left to the download. */
+export async function refreshStep(missionId: string, step: 'mission' | 'polygons', json: unknown): Promise<void> {
+  try {
+    if ((await savedSteps(missionId)).includes(step)) await saveStep(missionId, step, { json });
+  } catch {
+    // The copy on the phone stays as it was; the screen already has the server's answer.
+  }
+}
