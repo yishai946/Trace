@@ -6,6 +6,7 @@ import { PhoneBar } from './PhoneBar';
 import styles from './PhoneMissionScreen.module.css';
 import type { Connection } from '../../components/ConnectionStatus';
 import { MissionSheet, type SheetTab } from '../MissionSheet';
+import { SosStrip } from './SosStrip';
 import { MissionTabBar, type MissionTab } from '../MissionTabBar';
 import { PHONE_SCREENS, type PhoneScreen } from '../phoneScreen';
 import { statusCounts } from '../reportView';
@@ -35,6 +36,9 @@ interface PhoneMissionScreenProps {
   sosScreen: ReactNode;
   /** The mission's SOS, newest first. Undefined while they load. */
   sos: Sos[] | undefined;
+  /** The SOS could not be loaded: the alert says the state is unknown. */
+  sosFailed: boolean;
+  onRetrySos: () => void;
   onOpenSos: () => void;
   /** Newest first. Undefined while they load. */
   reports: Report[] | undefined;
@@ -68,6 +72,8 @@ export function PhoneMissionScreen({
   messagesScreen,
   sosScreen,
   sos,
+  sosFailed,
+  onRetrySos,
   onOpenSos,
   reports,
   reportsFailed,
@@ -94,7 +100,7 @@ export function PhoneMissionScreen({
   const critical = !isMissionEnded(mission.status) && (reports ?? []).some(isCriticalReport);
   // Safety continues until Finish Activity, so an active SOS shows in an ended mission too.
   const activeSos = (sos ?? []).filter((s) => s.status === 'active').length;
-  const alerts = activeSos > 0 ? (critical ? 2 : 1) : critical ? 1 : 0;
+  const alerts = [activeSos > 0, sosFailed, critical].filter(Boolean).length;
   const screens = { reports: reportsScreen, messages: messagesScreen, sos: sosScreen };
 
   return (
@@ -124,6 +130,8 @@ export function PhoneMissionScreen({
             mission={mission}
             critical={critical}
             sos={sos}
+            sosFailed={sosFailed}
+            onRetrySos={onRetrySos}
             reports={reports}
             notice={notice}
             joinOpen={joinOpen}
@@ -152,10 +160,23 @@ export function PhoneMissionScreen({
           />
         </div>
       ) : (
-        screens[screen]
+        <>
+          <SosStrip
+            screen={screen}
+            sos={sos}
+            failed={sosFailed}
+            onRetry={onRetrySos}
+            onOpen={() => onScreenChange('sos')}
+          />
+          {screens[screen]}
+        </>
       )}
 
-      <MissionTabBar current={current} onNavigate={navigate} counts={{ reports: newReports, sos: activeSos }} />
+      <MissionTabBar
+        current={current}
+        onNavigate={navigate}
+        counts={{ reports: newReports, sos: sosFailed ? null : activeSos }}
+      />
     </div>
   );
 }

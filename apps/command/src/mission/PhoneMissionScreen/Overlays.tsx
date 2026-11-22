@@ -11,6 +11,9 @@ interface OverlaysProps {
   critical: boolean;
   /** The mission's SOS, newest first: an active one shows its alert above the others. Undefined while they load. */
   sos: Sos[] | undefined;
+  /** The SOS could not be loaded: the alert says the state is unknown. */
+  sosFailed: boolean;
+  onRetrySos: () => void;
   /** Newest first. Undefined while they load. */
   reports: Report[] | undefined;
   /** Why the mission opened with a problem, e.g. the photo that was not saved. */
@@ -28,6 +31,8 @@ export function Overlays({
   mission,
   critical,
   sos,
+  sosFailed,
+  onRetrySos,
   reports,
   notice,
   joinOpen,
@@ -37,10 +42,10 @@ export function Overlays({
   onOpenSos,
 }: OverlaysProps) {
   const sosActive = (sos ?? []).some((s) => s.status === 'active');
-  if (!critical && !sosActive && !notice && !joinOpen && !search) return null;
+  if (!critical && !sosActive && !sosFailed && !notice && !joinOpen && !search) return null;
   return (
     <div className={styles.below}>
-      <SosAlert compact sos={sos ?? []} onOpen={onOpenSos} />
+      <SosAlert compact sos={sos} failed={sosFailed} onRetry={onRetrySos} onOpen={onOpenSos} />
       {critical && <CriticalReportAlert compact reports={reports ?? []} onOpen={onOpenReport} />}
       {notice && (
         <p className={styles.notice} role="alert">

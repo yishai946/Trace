@@ -23,4 +23,9 @@ describe('FloatingAlerts', () => {
     rerender(<FloatingAlerts reports={[reportLocated]} sos={[]} {...open} />);
     expect(screen.getByRole('alert', { name: 'התראה קריטית' })).toBeTruthy();
   });
+
+  it('says the SOS state is unknown when it failed to load, even with nothing else to show', () => {
+    render(<FloatingAlerts reports={[]} sos={[]} sosFailed onRetrySos={vi.fn()} {...open} />);
+    expect(screen.getByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeTruthy();
+  });
 });

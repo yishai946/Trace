@@ -16,6 +16,7 @@ import {
   missionKeys,
   useCloseSos,
   useReportMutations,
+  useSosList,
   useSendMessage,
   useSightingMutations,
   useUpdateMissionDetails,
@@ -193,5 +194,28 @@ describe('useUpdateMissionDetails', () => {
     const { queryClient, result } = setup();
     await act(() => result.current.mutateAsync(body(true)));
     expect(queryClient.getQueryState(missionKeys.timeline(mission.id))?.isInvalidated).toBe(true);
+  });
+});
+
+describe('useSosList', () => {
+  it('asks again after a failure, until the SOS is known', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('{}', { status: 500 }))
+      .mockResolvedValue(new Response(JSON.stringify([sosActive])));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      const noRetry = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      );
+      const { result } = renderHook(() => useSosList(mission.id), { wrapper: noRetry });
+      await waitFor(() => expect(result.current.isError).toBe(true));
+      await act(() => vi.advanceTimersByTimeAsync(11_000));
+      await waitFor(() => expect(result.current.data).toEqual([sosActive]));
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

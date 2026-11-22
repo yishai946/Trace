@@ -116,7 +116,13 @@ export function TimelinePage({ events, loadFailed, onRetry, onGoToMap, sos }: Ti
               </thead>
               <tbody>
                 {visible.map((event) => (
-                  <EventRow key={event.id} event={event} withDate={withDate} onGoToMap={onGoToMap} senderOf={senderOf} />
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    withDate={withDate}
+                    onGoToMap={onGoToMap}
+                    senderOf={senderOf}
+                  />
                 ))}
               </tbody>
             </table>

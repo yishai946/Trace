@@ -26,7 +26,10 @@ const manyEvents = (count: number): TimelineEvent[] =>
 
 describe('TimelinePage', () => {
   it('names the sender of an SOS the commander closed', () => {
-    const closed = { ...eventSamples['sos.closed'], subject: { ...eventSamples['sos.closed'].subject, id: sosActive.id } };
+    const closed = {
+      ...eventSamples['sos.closed'],
+      subject: { ...eventSamples['sos.closed'].subject, id: sosActive.id },
+    };
     render(<TimelinePage {...props({ events: [closed], sos: [sosActive] })} />);
     const row = rows()[0] as HTMLElement;
     expect(row.textContent).toContain('סגר את ה-SOS של');

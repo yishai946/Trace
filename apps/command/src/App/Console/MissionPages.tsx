@@ -8,6 +8,7 @@ import { ReportsPage } from '../../pages/ReportsPage';
 import { SearchersPage } from '../../pages/SearchersPage';
 import { SosPage } from '../../pages/SosPage';
 import { TimelinePage } from '../../pages/TimelinePage';
+import { PageSosAlert } from './PageSosAlert';
 import type { ConsoleNav } from './useConsoleNav';
 import type { MessageSending, ReportActions, SearcherActions, SosActions } from './useMissionActions';
 import type { MissionData } from './useMissionData';
@@ -23,6 +24,10 @@ interface MissionPagesProps {
   searcherActions: SearcherActions;
   messageSending: MessageSending;
 }
+
+/** The number on the SOS item: the active ones, or null (shown as "?") when the SOS could not be loaded. */
+const sosCount = (sos: MissionData['sos']) =>
+  sos.isError ? null : (sos.data?.filter((s) => s.status === 'active').length ?? 0);
 
 /** The mission's navigation and, beside it, the page of the open view. The map view has no page: the map shows. */
 export function MissionPages({
@@ -45,8 +50,9 @@ export function MissionPages({
       onNavigate={nav.setView}
       counts={{
         reports: data.reports.data?.filter((r) => r.status === 'new').length ?? 0,
-        sos: data.sos.data?.filter((s) => s.status === 'active').length ?? 0,
+        sos: sosCount(data.sos),
       }}
+      alert={<PageSosAlert view={view} sos={data.sos} onOpenSos={nav.openSos} />}
       joinPanel={
         nav.panel === 'join' && <JoinCodePanel mission={mission} onClose={() => nav.setPanelOpen('join', false)} />
       }

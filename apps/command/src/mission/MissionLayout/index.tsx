@@ -7,9 +7,11 @@ interface MissionLayoutProps {
   view: MissionView;
   onNavigate: (view: MissionView) => void;
   /** Numbers after the navigation labels, e.g. the New reports. */
-  counts?: Partial<Record<MissionView, number>>;
+  counts?: Partial<Record<MissionView, number | null>>;
   /** The join code panel, under the navigation, when open. */
   joinPanel: ReactNode;
+  /** The critical SOS alert, floating over the page; it renders nothing when there is none or the view shows it already. */
+  alert?: ReactNode;
   /** The searchers, Reports, Messages or Timeline page; nothing on the map view. */
   children?: ReactNode;
 }
@@ -18,13 +20,22 @@ interface MissionLayoutProps {
  * The start-side navigation of a mission, and beside it the searchers, Reports, Messages or Timeline page. One element serves both views, so the
  * navigation is not remounted when the view changes and keyboard focus stays on the link that was activated.
  */
-export function MissionLayout({ missionName, view, onNavigate, counts, joinPanel, children }: MissionLayoutProps) {
+export function MissionLayout({
+  missionName,
+  view,
+  onNavigate,
+  counts,
+  joinPanel,
+  alert,
+  children,
+}: MissionLayoutProps) {
   return (
     <div className={view === 'map' ? styles.start : styles.page}>
       <div className={styles.startColumn}>
         <MissionNav missionName={missionName} view={view} onNavigate={onNavigate} counts={counts} />
         {joinPanel}
       </div>
+      <div className={styles.alert}>{alert}</div>
       {children}
     </div>
   );

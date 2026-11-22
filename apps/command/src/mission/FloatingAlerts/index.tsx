@@ -8,16 +8,19 @@ export interface FloatingAlertsProps {
   /** Newest first, as the API returns them. */
   reports: Report[];
   sos: Sos[];
+  /** The SOS could not be loaded: whether one is active is not known. */
+  sosFailed?: boolean;
+  onRetrySos?: () => void;
   onOpenReport: (reportId: string) => void;
   onOpenSos: () => void;
 }
 
 /** The alerts that float at the top centre of the live map: the SOS on top (UC-C14), the critical report under it (UC-C11). */
-export function FloatingAlerts({ reports, sos, onOpenReport, onOpenSos }: FloatingAlertsProps) {
-  if (!sos.some((s) => s.status === 'active') && !reports.some(isCriticalReport)) return null;
+export function FloatingAlerts({ reports, sos, sosFailed, onRetrySos, onOpenReport, onOpenSos }: FloatingAlertsProps) {
+  if (!sosFailed && !sos.some((s) => s.status === 'active') && !reports.some(isCriticalReport)) return null;
   return (
     <div className={styles.stack}>
-      <SosAlert sos={sos} onOpen={onOpenSos} />
+      <SosAlert sos={sos} failed={sosFailed} onRetry={onRetrySos} onOpen={onOpenSos} />
       <CriticalReportAlert reports={reports} onOpen={onOpenReport} />
     </div>
   );
