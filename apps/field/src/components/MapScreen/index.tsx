@@ -39,6 +39,7 @@ export function MapScreen() {
       <WaitingForAssignment
         mission={mission.data}
         participation={participation}
+        notUpToDate={mission.notUpToDate}
         onOpenDetails={() => openScreen(router, routes.missingPerson)}
       />
     );

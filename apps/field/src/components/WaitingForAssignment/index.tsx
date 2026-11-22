@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSearcherProfile } from '../../auth';
 import { ltr } from '../../i18n/rtl';
+import { NOT_UP_TO_DATE } from '../../mission/mapWarning';
 import { formatTime, toMissionArea } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
@@ -12,6 +13,7 @@ import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
 import { MissingPersonPhoto } from '../MissingPersonPhoto';
 import { MissionMap } from '../MissionMap';
+import { Notice } from '../Notice';
 import { OfflineDownload } from '../OfflineDownload';
 import { Screen } from '../Screen';
 
@@ -20,13 +22,20 @@ export interface WaitingForAssignmentProps {
   participation: OwnParticipation;
   /** "פרטי נעדר מלאים": opens the missing person's full details. */
   onOpenDetails: () => void;
+  /** The mission is the copy saved on the phone and the server could not be reached (UC-F04). */
+  notUpToDate?: boolean;
 }
 
 /**
  * Fm04: what a searcher sees between joining and being assigned (UC-F02 step 3, decision 31): that they wait, the
  * general map with the LKP and the rally point, and who is missing. No other searcher appears anywhere on it.
  */
-export function WaitingForAssignment({ mission, participation, onOpenDetails }: WaitingForAssignmentProps) {
+export function WaitingForAssignment({
+  mission,
+  participation,
+  onOpenDetails,
+  notUpToDate = false,
+}: WaitingForAssignmentProps) {
   const { color } = useTheme().theme;
   const profile = useSearcherProfile();
   const area = useMemo(() => toMissionArea([], mission), [mission]);
@@ -49,6 +58,11 @@ export function WaitingForAssignment({ mission, participation, onOpenDetails }: 
         </View>
         <Badge label="זמין" tone="accent" />
       </View>
+      {notUpToDate ? (
+        <Notice icon="wifiOff" tone="warn" live>
+          {NOT_UP_TO_DATE}
+        </Notice>
+      ) : null}
       <OfflineDownload />
       <View style={[styles.map, { borderColor: color.border }]}>
         <MissionMap area={area} />
@@ -57,7 +71,7 @@ export function WaitingForAssignment({ mission, participation, onOpenDetails }: 
         accessibilityLabel="פרטי הנעדר"
         style={[styles.card, styles.person, { backgroundColor: color.surfaceSunken, borderColor: color.border }]}
       >
-        <MissingPersonPhoto url={person.photoUrl} />
+        <MissingPersonPhoto url={person.photoUrl} fromPhone={notUpToDate} />
         <View style={styles.grow}>
           <Text style={[typography.title, { color: color.ink }]}>
             {person.name ?? 'שם הנעדר לא הוזן'}

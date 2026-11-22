@@ -19,4 +19,9 @@ describe('mapWarning', () => {
   it('shows the located report first when both apply: the commander does not know the person was found', () => {
     expect(mapWarning({ gpsLost: true, locatedWaiting: true })?.text).toContain('הנעדר אותר');
   });
+
+  it('warns that saved information shows, after the GPS (UC-F04)', () => {
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, notUpToDate: true })?.text).toContain('נשמר במכשיר');
+    expect(mapWarning({ gpsLost: true, locatedWaiting: false, notUpToDate: true })?.text).toContain('ה-GPS לא זמין');
+  });
 });

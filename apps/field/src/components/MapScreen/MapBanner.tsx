@@ -14,7 +14,7 @@ import { Button } from '../Button';
 
 interface MapBannerProps {
   /** The mission's polygons query, which the map cannot show without. */
-  polygons: { isError: boolean; isFetching: boolean; data: unknown; refetch: () => unknown };
+  polygons: { isError: boolean; isFetching: boolean; data: unknown; refetch: () => unknown; notUpToDate: boolean };
   /** A "הנעדר אותר" report is waiting to be sent. */
   locatedWaiting: boolean;
 }
@@ -55,7 +55,7 @@ export function MapBanner({ polygons, locatedWaiting }: MapBannerProps) {
   };
   const status = kind ? actions[kind] : null;
   // The warnings show when nothing more urgent does.
-  const banner = status ?? mapWarning({ gpsLost, locatedWaiting });
+  const banner = status ?? mapWarning({ gpsLost, locatedWaiting, notUpToDate: polygons.notUpToDate });
   if (!banner) return null;
   return (
     <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
