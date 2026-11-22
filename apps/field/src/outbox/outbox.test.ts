@@ -154,6 +154,19 @@ describe('flushOutbox', () => {
     expect(await pendingCount()).toBe(2);
   });
 
+  it('holds back every kind of a failing mission, so a photo is not sent before its report', async () => {
+    await enqueue({ kind: 'track-point', missionId: A, payloads: [1] });
+    await enqueue({ kind: 'sighting', missionId: A, payloads: [2] });
+    await enqueue({ kind: 'sighting', missionId: B, payloads: [3] });
+    const failing = sender(async () => {
+      throw new Error('offline');
+    });
+    const other = sender();
+    await flushOutbox({ 'track-point': failing, sighting: other });
+    expect(vi.mocked(other.send).mock.calls.map((call) => [call[0], payloadsOf(call)])).toEqual([[B, [3]]]);
+    expect(await pendingCount()).toBe(2);
+  });
+
   it('keeps the order of a failing mission and still sends the next mission', async () => {
     await enqueue({ kind: 'track-point', missionId: A, payloads: [1] });
     await enqueue({ kind: 'track-point', missionId: B, payloads: [2] });

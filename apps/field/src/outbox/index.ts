@@ -107,20 +107,20 @@ async function deleteIds(db: SQLiteDatabase, ids: string[]): Promise<void> {
 }
 
 /**
- * Sends batches until the outbox is empty. A failed send leaves that kind and mission as it was and is not tried again
- * in this flush, so one stalled mission does not hold up the others; order within a mission is kept.
+ * Sends batches until the outbox is empty. A failed send leaves that mission (every kind, since a photo needs its report
+ * first) as it was and is not tried again in this flush, so one stalled mission does not hold up the others.
  */
 async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Promise<void> {
   const db = await database();
-  const failed: { kind: string; missionId: string }[] = [];
+  const failed: string[] = [];
   for (;;) {
     // A row of a kind without a sender is kept (a later version may know it) and skipped, not deleted.
     const kinds = Object.keys(senders);
-    const skipFailed = failed.map(() => ' AND NOT (kind = ? AND mission_id = ?)').join('');
+    const skipFailed = failed.map(() => ' AND mission_id <> ?').join('');
     const head = await db.getFirstAsync<Row>(
       `SELECT * FROM outbox WHERE kind IN (${kinds.map(() => '?').join(', ')})${skipFailed} ORDER BY seq LIMIT 1`,
       ...kinds,
-      ...failed.flatMap((stream) => [stream.kind, stream.missionId]),
+      ...failed,
     );
     if (!head) return;
     const sender = senders[head.kind];
@@ -146,7 +146,7 @@ async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Pr
     try {
       outcome = await sender.send(head.mission_id, items);
     } catch {
-      failed.push({ kind: head.kind, missionId: head.mission_id });
+      failed.push(head.mission_id);
       continue;
     }
     if (outcome === 'drop-mission') {
