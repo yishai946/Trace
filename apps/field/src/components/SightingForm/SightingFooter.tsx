@@ -12,20 +12,26 @@ interface SightingFooterProps {
   onDone: () => void;
 }
 
+const pendingText = 'אין חיבור. התצפית נשמרה בטלפון ותישלח אוטומטית כשהחיבור יחזור.';
+const retryingText = 'השרת לא קיבל את התצפית. היא נשמרה בטלפון ותישלח שוב אוטומטית.';
+const rejectedText = 'התצפית לא נשלחה: המסע הסתיים או שהפעילות שלך בו הסתיימה.';
+const invalidText = 'התצפית לא נשלחה: השרת דחה אותה. נסה לדווח שוב.';
+
 /** Under the form: the send button, or what happened to the sighting once it was sent or kept on the phone. */
 export function SightingFooter({ status, onSubmit, onDone }: SightingFooterProps) {
   const { color } = useTheme().theme;
   const sending = status === 'sending';
-  return status === 'pending' ? (
+  const savedText = status === 'pending' ? pendingText : status === 'retrying' ? retryingText : null;
+  return savedText ? (
     <>
       <Text accessibilityLiveRegion="polite" style={[typography.body, { color: color.ink }]}>
-        אין חיבור. התצפית נשמרה בטלפון ותישלח אוטומטית כשהחיבור יחזור.
+        {savedText}
       </Text>
       <Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
     </>
-  ) : status === 'rejected' ? (
+  ) : status === 'rejected' || status === 'invalid' ? (
     <>
-      <FieldError message="התצפית לא נשלחה: המסע הסתיים או שהפעילות שלך בו הסתיימה." />
+      <FieldError message={status === 'rejected' ? rejectedText : invalidText} />
       <Button key="back" label="חזרה למפה" variant="primary" size="lg" block onPress={onDone} />
     </>
   ) : (

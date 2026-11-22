@@ -1,13 +1,15 @@
 import type { QueuedSighting } from '../sender';
 import { getNetworkStateAsync } from 'expo-network';
-import { enqueue, isPending, wasDropped } from '../../outbox';
+import { droppedReason, enqueue, isPending } from '../../outbox';
 import { syncOutbox } from '../../tracking';
 
 /**
- * `sent`: the server has the sighting. `pending`: it waits on the phone and goes out when the connection is back.
- * `rejected`: the server refused it for good (the mission or the searcher's activity ended) and the phone dropped it.
+ * `sent`: the server has the sighting. `pending`: there is no connection; it waits on the phone and goes out when the
+ * connection is back. `retrying`: the phone is online but the send failed (server error, timeout); it waits and is sent
+ * again. `rejected`: the server refused it for good because the mission or the searcher's activity ended. `invalid`:
+ * the server refused this sighting itself (400, or its id is taken). The phone dropped both kinds of refusal.
  */
-export type Delivery = 'sent' | 'pending' | 'rejected';
+export type Delivery = 'sent' | 'pending' | 'retrying' | 'rejected' | 'invalid';
 
 /**
  * Keeps the sighting in the outbox first, so it is never lost, then sends it when the phone has a connection (UC-F10).
@@ -25,6 +27,7 @@ export async function submitSighting({
   const network = await getNetworkStateAsync();
   if (!network.isConnected || network.isInternetReachable === false) return 'pending';
   await syncOutbox();
-  if (await isPending(sighting.id)) return 'pending';
-  return wasDropped(sighting.id) ? 'rejected' : 'sent';
+  if (await isPending(sighting.id)) return 'retrying';
+  const reason = droppedReason(sighting.id);
+  return reason === 'batch' ? 'invalid' : reason === 'mission' ? 'rejected' : 'sent';
 }

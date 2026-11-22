@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { dial, EMERGENCY_NUMBER } from '../../phone';
 import type { SosSendFailure } from '../../sos/sendFailure';
-import { canRetrySend, SEND_REASON } from '../../sos/sendFailure/sendFailureText';
+import { canRetry, SEND_REASON } from '../../sos/sendFailure/sendFailureText';
 import { useTheme } from '../../theme';
 import { Button } from '../Button';
 
@@ -23,7 +23,7 @@ export function SosNotDelivered({ failure }: { failure: SosSendFailure }) {
         <Text style={[typography.bodyStrong, { color: color.ink }]}>ה-SOS לא נמסר</Text>
         <Text style={[typography.body, { color: color.ink }]}>{SEND_REASON[failure]}</Text>
         <Text style={[typography.meta, { color: color.dangerInkSoft }]}>
-          {`התקשר לשירותי החירום (${ltr(EMERGENCY_NUMBER)}).${canRetrySend(failure) ? ' ההודעה נשמרה; לחיצה ארוכה נוספת תנסה לשלוח שוב.' : ''}`}
+          {`התקשר לשירותי החירום (${ltr(EMERGENCY_NUMBER)}).${canRetry(failure) ? ' ההודעה נשמרה; לחיצה ארוכה נוספת תנסה לשלוח שוב.' : ''}`}
         </Text>
       </View>
       <Button

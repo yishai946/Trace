@@ -7,7 +7,7 @@ import { uuidv7 } from '../../outbox/uuidv7';
 import { clockOf, toSighting, type DraftErrors, type LocationMode } from '../../sightings/draft';
 import { submitSighting } from '../../sightings/submit';
 
-export type SightingStatus = 'idle' | 'sending' | 'pending' | 'rejected' | 'save-failed';
+export type SightingStatus = 'idle' | 'sending' | 'pending' | 'retrying' | 'rejected' | 'invalid' | 'save-failed';
 
 interface Input {
   missionId: string;

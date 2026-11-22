@@ -1,8 +1,8 @@
 import type { ReportType } from '@trace/domain';
 import { CreateReportBody } from '@trace/schemas';
 import { useRef, useState } from 'react';
+import { useCurrentFix } from '../../location/useCurrentFix';
 import { newReportId, submitReport } from '../../reports/submit';
-import { useReportFix } from '../../reports/useReportFix';
 import type { ReportPhotoValue } from '../ReportPhoto';
 
 export type ReportPhase = 'editing' | 'sending' | 'sent' | 'located-pending' | 'rejected';
@@ -15,7 +15,7 @@ interface Input {
 
 /** The report form (UC-F09): what was entered, the position fix, and keeping the report on the phone and sending it. */
 export function useReportDraft({ missionId, onDone }: Input) {
-  const fix = useReportFix();
+  const fix = useCurrentFix();
   const [type, setType] = useState<ReportType | null>(null);
   const [text, setText] = useState('');
   const [photo, setPhoto] = useState<ReportPhotoValue | null>(null);

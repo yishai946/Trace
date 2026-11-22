@@ -11,6 +11,7 @@ import {
   markDroppedSeen,
   unseenDropped,
   wasDropped,
+  droppedReason,
   type OutboxSender,
   type SendOutcome,
 } from '.';
@@ -277,6 +278,7 @@ describe('isPending and wasDropped', () => {
     await flushOutbox({ sighting: sender(async () => 'drop-batch', 1) });
     expect(await isPending(id)).toBe(false);
     expect(wasDropped(id)).toBe(true);
+    expect(droppedReason(id)).toBe('batch');
   });
 
   it('remembers every id of a kind and mission dropped with drop-mission', async () => {
@@ -286,7 +288,8 @@ describe('isPending and wasDropped', () => {
     const b1 = await idOf(2);
     await flushOutbox({ sighting: sender(async (missionId) => (missionId === A ? 'drop-mission' : 'sent'), 1) });
     expect(wasDropped(a1)).toBe(true);
-    expect(wasDropped(a2)).toBe(true);
+    expect(droppedReason(a2)).toBe('mission');
+    expect(droppedReason(b1)).toBeNull();
     expect(wasDropped(b1)).toBe(false);
   });
 
