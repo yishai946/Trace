@@ -59,10 +59,9 @@ export function useMissionDetailsForm({ mission, online }: Input) {
         onSuccess: (result) => {
           setSaved(!result.photoFailed);
           setPhotoFailed(result.photoFailed);
-          if (!result.photoFailed) {
-            setPhoto(null);
-            setNotify(false);
-          }
+          // The details are saved either way: a retry of the photo must not send the flag again.
+          setNotify(false);
+          if (!result.photoFailed) setPhoto(null);
         },
       },
     );

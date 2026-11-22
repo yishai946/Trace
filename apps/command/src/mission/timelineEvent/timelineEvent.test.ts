@@ -110,14 +110,23 @@ describe('spansDays', () => {
 });
 
 describe('recentChanges', () => {
-  it('keeps the details and LKP changes, newest first', () => {
+  const moved: TimelineEvent = {
+    ...eventSamples['lkp.changed'],
+    details: { observedAt: '2026-10-03T12:00:00.000Z', previousObservedAt: '2026-10-03T10:05:00.000Z' },
+  };
+
+  it('keeps the details changes and the LKP that moved, newest first', () => {
     const history = [
       eventSamples['mission.created'],
-      eventSamples['lkp.changed'],
+      moved,
       eventSamples['polygon.created'],
       eventSamples['mission.details_changed'],
     ];
     expect(recentChanges(history).map((event) => event.type)).toEqual(['mission.details_changed', 'lkp.changed']);
     expect(history).toHaveLength(4);
+  });
+
+  it('leaves out the LKP set when the mission was created', () => {
+    expect(recentChanges([eventSamples['mission.created'], eventSamples['lkp.changed']])).toEqual([]);
   });
 });

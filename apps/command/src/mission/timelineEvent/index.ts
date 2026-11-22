@@ -174,13 +174,16 @@ export function describeEvent(event: TimelineEvent): EventView {
   }
 }
 
-/** Events shown in "שינויים אחרונים" (Cd05): the mission's details and its LKP. */
-export const RECENT_CHANGE_TYPES = [
-  'mission.details_changed',
-  'lkp.changed',
-] as const satisfies readonly TimelineEventType[];
+/** Whether an event is a change worth showing in "שינויים אחרונים" (Cd05): a details change, or an LKP that moved. */
+function isRecentChange(event: TimelineEvent): boolean {
+  if (event.type === 'lkp.changed') return event.details.previousObservedAt !== null;
+  return event.type === 'mission.details_changed';
+}
 
-/** The recent changes, newest first, from the Timeline as the API orders it (oldest first). */
+/**
+ * The recent changes, newest first, from the Timeline as the API orders it (oldest first). The first LKP is the
+ * mission's creation, not a change.
+ */
 export function recentChanges(events: TimelineEvent[]): TimelineEvent[] {
-  return events.filter((event) => RECENT_CHANGE_TYPES.some((type) => type === event.type)).reverse();
+  return events.filter(isRecentChange).reverse();
 }

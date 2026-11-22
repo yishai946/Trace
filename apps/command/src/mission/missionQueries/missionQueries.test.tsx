@@ -189,7 +189,7 @@ describe('useUpdateMissionDetails', () => {
     photo: null,
   });
 
-  it('reloads the Timeline after a save that notified the searchers, where the change is recorded', async () => {
+  it('reloads the Timeline after a details save', async () => {
     const { queryClient, result } = setup();
     await act(() => result.current.mutateAsync(body(true)));
     expect(queryClient.getQueryState(missionKeys.timeline(mission.id))?.isInvalidated).toBe(true);

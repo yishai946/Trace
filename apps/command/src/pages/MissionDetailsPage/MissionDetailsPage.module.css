@@ -36,6 +36,7 @@
   flex-direction: column;
   gap: var(--space-6);
   width: var(--panel-end-w);
+  overflow-y: auto;
 }
 
 @media (width < 900px) {
@@ -175,7 +176,8 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 0;
+  /* The title and a few rows stay readable; the column scrolls when the viewport is shorter. */
+  min-height: calc(var(--control-h) * 5);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background-color: var(--surface);
