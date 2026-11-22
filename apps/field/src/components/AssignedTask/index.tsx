@@ -1,12 +1,15 @@
 import { radius, spacing, typography } from '@trace/design';
+import { startSearchBlockers } from '@trace/domain';
 import type { MissionPolygon, OwnParticipation } from '@trace/schemas';
 import { StyleSheet, Text, View } from 'react-native';
+import { usePermissions } from '../../permissions/usePermissions';
 import { useOfflinePackage } from '../../offline/useOfflinePackage';
 import type { AssignmentNotice } from '../../state/session';
 import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
+import { startHint } from './startHint';
 
 export interface AssignedTaskProps {
   participation: OwnParticipation;
@@ -24,8 +27,19 @@ export interface AssignedTaskProps {
  */
 export function AssignedTask({ participation, polygons, notice, onDismissNotice, onStartSearch }: AssignedTaskProps) {
   const { color } = useTheme().theme;
-  // Start Search is blocked until the essential package is saved on the phone (UC-F03, decision 85).
-  const { startSearch } = useOfflinePackage();
+  // Start Search is blocked until the essential package is saved on the phone (UC-F03, decision 85) and the required
+  // permissions are granted (UC-F06, decision 73).
+  const { savedParts } = useOfflinePackage();
+  const { permissions } = usePermissions();
+  // Until the phone says what it allows, the button stays closed without claiming a permission is missing.
+  const blockers = permissions
+    ? startSearchBlockers(savedParts, {
+        location: permissions.location === 'granted',
+        backgroundLocation: permissions.backgroundLocation === 'granted',
+        push: permissions.push === 'granted',
+      })
+    : null;
+  const ready = blockers?.ready === true;
   const polygon = polygons.find((p) => p.id === participation.polygonId);
   // Right after an assignment the polygon list may still be loading: say it without a name rather than a wrong one.
   const name = polygon?.name;
@@ -65,13 +79,11 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice,
         variant="primary"
         size="lg"
         block
-        disabled={!startSearch.ready || !onStartSearch}
+        disabled={!ready || !onStartSearch}
         onPress={onStartSearch}
       />
       <Text style={[typography.caption, styles.center, { color: color.inkMuted }]}>
-        {startSearch.ready
-          ? 'מעקב המיקום והמסלול מתחילים רק בלחיצה'
-          : 'אפשר להתחיל חיפוש רק אחרי שהורדת המידע ללא חיבור הושלמה'}
+        {!blockers ? 'בודקים הרשאות…' : blockers.ready ? 'מעקב המיקום והמסלול מתחילים רק בלחיצה' : startHint(blockers)}
       </Text>
     </View>
   );
