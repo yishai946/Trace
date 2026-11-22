@@ -299,8 +299,8 @@ describe('ReportForm', () => {
     fireEvent.click(send());
 
     const warning = await screen.findByRole('alert');
-    expect(warning).toHaveTextContent('המנהל לא יודע עליו');
-    expect(warning).toHaveTextContent('השרת לא קיבל');
+    expect(warning).toHaveTextContent('ייתכן שהמנהל עדיין לא יודע עליו');
+    expect(warning).toHaveTextContent('השרת לא אישר');
     expect(warning).not.toHaveTextContent('אין חיבור');
   });
 
