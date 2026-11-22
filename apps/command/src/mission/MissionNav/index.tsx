@@ -7,8 +7,8 @@ interface MissionNavProps {
   missionName: string;
   view: MissionView;
   onNavigate: (view: MissionView) => void;
-  /** A number after a label, e.g. the New reports or the active SOS; shown only above zero. */
-  counts?: Partial<Record<MissionView, number>>;
+  /** A number after a label, e.g. the New reports or the active SOS; shown only above zero; null is "not known" and shows "?". */
+  counts?: Partial<Record<MissionView, number | null>>;
 }
 
 /** Icons of Trace Wireframes Cd14: 16px line icons in `currentColor`. */
@@ -65,13 +65,21 @@ export function MissionNav({ missionName, view, onNavigate, counts }: MissionNav
     <nav aria-label="ניווט מסע" className={styles.nav}>
       <div className={styles.label}>{missionName}</div>
       {items.map((item) => {
-        const count = counts?.[item.view] ?? 0;
+        const raw = counts?.[item.view];
+        const unknown = raw === null;
+        const count = raw ?? 0;
         return (
           <Link
             key={item.view}
             className={styles.item}
             aria-current={item.view === view ? 'page' : undefined}
-            aria-label={count > 0 ? `${item.label}, ${count} ${countNoun[item.view] ?? 'חדשים'}` : undefined}
+            aria-label={
+              unknown
+                ? `${item.label}, המצב לא ידוע`
+                : count > 0
+                  ? `${item.label}, ${count} ${countNoun[item.view] ?? 'חדשים'}`
+                  : undefined
+            }
             onPress={() => onNavigate(item.view)}
           >
             <svg
@@ -86,9 +94,9 @@ export function MissionNav({ missionName, view, onNavigate, counts }: MissionNav
               {icons[item.view]}
             </svg>
             {item.label}
-            {count > 0 && (
+            {(unknown || count > 0) && (
               <span className={styles.count} data-danger={item.view === 'sos' || undefined}>
-                {count}
+                {unknown ? '?' : count}
               </span>
             )}
           </Link>

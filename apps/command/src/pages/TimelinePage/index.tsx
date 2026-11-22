@@ -1,4 +1,4 @@
-import type { TimelineEvent } from '@trace/schemas';
+import type { Sos, TimelineEvent } from '@trace/schemas';
 import { useState } from 'react';
 import { ToggleButton, ToggleButtonGroup } from 'react-aria-components';
 import { chooseFirst } from '../../choose';
@@ -24,16 +24,19 @@ export interface TimelinePageProps {
   onRetry: () => void;
   /** "מעבר אל" for events shown on the map. */
   onGoToMap: () => void;
+  /** The mission's SOS: a closed SOS in the Timeline names its sender. Undefined while they load. */
+  sos?: Sos[];
 }
 
 type Filter = TimelineCategory | 'all';
 const FILTERS: Filter[] = ['all', ...TIMELINE_CATEGORIES.map((c) => c.id)];
 
 /** The operational Timeline (UC-C19, wireframe Cd14): significant events newest first, filterable by kind. */
-export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: TimelinePageProps) {
+export function TimelinePage({ events, loadFailed, onRetry, onGoToMap, sos }: TimelinePageProps) {
   const [filter, setFilter] = useState<Filter>('all');
   const [shown, setShown] = useState(PAGE_SIZE);
 
+  const senderOf = (sosId: string) => sos?.find((s) => s.id === sosId)?.sender;
   const newestFirst = events ? [...events].reverse() : [];
   const filtered = filter === 'all' ? newestFirst : newestFirst.filter((e) => CATEGORY_OF[e.type] === filter);
   const visible = filtered.slice(0, shown);
@@ -113,7 +116,13 @@ export function TimelinePage({ events, loadFailed, onRetry, onGoToMap }: Timelin
               </thead>
               <tbody>
                 {visible.map((event) => (
-                  <EventRow key={event.id} event={event} withDate={withDate} onGoToMap={onGoToMap} />
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    withDate={withDate}
+                    onGoToMap={onGoToMap}
+                    senderOf={senderOf}
+                  />
                 ))}
               </tbody>
             </table>

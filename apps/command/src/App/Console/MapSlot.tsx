@@ -3,6 +3,7 @@ import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
 import styles from '../App.module.css';
 import type { MapFocus } from '../../map/MissionMap';
+import { FloatingAlerts } from '../../mission/FloatingAlerts';
 import { MissionWorkspace } from '../MissionWorkspace';
 import type { ConsoleNav } from './useConsoleNav';
 import type { MissionData } from './useMissionData';
@@ -48,8 +49,18 @@ export function MapSlot({
       reports={data.reports.data ?? []}
       sos={data.sos.data ?? []}
       onOpenReport={nav.openReport}
-      onOpenSos={nav.openSos}
-      alertOnMap={alertOnMap}
+      alerts={
+        alertOnMap && (
+          <FloatingAlerts
+            reports={data.reports.data ?? []}
+            sos={data.sos.data ?? []}
+            sosFailed={data.sos.isError}
+            onRetrySos={() => void data.sos.refetch()}
+            onOpenReport={nav.openReport}
+            onOpenSos={nav.openSos}
+          />
+        )
+      }
       sightingsLoading={sightings.isPending || lkps.isPending}
       sightingsFailed={sightings.isError || lkps.isError}
       onRetrySightings={() => {

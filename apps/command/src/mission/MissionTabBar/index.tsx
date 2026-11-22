@@ -8,8 +8,8 @@ export type MissionTab = 'board' | 'searchers' | 'reports' | 'messages' | 'sos';
 interface MissionTabBarProps {
   current: MissionTab;
   onNavigate: (tab: MissionTab) => void;
-  /** The count on an item: New reports on "דיווחים", active SOS on "SOS". Nothing shows for 0. */
-  counts?: Partial<Record<MissionTab, number>>;
+  /** The count on an item: New reports on "דיווחים", active SOS on "SOS". Nothing shows for 0; null is "not known" and shows "?". */
+  counts?: Partial<Record<MissionTab, number | null>>;
 }
 
 const ITEMS: { tab: MissionTab; label: string; icon: ReactNode }[] = [
@@ -72,20 +72,28 @@ export function MissionTabBar({ current, onNavigate, counts }: MissionTabBarProp
   return (
     <nav className={styles.bar} aria-label="ניווט ראשי">
       {ITEMS.map(({ tab, label, icon }) => {
-        const count = counts?.[tab] ?? 0;
+        const raw = counts?.[tab];
+        const unknown = raw === null;
+        const count = raw ?? 0;
         return (
           <Link
             key={tab}
             className={styles.item}
-            aria-label={count > 0 ? `${label}, ${count} ${COUNT_NOUN[tab] ?? 'חדשים'}` : undefined}
+            aria-label={
+              unknown
+                ? `${label}, המצב לא ידוע`
+                : count > 0
+                  ? `${label}, ${count} ${COUNT_NOUN[tab] ?? 'חדשים'}`
+                  : undefined
+            }
             aria-current={current === tab ? 'page' : undefined}
             onPress={() => onNavigate(tab)}
           >
             {icon}
             {label}
-            {count > 0 && (
+            {(unknown || count > 0) && (
               <span className={styles.count} data-danger={tab === 'sos' || undefined} aria-hidden="true">
-                {count}
+                {unknown ? '?' : count}
               </span>
             )}
           </Link>

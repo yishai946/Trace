@@ -59,6 +59,17 @@ describe('describeEvent', () => {
     expect(text(bySender)).toBe('[7] אלון שגיא סגר את ה-SOS, חורשת אורנים');
   });
 
+  it('names whose SOS the commander closed, when the sender is known', () => {
+    const closed = eventSamples['sos.closed'];
+    const senderOf = (id: string) => (id === closed.subject.id ? { callsign: 7, name: 'אלון שגיא' } : undefined);
+    const view = describeEvent(closed, senderOf);
+    expect(view.segments.map((s) => (typeof s === 'string' ? s : `[${s.callsign}]`)).join('')).toBe(
+      'מנהל סגר את ה-SOS של [7] אלון שגיא, חורשת אורנים',
+    );
+    expect(text(closed)).toBe('מנהל סגר את ה-SOS, חורשת אורנים');
+    expect(describeEvent(closed, () => undefined).segments).toEqual(describeEvent(closed).segments);
+  });
+
   it('words the events whose actions come later', () => {
     expect(text(eventSamples['mission.paused'])).toBe('המסע הושהה');
     expect(text(eventSamples['mission.resumed'])).toBe('המסע חודש');
@@ -85,18 +96,23 @@ describe('describeEvent', () => {
 });
 
 describe('formatEventTime', () => {
-  const iso = new Date(2026, 9, 3, 16, 58).toISOString();
+  // 13:58 UTC is 16:58 in Israel (UTC+3 on 3 October 2026).
+  const iso = '2026-10-03T13:58:00.000Z';
 
   it('shows the time in 24 hours, with the date when asked', () => {
     expect(formatEventTime(iso, false)).toBe('16:58');
     expect(formatEventTime(iso, true)).toBe('03.10, 16:58');
+  });
+
+  it('shows Israel time whatever the time zone of the computer', () => {
+    expect(formatEventTime('2026-10-03T21:30:00.000Z', true)).toBe('04.10, 00:30');
   });
 });
 
 describe('spansDays', () => {
   const at = (day: number, hour: number): TimelineEvent => ({
     ...eventSamples['polygon.created'],
-    occurredAt: new Date(2026, 9, day, hour).toISOString(),
+    occurredAt: new Date(Date.UTC(2026, 9, day, hour - 3)).toISOString(),
   });
 
   it('is true when the first and last events fall on different days', () => {
