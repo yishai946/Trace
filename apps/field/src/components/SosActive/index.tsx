@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { formatTime } from '../../mission/missionArea';
+import { CLOSE_REASON } from '../../sos/sendFailure/sendFailureText';
+import type { SosSendFailure } from '../../sos/sendFailure';
 import { useTheme } from '../../theme';
 import { Button } from '../Button';
 import { Notice } from '../Notice';
@@ -14,13 +16,13 @@ import { SosFacts } from '../SosFacts';
 export interface SosActiveProps {
   sos: Sos;
   closing: boolean;
-  /** The last attempt to close it failed. */
-  closeFailed: boolean;
+  /** Why the last attempt to close it failed, or null. */
+  closeFailure: SosSendFailure | null;
   onClose: () => void;
 }
 
 /** The SOS section's body while the searcher's SOS is active (Fm12 SOS פעיל): what was sent, to whom, and its state. */
-export function SosActive({ sos, closing, closeFailed, onClose }: SosActiveProps) {
+export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProps) {
   const { color } = useTheme().theme;
   const [confirming, setConfirming] = useState(false);
   const sentTo = sos.polygon ? `נשלח למנהל ולמחפשים בפוליגון ${sos.polygon.name}.` : 'נשלח למנהל.';
@@ -52,9 +54,9 @@ export function SosActive({ sos, closing, closeFailed, onClose }: SosActiveProps
         ]}
       />
       <Text style={[typography.meta, { color: color.inkMuted }]}>כשהמנהל סוגר את האירוע, עדכון הסגירה יופיע כאן.</Text>
-      {closeFailed ? (
+      {closeFailure ? (
         <Notice icon="alert" tone="warn" live>
-          הסגירה לא הצליחה. בדוק את החיבור ונסה שוב. ה-SOS עדיין פעיל.
+          {CLOSE_REASON[closeFailure]}
         </Notice>
       ) : null}
       {confirming ? (
