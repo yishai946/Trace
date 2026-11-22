@@ -58,6 +58,7 @@ export function ReportPhoto({
         <Image
           source={{ uri: photo.uri }}
           accessibilityIgnoresInvertColors
+          accessibilityLabel="תצוגה מקדימה של התמונה המצורפת"
           style={[styles.thumb, { borderColor: color.border }]}
         />
         <Text style={[typography.body, styles.text, { color: color.ink }]}>תמונה מצורפת</Text>

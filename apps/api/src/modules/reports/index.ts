@@ -67,7 +67,7 @@ export const reportRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps
         summary: "Attach the report's photo (UC-F09)",
         description:
           `The body is the image itself: JPEG, PNG or WebP, at most ${MAX_PHOTO_BYTES / 1024 / 1024} MB.` +
-          ' Only the searcher who sent the report. Sending it again replaces it.',
+          ' Only the searcher who sent the report, while they are still in the activity (409 PARTICIPATION_ENDED after Finish Activity). Sending it again replaces it.',
         params: ReportParams,
         consumes: [...PHOTO_TYPES],
         response: {
@@ -91,7 +91,8 @@ export const reportRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps
       const body: unknown = request.body;
       if (!Buffer.isBuffer(body)) throw unsupportedPhoto('Send the photo as an image');
       const { missionId, reportId } = request.params;
-      return setReportPhoto(deps, { missionId, reportId, userId: actorOf(request).userId, data: body });
+      const { userId, searcherId } = searcherOf(request);
+      return setReportPhoto(deps, { missionId, reportId, userId, searcherId, data: body });
     },
   );
 

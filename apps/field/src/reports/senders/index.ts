@@ -55,9 +55,16 @@ export const reportPhotoSender: OutboxSender = {
   async send(missionId, items) {
     const parsed = ReportPhotoPayload.safeParse(items[0]?.payload);
     if (!parsed.success) return 'drop-batch';
+    let bytes: Uint8Array<ArrayBuffer>;
+    try {
+      bytes = bytesOf(parsed.data.base64);
+    } catch {
+      // Corrupt base64 can never be sent: dropping it keeps it from blocking the queue behind it.
+      return 'drop-batch';
+    }
     const bearer = token();
     try {
-      await putReportPhoto(missionId, bearer, parsed.data.reportId, bytesOf(parsed.data.base64));
+      await putReportPhoto(missionId, bearer, parsed.data.reportId, bytes);
       return 'sent';
     } catch (error) {
       if (!(error instanceof ApiRequestError)) throw error;
