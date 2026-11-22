@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   svg: { position: 'absolute' },
-  announce: { position: 'absolute', opacity: 0 },
+  announce: { position: 'absolute', opacity: 0, pointerEvents: 'none' },
   button: {
     width: pendingTokens.sosButton,
     height: pendingTokens.sosButton,

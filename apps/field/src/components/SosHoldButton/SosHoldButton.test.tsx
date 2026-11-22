@@ -47,6 +47,12 @@ describe('SosHoldButton', () => {
     expect(status).toHaveTextContent('2');
   });
 
+  it('keeps the hidden countdown from catching the pointer over the button', () => {
+    setup();
+    press();
+    expect(screen.getByRole('status')).toHaveStyle({ pointerEvents: 'none' });
+  });
+
   it('cancels the hold when the pointer leaves the button', () => {
     const onActivate = setup();
     fireEvent.pointerEnter(button(), { pointerType: 'mouse' });
