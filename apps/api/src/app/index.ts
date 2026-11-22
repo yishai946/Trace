@@ -81,7 +81,11 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
 
   const deps: ServiceDeps = { db, realtime, push, log: app.log };
 
-  await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
+  await app.register(cors, {
+    origin: env.WEB_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  });
   await app.register(swagger, {
     openapi: { info: { title: 'TRACE API', version: VERSION } },
     transform: jsonSchemaTransform,
