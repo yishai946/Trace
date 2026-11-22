@@ -16,24 +16,40 @@ const ACTIVATE = 'activate';
  */
 export function SosHoldButton({ sending, onActivate }: { sending: boolean; onActivate: () => void }) {
   const { color } = useTheme().theme;
-  const { secondsLeft, start, cancel } = useHoldToActivate({ onComplete: onActivate, disabled: sending });
+  const { secondsLeft, progress, start, cancel } = useHoldToActivate({ onComplete: onActivate, disabled: sending });
   const ring = pendingTokens.sosRing;
   const hint = sending
     ? 'שולח…'
     : secondsLeft === null
       ? `החזק ${ltr(HOLD_SECONDS)} שניות`
       : `המשך להחזיק, ${ltr(secondsLeft)}`;
+  const center = ring / 2;
+  const radius = (ring - pendingTokens.sosRingStroke) / 2;
+  const length = 2 * Math.PI * radius;
   return (
     <View style={styles.ring}>
       <Svg width={ring} height={ring} viewBox={`0 0 ${ring} ${ring}`} style={styles.svg} aria-hidden>
         <Circle
-          cx={ring / 2}
-          cy={ring / 2}
-          r={(ring - pendingTokens.sosRingStroke) / 2}
+          cx={center}
+          cy={center}
+          r={radius}
           fill="none"
           stroke={color.danger}
-          strokeOpacity={secondsLeft === null ? pendingTokens.disabledOpacity : 1}
+          strokeOpacity={pendingTokens.disabledOpacity}
           strokeWidth={pendingTokens.sosRingStroke}
+        />
+        <Circle
+          testID="sos-progress"
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={color.danger}
+          strokeWidth={pendingTokens.sosRingStroke}
+          strokeDasharray={length}
+          strokeDashoffset={length * (1 - progress)}
+          rotation={-90}
+          origin={`${center}, ${center}`}
         />
       </Svg>
       <Pressable
@@ -48,6 +64,9 @@ export function SosHoldButton({ sending, onActivate }: { sending: boolean; onAct
         disabled={sending}
         onPressIn={start}
         onPressOut={cancel}
+        // Web only (react-native-web): dragging the mouse off the button cancels the hold. On a phone the press ends
+        // by itself once the finger leaves the button's retention area.
+        onHoverOut={cancel}
         style={({ pressed }) => [
           styles.button,
           {
@@ -57,10 +76,16 @@ export function SosHoldButton({ sending, onActivate }: { sending: boolean; onAct
         ]}
       >
         <Text style={[typography.title, styles.label, { color: color.onDanger }]}>SOS</Text>
-        <Text style={[typography.meta, { color: color.onDanger, fontWeight: typography.bodyStrong.fontWeight }]}>
+        <Text
+          aria-hidden
+          style={[typography.meta, { color: color.onDanger, fontWeight: typography.bodyStrong.fontWeight }]}
+        >
           {hint}
         </Text>
       </Pressable>
+      <Text role="status" accessibilityLiveRegion="polite" style={styles.announce}>
+        {secondsLeft === null ? '' : hint}
+      </Text>
     </View>
   );
 }
@@ -74,6 +99,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   svg: { position: 'absolute' },
+  announce: { position: 'absolute', opacity: 0 },
   button: {
     width: pendingTokens.sosButton,
     height: pendingTokens.sosButton,

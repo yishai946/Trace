@@ -21,6 +21,19 @@ describe('useHoldToActivate', () => {
     expect(result.current.secondsLeft).toBeNull();
   });
 
+  it('reports the fraction of the hold kept, from 0 to 1, and resets when released', () => {
+    const { result } = renderHook(() => useHoldToActivate({ onComplete: vi.fn() }));
+    expect(result.current.progress).toBe(0);
+    act(() => result.current.start());
+    expect(result.current.progress).toBe(0);
+    act(() => vi.advanceTimersByTime(SOS_HOLD_MS / 2));
+    expect(result.current.progress).toBeCloseTo(0.5, 1);
+    act(() => vi.advanceTimersByTime(SOS_HOLD_MS / 4));
+    expect(result.current.progress).toBeGreaterThan(0.7);
+    act(() => result.current.cancel());
+    expect(result.current.progress).toBe(0);
+  });
+
   it('does nothing when the finger is lifted early', () => {
     const onComplete = vi.fn();
     const { result } = renderHook(() => useHoldToActivate({ onComplete }));

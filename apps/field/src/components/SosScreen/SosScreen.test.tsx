@@ -154,7 +154,9 @@ describe('SosScreen activation', () => {
     ['FORBIDDEN', 403, /אין לך הרשאה/],
   ])('says why when sending fails with %s and still offers the emergency call', async (code, status, text) => {
     fetchMock.mockImplementation(async (url: string, init?: { method?: string }) =>
-      String(url).endsWith('/sos') && init?.method === 'POST' ? json({ error: { code, message: 'x' } }, status) : json([]),
+      String(url).endsWith('/sos') && init?.method === 'POST'
+        ? json({ error: { code, message: 'x' } }, status)
+        : json([]),
     );
     view();
     hold(SOS_HOLD_MS);
