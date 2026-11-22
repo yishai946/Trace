@@ -8,7 +8,10 @@ import { missionKeys } from '../mission/queries';
 import { makeReport } from '../reports/fixtures';
 import { makeMessage } from '../messages/fixtures';
 import { makeSos } from '../sos/fixtures';
+import { clearOfflinePackages } from '../offline/store';
 import { useSession } from '../state/session';
+
+vi.mock('../offline/store', () => ({ clearOfflinePackages: vi.fn().mockResolvedValue(undefined) }));
 
 type Handler = (...args: never[]) => void;
 
@@ -264,6 +267,15 @@ describe('useMissionLive', () => {
       socket?.joins.at(-1)?.ack({ ok: false, code: 'NOT_FOUND' });
     });
     expect(useSession.getState().missionId).toBeNull();
+  });
+
+  it('drops the offline package of a mission the searcher is no longer in', () => {
+    const { socket } = setup();
+    act(() => {
+      socket?.fire('connect');
+      socket?.joins.at(-1)?.ack({ ok: false, code: 'NOT_FOUND' });
+    });
+    expect(clearOfflinePackages).toHaveBeenCalled();
   });
 
   it('connects again after the server closed the connection, and disconnects when the mission closes', () => {

@@ -10,9 +10,17 @@ import { TestProviders } from '../../test/providers';
 
 const MISSION = '00000000-0000-4000-8000-000000000001';
 
-function showing(saved: OfflineStep[], extra: { failed?: boolean; loaded?: boolean } = {}) {
+function showing(saved: OfflineStep[], extra: { failed?: boolean; loaded?: boolean; refused?: boolean } = {}) {
   useSession.setState({ missionId: MISSION });
-  useOfflineState.setState({ missionId: MISSION, saved, loaded: true, running: false, failed: false, ...extra });
+  useOfflineState.setState({
+    missionId: MISSION,
+    saved,
+    loaded: true,
+    running: false,
+    failed: false,
+    refused: false,
+    ...extra,
+  });
   return render(<OfflineDownload />, { wrapper: TestProviders });
 }
 
@@ -41,6 +49,13 @@ describe('OfflineDownload', () => {
     expect(screen.getByText(/ההורדה נקטעה/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'נסה שוב' }));
     expect(useOfflineState.getState().attempt).toBeGreaterThan(0);
+  });
+
+  it('does not promise to continue after a refusal, and still offers to try again', () => {
+    showing(['mission'], { failed: true, refused: true });
+    expect(screen.getByText(/ההורדה נכשלה/)).toBeInTheDocument();
+    expect(screen.queryByText(/תמשיך כשהחיבור יחזור/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'נסה שוב' })).toBeInTheDocument();
   });
 
   it('says the device is ready for Offline when everything is saved', () => {

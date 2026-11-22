@@ -13,7 +13,7 @@ import { Meter } from '../Meter';
  */
 export function OfflineDownload() {
   const { color } = useTheme().theme;
-  const { status, progress, retry } = useOfflinePackage();
+  const { status, progress, refused, retry } = useOfflinePackage();
   if (status === 'checking') return null;
 
   if (status === 'ready') {
@@ -44,9 +44,11 @@ export function OfflineDownload() {
       </View>
       <Meter percent={progress.percent} label="התקדמות ההורדה" />
       <Text style={[typography.meta, { color: color.inkMuted }]}>
-        {interrupted
-          ? 'ההורדה נקטעה. היא תמשיך כשהחיבור יחזור. אפשר להישאר במסע, אבל "התחל חיפוש" חסום עד שההורדה תושלם.'
-          : 'פרטי המסע והנעדר, תמונה, LKP, נקודת כינוס ופוליגונים. ההורדה התחילה אוטומטית.'}
+        {interrupted && refused
+          ? 'ההורדה נכשלה. אפשר להישאר במסע, אבל "התחל חיפוש" חסום עד שההורדה תושלם. נסה שוב.'
+          : interrupted
+            ? 'ההורדה נקטעה. היא תמשיך כשהחיבור יחזור. אפשר להישאר במסע, אבל "התחל חיפוש" חסום עד שההורדה תושלם.'
+            : 'פרטי המסע והנעדר, תמונה, LKP, נקודת כינוס ופוליגונים. ההורדה התחילה אוטומטית.'}
       </Text>
       {interrupted ? <Button label="נסה שוב" onPress={retry} /> : null}
     </View>

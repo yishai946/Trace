@@ -4,8 +4,11 @@ import { useSession } from '../../state/session';
 import { MISSION_ID, mission, polygon } from '../downloadPackage/fixtures';
 import { useOfflineState } from '../state';
 import { savedSteps } from '../store';
+import * as store from '../store';
 import { useOfflinePackage } from '../useOfflinePackage';
 import { RETRY_AFTER_MS, useOfflineDownload } from './index';
+
+vi.mock('../store', { spy: true });
 
 const network = vi.hoisted(() => ({ listeners: new Set<(state: object) => void>() }));
 vi.mock('expo-network', () => ({
@@ -158,5 +161,75 @@ describe('useOfflineDownload', () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('does not touch the state of the new mission when the old mission download is aborted', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith(MISSION_ID)) await gate;
+      if (url.endsWith('/photo?v=1'))
+        return new Response(new Uint8Array([1]), { headers: { 'content-type': 'image/jpeg' } });
+      if (url.endsWith('/polygons')) return Response.json([polygon]);
+      return Response.json({ ...mission, id: url.split('/').pop() });
+    });
+    const hook = mount();
+    join();
+    await waitFor(() => expect(useOfflineState.getState().running).toBe(true));
+    join(OTHER);
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'));
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(useOfflineState.getState().missionId).toBe(OTHER);
+    expect(useOfflineState.getState().saved).toHaveLength(3);
+    expect(await savedSteps(MISSION_ID)).toEqual([]);
+  });
+
+  it('writes nothing after sign-out, even when a download was in flight', async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      await gate;
+      return Response.json(mission);
+    });
+    const hook = mount();
+    join();
+    await waitFor(() => expect(useOfflineState.getState().running).toBe(true));
+    await act(() => useSession.getState().signOut());
+    release();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await savedSteps(MISSION_ID)).toEqual([]);
+    expect(hook.result.current.status).toBe('checking');
+  });
+
+  it('says a refusal will not resume by itself and does not schedule a retry', async () => {
+    const timers = vi.spyOn(globalThis, 'setTimeout');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      Response.json({ error: { code: 'FORBIDDEN', message: 'no' } }, { status: 403 }),
+    );
+    const hook = mount();
+    join();
+    await waitFor(() => expect(hook.result.current.status).toBe('interrupted'));
+    expect(hook.result.current.refused).toBe(true);
+    expect(timers.mock.calls.some(([, delay]) => delay === RETRY_AFTER_MS)).toBe(false);
+  });
+
+  it('shows the download as failed, not as nothing, when the phone storage cannot be read', async () => {
+    serve();
+    vi.mocked(store.savedSteps).mockRejectedValueOnce(new Error('disk'));
+    const hook = mount();
+    join();
+    await waitFor(() => expect(hook.result.current.status).toBe('interrupted'));
+    expect(hook.result.current.refused).toBe(true);
+  });
+
+  it('drops the saved package when the participation ends', async () => {
+    serve();
+    const hook = mount();
+    join();
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'));
+    act(() => useSession.getState().updateParticipation({ ...participation, status: 'ended' }));
+    await waitFor(async () => expect(await savedSteps(MISSION_ID)).toEqual([]));
   });
 });

@@ -6,7 +6,7 @@ import { useSession } from '../../state/session';
 import { downloadOfflinePackage } from '../downloadPackage';
 import { offlineProgress } from '../progress';
 import { useOfflineState } from '../state';
-import { keepOnly, savedSteps } from '../store';
+import { clearOfflinePackages, keepOnly, savedSteps } from '../store';
 
 /** After a failure the download tries again by itself this often, for a connection that returns without an event. */
 export const RETRY_AFTER_MS = 30_000;
@@ -26,11 +26,15 @@ export function useOfflineDownload(): void {
   const ended = useSession((s) => s.participation?.status === 'ended');
 
   useEffect(() => {
+    // The activity is over for this searcher: the missing person's details do not stay on the phone.
+    if (ended) void clearOfflinePackages().catch(() => undefined);
     if (!token || !missionId || ended) return;
     const state = useOfflineState;
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
     state.getState().start(missionId);
+    // This run still owns the state: not aborted (mission switch, sign-out) and not replaced by another mission's.
+    const current = () => !controller.signal.aborted && state.getState().missionId === missionId;
 
     const run = async () => {
       const { running, loaded, saved } = state.getState();
@@ -42,30 +46,31 @@ export function useOfflineDownload(): void {
           missionId,
           token,
           signal: controller.signal,
-          onStepSaved: state.getState().stepSaved,
+          onStepSaved: (step) => current() && state.getState().stepSaved(step),
         });
         state.getState().setFailed(false);
       } catch (error) {
-        if (controller.signal.aborted) return;
-        state.getState().setFailed(true);
-        if (worthRetrying(error)) timer = setTimeout(() => void run(), RETRY_AFTER_MS);
+        if (!current()) return;
+        const retry = worthRetrying(error);
+        state.getState().setFailed(true, !retry);
+        if (retry) timer = setTimeout(() => void run(), RETRY_AFTER_MS);
       } finally {
-        state.getState().setRunning(false);
+        if (current()) state.getState().setRunning(false);
       }
     };
 
     void keepOnly(missionId)
       .then(() => savedSteps(missionId))
       .then((saved) => {
-        if (controller.signal.aborted) return;
+        if (!current()) return;
         state.getState().setSaved(saved);
         return run();
       })
       .catch(() => {
         // The phone cannot read its storage: nothing is known to be saved, so it shows as interrupted.
-        if (controller.signal.aborted) return;
+        if (!current()) return;
         state.getState().setSaved([]);
-        state.getState().setFailed(true);
+        state.getState().setFailed(true, true);
       });
 
     const network = addNetworkStateListener((net) => {

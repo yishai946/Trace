@@ -11,6 +11,8 @@ export interface StepContent {
 }
 
 let opened: Promise<SQLiteDatabase> | null = null;
+/** Raised by every clear, so a save that began before it cannot write after it. */
+let epoch = 0;
 
 function database(): Promise<SQLiteDatabase> {
   opened ??= openDatabaseAsync('trace-offline.db')
@@ -37,7 +39,9 @@ function database(): Promise<SQLiteDatabase> {
 
 /** Saves one step of a mission's package. The step counts as saved only once this resolves. */
 export async function saveStep(missionId: string, step: OfflineStep, content: StepContent): Promise<void> {
+  const started = epoch;
   const db = await database();
+  if (started !== epoch) throw new Error('The offline package was cleared');
   await db.runAsync(
     'INSERT OR REPLACE INTO offline_steps (mission_id, step, json, bytes, content_type, saved_at) VALUES (?, ?, ?, ?, ?, ?)',
     missionId,
@@ -101,6 +105,7 @@ export async function keepOnly(missionId: string): Promise<void> {
 
 /** Drops every saved package, on sign-out: the missing person's details belong to this searcher's mission only. */
 export async function clearOfflinePackages(): Promise<void> {
+  epoch += 1;
   const db = await database();
   await db.runAsync('DELETE FROM offline_steps');
 }

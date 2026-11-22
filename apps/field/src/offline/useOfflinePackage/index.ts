@@ -10,6 +10,8 @@ export interface OfflinePackage {
   progress: OfflineProgress;
   /** Whether Start Search is open (decision 85): only with the whole package saved. */
   startSearch: StartSearchReadiness;
+  /** An interrupted download that will not resume by itself. */
+  refused: boolean;
   retry: () => void;
 }
 
@@ -29,5 +31,11 @@ export function useOfflinePackage(): OfflinePackage {
         : state.failed && !state.running
           ? 'interrupted'
           : 'downloading';
-  return { status, progress, startSearch: canStartSearch(savedParts(saved)), retry: state.retry };
+  return {
+    status,
+    progress,
+    startSearch: canStartSearch(savedParts(saved)),
+    refused: state.refused,
+    retry: state.retry,
+  };
 }
