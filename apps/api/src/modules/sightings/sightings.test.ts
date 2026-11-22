@@ -190,6 +190,15 @@ describe('sightings', () => {
       expect(await getSightings()).toHaveLength(1);
     });
 
+    it('answers 200 with the saved sighting when it is sent again after the mission ended', async () => {
+      const first = await postAsSearcher({ id: ID });
+      await ctx.db.update(missions).set({ status: 'ended_stopped' }).where(eq(missions.id, missionId));
+      const again = await postAsSearcher({ id: ID });
+      expect(again.statusCode).toBe(200);
+      expect(Sighting.parse(again.json())).toEqual(Sighting.parse(first.json()));
+      expect(await getSightings()).toHaveLength(1);
+    });
+
     it('refuses an id that belongs to another reporter', async () => {
       await add({ id: ID });
       const res = await postAsSearcher({ id: ID });
