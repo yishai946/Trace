@@ -243,7 +243,7 @@ describe('SightingForm', () => {
     submit.fn.mockResolvedValue('invalid');
     renderForm();
     send();
-    expect(await screen.findByRole('alert')).toHaveTextContent('התצפית לא נשלחה: השרת דחה אותה. בדוק את הפרטים.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('התצפית לא נשלחה: השרת דחה אותה. נסה לדווח שוב.');
   });
 
   it('says when the server refused the sighting for good', async () => {

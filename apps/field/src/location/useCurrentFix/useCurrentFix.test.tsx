@@ -81,4 +81,33 @@ describe('useCurrentFix', () => {
       vi.useRealTimers();
     }
   });
+
+  it('keeps the fix when the timeout passes after it arrived', async () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS + 1000);
+      });
+      expect(result.current.state).toBe('ready');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores a fix that arrives after the timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      let arrive: (value: unknown) => void = () => {};
+      location.position.mockReturnValue(new Promise((resolve) => (arrive = resolve)));
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS);
+      });
+      await act(async () => arrive({ coords: { latitude: 31, longitude: 35, accuracy: 5 }, timestamp: 1 }));
+      expect(result.current).toEqual({ state: 'unavailable', fix: null });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

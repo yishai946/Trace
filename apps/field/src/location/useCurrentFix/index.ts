@@ -31,10 +31,15 @@ export function useCurrentFix({ prompt = true }: { prompt?: boolean } = {}): Cur
   const [result, setResult] = useState<CurrentFixState>({ state: 'locating', fix: null });
   useEffect(() => {
     let active = true;
-    const finish = (next: CurrentFixState) => {
-      if (active) setResult(next);
-    };
+    let settled = false;
     const timer = setTimeout(() => finish({ state: 'unavailable', fix: null }), FIX_TIMEOUT_MS);
+    // The first result wins: a fix after the timeout, or the timeout after a fix, is ignored.
+    const finish = (next: CurrentFixState) => {
+      if (!active || settled) return;
+      settled = true;
+      clearTimeout(timer);
+      setResult(next);
+    };
     void (async () => {
       try {
         let permission = await getForegroundPermissionsAsync();

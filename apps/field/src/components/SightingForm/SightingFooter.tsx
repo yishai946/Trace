@@ -15,7 +15,7 @@ interface SightingFooterProps {
 const pendingText = 'אין חיבור. התצפית נשמרה בטלפון ותישלח אוטומטית כשהחיבור יחזור.';
 const retryingText = 'השרת לא קיבל את התצפית. היא נשמרה בטלפון ותישלח שוב אוטומטית.';
 const rejectedText = 'התצפית לא נשלחה: המסע הסתיים או שהפעילות שלך בו הסתיימה.';
-const invalidText = 'התצפית לא נשלחה: השרת דחה אותה. בדוק את הפרטים.';
+const invalidText = 'התצפית לא נשלחה: השרת דחה אותה. נסה לדווח שוב.';
 
 /** Under the form: the send button, or what happened to the sighting once it was sent or kept on the phone. */
 export function SightingFooter({ status, onSubmit, onDone }: SightingFooterProps) {
