@@ -20,7 +20,7 @@ function parseRetryAfter(value: string | null): number | undefined {
 }
 
 /** The failure the server answered with, in its shared error shape. */
-async function failureOf(res: Response): Promise<ApiRequestError> {
+export async function failureOf(res: Response): Promise<ApiRequestError> {
   const retryAfter = parseRetryAfter(res.headers.get('retry-after'));
   const parsed = ApiError.safeParse(await res.json().catch(() => null));
   if (!parsed.success) {
@@ -31,7 +31,7 @@ async function failureOf(res: Response): Promise<ApiRequestError> {
 }
 
 /** Sends the request. A failure to get an answer is a network error, except the caller's own abort. */
-async function send<S extends z.ZodType>(
+export async function send<S extends z.ZodType>(
   url: string,
   { method = 'GET', headers, body, signal, credentials }: RequestOptions<S>,
   limit: ReturnType<typeof withTimeout> | undefined,
