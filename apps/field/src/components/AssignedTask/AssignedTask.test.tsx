@@ -1,8 +1,9 @@
 import { themes } from '@trace/design';
 import type { MissionPolygon, OwnParticipation } from '@trace/schemas';
-import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AssignedTask } from '.';
+import type { FieldPermissions } from '../../permissions/devicePermissions';
 import { useOfflineState } from '../../offline/state';
 import { useSession } from '../../state/session';
 import { usePreferences } from '../../state/preferences';
@@ -41,11 +42,29 @@ const participation: OwnParticipation = {
   taskStatus: 'ready',
 };
 
+const device = vi.hoisted(() => ({ read: vi.fn(), request: vi.fn() }));
+vi.mock('../../permissions/devicePermissions', () => ({
+  readPermissions: device.read,
+  requestPermission: device.request,
+}));
+const granted = (override: Partial<FieldPermissions> = {}): FieldPermissions => ({
+  location: 'granted',
+  backgroundLocation: 'granted',
+  push: 'granted',
+  camera: 'ask',
+  ...override,
+});
+
 const MISSION = '00000000-0000-4000-8000-000000000001';
 const setSaved = (saved: ('mission' | 'photo' | 'polygons')[]) => {
   useSession.setState({ missionId: MISSION });
   useOfflineState.setState({ missionId: MISSION, saved, loaded: true, running: false, failed: false });
 };
+
+beforeEach(() => {
+  device.read.mockReset();
+  device.read.mockResolvedValue(granted());
+});
 
 afterEach(() => {
   usePreferences.setState(usePreferences.getInitialState());
@@ -73,19 +92,46 @@ describe('AssignedTask', () => {
     expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
   });
 
-  it('blocks Start Search and says why until the offline package is saved', () => {
+  it('blocks Start Search and says why until the offline package is saved', async () => {
     setSaved(['mission', 'photo']);
     renderTask({ onStartSearch: () => {} });
     expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
-    expect(screen.getByText(/רק אחרי שהורדת המידע ללא חיבור הושלמה/)).toBeInTheDocument();
+    expect(await screen.findByText(/חסר: השלמת ההורדה/)).toBeInTheDocument();
   });
 
-  it('opens Start Search once the offline package is saved', () => {
+  it('opens Start Search once the offline package is saved and the permissions are granted', async () => {
     setSaved(['mission', 'photo', 'polygons']);
     const onStartSearch = vi.fn();
     renderTask({ onStartSearch });
+    expect(await screen.findByText(/מעקב המיקום והמסלול מתחילים/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'התחל חיפוש' }));
     expect(onStartSearch).toHaveBeenCalled();
+  });
+
+  it('blocks Start Search and names the missing permissions and how to grant them', async () => {
+    device.read.mockResolvedValue(granted({ backgroundLocation: 'ask', push: 'ask' }));
+    setSaved(['mission', 'photo', 'polygons']);
+    renderTask({ onStartSearch: () => {} });
+    expect(await screen.findByText(/חסר: מיקום ברקע, התראות Push/)).toBeInTheDocument();
+    expect(screen.getByText(/בהגדרות הטלפון/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'אשר הרשאה' }));
+    await waitFor(() => expect(device.request).toHaveBeenCalledWith('backgroundLocation'));
+    expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
+  });
+
+  it('keeps Start Search closed without a claim about permissions until the phone answers', () => {
+    device.read.mockReturnValue(new Promise(() => {}));
+    setSaved(['mission', 'photo', 'polygons']);
+    renderTask({ onStartSearch: () => {} });
+    expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
+    expect(screen.queryByText(/חסר:/)).not.toBeInTheDocument();
+  });
+
+  it('names both the missing offline package and the permissions', async () => {
+    device.read.mockResolvedValue(granted({ location: 'ask' }));
+    setSaved(['mission']);
+    renderTask({ onStartSearch: () => {} });
+    expect(await screen.findByText(/חסר: מיקום, השלמת ההורדה/)).toBeInTheDocument();
   });
 
   it('tells the searcher they were moved, until they dismiss it', () => {

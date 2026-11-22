@@ -229,6 +229,23 @@ describe('SightingForm', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('says the sighting waits for a retry when the server could not take it, not that there is no connection', async () => {
+    submit.fn.mockResolvedValue('retrying');
+    renderForm();
+    send();
+    expect(
+      await screen.findByText('השרת לא קיבל את התצפית. היא נשמרה בטלפון ותישלח שוב אוטומטית.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/אין חיבור/)).not.toBeInTheDocument();
+  });
+
+  it('says the sighting itself was refused, not that the mission ended', async () => {
+    submit.fn.mockResolvedValue('invalid');
+    renderForm();
+    send();
+    expect(await screen.findByRole('alert')).toHaveTextContent('התצפית לא נשלחה: השרת דחה אותה. נסה לדווח שוב.');
+  });
+
   it('says when the server refused the sighting for good', async () => {
     submit.fn.mockResolvedValue('rejected');
     renderForm();

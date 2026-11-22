@@ -1,10 +1,5 @@
-import type { RequiredPermission, StartSearchBlockers } from '@trace/domain';
-
-const PERMISSION_NAMES: Record<RequiredPermission, string> = {
-  location: 'מיקום',
-  backgroundLocation: 'מיקום ברקע',
-  push: 'התראות Push',
-};
+import type { StartSearchBlockers } from '@trace/domain';
+import { PERMISSION_NAMES } from '../../permissions/permissionNames';
 
 /** The banner of Fm03: that Start Search is closed, what is missing, and that watching the mission is still open. */
 export function blockedSummary({ missingParts, missingPermissions }: StartSearchBlockers): string {

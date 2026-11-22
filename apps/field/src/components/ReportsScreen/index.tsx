@@ -7,6 +7,7 @@ import { routes } from '../../navigation/routes';
 import type { ReportFilter } from '../../reports/reportItems';
 import { Button } from '../Button';
 import { Notice } from '../Notice';
+import { RejectedReportsNotice } from '../RejectedReportsNotice';
 import { ReportsList } from '../ReportsList';
 import { Screen } from '../Screen';
 import { SegmentedChoice } from '../SegmentedChoice';
@@ -74,12 +75,16 @@ export function ReportsScreen() {
     >
       {view === 'list' ? (
         <>
+          <RejectedReportsNotice />
           {staleNotice}
           {filterChoice}
           {list}
         </>
       ) : (
         <View style={styles.fill}>
+          <View style={styles.padded}>
+            <RejectedReportsNotice />
+          </View>
           {staleNotice ? <View style={styles.padded}>{staleNotice}</View> : null}
           {filterChoice ? <View style={styles.padded}>{filterChoice}</View> : null}
           <ReportsMapView screen={screen} list={list} onEdit={edit} />

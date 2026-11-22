@@ -1,6 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useCurrentFix } from '.';
+import { FIX_TIMEOUT_MS, useCurrentFix } from '.';
 
 const location = vi.hoisted(() => ({
   get: vi.fn(),
@@ -66,5 +66,66 @@ describe('useCurrentFix', () => {
     const { result } = renderHook(() => useCurrentFix({ prompt: false }));
     await waitFor(() => expect(result.current.state).toBe('ready'));
     expect(location.request).not.toHaveBeenCalled();
+  });
+
+  it('gives up and is unavailable when the phone takes too long for a fix', async () => {
+    vi.useFakeTimers();
+    try {
+      location.position.mockReturnValue(new Promise(() => {}));
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS);
+      });
+      expect(result.current).toEqual({ state: 'unavailable', fix: null });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the fix when the timeout passes after it arrived', async () => {
+    vi.useFakeTimers();
+    try {
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS + 1000);
+      });
+      expect(result.current.state).toBe('ready');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ignores a fix that arrives after the timeout', async () => {
+    vi.useFakeTimers();
+    try {
+      let arrive: (value: unknown) => void = () => {};
+      location.position.mockReturnValue(new Promise((resolve) => (arrive = resolve)));
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS);
+      });
+      await act(async () => arrive({ coords: { latitude: 31, longitude: 35, accuracy: 5 }, timestamp: 1 }));
+      expect(result.current).toEqual({ state: 'unavailable', fix: null });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not count the time the person takes to answer the permission prompt', async () => {
+    vi.useFakeTimers();
+    try {
+      let answer: (value: unknown) => void = () => {};
+      location.get.mockResolvedValue({ granted: false });
+      location.request.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS * 2);
+      });
+      expect(result.current.state).toBe('locating');
+      await act(async () => answer({ granted: true }));
+      expect(result.current.state).toBe('ready');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -199,6 +199,41 @@ describe('SosScreen close errors', () => {
     expect(screen.queryByText(/בדוק את החיבור/)).toBeNull();
   });
 
+  it('closes the confirmation after a failed close and lets the searcher choose again', async () => {
+    failClose(500, 'INTERNAL_ERROR');
+    await tryClose();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'כן, סגור את ה-SOS' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'בטל SOS…' })).toBeInTheDocument();
+  });
+
+  it('collapses the confirmation again when a second close attempt fails', async () => {
+    failClose(500, 'INTERNAL_ERROR');
+    await tryClose();
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'בטל SOS…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'כן, סגור את ה-SOS' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'כן, סגור את ה-SOS' })).toBeNull());
+    expect(screen.getByRole('button', { name: 'בטל SOS…' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['PARTICIPATION_ENDED', 409],
+    ['FORBIDDEN', 403],
+  ])('offers no retry when closing fails with %s', async (code, status) => {
+    failClose(status, code);
+    await tryClose();
+    await screen.findByRole('alert');
+    expect(screen.queryByRole('button', { name: 'בטל SOS…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'כן, סגור את ה-SOS' })).toBeNull();
+  });
+
+  it('words the forbidden close for the searcher who sent the SOS', async () => {
+    failClose(403, 'FORBIDDEN');
+    await tryClose();
+    expect(await screen.findByRole('alert')).toHaveTextContent('פנה למנהל');
+  });
+
   it('asks to check the connection when closing fails with no connection', async () => {
     failClose(500, 'INTERNAL_ERROR');
     fetchMock.mockImplementation(async (url: string, init?: { method?: string }) => {
