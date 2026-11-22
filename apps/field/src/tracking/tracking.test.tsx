@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker } from '.';
+import { resetBatteryReport } from './batteryReport';
 import { enqueue, pending } from '../outbox';
 import { useSession } from '../state/session';
 
@@ -38,6 +39,7 @@ vi.mock('expo-network', () => ({
     };
   },
 }));
+vi.mock('expo-battery', () => ({ getBatteryLevelAsync: vi.fn(async () => 0.42) }));
 vi.mock('expo-task-manager', () => ({ defineTask: vi.fn() }));
 const location = vi.hoisted(() => ({ stop: vi.fn(), started: vi.fn(async () => true) }));
 vi.mock('expo-location', () => ({
@@ -103,12 +105,22 @@ describe('receiveFixes, the background task', () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it('uploads a batch, empties the queue, and ignores an empty delivery', async () => {
-    const fetch = vi.fn(async () => json(200, { stored: 1, duplicates: 0 }));
+    const fetch = vi.fn(async (_url: string) => json(200, { stored: 1, duplicates: 0 }));
     vi.stubGlobal('fetch', fetch);
     await receiveFixes({ data: { locations: locations(1) }, error: null });
     await receiveFixes({ data: undefined, error: null });
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(fetch.mock.calls.filter((call) => String(call[0]).endsWith('/track-points'))).toHaveLength(1);
     expect(await pending()).toEqual([]);
+  });
+
+  it('sends the battery level together with the points', async () => {
+    resetBatteryReport();
+    const fetch = vi.fn(async (_url: string, _init: RequestInit) => json(200, { stored: 1, duplicates: 0 }));
+    vi.stubGlobal('fetch', fetch);
+    await receiveFixes({ data: { locations: locations(1) }, error: null });
+    const urls = fetch.mock.calls.map(([url]) => url);
+    expect(urls).toEqual([expect.stringContaining('/track-points'), expect.stringContaining('/participation/battery')]);
+    expect(JSON.parse(String(fetch.mock.calls[1]?.[1].body))).toMatchObject({ level: 42 });
   });
 
   it('keeps the batch on the device when the server is not reachable, without throwing', async () => {

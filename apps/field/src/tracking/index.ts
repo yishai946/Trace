@@ -11,6 +11,7 @@ import { AppState, Platform } from 'react-native';
 import { flushOutbox } from '../outbox';
 import { useSession } from '../state/session';
 import { sightingSender } from '../sightings/sender';
+import { reportBattery } from './batteryReport';
 import { noteGps } from './gpsStatus';
 import { reportPhotoSender, reportSender } from '../reports/senders';
 import { LOCATION_TASK, recordFixes, trackPointSender } from './locationTask';
@@ -60,16 +61,18 @@ async function stopTrackingIfCurrent(endedMissionId: string): Promise<void> {
 const trackSender = trackPointSender((missionId) => void stopTrackingIfCurrent(missionId));
 
 /**
- * Sends what waits in the outbox: track points, sightings, field reports and their photos (UC-S01, UC-F10, UC-F09, UC-S03).
+ * Sends what waits in the outbox: track points, sightings, field reports and their photos (UC-S01, UC-F10, UC-F09, UC-S03), then the battery level.
  * Never throws: what fails stays queued for the next trigger.
  */
-export function syncOutbox(): Promise<void> {
-  return flushOutbox({
+export async function syncOutbox(): Promise<void> {
+  await flushOutbox({
     'track-point': trackSender,
     sighting: sightingSender,
     report: reportSender,
     'report-photo': reportPhotoSender,
   }).catch(() => undefined);
+  // The battery level goes with the points (UC-C10, decision 13).
+  await reportBattery();
 }
 
 /**
