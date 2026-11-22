@@ -1,17 +1,18 @@
-import { recipientStatus, requiresAcknowledgement, type MessageUrgency } from '@trace/domain';
-import type { Message, MessageRecipient, MessageTarget, OwnMessage } from '@trace/schemas';
+import { recipientStatus, requiresAcknowledgement } from '@trace/domain';
+import type { Message, MessageRecipient, MessageTarget, OwnMessage, OwnMessageTarget } from '@trace/schemas';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import type { Db, Tx } from '../../db';
 import { isoOrNull } from '../isoOrNull';
-import { messageRecipients, messages, participations, polygons, searchers } from '../../db/schema';
+import { messageRecipients, messages, participations, polygons, searchers, users } from '../../db/schema';
 
 /**
  * The mission's messages, newest first, with their recipients ordered by callsign. With `ids`, only those messages.
  */
 export async function loadMessages(db: Db | Tx, missionId: string, ids?: string[]): Promise<Message[]> {
   const rows = await db
-    .select()
+    .select({ message: messages, senderName: users.name })
     .from(messages)
+    .innerJoin(users, eq(users.id, messages.sentBy))
     .where(and(eq(messages.missionId, missionId), ids ? inArray(messages.id, ids) : undefined))
     .orderBy(desc(messages.createdAt), desc(messages.id));
   if (rows.length === 0) return [];
@@ -32,18 +33,18 @@ export async function loadMessages(db: Db | Tx, missionId: string, ids?: string[
     .where(
       inArray(
         messageRecipients.messageId,
-        rows.map((row) => row.id),
+        rows.map((row) => row.message.id),
       ),
     )
     .orderBy(asc(participations.callsign));
-  const polygonIds = [...new Set(rows.flatMap((row) => row.targetPolygonIds ?? []))];
+  const polygonIds = [...new Set(rows.flatMap((row) => row.message.targetPolygonIds ?? []))];
   const polygonRows =
     polygonIds.length > 0
       ? await db.select({ id: polygons.id, name: polygons.name }).from(polygons).where(inArray(polygons.id, polygonIds))
       : [];
   const polygonNames = new Map(polygonRows.map((polygon) => [polygon.id, polygon.name]));
 
-  return rows.map((row): Message => {
+  return rows.map(({ message: row, senderName }): Message => {
     const recipients: MessageRecipient[] = recipientRows
       .filter((recipient) => recipient.messageId === row.id)
       .map((recipient) => ({
@@ -62,6 +63,7 @@ export async function loadMessages(db: Db | Tx, missionId: string, ids?: string[
       urgency: row.urgency,
       body: row.body,
       target: targetOf(row, recipients, polygonNames),
+      sender: { name: senderName, role: 'commander' },
       sentAt: row.createdAt.toISOString(),
       recipients,
     };
@@ -92,8 +94,14 @@ function targetOf(
   return { kind: 'mission' };
 }
 
+/** What a recipient may know of the target: names of polygons, "personal", never who else got it (decision 32). */
+function ownTarget(target: MessageTarget): OwnMessageTarget {
+  if (target.kind === 'polygons') return { kind: 'polygons', polygons: target.polygons.map(({ name }) => ({ name })) };
+  return { kind: target.kind };
+}
+
 export function toOwnMessage(
-  message: { id: string; missionId: string; urgency: MessageUrgency; body: string; sentAt: string },
+  message: Pick<Message, 'id' | 'missionId' | 'urgency' | 'body' | 'sentAt' | 'target' | 'sender'>,
   recipient: Pick<MessageRecipient, 'status' | 'deliveredAt' | 'readAt' | 'acknowledgedAt'>,
 ): OwnMessage {
   return {
@@ -101,6 +109,8 @@ export function toOwnMessage(
     missionId: message.missionId,
     urgency: message.urgency,
     body: message.body,
+    target: ownTarget(message.target),
+    sender: message.sender,
     sentAt: message.sentAt,
     requiresAcknowledgement: requiresAcknowledgement(message.urgency),
     status: recipient.status,
@@ -118,31 +128,19 @@ export async function listOwnMessages(
   db: Db,
   { missionId, searcherId }: { missionId: string; searcherId: string },
 ): Promise<OwnMessage[]> {
-  const rows = await db
-    .select({
-      id: messages.id,
-      missionId: messages.missionId,
-      urgency: messages.urgency,
-      body: messages.body,
-      createdAt: messages.createdAt,
-      deliveredAt: messageRecipients.deliveredAt,
-      readAt: messageRecipients.readAt,
-      acknowledgedAt: messageRecipients.acknowledgedAt,
-    })
+  const mine = await db
+    .select({ id: messageRecipients.messageId })
     .from(messageRecipients)
     .innerJoin(participations, eq(participations.id, messageRecipients.participationId))
-    .innerJoin(messages, eq(messages.id, messageRecipients.messageId))
-    .where(and(eq(participations.missionId, missionId), eq(participations.searcherId, searcherId)))
-    .orderBy(desc(messages.createdAt), desc(messages.id));
-  return rows.map((row) =>
-    toOwnMessage(
-      { ...row, sentAt: row.createdAt.toISOString() },
-      {
-        status: recipientStatus(row),
-        deliveredAt: isoOrNull(row.deliveredAt),
-        readAt: isoOrNull(row.readAt),
-        acknowledgedAt: isoOrNull(row.acknowledgedAt),
-      },
-    ),
+    .where(and(eq(participations.missionId, missionId), eq(participations.searcherId, searcherId)));
+  if (mine.length === 0) return [];
+  const found = await loadMessages(
+    db,
+    missionId,
+    mine.map((row) => row.id),
   );
+  return found.flatMap((message) => {
+    const recipient = message.recipients.find((candidate) => candidate.searcherId === searcherId);
+    return recipient ? [toOwnMessage(message, recipient)] : [];
+  });
 }

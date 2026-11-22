@@ -2,7 +2,7 @@ import { isJoinCode, MAX_PHOTO_BYTES } from '@trace/domain';
 import { ApiError, Mission, MissionList } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { missions } from '../../db/schema';
+import { missions, users } from '../../db/schema';
 import {
   addParticipant,
   createTestApp,
@@ -104,6 +104,16 @@ describe('missions', () => {
 
     const one = await inject({ method: 'GET', url: `/api/missions/${first.id}` });
     expect(Mission.parse(one.json()).name).toBe('ראשון');
+  });
+
+  it('shows who runs the mission and the phone to call them, null when they have none', async () => {
+    const created = Mission.parse((await post({ name: 'ראשון', rallyPoint, lkp })).json());
+    expect(created.commander).toEqual({ name: 'מנהל', phoneNumber: null });
+    await ctx.db.update(users).set({ phoneNumber: '+972501234567' }).where(eq(users.id, commander.userId));
+    const one = await inject({ method: 'GET', url: `/api/missions/${created.id}` });
+    expect(Mission.parse(one.json()).commander).toEqual({ name: 'מנהל', phoneNumber: '+972501234567' });
+    const list = MissionList.parse((await inject({ method: 'GET', url: '/api/missions' })).json());
+    expect(list[0]?.commander.phoneNumber).toBe('+972501234567');
   });
 
   it('returns 404 for an unknown mission and 400 for a malformed id', async () => {

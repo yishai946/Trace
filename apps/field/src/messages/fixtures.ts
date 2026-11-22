@@ -1,4 +1,4 @@
-import type { OwnMessage } from '@trace/schemas';
+import type { Mission, OwnMessage } from '@trace/schemas';
 
 let counter = 0;
 
@@ -10,6 +10,8 @@ export function makeMessage(overrides: Partial<OwnMessage> = {}): OwnMessage {
     missionId: '00000000-0000-4000-8000-000000000001',
     urgency: 'normal',
     body: 'מים וציוד עזרה ראשונה בחניון',
+    target: { kind: 'mission' },
+    sender: { name: 'ישי', role: 'commander' },
     sentAt: '2026-10-03T16:55:00.000Z',
     requiresAcknowledgement: false,
     status: 'sent',
@@ -23,4 +25,27 @@ export function makeMessage(overrides: Partial<OwnMessage> = {}): OwnMessage {
 /** A critical message: it also asks for "אישרתי". */
 export function makeCritical(overrides: Partial<OwnMessage> = {}): OwnMessage {
   return makeMessage({ urgency: 'critical', requiresAcknowledgement: true, body: 'חוזרים לחניון', ...overrides });
+}
+
+/** The searcher's mission, run by a commander with the given phone (or none). */
+export function makeMissionOf(phoneNumber: string | null): Mission {
+  return {
+    id: '00000000-0000-4000-8000-000000000001',
+    name: 'מסע 0412',
+    status: 'active',
+    joinCode: 'K7-4Q2',
+    commander: { name: 'ישי', phoneNumber },
+    missingPerson: {
+      name: 'נועם',
+      age: null,
+      disappearedAt: null,
+      description: null,
+      additionalInfo: null,
+      photoUrl: null,
+    },
+    rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
+    lkp: null,
+    createdAt: '2026-10-03T10:00:00.000Z',
+    updatedAt: '2026-10-03T10:00:00.000Z',
+  };
 }
