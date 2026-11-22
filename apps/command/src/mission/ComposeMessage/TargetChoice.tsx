@@ -1,6 +1,7 @@
 import type { MissionPolygon, Participant } from '@trace/schemas';
-import { Checkbox, CheckboxGroup, Radio, RadioGroup } from 'react-aria-components';
+import { CheckboxGroup, Radio, RadioGroup } from 'react-aria-components';
 import { CallsignChip } from '../../components/CallsignChip';
+import { Checkbox } from '../../components/Checkbox';
 import styles from './ComposeMessage.module.css';
 import { activeParticipants, countInPolygon, type MessageForm } from '../messageForm';
 
@@ -48,8 +49,7 @@ export function TargetChoice({ form, participants, polygons, onChange }: TargetC
             }}
           >
             {polygons.map((polygon) => (
-              <Checkbox key={polygon.id} value={polygon.id} className={styles.check}>
-                <span className={styles.box}>{checkIcon}</span>
+              <Checkbox key={polygon.id} value={polygon.id}>
                 <span className={styles.grow}>{polygon.name}</span>
                 <span className={styles.meta}>{searchersLabel(countInPolygon(polygon.id, pool))}</span>
               </Checkbox>

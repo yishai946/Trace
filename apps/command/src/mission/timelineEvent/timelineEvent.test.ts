@@ -2,7 +2,7 @@ import { TIMELINE_EVENT_TYPES } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { describe, expect, it } from 'vitest';
 import { eventSamples } from '../fixtures';
-import { CATEGORY_OF, TIMELINE_CATEGORIES, describeEvent, formatEventTime, spansDays } from '.';
+import { CATEGORY_OF, TIMELINE_CATEGORIES, describeEvent, formatEventTime, recentChanges, spansDays } from '.';
 
 const text = (event: TimelineEvent) =>
   describeEvent(event)
@@ -17,6 +17,13 @@ describe('describeEvent', () => {
     expect(text(eventSamples['mission.created'])).toBe('המסע נוצר, מסע 0412');
     expect(text(eventSamples['polygon.created'])).toBe('ואדי צפוני נוצר');
     expect(text(eventSamples['polygon.deleted'])).toBe('פוליגון 2 נמחק מהמפה');
+  });
+
+  it('words a change of the mission details by what changed, with no destination', () => {
+    const view = describeEvent(eventSamples['mission.details_changed']);
+    expect(view).toMatchObject({ badge: 'פרטי מסע', danger: false, destination: null });
+    expect(text(eventSamples['mission.details_changed'])).toBe('עודכנו: תיאור / לבוש, מידע רלוונטי');
+    expect(CATEGORY_OF['mission.details_changed']).toBe('mission');
   });
 
   it('says whether the LKP was set or updated', () => {
@@ -99,5 +106,18 @@ describe('spansDays', () => {
   it('is false within one day, and for no events', () => {
     expect(spansDays([at(3, 1), at(3, 23)])).toBe(false);
     expect(spansDays([])).toBe(false);
+  });
+});
+
+describe('recentChanges', () => {
+  it('keeps the details and LKP changes, newest first', () => {
+    const history = [
+      eventSamples['mission.created'],
+      eventSamples['lkp.changed'],
+      eventSamples['polygon.created'],
+      eventSamples['mission.details_changed'],
+    ];
+    expect(recentChanges(history).map((event) => event.type)).toEqual(['mission.details_changed', 'lkp.changed']);
+    expect(history).toHaveLength(4);
   });
 });

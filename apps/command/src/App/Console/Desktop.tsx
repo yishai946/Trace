@@ -92,6 +92,15 @@ export function Desktop({
           commanderName={user.name}
           searcherCount={(data.participants.data ?? []).filter((p) => p.status !== 'ended').length}
           online={operational}
+          changes={{
+            events: data.timeline.data,
+            loadFailed: data.timeline.isError,
+            onRetry: () => void data.timeline.refetch(),
+          }}
+          onOpenTimeline={() => {
+            nav.setPanelOpen('details', false);
+            nav.setView('timeline');
+          }}
           onClose={() => {
             nav.setPanelOpen('details', false);
             detailsButton.current?.focus();

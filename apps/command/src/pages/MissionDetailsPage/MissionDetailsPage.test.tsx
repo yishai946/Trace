@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MissionDetailsPage, type MissionDetailsPageProps } from '.';
-import { mission as baseMission } from '../../mission/fixtures';
+import { eventSamples, mission as baseMission } from '../../mission/fixtures';
+import { formatEventTime } from '../../mission/timelineEvent';
 import { DETAILS_MESSAGES, PHOTO_SAVE_FAILED } from './missionDetailsForm';
 
 // Shrinking needs a canvas; the stand-in keeps the file as it is.
@@ -20,6 +21,8 @@ const apiError = (status: number, code: string) => json({ error: { code, message
 function renderPage(props: Partial<MissionDetailsPageProps> = {}) {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
   const onClose = vi.fn();
+  const onOpenTimeline = vi.fn();
+  const onRetry = vi.fn();
   render(
     <QueryClientProvider client={client}>
       <MissionDetailsPage
@@ -28,11 +31,13 @@ function renderPage(props: Partial<MissionDetailsPageProps> = {}) {
         searcherCount={3}
         online
         onClose={onClose}
+        changes={{ events: [], loadFailed: false, onRetry }}
+        onOpenTimeline={onOpenTimeline}
         {...props}
       />
     </QueryClientProvider>,
   );
-  return { onClose };
+  return { onClose, onOpenTimeline, onRetry };
 }
 
 const saveButton = () => screen.getByRole('button', { name: 'שמור שינויים' });
@@ -93,6 +98,7 @@ describe('MissionDetailsPage', () => {
         description: 'מעיל חום, כובע צמר',
         additionalInfo: null,
       },
+      notifySearchers: false,
     });
   });
 
@@ -191,5 +197,95 @@ describe('MissionDetailsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'בטל' }));
     expect(onClose).toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  describe('notifying the searchers', () => {
+    const notify = () => screen.getByRole('checkbox', { name: 'עדכן את המחפשים' });
+
+    it('offers it unchecked, with the hint that names it', () => {
+      renderPage();
+      expect(notify()).not.toBeChecked();
+      expect(
+        screen.getByText('מסתנכרן ל-TRACE Field בשמירה. עם "עדכן את המחפשים" נשלחת התראה למחפשים ורשומה בציר הזמן.'),
+      ).toBeInTheDocument();
+    });
+
+    it('sends the choice with the save and is unchecked again after it', async () => {
+      const fetch = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json(mission));
+      renderPage();
+      type('תיאור / לבוש', 'מעיל חום, כובע');
+      fireEvent.click(notify());
+      expect(notify()).toBeChecked();
+      expect(saveButton()).toBeEnabled();
+      fireEvent.click(saveButton());
+
+      expect(await screen.findByText('השינויים נשמרו.')).toBeInTheDocument();
+      expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({ notifySearchers: true });
+      expect(notify()).not.toBeChecked();
+    });
+
+    it('does not by itself allow saving', () => {
+      renderPage();
+      fireEvent.click(notify());
+      expect(saveButton()).toBeDisabled();
+    });
+
+    it('is not offered for an ended mission', () => {
+      renderPage({ mission: { ...mission, status: 'ended_stopped' } });
+      expect(screen.queryByRole('checkbox', { name: 'עדכן את המחפשים' })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('recent changes (Cd05)', () => {
+    const region = () => screen.getByRole('region', { name: 'שינויים אחרונים' });
+    const later = { ...eventSamples['lkp.changed'], occurredAt: '2026-10-03T12:00:00.000Z' };
+
+    it('lists the significant changes, newest first, and leaves out the rest', () => {
+      const events = [eventSamples['mission.created'], later, eventSamples['mission.details_changed']];
+      renderPage({ changes: { events, loadFailed: false, onRetry: vi.fn() } });
+      const items = within(region()).getAllByRole('listitem');
+      expect(items).toHaveLength(2);
+      expect(items[0]).toHaveTextContent('עודכנו: תיאור / לבוש, מידע רלוונטי');
+      expect(items[1]).toHaveTextContent('LKP');
+      for (const item of items) expect(item).toHaveTextContent('שינוי משמעותי');
+      expect(within(region()).queryByText(/המסע נוצר/)).not.toBeInTheDocument();
+    });
+
+    it('shows the date with the time when the changes span days', () => {
+      const earlier = { ...later, occurredAt: '2026-10-01T12:00:00.000Z' };
+      const events = [earlier, eventSamples['mission.details_changed']];
+      renderPage({ changes: { events, loadFailed: false, onRetry: vi.fn() } });
+      for (const event of events) {
+        expect(within(region()).getByText(formatEventTime(event.occurredAt, true))).toBeInTheDocument();
+      }
+    });
+
+    it('says when they could not be loaded', () => {
+      renderPage({ changes: { events: undefined, loadFailed: true, onRetry: vi.fn() } });
+      expect(within(region()).getByRole('alert')).toHaveTextContent('לא ניתן לטעון את השינויים מהשרת.');
+    });
+
+    it('retries after a failure', () => {
+      const onRetry = vi.fn();
+      renderPage({ changes: { events: undefined, loadFailed: true, onRetry } });
+      fireEvent.click(within(region()).getByRole('button', { name: 'נסה שוב' }));
+      expect(onRetry).toHaveBeenCalled();
+    });
+
+    it('says when the changes load', () => {
+      renderPage({ changes: { events: undefined, loadFailed: false, onRetry: vi.fn() } });
+      expect(within(region()).getByText('טוען שינויים…')).toBeInTheDocument();
+    });
+
+    it('says when there are none', () => {
+      renderPage();
+      expect(within(region()).getByText('אין עדיין שינויים משמעותיים במסע.')).toBeInTheDocument();
+    });
+
+    it('leads to the Timeline', () => {
+      const { onOpenTimeline } = renderPage();
+      fireEvent.click(within(region()).getByRole('link', { name: 'ציר זמן' }));
+      expect(onOpenTimeline).toHaveBeenCalled();
+    });
   });
 });

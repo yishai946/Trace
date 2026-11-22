@@ -51,8 +51,8 @@ export function validate(form: MissionDetailsForm): DetailsErrors {
 }
 
 /** The API request for a valid form. Blank text becomes null. */
-export function toUpdateBody(form: MissionDetailsForm): UpdateMissionDetailsBody {
-  return { name: form.name.trim(), missingPerson: toMissingPerson(form) };
+export function toUpdateBody(form: MissionDetailsForm, notifySearchers: boolean): UpdateMissionDetailsBody {
+  return { name: form.name.trim(), missingPerson: toMissingPerson(form), notifySearchers };
 }
 
 const normalise = (form: MissionDetailsForm): MissionDetailsForm => ({

@@ -25,6 +25,8 @@ export function useMissionDetailsForm({ mission, online }: Input) {
   const [errors, setErrors] = useState<DetailsErrors>({});
   const [saved, setSaved] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
+  // The commander marks a change as significant (decision 34); it is off for every save.
+  const [notify, setNotify] = useState(false);
   const save = useUpdateMissionDetails(mission.id);
 
   const readOnly = !canEditMissionDetails(mission.status);
@@ -52,16 +54,33 @@ export function useMissionDetailsForm({ mission, online }: Input) {
     setErrors(found);
     if (Object.keys(found).length > 0 || !canSave) return;
     save.mutate(
-      { body: toUpdateBody(form), photo },
+      { body: toUpdateBody(form, notify), photo },
       {
         onSuccess: (result) => {
           setSaved(!result.photoFailed);
           setPhotoFailed(result.photoFailed);
-          if (!result.photoFailed) setPhoto(null);
+          if (!result.photoFailed) {
+            setPhoto(null);
+            setNotify(false);
+          }
         },
       },
     );
   };
 
-  return { form, photo, errors, saved, photoFailed, save, readOnly, canSave, update, choosePhoto, submit };
+  return {
+    form,
+    photo,
+    errors,
+    saved,
+    photoFailed,
+    notify,
+    setNotify,
+    save,
+    readOnly,
+    canSave,
+    update,
+    choosePhoto,
+    submit,
+  };
 }

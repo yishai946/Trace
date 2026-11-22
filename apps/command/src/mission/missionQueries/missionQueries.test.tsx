@@ -12,7 +12,14 @@ import {
   sosActive,
   sosClosed,
 } from '../fixtures';
-import { missionKeys, useCloseSos, useReportMutations, useSendMessage, useSightingMutations } from '.';
+import {
+  missionKeys,
+  useCloseSos,
+  useReportMutations,
+  useSendMessage,
+  useSightingMutations,
+  useUpdateMissionDetails,
+} from '.';
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
@@ -160,5 +167,31 @@ describe('useCloseSos', () => {
       expect.objectContaining({ method: 'POST' }),
     );
     expect(queryClient.getQueryData(missionKeys.sos(mission.id))).toEqual([closed, sosClosed]);
+  });
+});
+
+describe('useUpdateMissionDetails', () => {
+  const setup = () => {
+    const queryClient = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    queryClient.setQueryData(missionKeys.timeline(mission.id), []);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(Response.json(mission))),
+    );
+    const clientWrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useUpdateMissionDetails(mission.id), { wrapper: clientWrapper });
+    return { queryClient, result };
+  };
+  const body = (notifySearchers: boolean) => ({
+    body: { name: mission.name, missingPerson: {}, notifySearchers },
+    photo: null,
+  });
+
+  it('reloads the Timeline after a save that notified the searchers, where the change is recorded', async () => {
+    const { queryClient, result } = setup();
+    await act(() => result.current.mutateAsync(body(true)));
+    expect(queryClient.getQueryState(missionKeys.timeline(mission.id))?.isInvalidated).toBe(true);
   });
 });

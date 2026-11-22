@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  eventSamples,
   messageCritical,
   messageNormal,
   mission,
@@ -36,6 +37,7 @@ function renderApp() {
     if (url.endsWith('/health'))
       return Promise.resolve(json({ status: 'ok', version: '1', time: '2026-11-08T00:00:00Z' }));
     if (url.endsWith('/polygons')) return Promise.resolve(json([]));
+    if (url.endsWith('/timeline')) return Promise.resolve(json([eventSamples['mission.details_changed']]));
     if (url.endsWith('/participants')) return Promise.resolve(json(participants));
     if (url.endsWith('/messages')) return Promise.resolve(json([]));
     if (url.endsWith('/reports')) return Promise.resolve(json([]));
@@ -76,6 +78,25 @@ describe('App mission details', () => {
     await openDetails();
     expect(await screen.findByRole('form', { name: 'פרטי מסע ונעדר' })).toBeInTheDocument();
     expect(error).not.toHaveBeenCalled();
+  });
+
+  it('shows the recent changes of the mission, loaded when the details open', async () => {
+    renderApp();
+    await openDetails();
+    const changes = await screen.findByRole('region', { name: 'שינויים אחרונים' });
+    expect(await within(changes).findByText('עודכנו: תיאור / לבוש, מידע רלוונטי')).toBeInTheDocument();
+    expect(vi.mocked(globalThis.fetch).mock.calls.map(([input]) => String(input))).toContain(
+      `/api/missions/${mission.id}/timeline`,
+    );
+  });
+
+  it('opens the Timeline from the recent changes', async () => {
+    renderApp();
+    await openDetails();
+    const changes = await screen.findByRole('region', { name: 'שינויים אחרונים' });
+    fireEvent.click(within(changes).getByRole('link', { name: 'ציר זמן' }));
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'פרטי מסע ונעדר' })).not.toBeInTheDocument());
+    expect(await screen.findByRole('table')).toBeInTheDocument();
   });
 
   it('returns focus to the details button when the screen is closed', async () => {

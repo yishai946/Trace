@@ -305,6 +305,15 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     subject: subjectOf('sos', 'חורשת אורנים'),
     details: {},
   },
+  'mission.details_changed': {
+    id: '00000000-0000-4000-8000-00000000030f',
+    missionId: mission.id,
+    occurredAt: '2026-10-03T14:10:00.000Z',
+    type: 'mission.details_changed',
+    actor: commanderActor,
+    subject: subjectOf('mission', 'מסע 0412', mission.id),
+    details: { fields: ['description', 'additionalInfo'] },
+  },
 };
 
 /** A short mission history, oldest first, as the API returns it. */

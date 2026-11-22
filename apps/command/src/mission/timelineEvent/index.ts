@@ -1,5 +1,5 @@
 import { sameDay } from '../sameDay';
-import type { TimelineEventType } from '@trace/domain';
+import { detailChangesText, type TimelineEventType } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 
 export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'contact' | 'mission' | 'pause';
@@ -24,6 +24,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'contact.lost': 'contact',
   'mission.created': 'mission',
   'mission.ended': 'mission',
+  'mission.details_changed': 'mission',
   'lkp.changed': 'mission',
   'polygon.created': 'mission',
   'polygon.boundary_changed': 'mission',
@@ -153,6 +154,8 @@ export function describeEvent(event: TimelineEvent): EventView {
       return plain('השהיה', PAUSE_TEXT[event.type]);
     case 'mission.ended':
       return plain('מסע', endedText(event));
+    case 'mission.details_changed':
+      return plain('פרטי מסע', detailChangesText(event.details.fields));
     case 'lkp.changed':
       return plain('LKP', lkpText(event), 'map');
     case 'search.started':
@@ -169,4 +172,15 @@ export function describeEvent(event: TimelineEvent): EventView {
     default:
       return describePolygon(event, label);
   }
+}
+
+/** Events shown in "שינויים אחרונים" (Cd05): the mission's details and its LKP. */
+export const RECENT_CHANGE_TYPES = [
+  'mission.details_changed',
+  'lkp.changed',
+] as const satisfies readonly TimelineEventType[];
+
+/** The recent changes, newest first, from the Timeline as the API orders it (oldest first). */
+export function recentChanges(events: TimelineEvent[]): TimelineEvent[] {
+  return events.filter((event) => RECENT_CHANGE_TYPES.some((type) => type === event.type)).reverse();
 }

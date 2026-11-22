@@ -2,7 +2,7 @@ import { formatCallsign } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { Link } from 'react-aria-components';
 import styles from './TimelinePage.module.css';
-import { CallsignChip } from '../../components/CallsignChip';
+import { EventText } from '../../mission/EventText';
 import { describeEvent, formatEventTime } from '../../mission/timelineEvent';
 
 export function EventRow({
@@ -32,13 +32,7 @@ export function EventRow({
         </span>
       </td>
       <td>
-        {view.segments.map((segment, i) =>
-          typeof segment === 'string' ? (
-            <span key={i}>{segment}</span>
-          ) : (
-            <CallsignChip key={i} callsign={segment.callsign} />
-          ),
-        )}
+        <EventText segments={view.segments} />
       </td>
       <td>
         {view.destination === 'map' && (
