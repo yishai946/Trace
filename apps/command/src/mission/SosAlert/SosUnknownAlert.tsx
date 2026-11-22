@@ -6,7 +6,9 @@ export function SosUnknownAlert({ onRetry, compact }: { onRetry?: () => void; co
   return (
     <section className={styles.alert} data-compact={compact || undefined} role="alert" aria-label="מצב SOS לא ידוע">
       <span className={styles.badge}>SOS</span>
-      <div className={styles.text}>לא ניתן לטעון את מצב ה-SOS, ייתכן ש-SOS פעיל. מנסה שוב.</div>
+      <div className={styles.text} data-wrap>
+        לא ניתן לטעון את מצב ה-SOS, ייתכן ש-SOS פעיל. מנסה שוב.
+      </div>
       {onRetry && (
         <Button variant="danger" onPress={onRetry}>
           נסה שוב

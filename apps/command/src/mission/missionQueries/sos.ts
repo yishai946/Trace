@@ -12,6 +12,8 @@ export function useSosList(missionId: string | undefined) {
     queryKey: missionKeys.sos(missionId ?? ''),
     queryFn: ({ signal }) => apiRequest(`/missions/${missionId}/sos`, { schema: SosList, signal }),
     enabled: !!missionId,
+    // The interval below asks again, so a failure shows at once instead of after the default retries.
+    retry: false,
     // Whether an SOS is active must not stay unknown: after a failure keep asking until it is known.
     refetchInterval: (query) => (query.state.status === 'error' ? SOS_RETRY_MS : false),
   });
