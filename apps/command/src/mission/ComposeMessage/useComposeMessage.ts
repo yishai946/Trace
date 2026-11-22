@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   emptyForm,
   recipientsOf,
+  targetRule,
   toSendBody,
   validate,
   type MessageForm,
@@ -15,11 +16,19 @@ interface ComposeInput {
   /** Undefined while sending is blocked. `onSent` runs after the server saved the message. */
   onSend?: (body: SendMessageBody, onSent: (message: Message) => void) => void;
   sending: boolean;
+  participantsFailed: boolean;
   onSent?: (message: Message) => void;
 }
 
 /** The new-message form's state: what was typed, what is wrong with it, and sending it once. */
-export function useComposeMessage({ participants, sendError, onSend, sending, onSent }: ComposeInput) {
+export function useComposeMessage({
+  participants,
+  sendError,
+  onSend,
+  sending,
+  participantsFailed,
+  onSent,
+}: ComposeInput) {
   const [form, setForm] = useState<MessageForm>(emptyForm);
   const [errors, setErrors] = useState<MessageFormErrors>({});
   const [announcement, setAnnouncement] = useState('');
@@ -39,6 +48,10 @@ export function useComposeMessage({ participants, sendError, onSend, sending, on
     setDismissedError(sendError);
   };
   const count = recipientsOf(form, participants ?? []).length;
+  // The case the API refuses with 409 NO_RECIPIENTS: a complete target nobody is in.
+  const noRecipients = participants !== undefined && targetRule(form) !== null && count === 0;
+
+  const blocked = !onSend || sending || participantsFailed || noRecipients;
 
   const submit = () => {
     const found = validate(form);
@@ -48,7 +61,7 @@ export function useComposeMessage({ participants, sendError, onSend, sending, on
       formRef.current?.querySelector<HTMLElement>(first)?.focus();
       return;
     }
-    if (!onSend || inFlight.current) return;
+    if (!onSend || noRecipients || inFlight.current) return;
     inFlight.current = true;
     setDismissedError(null);
     onSend(toSendBody(form), (message) => {
@@ -60,5 +73,17 @@ export function useComposeMessage({ participants, sendError, onSend, sending, on
     });
   };
 
-  return { form, errors, setErrors, announcement, dismissedError, formRef, change, submit, count };
+  return {
+    form,
+    errors,
+    setErrors,
+    announcement,
+    dismissedError,
+    formRef,
+    change,
+    submit,
+    count,
+    noRecipients,
+    blocked,
+  };
 }
