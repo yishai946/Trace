@@ -55,6 +55,9 @@ export const MessageRecipient = z
   })
   .meta({ id: 'MessageRecipient' });
 
+/** Who sent a message: the name on their account and their role in the mission. Only commanders send (UC-C12). */
+export const MessageSender = z.object({ name: z.string(), role: z.literal('commander') }).meta({ id: 'MessageSender' });
+
 export const Message = z
   .object({
     id: z.uuid(),
@@ -62,12 +65,25 @@ export const Message = z
     urgency: MessageUrgency,
     body: z.string(),
     target: MessageTarget,
+    sender: MessageSender,
     sentAt: IsoDateTime,
     /** Fixed when sent, ordered by callsign. */
     recipients: z.array(MessageRecipient),
   })
   .meta({ id: 'Message' });
 export const MessageList = z.array(Message).meta({ id: 'MessageList' });
+
+/**
+ * The target as the recipient sees it (Fm11): the whole mission, the polygon names, or "personal". Never the other
+ * recipients, so a personal message does not name the searcher (decision 32).
+ */
+export const OwnMessageTarget = z
+  .discriminatedUnion('kind', [
+    z.object({ kind: z.literal('mission') }),
+    z.object({ kind: z.literal('polygons'), polygons: z.array(z.object({ name: z.string() })) }),
+    z.object({ kind: z.literal('searcher') }),
+  ])
+  .meta({ id: 'OwnMessageTarget' });
 
 /** A message as its recipient sees it: no other recipients (decision 32). */
 export const OwnMessage = z
@@ -76,6 +92,8 @@ export const OwnMessage = z
     missionId: z.uuid(),
     urgency: MessageUrgency,
     body: z.string(),
+    target: OwnMessageTarget,
+    sender: MessageSender,
     sentAt: IsoDateTime,
     requiresAcknowledgement: z.boolean(),
     status: RecipientStatus,
@@ -94,6 +112,8 @@ export type RecipientStatus = z.infer<typeof RecipientStatus>;
 export type MessageReceipt = z.infer<typeof MessageReceipt>;
 export type SendMessageBody = z.input<typeof SendMessageBody>;
 export type MessageTarget = z.infer<typeof MessageTarget>;
+export type MessageSender = z.infer<typeof MessageSender>;
+export type OwnMessageTarget = z.infer<typeof OwnMessageTarget>;
 export type MessageRecipient = z.infer<typeof MessageRecipient>;
 export type Message = z.infer<typeof Message>;
 export type OwnMessage = z.infer<typeof OwnMessage>;

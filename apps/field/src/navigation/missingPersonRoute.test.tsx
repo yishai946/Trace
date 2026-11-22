@@ -41,6 +41,7 @@ describe('the missing person route', () => {
       name: 'מסע 0412',
       status: 'active',
       joinCode: 'K7-4Q2',
+      commander: { name: 'ישי', phoneNumber: null },
       missingPerson: {
         name: 'נועם אברהם',
         age: 74,

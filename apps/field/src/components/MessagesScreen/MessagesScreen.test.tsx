@@ -1,9 +1,10 @@
 import { QueryClient } from '@tanstack/react-query';
+import { Linking } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MessagesScreen } from '.';
 import { missionKeys } from '../../mission/queries';
-import { makeCritical, makeMessage } from '../../messages/fixtures';
+import { makeCritical, makeMessage, makeMissionOf } from '../../messages/fixtures';
 import { MISSION_ID } from '../../reports/fixtures';
 import { useSession } from '../../state/session';
 import { TestProviders } from '../../test/providers';
@@ -71,5 +72,31 @@ describe('MessagesScreen', () => {
     await screen.findByText('עדיין לא התקבלו הודעות מהמנהל');
     client.setQueryData(missionKeys.messages(MISSION_ID), [makeMessage({ body: 'חוזרים לחניון' })]);
     expect(await screen.findByText('חוזרים לחניון')).toBeInTheDocument();
+  });
+
+  describe('call the commander', () => {
+    it('dials the commander from the footer', async () => {
+      const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+      client.setQueryData(missionKeys.mission(MISSION_ID), makeMissionOf('+972501234567'));
+      show(() => json([makeMessage()]));
+      fireEvent.click(await screen.findByRole('button', { name: 'התקשר למנהל' }));
+      expect(open).toHaveBeenCalledWith('tel:+972501234567');
+    });
+
+    it('offers no call when the commander has no phone', async () => {
+      client.setQueryData(missionKeys.mission(MISSION_ID), makeMissionOf(null));
+      show(() => json([makeMessage()]));
+      await screen.findByLabelText('הודעה רגילה');
+      expect(screen.queryByRole('button', { name: 'התקשר למנהל' })).not.toBeInTheDocument();
+    });
+
+    it('says the call did not open and keeps the messages', async () => {
+      vi.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no dialer'));
+      client.setQueryData(missionKeys.mission(MISSION_ID), makeMissionOf('+972501234567'));
+      show(() => json([makeMessage()]));
+      fireEvent.click(await screen.findByRole('button', { name: 'התקשר למנהל' }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('לא ניתן לפתוח את החייגן');
+      expect(screen.getByLabelText('הודעה רגילה')).toBeInTheDocument();
+    });
   });
 });

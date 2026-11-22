@@ -2,6 +2,7 @@ import { radius, spacing, typography } from '@trace/design';
 import type { OwnMessage } from '@trace/schemas';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useMessageReceipt } from '../../messages/useMessageReceipt';
+import { targetLabel } from '../../messages/messageTarget';
 import { formatTime } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
@@ -10,10 +11,10 @@ import { Button } from '../Button';
 import { Notice } from '../Notice';
 import { UrgencyBadge, urgencyLabel } from './UrgencyBadge';
 
-function statusLine(message: OwnMessage): string {
+function statusLine(message: OwnMessage): string | null {
   if (message.acknowledgedAt) return `אושרה, ${formatTime(message.acknowledgedAt)}`;
   if (message.readAt) return `נקראה, ${formatTime(message.readAt)}`;
-  return `נשלחה ב-${formatTime(message.sentAt)}`;
+  return null;
 }
 
 /**
@@ -24,6 +25,7 @@ export function MessageCard({ message }: { message: OwnMessage }) {
   const { color } = useTheme().theme;
   const receipt = useMessageReceipt();
   const unread = message.status === 'sent';
+  const status = statusLine(message);
   const awaitingAck = message.requiresAcknowledgement && message.status !== 'acknowledged';
   const border = {
     normal: { borderColor: color.borderStrong, borderWidth: 1 },
@@ -37,6 +39,7 @@ export function MessageCard({ message }: { message: OwnMessage }) {
     <>
       <View style={styles.head}>
         <UrgencyBadge urgency={message.urgency} />
+        <Text style={[typography.meta, { color: color.inkMuted }]}>{targetLabel(message.target)}</Text>
         <View style={styles.fill} />
         {unread ? <Badge label="חדשה" tone="accent" dot /> : null}
       </View>
@@ -46,7 +49,10 @@ export function MessageCard({ message }: { message: OwnMessage }) {
       >
         {message.body}
       </Text>
-      <Text style={[typography.meta, { color: color.inkMuted }]}>{statusLine(message)}</Text>
+      <Text style={[typography.meta, { color: color.inkMuted }]}>
+        {`${message.sender.name}, מנהל מסע, ${formatTime(message.sentAt)}`}
+      </Text>
+      {status ? <Text style={[typography.meta, { color: color.inkMuted }]}>{status}</Text> : null}
     </>
   );
 

@@ -81,12 +81,18 @@ export const UpdateMissionDetailsBody = z.object({
   notifySearchers: z.boolean().default(false),
 });
 
+/** Who runs the mission, for the searchers to call (UC-F14). The phone is empty until the commander has one. */
+export const MissionCommander = z
+  .object({ name: z.string(), phoneNumber: z.string().nullable() })
+  .meta({ id: 'MissionCommander' });
+
 export const Mission = z
   .object({
     id: z.uuid(),
     name: z.string(),
     status: MissionStatus,
     joinCode: z.string(),
+    commander: MissionCommander,
     missingPerson: MissingPerson,
     rallyPoint: PointGeometry,
     /** The current LKP; earlier ones are kept as history. */

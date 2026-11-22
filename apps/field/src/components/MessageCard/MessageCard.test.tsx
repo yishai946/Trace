@@ -37,6 +37,22 @@ afterEach(() => {
 });
 
 describe('MessageCard', () => {
+  it('shows the target and who sent it, and when', () => {
+    show(makeMessage({ target: { kind: 'mission' } }));
+    expect(screen.getByText('כלל המסע')).toBeInTheDocument();
+    expect(screen.getByText('ישי, מנהל מסע, 16:55')).toBeInTheDocument();
+  });
+
+  it('names the polygons of a polygon message, and calls a personal message personal', () => {
+    const { unmount } = show(
+      makeMessage({ target: { kind: 'polygons', polygons: [{ name: 'פוליגון A' }, { name: 'פוליגון B' }] } }),
+    );
+    expect(screen.getByText('פוליגון A, פוליגון B')).toBeInTheDocument();
+    unmount();
+    show(makeMessage({ target: { kind: 'searcher' } }));
+    expect(screen.getByText('אישי')).toBeInTheDocument();
+  });
+
   it('opens an unread normal message and reports it read', async () => {
     const message = makeMessage();
     show(message, () => json({ ...message, status: 'read', readAt: '2026-10-03T17:00:00.000Z' }));

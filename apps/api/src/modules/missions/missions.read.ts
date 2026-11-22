@@ -4,7 +4,7 @@ import { desc, eq, inArray } from 'drizzle-orm';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { lkpPoints, missionPhotos, missions, participations } from '../../db/schema';
+import { lkpPoints, missionPhotos, missions, participations, users } from '../../db/schema';
 import { notFound } from '../../errors';
 import { isoOrNull } from '../isoOrNull';
 
@@ -13,6 +13,8 @@ const missionColumns = {
   name: missions.name,
   status: missions.status,
   joinCode: missions.joinCode,
+  commanderName: users.name,
+  commanderPhone: users.phoneNumber,
   missingPersonName: missions.missingPersonName,
   missingPersonAge: missions.missingPersonAge,
   disappearedAt: missions.disappearedAt,
@@ -25,7 +27,11 @@ const missionColumns = {
 };
 
 const selectMissions = (db: Db) =>
-  db.select(missionColumns).from(missions).leftJoin(missionPhotos, eq(missionPhotos.missionId, missions.id));
+  db
+    .select(missionColumns)
+    .from(missions)
+    .innerJoin(users, eq(users.id, missions.commanderId))
+    .leftJoin(missionPhotos, eq(missionPhotos.missionId, missions.id));
 type MissionRow = Awaited<ReturnType<typeof selectMissions>>[number];
 interface LkpRow {
   missionId: string;
@@ -42,6 +48,7 @@ function toMission(row: MissionRow, lkp: LkpRow | undefined): Mission {
     name: row.name,
     status: row.status,
     joinCode: row.joinCode,
+    commander: { name: row.commanderName, phoneNumber: row.commanderPhone },
     missingPerson: {
       name: row.missingPersonName,
       age: row.missingPersonAge,

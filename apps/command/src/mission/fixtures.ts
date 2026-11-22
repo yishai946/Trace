@@ -19,6 +19,7 @@ export const mission: Mission = {
   name: 'מסע 0412',
   status: 'active',
   joinCode: 'K7-4Q2',
+  commander: { name: 'ישי', phoneNumber: null },
   missingPerson: {
     name: 'נועם אברהם',
     age: 74,
@@ -356,6 +357,7 @@ export const messageNormal: Message = {
   urgency: 'normal',
   body: 'חזרו לכינוס בנקודת הריכוז',
   target: { kind: 'polygons', polygons: [{ id: polygonA.id, name: polygonA.name }] },
+  sender: { name: 'ישי', role: 'commander' },
   sentAt: '2026-10-03T13:35:00.000Z',
   recipients: [
     recipientOf(4, 'דנה כהן', {
@@ -374,6 +376,7 @@ export const messageCritical: Message = {
   urgency: 'critical',
   body: 'מזג האוויר מתדרדר, יש לצאת מהשטח',
   target: { kind: 'mission' },
+  sender: { name: 'ישי', role: 'commander' },
   sentAt: '2026-10-03T14:10:00.000Z',
   recipients: [
     recipientOf(4, 'דנה כהן', {
@@ -401,6 +404,7 @@ export const messageToOne: Message = {
   urgency: 'important',
   body: 'בדקו קשר',
   target: { kind: 'searcher', participantId: '00000000-0000-4000-8000-000000000009', callsign: 9, name: 'מיכל פרץ' },
+  sender: { name: 'ישי', role: 'commander' },
   sentAt: '2026-10-03T12:00:00.000Z',
   recipients: [
     recipientOf(9, 'מיכל פרץ', {

@@ -5,6 +5,7 @@ import { useMissionMessages } from '../../messages/useMissionMessages';
 import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
+import { CallCommanderButton } from '../CallCommanderButton';
 import { MessageCard } from '../MessageCard';
 import { Notice } from '../Notice';
 import { Screen } from '../Screen';
@@ -25,9 +26,12 @@ export function MessagesScreen() {
       tabbed
       action={unread > 0 ? <Badge tone="accent" label={`${unread} חדשות`} /> : undefined}
       footer={
-        <Notice icon="messages">
-          הודעות חד-כיווניות מהמנהל, ללא מענה בצ'אט. הודעה שנשלחה כשהיית לא מקוון מופיעה כאן עם החיבור.
-        </Notice>
+        <View style={styles.footer}>
+          <Notice icon="messages">
+            הודעות חד-כיווניות מהמנהל, ללא מענה בצ'אט. הודעה שנשלחה כשהיית לא מקוון מופיעה כאן עם החיבור.
+          </Notice>
+          <CallCommanderButton />
+        </View>
       }
     >
       {waiting ? (
@@ -56,6 +60,7 @@ export function MessagesScreen() {
 }
 
 const styles = StyleSheet.create({
+  footer: { gap: spacing.space4 },
   list: { gap: spacing.space5 },
   message: { gap: spacing.space5, alignItems: 'flex-start' },
 });

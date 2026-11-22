@@ -235,6 +235,39 @@ describe('messages', () => {
     });
   });
 
+  describe('what the searcher sees of the sender and the target', () => {
+    const own = async () => (await inbox(s1)).at(0);
+
+    it('carries the commander as sender and a whole-mission target', async () => {
+      await sendOk(toMission());
+      expect((await own())?.sender).toEqual({ name: 'מנהל', role: 'commander' });
+      expect((await own())?.target).toEqual({ kind: 'mission' });
+    });
+
+    it('carries the polygon names, without ids or other recipients', async () => {
+      await ctx.db.update(polygons).set({ name: 'פוליגון א' }).where(eq(polygons.id, polyA));
+      await sendOk(toPolygons([polyA]));
+      const message = await own();
+      expect(message?.target).toEqual({ kind: 'polygons', polygons: [{ name: 'פוליגון א' }] });
+      expect(JSON.stringify(message)).not.toContain('recipients');
+    });
+
+    it('marks a personal message without naming the searcher', async () => {
+      const participantId = (await sendOk(toMission())).recipients.find((r) => r.callsign === 1)?.participantId;
+      await sendOk({ target: { kind: 'searcher', participantId }, urgency: 'normal', body: 'אישי' });
+      expect((await own())?.target).toEqual({ kind: 'searcher' });
+    });
+
+    it('keeps the sender and target in the receipt reply and the push to the app', async () => {
+      const critical = await sendOk(toMission('critical'));
+      const res = await receipt(s1, critical.id, 'read');
+      expect(OwnMessage.parse(res.json())).toMatchObject({
+        sender: { role: 'commander' },
+        target: { kind: 'mission' },
+      });
+    });
+  });
+
   describe('validation and access', () => {
     it('E6: refuses invalid bodies and stores the body trimmed', async () => {
       const bad = [
