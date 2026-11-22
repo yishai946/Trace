@@ -2,10 +2,18 @@ import type { ReportType } from '@trace/domain';
 import { CreateReportBody } from '@trace/schemas';
 import { useRef, useState } from 'react';
 import { useCurrentFix } from '../../location/useCurrentFix';
-import { newReportId, submitReport } from '../../reports/submit';
+import { type Delivery, newReportId, submitReport } from '../../reports/submit';
 import type { ReportPhotoValue } from '../ReportPhoto';
 
-export type ReportPhase = 'editing' | 'sending' | 'sent' | 'located-pending' | 'rejected';
+export type ReportPhase =
+  'editing' | 'sending' | 'sent' | 'located-pending' | 'located-retrying' | 'rejected' | 'invalid';
+
+/** The screen that says what became of the report, or null when it was sent or waits and the form is simply done. */
+function outcomePhase(delivery: Delivery, type: ReportType): ReportPhase | null {
+  if (delivery === 'sent' || delivery === 'rejected' || delivery === 'invalid') return delivery;
+  if (type !== 'located') return null;
+  return delivery === 'pending' ? 'located-pending' : delivery === 'retrying' ? 'located-retrying' : null;
+}
 
 interface Input {
   missionId: string;
@@ -52,12 +60,7 @@ export function useReportDraft({ missionId, onDone }: Input) {
     setPhase('sending');
     try {
       const delivery = await submitReport({ missionId, report, photo: photo && { base64: photo.base64 } });
-      const phaseOf = {
-        sent: 'sent',
-        rejected: 'rejected',
-        pending: type === 'located' ? 'located-pending' : null,
-      } as const;
-      const next = phaseOf[delivery];
+      const next = outcomePhase(delivery, type);
       if (next) setPhase(next);
       else onDone();
     } catch {

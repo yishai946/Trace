@@ -81,11 +81,11 @@ describe('submitReport', () => {
     expect(fetch.mock.calls.map((call) => call[1].method)).toEqual(['POST', 'PUT']);
   });
 
-  it('keeps the report as pending when the server cannot be reached', async () => {
+  it('says retrying, not pending, when the phone is online but the send failed', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
     const r = report();
 
-    await expect(submitReport({ missionId, report: r, photo: null })).resolves.toBe('pending');
+    await expect(submitReport({ missionId, report: r, photo: null })).resolves.toBe('retrying');
     expect((await pending()).map((i) => i.id)).toEqual([r.id]);
   });
 
@@ -100,7 +100,17 @@ describe('submitReport', () => {
     expect(await pending()).toEqual([]);
   });
 
-  it('falls back to pending when the server stalls, and the next flush is not blocked', async () => {
+  it('says invalid when the server refuses the report itself (400)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION_ERROR', message: 'bad' } })),
+    );
+
+    await expect(submitReport({ missionId, report: report(), photo: null })).resolves.toBe('invalid');
+    expect(await pending()).toEqual([]);
+  });
+
+  it('falls back to retrying when the server stalls, and the next flush is not blocked', async () => {
     vi.useFakeTimers();
     const r = report();
     const stalled = vi.fn(
@@ -113,7 +123,7 @@ describe('submitReport', () => {
 
     const result = submitReport({ missionId, report: r, photo: null });
     await vi.advanceTimersByTimeAsync(REQUEST_TIMEOUT_MS);
-    await expect(result).resolves.toBe('pending');
+    await expect(result).resolves.toBe('retrying');
     expect((await pending()).map((i) => i.id)).toEqual([r.id]);
 
     vi.stubGlobal(
