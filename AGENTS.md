@@ -16,7 +16,7 @@ Never use git worktrees: not `git worktree add`, not the `EnterWorktree` tool, n
 
 # Tracking work
 
-Work is tracked in GitHub issues and the [project board](https://github.com/users/yishai946/projects/6), not in files in the repository. Before starting a task, find its issue (or the one the user names), check that every issue in its "Blocked by" list is closed, assign it and set its board Status to In progress. One issue is one Pull Request: the Pull Request names its issue with `Closes #<N>`, and merging it into `dev` finishes the issue (there is no `Refs` and no second Pull Request for the same issue). Work that did not fit, or that you found on the way, gets its own new issue, listed in the Pull Request; never leave the issue open for it. If the work has no issue yet, create one first (labels, milestone, board Priority and Size, "Blocked by"), add it to the board, and only then open the Pull Request linked to it. Never open a Pull Request without an issue, except a release from `dev` into `main`. If the user asks what to work on next, list the board (`gh project item-list 6 --owner yishai946 --format json`) and take the unassigned **Ready** item with the earliest milestone, then the highest priority. Full rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#tracking-work).
+Work is tracked in GitHub issues and the [project board](https://github.com/users/yishai946/projects/6), not in files in the repository. Before starting a task, find its issue (or the one the user names), check that every issue in its "Blocked by" list is closed, assign it and set its board Status to In progress. One issue is one Pull Request: the Pull Request names its issue with `Closes #<N>`, and merging it into `dev` finishes the issue. Work that did not fit, or that you found on the way, gets its own new issue, listed in the Pull Request; never leave the issue open for it. If the work has no issue yet, create one first (labels, milestone, board Priority and Size, "Blocked by"), add it to the board, and only then open the Pull Request linked to it. Never open a Pull Request without an issue, except a release from `dev` into `main`. If the user asks what to work on next, list the board (`gh project item-list 6 --owner yishai946 --format json`) and take the unassigned **Ready** item with the earliest milestone, then the highest priority. Full rules in [`docs/CODING_STANDARDS.md`](docs/CODING_STANDARDS.md#tracking-work).
 
 # Review before the Pull Request
 
@@ -56,14 +56,14 @@ Before any UI work:
 2. Otherwise, read the synced copies: [`packages/design/source/`](packages/design/source/) for the design system (`README.md` brand book in Hebrew, `components/<Name>/README.md` and `preview.html`), and [`packages/design/wireframes/`](packages/design/wireframes/) for the screen (`<ScreenId>.dc.html`, read as markup).
 3. If the live artifact's version differs from `packages/design/source/sync.json`, run `/sync-design` first and commit it on your branch as its own commit (`chore(design): sync Trace Console <version>`). If you cannot read the artifact, say so in the Pull Request. Do not build against values that exist only in the artifact.
 
-After UI work, before the Pull Request: if the screen needed a value, pattern or component the design system does not have, or departs from the wireframe on purpose, update the Trace Console (or Trace Wireframes) artifact to match, run `/sync-design` again, and list the design changes in the Pull Request. If you cannot write the artifact, list the gaps in the Pull Request instead.
+After UI work, before the Pull Request: a screen may differ from the wireframe or Trace Console as long as the theme values themselves stay unchanged; a one-off difference needs no design update. Do not change theme values, and do not update the artifacts or run `/sync-design` for a deviation. If you want to change colors or a recurring element or pattern (not a one-off), leave it and flag it in the Pull Request under **Design deviations**.
 
 Rules (enforced by ESLint and Stylelint in `apps/**`):
 
 - Every color, font, text style, spacing, radius, shadow and fixed size comes from `@trace/design`: `themes[themeId].color.*`, `spacing`, `radius`, `size`, `typography` in TS and React Native; `var(--token)` from `@trace/design/tokens.css` on the web. No hex, `rgb()`, named colors or raw px for those properties.
 - Web components may use the classes in `@trace/design/components.css` (`.tc-*`). React Native components reproduce the same component guidelines with the TS tokens.
 - Both themes (`night`, `day`) are first-class; every screen must work in both.
-- A missing value is a design-system change, not a local exception: add it to the artifact (see above), then run `/sync-design`.
+- A missing token value is not a local exception: do not hardcode it and do not add it to the artifact; report it in the Pull Request under **Design deviations** (see above).
 - Never edit `packages/design/source/` or `packages/design/src/generated/` by hand. `/sync-design` updates them from the artifact.
 
 # Product source of truth
