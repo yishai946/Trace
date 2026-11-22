@@ -18,19 +18,14 @@ export interface SosActiveProps {
   closing: boolean;
   /** Why the last attempt to close it failed, or null. */
   closeFailure: SosSendFailure | null;
-  onClose: () => void;
+  /** Closes the SOS; `onFailed` runs when the attempt fails. */
+  onClose: (onFailed: () => void) => void;
 }
 
 /** The SOS section's body while the searcher's SOS is active (Fm12 SOS פעיל): what was sent, to whom, and its state. */
 export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProps) {
   const { color } = useTheme().theme;
   const [confirming, setConfirming] = useState(false);
-  // A failed close ends the confirmation: the failure notice replaces it and the searcher chooses again.
-  const [seenFailure, setSeenFailure] = useState(closeFailure);
-  if (closeFailure !== seenFailure) {
-    setSeenFailure(closeFailure);
-    if (closeFailure) setConfirming(false);
-  }
   const sentTo = sos.polygon ? `נשלח למנהל ולמחפשים בפוליגון ${sos.polygon.name}.` : 'נשלח למנהל.';
   const where = sos.location
     ? `${ltr(formatLatLng(sos.location.position.coordinates))}${sos.location.accuracy === null ? '' : ` ±${ltr(Math.round(sos.location.accuracy))} מ׳`}`
@@ -76,7 +71,7 @@ export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProp
             size="lg"
             block
             disabled={closing}
-            onPress={onClose}
+            onPress={() => onClose(() => setConfirming(false))}
           />
           <Button label="השאר פעיל" size="lg" block disabled={closing} onPress={() => setConfirming(false)} />
         </View>

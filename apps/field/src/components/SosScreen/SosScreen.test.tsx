@@ -207,6 +207,16 @@ describe('SosScreen close errors', () => {
     expect(screen.getByRole('button', { name: 'בטל SOS…' })).toBeInTheDocument();
   });
 
+  it('collapses the confirmation again when a second close attempt fails', async () => {
+    failClose(500, 'INTERNAL_ERROR');
+    await tryClose();
+    await screen.findByRole('alert');
+    fireEvent.click(screen.getByRole('button', { name: 'בטל SOS…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'כן, סגור את ה-SOS' }));
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'כן, סגור את ה-SOS' })).toBeNull());
+    expect(screen.getByRole('button', { name: 'בטל SOS…' })).toBeInTheDocument();
+  });
+
   it.each([
     ['PARTICIPATION_ENDED', 409],
     ['FORBIDDEN', 403],

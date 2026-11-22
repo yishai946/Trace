@@ -1,4 +1,5 @@
 import { spacing } from '@trace/design';
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useCurrentFix } from '../../location/useCurrentFix';
 import { endedSentence, ownActiveSos, ownClosedSos, sosLocationOf } from '../../sos/sosList';
@@ -24,6 +25,10 @@ export function SosScreen() {
 
   const active = ownActiveSos(list.data ?? [], participation?.id);
   const closed = ownClosedSos(list.data ?? [], participation?.id);
+  const activeId = active?.id;
+  const { reset: resetClose } = close;
+  // A close failure belongs to the SOS it happened on, not to the next one.
+  useEffect(() => resetClose(), [activeId, resetClose]);
   const polygonName = polygons.data?.find((p) => p.id === participation?.polygonId)?.name ?? null;
   const endedNote = endedSentence(closed);
 
@@ -42,7 +47,7 @@ export function SosScreen() {
             sos={active}
             closing={close.isPending}
             closeFailure={sosSendFailure(close.error)}
-            onClose={() => close.mutate(active.id)}
+            onClose={(onFailed) => close.mutate(active.id, { onError: onFailed })}
           />
         ) : (
           <SosActivation
