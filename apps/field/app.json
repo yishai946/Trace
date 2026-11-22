@@ -36,6 +36,7 @@
       "@maplibre/maplibre-react-native",
       "expo-sqlite",
       "expo-secure-store",
+      "expo-notifications",
       "expo-dev-client",
       "@sentry/react-native/expo",
       [
