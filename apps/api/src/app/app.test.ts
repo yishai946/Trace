@@ -29,6 +29,18 @@ describe('api', () => {
     expect(doc.components.schemas.MissionPolygon).toBeDefined();
   });
 
+  it('lets the web origin send PATCH and DELETE (CORS preflight)', async () => {
+    const res = await ctx.app.inject({
+      method: 'OPTIONS',
+      url: '/api/missions',
+      headers: { origin: loadEnv({}).WEB_ORIGIN, 'access-control-request-method': 'PATCH' },
+    });
+    const methods = String(res.headers['access-control-allow-methods'])
+      .split(',')
+      .map((m) => m.trim());
+    expect(methods).toEqual(expect.arrayContaining(['GET', 'POST', 'PATCH', 'PUT', 'DELETE']));
+  });
+
   it('answers unknown routes with the shared error shape', async () => {
     const res = await ctx.app.inject({ method: 'GET', url: '/api/nothing-here' });
     expect(res.statusCode).toBe(404);
