@@ -64,6 +64,7 @@ describe('MissionEvent messages', () => {
     urgency: 'critical',
     body: 'שלום',
     target: { kind: 'mission' },
+    sender: { name: 'ישי', role: 'commander' },
     sentAt: at,
     recipients: [recipient],
   };
@@ -72,6 +73,8 @@ describe('MissionEvent messages', () => {
     missionId: id(5),
     urgency: 'critical',
     body: 'שלום',
+    target: { kind: 'polygons', polygons: [{ name: 'A' }] },
+    sender: { name: 'ישי', role: 'commander' },
     sentAt: at,
     requiresAcknowledgement: true,
     status: 'sent',
