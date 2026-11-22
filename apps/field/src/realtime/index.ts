@@ -14,7 +14,17 @@ import { apiBaseUrl } from '../api';
 import { fetchOwnParticipation, missionKeys } from '../mission/queries';
 import { upsertMessage } from '../messages/messageList';
 import { useSession } from '../state/session';
+import { requestOfflineRefresh } from '../offline/refreshPackage';
 import { clearOfflinePackages } from '../offline/store';
+
+/** The events that change what the offline package holds: the mission (details, LKP, rally point, photo) and the polygons. */
+const PACKAGE_EVENTS: ReadonlySet<MissionEvent['type']> = new Set([
+  'mission.updated',
+  'rally.changed',
+  'lkp.changed',
+  'polygon.saved',
+  'polygon.deleted',
+]);
 
 type MissionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -91,6 +101,9 @@ export function useMissionLive(): void {
       transports: ['websocket'],
     });
     let closed = false;
+    const controller = new AbortController();
+    // The saved copy follows the server; a failure waits for the next event or reconnect.
+    const refreshPackage = () => void requestOfflineRefresh({ missionId, token, signal: controller.signal });
     let retry: ReturnType<typeof setTimeout> | undefined;
     const later = (action: () => void) => {
       clearTimeout(retry);
@@ -100,6 +113,8 @@ export function useMissionLive(): void {
       socket.emit('mission:join', { missionId }, (result) => {
         if (result.ok) {
           void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+          // Edits made while the phone was offline are not replayed: bring the saved package up to date (UC-F03).
+          refreshPackage();
           // An SOS sent or closed while away is not replayed either.
           void queryClient.invalidateQueries({ queryKey: missionKeys.sos(missionId) });
           // A message sent while away is not replayed either (decision 77).
@@ -131,7 +146,9 @@ export function useMissionLive(): void {
     });
     socket.on('mission:event', (raw) => {
       const event = MissionEvent.safeParse(raw);
-      if (event.success && event.data.missionId === missionId) applyEvent(queryClient, event.data);
+      if (!event.success || event.data.missionId !== missionId) return;
+      applyEvent(queryClient, event.data);
+      if (PACKAGE_EVENTS.has(event.data.type)) refreshPackage();
     });
     // The server closed the connection (a restart): Socket.IO does not reconnect on its own.
     socket.on('disconnect', (reason) => {
@@ -139,6 +156,7 @@ export function useMissionLive(): void {
     });
     return () => {
       closed = true;
+      controller.abort();
       clearTimeout(retry);
       socket.disconnect();
     };

@@ -49,7 +49,7 @@ export async function downloadOfflinePackage({
 }
 
 /** The photo, or null when the server no longer has one: that is a mission without a photo, not a failed download. */
-async function fetchPhoto(
+export async function fetchPhoto(
   url: string,
   request: { baseUrl: string | undefined; token: string | null; signal?: AbortSignal },
 ) {

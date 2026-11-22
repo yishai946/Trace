@@ -14,6 +14,8 @@ interface OfflineState {
   failed: boolean;
   /** The failure will not go away by waiting (a refusal, or the phone's storage), so nothing retries by itself. */
   refused: boolean;
+  /** Bumped when a saved step was replaced by a newer copy, so screens read the phone again. */
+  revision: number;
   /** Bumped by "try again"; the download hook runs again on a change. */
   attempt: number;
   start: (missionId: string) => void;
@@ -21,6 +23,7 @@ interface OfflineState {
   stepSaved: (step: OfflineStep) => void;
   setRunning: (running: boolean) => void;
   setFailed: (failed: boolean, refused?: boolean) => void;
+  refreshed: (missionId: string) => void;
   retry: () => void;
 }
 
@@ -32,11 +35,13 @@ export const useOfflineState = create<OfflineState>()((set) => ({
   running: false,
   failed: false,
   refused: false,
+  revision: 0,
   attempt: 0,
   start: (missionId) => set({ missionId, saved: [], loaded: false, running: false, failed: false, refused: false }),
   setSaved: (saved) => set({ saved, loaded: true }),
   stepSaved: (step) => set((s) => (s.saved.includes(step) ? s : { saved: [...s.saved, step] })),
   setRunning: (running) => set({ running }),
   setFailed: (failed, refused = false) => set({ failed, refused: failed && refused }),
+  refreshed: (missionId) => set((s) => (s.missionId === missionId ? { revision: s.revision + 1 } : s)),
   retry: () => set((s) => ({ attempt: s.attempt + 1 })),
 }));

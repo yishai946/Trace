@@ -14,6 +14,9 @@ let opened: Promise<SQLiteDatabase> | null = null;
 /** Raised by every clear, so a save that began before it cannot write after it. */
 let epoch = 0;
 
+/** Changes whenever the packages are cleared, so a late write can tell that its package is gone. */
+export const packageEpoch = () => epoch;
+
 function database(): Promise<SQLiteDatabase> {
   opened ??= openDatabaseAsync('trace-offline.db')
     .then(async (db) => {
