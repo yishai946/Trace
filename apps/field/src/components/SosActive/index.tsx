@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { formatTime } from '../../mission/missionArea';
-import { CLOSE_REASON } from '../../sos/sendFailure/sendFailureText';
+import { canRetry, CLOSE_REASON } from '../../sos/sendFailure/sendFailureText';
 import type { SosSendFailure } from '../../sos/sendFailure';
 import { useTheme } from '../../theme';
 import { Button } from '../Button';
@@ -18,7 +18,8 @@ export interface SosActiveProps {
   closing: boolean;
   /** Why the last attempt to close it failed, or null. */
   closeFailure: SosSendFailure | null;
-  onClose: () => void;
+  /** Closes the SOS; `onFailed` runs when the attempt fails. */
+  onClose: (onFailed: () => void) => void;
 }
 
 /** The SOS section's body while the searcher's SOS is active (Fm12 SOS פעיל): what was sent, to whom, and its state. */
@@ -70,11 +71,11 @@ export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProp
             size="lg"
             block
             disabled={closing}
-            onPress={onClose}
+            onPress={() => onClose(() => setConfirming(false))}
           />
           <Button label="השאר פעיל" size="lg" block disabled={closing} onPress={() => setConfirming(false)} />
         </View>
-      ) : (
+      ) : closeFailure && !canRetry(closeFailure) ? null : (
         <Button label="בטל SOS…" size="lg" block onPress={() => setConfirming(true)} />
       )}
     </View>
