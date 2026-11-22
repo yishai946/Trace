@@ -7,6 +7,7 @@ import ReportsScreen from '../app/(mission)/reports';
 import { missionKeys } from '../mission/queries';
 import { applyEvent } from '../realtime';
 import { assigned, makeReport, MISSION_ID, POLYGON_A, POLYGON_B } from '../reports/fixtures';
+import { saveStep } from '../offline/store';
 import { enqueue } from '../outbox';
 import { useSession } from '../state/session';
 import { TestProviders } from '../test/providers';
@@ -118,6 +119,15 @@ describe('the reports screen (Fm10)', () => {
     server.reports = [makeReport({ text: 'שביל חסום' })];
     fireEvent.click(screen.getByRole('button', { name: 'נסה שוב' }));
     expect(await screen.findByText('שביל חסום')).toBeInTheDocument();
+  });
+
+  it('shows the reports saved on the phone with a not-up-to-date notice when the server cannot be reached', async () => {
+    await saveStep(MISSION_ID, 'reports', { json: [makeReport({ text: 'נשמר קודם' })] });
+    server.reportsStatus = 500;
+    show();
+    expect(await screen.findByText('נשמר קודם')).toBeInTheDocument();
+    expect(await screen.findByText(/הדיווחים נשמרו במכשיר ואינם עדכניים/)).toBeInTheDocument();
+    expect(screen.queryByText('לא ניתן לטעון את הדיווחים')).toBeNull();
   });
 
   it('shows a new report of the polygon in the list and on the map, and opens its details', async () => {

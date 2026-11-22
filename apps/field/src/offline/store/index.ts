@@ -2,7 +2,7 @@ import type { z } from 'zod';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
 
 /** The pieces of the offline package, saved one by one so an interrupted download can resume (UC-F03). */
-export type OfflineStep = 'mission' | 'photo' | 'polygons';
+export type OfflineStep = 'mission' | 'photo' | 'polygons' | 'reports';
 
 export interface StepContent {
   json?: unknown;
@@ -54,7 +54,7 @@ export async function saveStep(missionId: string, step: OfflineStep, content: St
 }
 
 const isStep = (value: unknown): value is OfflineStep =>
-  value === 'mission' || value === 'photo' || value === 'polygons';
+  value === 'mission' || value === 'photo' || value === 'polygons' || value === 'reports';
 
 /** The steps of the mission's package that are saved. */
 export async function savedSteps(missionId: string): Promise<OfflineStep[]> {
@@ -108,6 +108,15 @@ export async function clearOfflinePackages(): Promise<void> {
   epoch += 1;
   const db = await database();
   await db.runAsync('DELETE FROM offline_steps');
+}
+
+/** Saves the reports list the searcher last saw (UC-F11). Unlike the package steps it is rewritten whenever the list changes. */
+export async function saveReports(missionId: string, reports: unknown): Promise<void> {
+  try {
+    await saveStep(missionId, 'reports', { json: reports });
+  } catch {
+    // The copy on the phone stays as it was; the screen already has the list.
+  }
 }
 
 /** Replaces a step that is already saved with a newer answer from the server; a step not saved yet is left to the download. */
