@@ -7,6 +7,7 @@ export const mission: Mission = {
   name: 'מסע 0412',
   status: 'active',
   joinCode: 'ABCD1234',
+  commander: { name: 'דנה', phoneNumber: null },
   missingPerson: {
     name: 'נועם',
     age: 9,
