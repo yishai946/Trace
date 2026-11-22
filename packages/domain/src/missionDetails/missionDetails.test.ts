@@ -16,14 +16,20 @@ const base: MissionDetailValues = {
   additionalInfo: null,
 };
 
+/** The unchanged part of the base values, so the test can put the changed ones first. */
+function omit(values: MissionDetailValues): Omit<MissionDetailValues, 'name' | 'additionalInfo'> {
+  const { missingPersonName, missingPersonAge, disappearedAt, description } = values;
+  return { missingPersonName, missingPersonAge, disappearedAt, description };
+}
+
 describe('changedMissionDetails', () => {
   it('returns nothing for identical values', () => {
     expect(changedMissionDetails(base, { ...base })).toEqual([]);
   });
 
   it('returns the changed fields in form order, whatever the property order', () => {
-    const after: MissionDetailValues = { additionalInfo: 'חבר בקבוצה', ...base, name: 'מסע 0412' };
-    expect(changedMissionDetails(base, { ...after, additionalInfo: 'חבר בקבוצה' })).toEqual(['name', 'additionalInfo']);
+    const after: MissionDetailValues = { additionalInfo: 'חבר בקבוצה', name: 'מסע 0412', ...omit(base) };
+    expect(changedMissionDetails(base, after)).toEqual(['name', 'additionalInfo']);
   });
 
   it('counts a cleared value and a filled one', () => {
