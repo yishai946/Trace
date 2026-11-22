@@ -5,7 +5,7 @@ import { newReportId, submitReport } from '../../reports/submit';
 import { useReportFix } from '../../reports/useReportFix';
 import type { ReportPhotoValue } from '../ReportPhoto';
 
-export type ReportPhase = 'editing' | 'sending' | 'located-pending' | 'rejected';
+export type ReportPhase = 'editing' | 'sending' | 'sent' | 'located-pending' | 'rejected';
 
 interface Input {
   missionId: string;
@@ -52,13 +52,14 @@ export function useReportDraft({ missionId, onDone }: Input) {
     setPhase('sending');
     try {
       const delivery = await submitReport({ missionId, report, photo: photo && { base64: photo.base64 } });
-      if (delivery === 'rejected') {
-        setPhase('rejected');
-      } else if (delivery === 'pending' && type === 'located') {
-        setPhase('located-pending');
-      } else {
-        onDone();
-      }
+      const phaseOf = {
+        sent: 'sent',
+        rejected: 'rejected',
+        pending: type === 'located' ? 'located-pending' : null,
+      } as const;
+      const next = phaseOf[delivery];
+      if (next) setPhase(next);
+      else onDone();
     } catch {
       // Nothing was saved on the phone: keep the form so the searcher can try again.
       setSaveError('לא ניתן לשמור את הדיווח במכשיר. נסה שוב.');

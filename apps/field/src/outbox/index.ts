@@ -6,7 +6,7 @@ import type { OutboxItem, OutboxKind, OutboxSender, Row, SendOutcome } from './t
 import { uuidv7 } from './uuidv7';
 
 export { onOutboxChange } from './changes';
-export { wasDropped } from './dropped';
+export { markDroppedSeen, unseenDropped, wasDropped } from './dropped';
 export type { OutboxItem, OutboxKind, OutboxSender, SendOutcome } from './types';
 
 function toItem(row: Row): OutboxItem | null {
@@ -155,14 +155,17 @@ async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Pr
         head.kind,
         head.mission_id,
       );
-      rememberDropped(ids.map((row) => row.id));
+      rememberDropped(
+        head.kind,
+        ids.map((row) => row.id),
+      );
       await serialized(() =>
         db.runAsync('DELETE FROM outbox WHERE kind = ? AND mission_id = ?', head.kind, head.mission_id),
       );
       notifyChange();
     } else {
       const ids = items.map((item) => item.id);
-      if (outcome === 'drop-batch') rememberDropped(ids);
+      if (outcome === 'drop-batch') rememberDropped(head.kind, ids);
       await deleteIds(db, ids);
     }
   }

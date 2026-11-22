@@ -1,6 +1,6 @@
 import type { CreateReportBody } from '@trace/schemas';
 import { getNetworkStateAsync } from 'expo-network';
-import { enqueue, isPending, wasDropped } from '../../outbox';
+import { enqueue, isPending, markDroppedSeen, wasDropped } from '../../outbox';
 import { uuidv7 } from '../../outbox/uuidv7';
 import { syncOutbox } from '../../tracking';
 
@@ -37,5 +37,8 @@ export async function submitReport({
   if (!network.isConnected || network.isInternetReachable === false) return 'pending';
   await syncOutbox();
   if (await isPending(report.id)) return 'pending';
-  return wasDropped(report.id) ? 'rejected' : 'sent';
+  if (!wasDropped(report.id)) return 'sent';
+  // The form says it right now, so the list of reports need not say it again.
+  markDroppedSeen([report.id]);
+  return 'rejected';
 }
