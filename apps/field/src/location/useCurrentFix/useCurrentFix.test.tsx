@@ -110,4 +110,22 @@ describe('useCurrentFix', () => {
       vi.useRealTimers();
     }
   });
+
+  it('does not count the time the person takes to answer the permission prompt', async () => {
+    vi.useFakeTimers();
+    try {
+      let answer: (value: unknown) => void = () => {};
+      location.get.mockResolvedValue({ granted: false });
+      location.request.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS * 2);
+      });
+      expect(result.current.state).toBe('locating');
+      await act(async () => answer({ granted: true }));
+      expect(result.current.state).toBe('ready');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

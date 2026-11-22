@@ -32,7 +32,7 @@ export function useCurrentFix({ prompt = true }: { prompt?: boolean } = {}): Cur
   useEffect(() => {
     let active = true;
     let settled = false;
-    const timer = setTimeout(() => finish({ state: 'unavailable', fix: null }), FIX_TIMEOUT_MS);
+    let timer: ReturnType<typeof setTimeout> | undefined;
     // The first result wins: a fix after the timeout, or the timeout after a fix, is ignored.
     const finish = (next: CurrentFixState) => {
       if (!active || settled) return;
@@ -45,6 +45,8 @@ export function useCurrentFix({ prompt = true }: { prompt?: boolean } = {}): Cur
         let permission = await getForegroundPermissionsAsync();
         if (!permission.granted && prompt) permission = await requestForegroundPermissionsAsync();
         if (!permission.granted) return finish({ state: 'unavailable', fix: null });
+        // The time limit is for the phone to find a fix, not for the person to answer the permission prompt.
+        timer = setTimeout(() => finish({ state: 'unavailable', fix: null }), FIX_TIMEOUT_MS);
         const { coords, timestamp } = await getCurrentPositionAsync({ accuracy: Accuracy.High });
         finish({
           state: 'ready',
