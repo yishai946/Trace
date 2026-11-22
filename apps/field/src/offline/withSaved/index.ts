@@ -1,4 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
+import { ApiRequestError } from '../../api';
 
 /** The part of a query result the screens read, with the copy saved on the phone filling in when the server gave nothing. */
 export interface QueryWithSaved<T> {
@@ -17,11 +18,14 @@ export interface QueryWithSaved<T> {
  * is still being asked the saved copy shows without a warning; the warning appears once a request has failed. A
  * request that fails does not turn into an error screen while a saved copy can be shown.
  */
+/** A refusal from the server (not a member, no longer there) is an answer, not a missing connection: a saved copy must not hide it. */
+const reachedServer = (error: unknown) => error instanceof ApiRequestError && error.status >= 400 && error.status < 500;
+
 export function withSaved<T>(
   query: UseQueryResult<T>,
   saved: Pick<UseQueryResult<T | null>, 'data' | 'isLoading'>,
 ): QueryWithSaved<T> {
-  const copy = saved.data ?? undefined;
+  const copy = reachedServer(query.error) ? undefined : (saved.data ?? undefined);
   const data = query.data ?? copy;
   const fromPhone = query.data === undefined && copy !== undefined;
   return {

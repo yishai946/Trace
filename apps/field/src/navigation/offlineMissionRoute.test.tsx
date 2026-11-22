@@ -55,4 +55,39 @@ describe('the missing person details without a connection (UC-F04)', () => {
 
     expect(await screen.findByRole('button', { name: 'נסה שוב' })).toBeInTheDocument();
   });
+
+  it('keeps the newest version the searcher saw, for the next time without a connection', async () => {
+    await saved();
+    const newer = { ...mission, missingPerson: { ...mission.missingPerson, description: 'כובע אדום' } };
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(new Response(JSON.stringify(newer), { headers: { 'content-type': 'application/json' } })),
+    );
+    const first = render(<MissingPersonScreen />, { wrapper: TestProviders });
+    expect(await screen.findByText('כובע אדום')).toBeInTheDocument();
+    first.unmount();
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    render(<MissingPersonScreen />, { wrapper: TestProviders });
+    expect(await screen.findByText('כובע אדום')).toBeInTheDocument();
+    expect(await screen.findByText(/נשמר במכשיר/)).toBeInTheDocument();
+  });
+
+  it('shows the error, not the saved copy, when the server refuses (the mission is gone)', async () => {
+    await saved();
+    const body = { error: { code: 'NOT_FOUND', message: 'x' } };
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify(body), { status: 404, headers: { 'content-type': 'application/json' } }),
+        ),
+    );
+    render(<MissingPersonScreen />, { wrapper: TestProviders });
+    expect(await screen.findByRole('button', { name: 'נסה שוב' })).toBeInTheDocument();
+    expect(screen.queryByText('חולצה כחולה')).not.toBeInTheDocument();
+  });
 });

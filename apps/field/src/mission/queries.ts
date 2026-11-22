@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { missionDataKeys } from '@trace/mission-cache';
 import { apiBaseUrl, apiRequest } from '../api';
 import { useSavedMission, useSavedPolygons } from '../offline/savedPackage';
+import { refreshStep } from '../offline/store';
 import { withSaved } from '../offline/withSaved';
 import { useSession } from '../state/session';
 
@@ -19,13 +20,17 @@ export function useMissionPolygons() {
   const missionId = useSession((s) => s.missionId);
   const query = useQuery({
     queryKey: missionKeys.polygons(missionId ?? ''),
-    queryFn: ({ signal }) =>
-      apiRequest(`/missions/${missionId}/polygons`, {
+    queryFn: async ({ signal }) => {
+      const polygons = await apiRequest(`/missions/${missionId}/polygons`, {
         baseUrl: apiBaseUrl,
         token,
         schema: MissionPolygonList,
         signal,
-      }),
+      });
+      // What the searcher saw last is what shows without a connection (UC-F04).
+      if (missionId) void refreshStep(missionId, 'polygons', polygons);
+      return polygons;
+    },
     enabled: !!token && !!missionId && !!apiBaseUrl,
   });
   // Without a connection the copy saved by the offline package shows (UC-F04).
@@ -38,8 +43,16 @@ export function useMission() {
   const missionId = useSession((s) => s.missionId);
   const query = useQuery({
     queryKey: missionKeys.mission(missionId ?? ''),
-    queryFn: ({ signal }) =>
-      apiRequest(`/missions/${missionId}`, { baseUrl: apiBaseUrl, token, schema: Mission, signal }),
+    queryFn: async ({ signal }) => {
+      const mission = await apiRequest(`/missions/${missionId}`, {
+        baseUrl: apiBaseUrl,
+        token,
+        schema: Mission,
+        signal,
+      });
+      if (missionId) void refreshStep(missionId, 'mission', mission);
+      return mission;
+    },
     enabled: !!token && !!missionId && !!apiBaseUrl,
   });
   return withSaved(query, useSavedMission());

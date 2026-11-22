@@ -2,7 +2,7 @@ import { radius, spacing, typography } from '@trace/design';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { apiBaseUrl } from '../api';
-import { useSavedPhotoUri } from '../offline/savedPackage';
+import { useSavedMission, useSavedPhotoUri } from '../offline/savedPackage';
 import { useSession } from '../state/session';
 import { useTheme } from '../theme';
 import { pendingTokens } from '../theme/pending';
@@ -25,7 +25,10 @@ export function MissingPersonPhoto({
   const { color } = useTheme().theme;
   const token = useSession((s) => s.token);
   const [failed, setFailed] = useState(false);
-  const saved = useSavedPhotoUri().data;
+  const savedUri = useSavedPhotoUri().data;
+  // The saved photo belongs to the saved mission: it shows only for the photo that mission points to.
+  const savedFor = useSavedMission().data?.missingPerson.photoUrl;
+  const saved = savedFor === url ? savedUri : null;
   const size = large ? styles.large : styles.small;
   const alt = 'תמונת הנעדר';
   const showSaved = !!url && !!saved && (fromPhone || failed || !apiBaseUrl || !token);

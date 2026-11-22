@@ -1,5 +1,6 @@
 import type { UseQueryResult } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
+import { ApiRequestError } from '../../api';
 import { withSaved } from './index';
 
 type Q = Pick<
@@ -44,5 +45,16 @@ describe('withSaved', () => {
   it('waits for the saved copy before calling a failure an error', () => {
     const result = withSaved(query({ isError: true, isPending: false }), saved(undefined, true));
     expect(result.isError).toBe(false);
+  });
+
+  it('does not hide a refusal from the server behind the saved copy', () => {
+    const error = new ApiRequestError(404, 'NOT_FOUND', 'x');
+    const result = withSaved(query({ isError: true, isPending: false, error }), saved('phone'));
+    expect(result).toMatchObject({ data: undefined, isError: true, notUpToDate: false });
+  });
+
+  it('still shows the saved copy when the server is down (5xx)', () => {
+    const error = new ApiRequestError(503, 'INTERNAL_ERROR', 'x');
+    expect(withSaved(query({ isError: true, isPending: false, error }), saved('phone')).data).toBe('phone');
   });
 });

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Mission, MissionPolygonList } from '@trace/schemas';
 import { useSession } from '../../state/session';
+import { useOfflineState } from '../state';
 import { loadPhoto, loadStep, type OfflineStep } from '../store';
 import { photoDataUri } from '../photoDataUri';
 
@@ -9,12 +10,15 @@ const key = (missionId: string | null, step: OfflineStep) => ['offline', 'saved'
 /** Reads one saved step; the device being unreadable counts as nothing saved. */
 function useSaved<T>(step: OfflineStep, read: (missionId: string) => Promise<T | null>) {
   const missionId = useSession((s) => s.missionId);
+  // The steps saved so far are part of the key, so a download or a clear makes the screens read the phone again.
+  const savedNow = useOfflineState((s) => s.saved.join());
   return useQuery({
-    queryKey: key(missionId, step),
+    queryKey: [...key(missionId, step), savedNow],
     queryFn: () => (missionId ? read(missionId).catch(() => null) : null),
     enabled: !!missionId,
-    // A copy on the phone only changes when a download saves it; screens ask the server for anything newer.
-    staleTime: Infinity,
+    // Always read what is on the phone now: a download or a clear changes it behind the cache.
+    staleTime: 0,
+    gcTime: 0,
     retry: false,
   });
 }
