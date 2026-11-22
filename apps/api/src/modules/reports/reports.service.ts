@@ -34,6 +34,19 @@ async function publishSaved({ db, realtime, log }: ServiceDeps, missionId: strin
   realtime.publish({ type: 'report.saved', missionId, report }, options);
 }
 
+/** The report already saved under this id, null when there is none; 409 when it belongs to another reporter or mission. */
+async function findOwnSaved(tx: Tx, id: string, missionId: string, userId: string): Promise<Report | null> {
+  const [saved] = await tx
+    .select({ missionId: reports.missionId, reportedBy: reports.reportedBy })
+    .from(reports)
+    .where(eq(reports.id, id));
+  if (!saved) return null;
+  if (saved.missionId !== missionId || saved.reportedBy !== userId) {
+    throw new AppError(409, 'REPORT_ID_TAKEN', 'This report id is already used');
+  }
+  return findReport(tx, id);
+}
+
 /**
  * Saves a searcher's field report (UC-F09) as New, with the searcher's polygon at this moment. The id comes from the
  * phone, so a report sent again (a lost answer, an offline retry) returns the one already saved. The mission and the
@@ -58,6 +71,10 @@ export async function createReport(
     if (!participation) throw notFound('Mission');
     const [mission] = await tx.select({ status: missions.status }).from(missions).where(eq(missions.id, missionId));
     if (!mission) throw notFound('Mission');
+    // A report that is already saved is answered as saved, even if the mission or the activity ended since: the
+    // answer was lost, and refusing the retry would leave it stuck in the phone's queue.
+    const saved = await findOwnSaved(tx, body.id, missionId, actor.userId);
+    if (saved) return { report: saved, created: false, event: null };
     if (!canSubmitReport(mission.status)) throw missionEnded('An ended mission takes no new reports');
     if (!acceptsReports(participation.status)) throw participationEnded();
 
@@ -78,11 +95,9 @@ export async function createReport(
       .returning({ id: reports.id });
 
     if (inserted.length === 0) {
-      const existing = await findReport(tx, body.id);
-      const [owner] = await tx.select({ reportedBy: reports.reportedBy }).from(reports).where(eq(reports.id, body.id));
-      if (existing.missionId !== missionId || owner?.reportedBy !== actor.userId) {
-        throw new AppError(409, 'REPORT_ID_TAKEN', 'This report id is already used');
-      }
+      // Another request won the id between the check and the insert.
+      const existing = await findOwnSaved(tx, body.id, missionId, actor.userId);
+      if (!existing) throw new Error('Report insert returned no row');
       return { report: existing, created: false, event: null };
     }
 
