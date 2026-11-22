@@ -6,6 +6,7 @@ import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
 import type { ReportFilter } from '../../reports/reportItems';
 import { Button } from '../Button';
+import { Notice } from '../Notice';
 import { ReportsList } from '../ReportsList';
 import { Screen } from '../Screen';
 import { SegmentedChoice } from '../SegmentedChoice';
@@ -17,6 +18,9 @@ const filterOptions = [
   { value: 'polygon', label: 'בפוליגון שלי' },
   { value: 'mine', label: 'שלי' },
 ] as const;
+
+/** Said when the list shows what the phone saved because the server cannot be reached (UC-F11, decision 22). */
+const REPORTS_NOT_UP_TO_DATE = 'הדיווחים נשמרו במכשיר ואינם עדכניים. הרשימה תתעדכן כשהחיבור יחזור.';
 
 const emptyText: Record<ReportFilter, string> = {
   polygon: 'אין עדיין דיווחים בפוליגון',
@@ -45,6 +49,12 @@ export function ReportsScreen() {
     <SegmentedChoice label="סינון דיווחים" options={filterOptions} value={filter} onChange={screen.setFilter} />
   ) : null;
 
+  const staleNotice = screen.notUpToDate ? (
+    <Notice icon="wifiOff" tone="warn" live>
+      {REPORTS_NOT_UP_TO_DATE}
+    </Notice>
+  ) : null;
+
   return (
     <Screen
       title={screen.polygonName ? `דיווחים, פוליגון ${screen.polygonName}` : 'דיווחים'}
@@ -64,11 +74,13 @@ export function ReportsScreen() {
     >
       {view === 'list' ? (
         <>
+          {staleNotice}
           {filterChoice}
           {list}
         </>
       ) : (
         <View style={styles.fill}>
+          {staleNotice ? <View style={styles.padded}>{staleNotice}</View> : null}
           {filterChoice ? <View style={styles.padded}>{filterChoice}</View> : null}
           <ReportsMapView screen={screen} list={list} onEdit={edit} />
         </View>

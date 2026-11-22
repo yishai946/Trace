@@ -3,6 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMissionReports } from '.';
+import { loadStep, saveStep } from '../../offline/store';
+import { ReportList } from '@trace/schemas';
 import { useSession } from '../../state/session';
 import { makeReport, MISSION_ID } from '../fixtures';
 
@@ -29,7 +31,7 @@ describe('useMissionReports', () => {
     const fetch = vi.fn(async () => json(reports));
     vi.stubGlobal('fetch', fetch);
     const { result } = renderHook(() => useMissionReports(), { wrapper });
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    await waitFor(() => expect(result.current.data).toEqual(reports));
     expect(result.current.data).toEqual(reports);
     expect(fetch).toHaveBeenCalledWith(
       `https://api.test/api/missions/${MISSION_ID}/reports`,
@@ -53,5 +55,40 @@ describe('useMissionReports', () => {
     const { result } = renderHook(() => useMissionReports(), { wrapper });
     expect(result.current.fetchStatus).toBe('idle');
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('saves the list on the phone, so it can be shown without a connection (UC-F11)', async () => {
+    const reports = [makeReport()];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(reports)),
+    );
+    const { result } = renderHook(() => useMissionReports(), { wrapper });
+    await waitFor(() => expect(result.current.data).toEqual(reports));
+    await waitFor(async () => expect(await loadStep(MISSION_ID, 'reports', ReportList)).toEqual(reports));
+    expect(result.current.notUpToDate).toBe(false);
+  });
+
+  it('shows the saved list marked not up to date when the server cannot be reached', async () => {
+    const reports = [makeReport({ text: 'נשמר קודם' })];
+    await saveStep(MISSION_ID, 'reports', { json: reports });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Promise.reject(new TypeError('offline'))),
+    );
+    const { result } = renderHook(() => useMissionReports(), { wrapper });
+    await waitFor(() => expect(result.current.notUpToDate).toBe(true));
+    expect(result.current.data).toEqual(reports);
+    expect(result.current.isError).toBe(false);
+  });
+
+  it('shows an error when nothing was saved and the server cannot be reached', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ error: { code: 'INTERNAL_ERROR', message: 'x' } }, 500)),
+    );
+    const { result } = renderHook(() => useMissionReports(), { wrapper });
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(result.current.data).toBeUndefined();
   });
 });

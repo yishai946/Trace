@@ -40,7 +40,7 @@ export default function ReportEditScreen() {
     }
     return (
       <Screen title="עריכת דיווח" leading={leading}>
-        {reports.isLoading ? (
+        {reports.isPending && reports.fetchStatus !== 'idle' ? (
           <Text role="status" accessibilityLiveRegion="polite" style={[typography.body, { color: color.inkSecondary }]}>
             טוען דיווח…
           </Text>

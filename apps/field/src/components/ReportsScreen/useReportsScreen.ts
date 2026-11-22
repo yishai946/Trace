@@ -20,6 +20,12 @@ function useRefetchWhenSent(missionId: string | null, waitingCount: number) {
   }, [waitingCount, missionId, queryClient]);
 }
 
+/** `loading` or `error` only while nothing is known: a saved copy or a refresh in the background keeps the list. */
+function listState(reports: ReturnType<typeof useMissionReports>) {
+  if (reports.isError && !reports.data) return 'error' as const;
+  return reports.isPending && reports.fetchStatus !== 'idle' ? ('loading' as const) : ('ready' as const);
+}
+
 /**
  * The reports screen's data (UC-F11, decisions 80, 81): the reports of my polygon and my own, filtered, with the one
  * the searcher opened. What the server sends is already limited to them; the same rule applies again here, so a
@@ -70,12 +76,8 @@ export function useReportsScreen() {
     setSelectedId,
     // The open report closes by itself once it is not in the list (a filter change, a move, a deletion).
     selected: items.find((item) => item.id === selectedId) ?? null,
-    state:
-      reports.isError && !reports.data
-        ? ('error' as const)
-        : reports.isLoading
-          ? ('loading' as const)
-          : ('ready' as const),
+    state: listState(reports),
+    notUpToDate: reports.notUpToDate,
     retry: () => void reports.refetch(),
     polygons: polygonList ?? [],
     mission: mission.data,
