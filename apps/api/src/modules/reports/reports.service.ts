@@ -62,6 +62,8 @@ export async function createReport(
   }: { missionId: string; searcherId: string; actor: Actor; body: z.output<typeof CreateReportBody> },
 ): Promise<{ report: Report; created: boolean }> {
   const { db, realtime } = deps;
+  // The phone's clock is not trusted: a time in the future counts as the moment the report arrived.
+  const reportedAt = new Date(Math.min(Date.parse(body.reportedAt), Date.now()));
   const result: CreateReportResult = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({ status: participations.status, polygonId: participations.polygonId })
@@ -89,7 +91,7 @@ export async function createReport(
         text: body.text,
         position: body.position,
         accuracy: body.accuracy,
-        reportedAt: new Date(body.reportedAt),
+        reportedAt,
       })
       .onConflictDoNothing({ target: reports.id })
       .returning({ id: reports.id });
@@ -107,7 +109,7 @@ export async function createReport(
       type: 'report.submitted',
       subject: { kind: 'report', id: body.id, label: reportSummary(body) },
       details: {},
-      occurredAt: new Date(body.reportedAt),
+      occurredAt: reportedAt,
     });
     return { report: await findReport(tx, body.id), created: true, event };
   });
@@ -125,25 +127,40 @@ export async function createReport(
  */
 export async function setReportPhoto(
   deps: ServiceDeps,
-  { missionId, reportId, userId, data }: { missionId: string; reportId: string; userId: string; data: Buffer },
+  {
+    missionId,
+    reportId,
+    userId,
+    searcherId,
+    data,
+  }: { missionId: string; reportId: string; userId: string; searcherId: string; data: Buffer },
 ): Promise<Report> {
   const { db } = deps;
-  const [row] = await db
-    .select({ missionId: reports.missionId, reportedBy: reports.reportedBy, missionStatus: missions.status })
-    .from(reports)
-    .innerJoin(missions, eq(missions.id, reports.missionId))
-    .where(eq(reports.id, reportId));
-  if (!row || row.missionId !== missionId || row.reportedBy !== userId) throw notFound('Report');
-  if (!canSubmitReport(row.missionStatus)) {
-    throw missionEnded('The photo of a report in an ended mission cannot be changed');
-  }
   const contentType = detectPhotoType(data);
-  if (!contentType) throw unsupportedPhoto();
-  await db
-    .insert(reportPhotos)
-    .values({ reportId, contentType, data })
-    .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data, updatedAt: new Date() } });
-  const report = await findReport(db, reportId);
+  const report = await db.transaction(async (tx) => {
+    // Locked like createReport does, so the check and the save are ordered with Finish Activity.
+    const [participation] = await tx
+      .select({ status: participations.status })
+      .from(participations)
+      .where(and(eq(participations.missionId, missionId), eq(participations.searcherId, searcherId)))
+      .for('update');
+    const [row] = await tx
+      .select({ missionId: reports.missionId, reportedBy: reports.reportedBy, missionStatus: missions.status })
+      .from(reports)
+      .innerJoin(missions, eq(missions.id, reports.missionId))
+      .where(eq(reports.id, reportId));
+    if (!row || row.missionId !== missionId || row.reportedBy !== userId) throw notFound('Report');
+    if (!canSubmitReport(row.missionStatus)) {
+      throw missionEnded('The photo of a report in an ended mission cannot be changed');
+    }
+    if (participation && !acceptsReports(participation.status)) throw participationEnded();
+    if (!contentType) throw unsupportedPhoto();
+    await tx
+      .insert(reportPhotos)
+      .values({ reportId, contentType, data })
+      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data, updatedAt: new Date() } });
+    return findReport(tx, reportId);
+  });
   await publishSaved(deps, missionId, report);
   return report;
 }
