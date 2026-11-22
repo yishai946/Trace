@@ -8,6 +8,8 @@ import {
   pending,
   pendingCount,
   pendingOf,
+  markDroppedSeen,
+  unseenDropped,
   wasDropped,
   type OutboxSender,
   type SendOutcome,
@@ -293,6 +295,18 @@ describe('isPending and wasDropped', () => {
     await enqueue({ kind: 'sighting', missionId: A, payloads: [2] });
     await flushOutbox({ sighting: sender() });
     expect((await pending()).map((item) => item.kind)).toEqual(['track-point']);
+  });
+});
+
+describe('unseenDropped', () => {
+  it('keeps dropped items of a kind until they are marked seen, even past the lookup memory', async () => {
+    const ids = numbers(0, 205).map((n) => `r-${n}`);
+    await enqueue({ kind: 'report', missionId: A, payloads: ids, ids });
+    await flushOutbox({ report: sender(async () => 'drop-batch', 500) });
+    const mine = () => unseenDropped('report').filter((id) => id.startsWith('r-'));
+    expect(mine()).toHaveLength(205);
+    markDroppedSeen(['r-0']);
+    expect(mine()).toHaveLength(204);
   });
 });
 

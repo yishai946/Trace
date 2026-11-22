@@ -2,7 +2,7 @@
 const DROPPED_MEMORY = 200;
 /** Ids of items the server refused for good and the outbox deleted, newest last. Kept in memory only. */
 const dropped = new Set<string>();
-/** The dropped items nobody has told the searcher about yet, by id, with their kind. */
+/** The dropped items nobody has told the searcher about yet, by id, with their kind. Not capped: none may go unsaid. */
 const unseen = new Map<string, string>();
 
 export function rememberDropped(kind: string, ids: string[]): void {
@@ -14,7 +14,6 @@ export function rememberDropped(kind: string, ids: string[]): void {
   for (const id of dropped) {
     if (dropped.size <= DROPPED_MEMORY) break;
     dropped.delete(id);
-    unseen.delete(id);
   }
 }
 
