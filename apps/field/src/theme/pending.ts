@@ -33,6 +33,8 @@ export const pendingTokens = {
   stepMarker: 20,
   stepIcon: 12,
   stepSeparatorW: 16,
+  /** Fm03 permission row, inline `min-height:68px`: a title with a badge, a caption and a 44px button fit in it. */
+  permissionRowH: 68,
   /** Fm01 `.tcx-otp` and `.tcx-step__n`: 1.5px border. */
   strongBorder: 1.5,
   /** Fm01 `.tcx-otp`: code cell height and digit size. */

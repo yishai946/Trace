@@ -8,6 +8,11 @@ import { usePreferences } from '../../state/preferences';
 import { useSession } from '../../state/session';
 import { TestProviders } from '../../test/providers';
 
+vi.mock('../../permissions/devicePermissions', () => ({
+  readPermissions: async () => ({ location: 'granted', backgroundLocation: 'granted', push: 'granted', camera: 'ask' }),
+  requestPermission: async () => {},
+}));
+
 const mission: Mission = {
   id: '00000000-0000-4000-8000-000000000001',
   name: 'מסע 0412',
@@ -63,6 +68,11 @@ describe('WaitingForAssignment', () => {
     expect(status.getByText('07')).toBeInTheDocument();
     expect(status.getByText('זמין')).toBeInTheDocument();
     expect(await status.findByText('דנה כהן')).toBeInTheDocument();
+  });
+
+  it('shows the permissions the searcher needs before Start Search (Fm03)', async () => {
+    renderScreen();
+    expect(await screen.findByRole('heading', { name: 'הרשאות' })).toBeInTheDocument();
   });
 
   it('shows the missing person, the LKP and the rally point', () => {

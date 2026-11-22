@@ -8,6 +8,11 @@ import { assigned, makeReport, MISSION_ID, POLYGON_B } from '../reports/fixtures
 import { useSession } from '../state/session';
 import { TestProviders } from '../test/providers';
 
+vi.mock('../permissions/devicePermissions', () => ({
+  readPermissions: async () => ({ location: 'granted', backgroundLocation: 'granted', push: 'granted', camera: 'ask' }),
+  requestPermission: async () => {},
+}));
+
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 vi.mock('expo-router', () => ({ useRouter: () => router }));
 const mapProps = vi.hoisted(() => ({ last: null as null | { area: MissionArea } }));
