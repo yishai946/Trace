@@ -1,6 +1,7 @@
 import type { OwnParticipation } from '@trace/schemas';
 import { create } from 'zustand';
 import { clearOutbox } from '../../outbox';
+import { clearOfflinePackages } from '../../offline/store';
 import { deleteToken, loadToken, saveToken } from './tokenStore';
 
 interface SessionState {
@@ -74,6 +75,8 @@ export const useSession = create<SessionState>()((set) => ({
     await deleteToken();
     // Points kept for a later send belong to this searcher; they must not go out under the next sign-in.
     await clearOutbox().catch(() => undefined);
+    // The missing person's details saved for Offline belong to this searcher's mission only.
+    await clearOfflinePackages().catch(() => undefined);
     set({ token: null, missionId: null, participation: null, tracking: false, assignmentNotice: null });
   },
   setMissionId: (missionId) => set({ missionId, participation: null, tracking: false, assignmentNotice: null }),

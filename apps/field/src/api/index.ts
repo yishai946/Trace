@@ -1,4 +1,4 @@
-import { ApiRequestError, request } from '@trace/api-client';
+import { ApiRequestError, request, requestBytes, type BytesResponse } from '@trace/api-client';
 import type { z } from 'zod';
 
 export { ApiRequestError };
@@ -57,5 +57,19 @@ export async function apiRequest<S extends z.ZodType>(
     headers: headersOf({ token, body, upload }),
     body: upload ? upload.data : body === undefined ? undefined : JSON.stringify(body),
     timeoutMs: upload ? UPLOAD_TIMEOUT_MS : REQUEST_TIMEOUT_MS,
+  });
+}
+
+/** Downloads a file the API serves to members, such as the missing person's photo (UC-F04). `path` is the address the server gave, `/api/...` included. */
+export function apiBytes(
+  path: string,
+  { baseUrl, token, signal }: { baseUrl: string | undefined; token: string | null; signal?: AbortSignal },
+): Promise<BytesResponse> {
+  if (!baseUrl) throw new ApiRequestError(0, 'NETWORK_ERROR', 'EXPO_PUBLIC_API_URL is not set');
+  return requestBytes(`${baseUrl.replace(/\/$/, '')}${path}`, {
+    signal,
+    credentials: 'omit',
+    headers: headersOf({ token, body: undefined, upload: undefined }),
+    timeoutMs: UPLOAD_TIMEOUT_MS,
   });
 }
