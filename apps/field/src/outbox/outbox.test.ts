@@ -133,7 +133,7 @@ describe('flushOutbox', () => {
     expect(calls.flatMap(payloadsOf)).toEqual(numbers(0, 1203));
   });
 
-  it('sends each mission on its own, and a failure stops the flush with nothing deleted', async () => {
+  it('sends each mission on its own, and a failure leaves that mission and goes on with the others', async () => {
     await enqueue({ kind: 'track-point', missionId: A, payloads: [1] });
     await enqueue({ kind: 'track-point', missionId: B, payloads: [2] });
     await enqueue({ kind: 'track-point', missionId: A, payloads: [3] });
@@ -150,8 +150,24 @@ describe('flushOutbox', () => {
       throw new Error('offline');
     });
     await flushOutbox({ 'track-point': failing });
-    expect(failing.send).toHaveBeenCalledTimes(1);
+    expect(failing.send).toHaveBeenCalledTimes(2);
     expect(await pendingCount()).toBe(2);
+  });
+
+  it('keeps the order of a failing mission and still sends the next mission', async () => {
+    await enqueue({ kind: 'track-point', missionId: A, payloads: [1] });
+    await enqueue({ kind: 'track-point', missionId: B, payloads: [2] });
+    await enqueue({ kind: 'track-point', missionId: A, payloads: [3] });
+    const mixed = sender(async (missionId) => {
+      if (missionId === A) throw new Error('stalled');
+      return 'sent';
+    });
+    await flushOutbox({ 'track-point': mixed });
+    expect(vi.mocked(mixed.send).mock.calls.map((call) => [call[0], payloadsOf(call)])).toEqual([
+      [A, [1, 3]],
+      [B, [2]],
+    ]);
+    expect((await pending()).map((item) => item.payload)).toEqual([1, 3]);
   });
 
   it('drops all items of a mission on drop-mission and goes on with the others', async () => {
