@@ -1,17 +1,25 @@
 /** How many dropped ids are remembered; a refused item is looked up right after its send, so a few are enough. */
 const DROPPED_MEMORY = 200;
 /** Ids of items the server refused for good and the outbox deleted, newest last. Kept in memory only. */
-const dropped = new Set<string>();
+const dropped = new Map<string, DroppedReason>();
 
-export function rememberDropped(ids: string[]): void {
+/** `batch`: the server will never take this item. `mission`: it takes nothing more of the mission (it ended, or access is gone). */
+export type DroppedReason = 'batch' | 'mission';
+
+export function rememberDropped(ids: string[], reason: DroppedReason): void {
   for (const id of ids) {
     dropped.delete(id);
-    dropped.add(id);
+    dropped.set(id, reason);
   }
-  for (const id of dropped) {
+  for (const id of dropped.keys()) {
     if (dropped.size <= DROPPED_MEMORY) break;
     dropped.delete(id);
   }
+}
+
+/** Why the item with this id was dropped, or null when it was not. */
+export function droppedReason(id: string): DroppedReason | null {
+  return dropped.get(id) ?? null;
 }
 
 /**
