@@ -49,7 +49,7 @@ export function TargetChoice({ form, participants, polygons, onChange }: TargetC
             }}
           >
             {polygons.map((polygon) => (
-              <Checkbox key={polygon.id} value={polygon.id}>
+              <Checkbox key={polygon.id} value={polygon.id} className={styles.polygonCheck}>
                 <span className={styles.grow}>{polygon.name}</span>
                 <span className={styles.meta}>{searchersLabel(countInPolygon(polygon.id, pool))}</span>
               </Checkbox>
