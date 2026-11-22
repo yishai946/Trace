@@ -7,6 +7,6 @@ export function startHint({ missingParts, missingPermissions }: StartSearchBlock
     ...missingPermissions.map((permission) => PERMISSION_NAMES[permission]),
     ...(missingParts.length ? ['השלמת ההורדה ללא חיבור'] : []),
   ];
-  const how = missingPermissions.length ? ' אפשר לאשר הרשאות במסך ההרשאות או בהגדרות הטלפון.' : '';
+  const how = missingPermissions.length ? ' אפשר לאשר עם הכפתור למטה, או בהגדרות הטלפון.' : '';
   return `אפשר להתחיל חיפוש רק אחרי שהכול מוכן. חסר: ${missing.join(', ')}.${how}`;
 }

@@ -1,6 +1,6 @@
 import { themes } from '@trace/design';
 import type { MissionPolygon, OwnParticipation } from '@trace/schemas';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AssignedTask } from '.';
 import type { FieldPermissions } from '../../permissions/devicePermissions';
@@ -42,8 +42,11 @@ const participation: OwnParticipation = {
   taskStatus: 'ready',
 };
 
-const device = vi.hoisted(() => ({ read: vi.fn() }));
-vi.mock('../../permissions/devicePermissions', () => ({ readPermissions: device.read, requestPermission: vi.fn() }));
+const device = vi.hoisted(() => ({ read: vi.fn(), request: vi.fn() }));
+vi.mock('../../permissions/devicePermissions', () => ({
+  readPermissions: device.read,
+  requestPermission: device.request,
+}));
 const granted = (override: Partial<FieldPermissions> = {}): FieldPermissions => ({
   location: 'granted',
   backgroundLocation: 'granted',
@@ -106,11 +109,13 @@ describe('AssignedTask', () => {
   });
 
   it('blocks Start Search and names the missing permissions and how to grant them', async () => {
-    device.read.mockResolvedValue(granted({ backgroundLocation: 'blocked', push: 'ask' }));
+    device.read.mockResolvedValue(granted({ backgroundLocation: 'ask', push: 'ask' }));
     setSaved(['mission', 'photo', 'polygons']);
     renderTask({ onStartSearch: () => {} });
     expect(await screen.findByText(/חסר: מיקום ברקע, התראות Push/)).toBeInTheDocument();
     expect(screen.getByText(/בהגדרות הטלפון/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'אשר הרשאה' }));
+    await waitFor(() => expect(device.request).toHaveBeenCalledWith('backgroundLocation'));
     expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
   });
 

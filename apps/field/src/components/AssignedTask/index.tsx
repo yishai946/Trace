@@ -30,7 +30,7 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice,
   // Start Search is blocked until the essential package is saved on the phone (UC-F03, decision 85) and the required
   // permissions are granted (UC-F06, decision 73).
   const { savedParts } = useOfflinePackage();
-  const { permissions } = usePermissions();
+  const { permissions, grant } = usePermissions();
   // Until the phone says what it allows, the button stays closed without claiming a permission is missing.
   const blockers = permissions
     ? startSearchBlockers(savedParts, {
@@ -40,6 +40,7 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice,
       })
     : null;
   const ready = blockers?.ready === true;
+  const firstMissing = blockers?.missingPermissions[0];
   const polygon = polygons.find((p) => p.id === participation.polygonId);
   // Right after an assignment the polygon list may still be loading: say it without a name rather than a wrong one.
   const name = polygon?.name;
@@ -82,9 +83,12 @@ export function AssignedTask({ participation, polygons, notice, onDismissNotice,
         disabled={!ready || !onStartSearch}
         onPress={onStartSearch}
       />
-      <Text style={[typography.caption, styles.center, { color: color.inkMuted }]}>
+      <Text accessibilityLiveRegion="polite" style={[typography.caption, styles.center, { color: color.inkMuted }]}>
         {!blockers ? 'בודקים הרשאות…' : blockers.ready ? 'מעקב המיקום והמסלול מתחילים רק בלחיצה' : startHint(blockers)}
       </Text>
+      {firstMissing ? (
+        <Button label="אשר הרשאה" variant="secondary" block onPress={() => void grant(firstMissing)} />
+      ) : null}
     </View>
   );
 }
