@@ -178,6 +178,17 @@ const subjectOf = (
 ): TimelineSubject => ({ kind, id, label, callsign });
 
 /** One event of every type, as the API returns them. */
+/** An LKP change that moved the point: the observation time changed from an earlier one. */
+export const lkpMovedEvent: TimelineEvent = {
+  id: '00000000-0000-4000-8000-000000000320',
+  missionId: mission.id,
+  occurredAt: '2026-10-03T12:00:00.000Z',
+  type: 'lkp.changed',
+  actor: commanderActor,
+  subject: subjectOf('lkp', null),
+  details: { observedAt: '2026-10-03T12:00:00.000Z', previousObservedAt: '2026-10-03T10:05:00.000Z' },
+};
+
 export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
   'mission.created': {
     id: '00000000-0000-4000-8000-000000000301',

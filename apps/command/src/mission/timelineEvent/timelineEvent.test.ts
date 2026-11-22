@@ -1,7 +1,7 @@
 import { TIMELINE_EVENT_TYPES } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { describe, expect, it } from 'vitest';
-import { eventSamples } from '../fixtures';
+import { eventSamples, lkpMovedEvent } from '../fixtures';
 import { CATEGORY_OF, TIMELINE_CATEGORIES, describeEvent, formatEventTime, recentChanges, spansDays } from '.';
 
 const text = (event: TimelineEvent) =>
@@ -110,10 +110,7 @@ describe('spansDays', () => {
 });
 
 describe('recentChanges', () => {
-  const moved: TimelineEvent = {
-    ...eventSamples['lkp.changed'],
-    details: { observedAt: '2026-10-03T12:00:00.000Z', previousObservedAt: '2026-10-03T10:05:00.000Z' },
-  };
+  const moved = lkpMovedEvent;
 
   it('keeps the details changes and the LKP that moved, newest first', () => {
     const history = [

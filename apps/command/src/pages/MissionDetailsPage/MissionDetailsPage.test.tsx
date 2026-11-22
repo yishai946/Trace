@@ -1,9 +1,9 @@
-import type { Mission, TimelineEvent } from '@trace/schemas';
+import type { Mission } from '@trace/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MissionDetailsPage, type MissionDetailsPageProps } from '.';
-import { eventSamples, mission as baseMission } from '../../mission/fixtures';
+import { eventSamples, lkpMovedEvent, mission as baseMission } from '../../mission/fixtures';
 import { formatEventTime } from '../../mission/timelineEvent';
 import { DETAILS_MESSAGES, PHOTO_SAVE_FAILED } from './missionDetailsForm';
 
@@ -258,11 +258,7 @@ describe('MissionDetailsPage', () => {
 
   describe('recent changes (Cd05)', () => {
     const region = () => screen.getByRole('region', { name: 'שינויים אחרונים' });
-    const later: TimelineEvent = {
-      ...eventSamples['lkp.changed'],
-      occurredAt: '2026-10-03T12:00:00.000Z',
-      details: { observedAt: '2026-10-03T12:00:00.000Z', previousObservedAt: '2026-10-03T10:05:00.000Z' },
-    };
+    const later = lkpMovedEvent;
 
     it('lists the significant changes, newest first, and leaves out the rest', () => {
       const events = [eventSamples['mission.created'], later, eventSamples['mission.details_changed']];
