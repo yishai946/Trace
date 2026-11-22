@@ -9,6 +9,7 @@ import {
   participants,
   reportFinding,
   reportLocated,
+  sosActive,
 } from '../mission/fixtures';
 import { ThemeProvider } from '../theme/theme';
 import { App } from '.';
@@ -31,7 +32,8 @@ vi.mock('../auth', () => ({
 
 const json = (body: unknown) => new Response(JSON.stringify(body));
 
-function renderApp() {
+/** What `GET /sos` answers: a list, or `'fail'` for a server error. */
+function renderApp(sos: unknown[] | 'fail' = []) {
   vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
     const url = String(input);
     if (url.endsWith('/health'))
@@ -41,6 +43,7 @@ function renderApp() {
     if (url.endsWith('/participants')) return Promise.resolve(json(participants));
     if (url.endsWith('/messages')) return Promise.resolve(json([]));
     if (url.endsWith('/reports')) return Promise.resolve(json([]));
+    if (url.endsWith('/sos')) return Promise.resolve(sos === 'fail' ? new Response('{}', { status: 500 }) : json(sos));
     return Promise.resolve(json([mission]));
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -118,6 +121,27 @@ describe('App mission details', () => {
       ),
     );
     expect(await screen.findByText('עוד לא נשלחו הודעות במסע הזה.')).toBeInTheDocument();
+  });
+
+  it('keeps the SOS alert on the Messages and Timeline pages, not on the SOS page', async () => {
+    renderApp([sosActive]);
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('link', { name: /הודעות/ }));
+    expect(await screen.findByRole('alert', { name: 'התראת SOS' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: /ציר זמן/ }));
+    expect(await screen.findByRole('alert', { name: 'התראת SOS' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: /SOS/ }));
+    await screen.findByRole('heading', { name: /SOS/ });
+    expect(screen.queryByRole('alert', { name: 'התראת SOS' })).toBeNull();
+  });
+
+  it('says the SOS state is unknown on every page when it cannot be loaded', async () => {
+    renderApp('fail');
+    fireEvent.click(await screen.findByText(mission.name));
+    expect(await screen.findByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('link', { name: /הודעות/ }));
+    expect(await screen.findByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'SOS, המצב לא ידוע' })).toBeInTheDocument();
   });
 
   it('opens the reports screen from the mission navigation', async () => {

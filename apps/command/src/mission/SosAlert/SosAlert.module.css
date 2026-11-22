@@ -61,3 +61,8 @@
 .alert[data-compact] .where::before {
   content: ' · ';
 }
+
+/* The unknown-state text is the point of the alert: it wraps instead of being cut. */
+.alert[data-compact] .text[data-wrap] {
+  white-space: normal;
+}

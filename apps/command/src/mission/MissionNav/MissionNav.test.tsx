@@ -60,4 +60,9 @@ describe('MissionNav', () => {
     fireEvent.click(link);
     expect(onNavigate).toHaveBeenLastCalledWith('sos');
   });
+
+  it('shows "?" on SOS when its state is not known', () => {
+    render(<MissionNav missionName="מסע 0412" view="map" onNavigate={vi.fn()} counts={{ sos: null }} />);
+    expect(screen.getByRole('link', { name: 'SOS, המצב לא ידוע' }).textContent).toContain('?');
+  });
 });

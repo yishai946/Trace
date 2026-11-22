@@ -68,6 +68,8 @@ export function PhoneMission({
       reportsFailed={data.reports.isError}
       onOpenReport={nav.openReport}
       sos={data.sos.data}
+      sosFailed={data.sos.isError}
+      onRetrySos={() => void data.sos.refetch()}
       onOpenSos={nav.openSos}
       sosScreen={
         <SosPage

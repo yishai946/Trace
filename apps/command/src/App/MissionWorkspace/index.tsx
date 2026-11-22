@@ -2,9 +2,9 @@ import type { ThemeId } from '@trace/design';
 import { canChangeLkp, canChangePolygons } from '@trace/domain';
 import type { MapProvider } from '@trace/map';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
+import type { ReactNode } from 'react';
 import styles from '../App.module.css';
 import { MissionMap, type MapFocus, type PointTarget } from '../../map/MissionMap';
-import { FloatingAlerts } from '../../mission/FloatingAlerts';
 import { RallyPointPanel } from '../../mission/RallyPointPanel';
 import { usePolygonEdit } from './usePolygonEdit';
 import { useRallyPointEdit } from './useRallyPointEdit';
@@ -28,10 +28,8 @@ interface MissionWorkspaceProps {
   sos: Sos[];
   /** Opens a report in the Reports page or screen. */
   onOpenReport: (id: string) => void;
-  /** Opens the SOS page or screen. */
-  onOpenSos: () => void;
-  /** The floating alerts; the phone shows its own under the top bar. */
-  alertOnMap: boolean;
+  /** The alerts floating over the map; the phone shows its own under the top bar. */
+  alerts: ReactNode;
   sightingsLoading: boolean;
   sightingsFailed: boolean;
   onRetrySightings: () => void;
@@ -57,8 +55,7 @@ export function MissionWorkspace({
   reports,
   sos,
   onOpenReport,
-  onOpenSos,
-  alertOnMap,
+  alerts,
   sightingsLoading,
   sightingsFailed,
   onRetrySightings,
@@ -126,7 +123,7 @@ export function MissionWorkspace({
         onEditChange={polygon.changeBoundary}
       />
 
-      {alertOnMap && <FloatingAlerts reports={reports} sos={sos} onOpenReport={onOpenReport} onOpenSos={onOpenSos} />}
+      {alerts}
 
       {rallyOpen && (
         <div className={styles.rallyPanel}>

@@ -22,3 +22,16 @@
   top: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-start: var(--space-6);
 }
+
+/* The SOS alert sits under the navigation, as wide as the join panel; it covers nothing of the page. */
+.alert {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: var(--panel-end-w);
+  max-width: 100%;
+}
+
+.alert:empty {
+  display: none;
+}

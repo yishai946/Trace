@@ -1,4 +1,3 @@
-import { sameDay } from '../sameDay';
 import { detailChangesText, type TimelineEventType } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 
@@ -45,8 +44,16 @@ export interface EventView {
   destination: 'map' | null;
 }
 
-const time = new Intl.DateTimeFormat('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
-const dayMonth = new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit' });
+// The time zone of the rest of Command (`timeLabel`): a time reads the same on every commander's screen.
+const TIME_ZONE = 'Asia/Jerusalem';
+const time = new Intl.DateTimeFormat('he-IL', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+  timeZone: TIME_ZONE,
+});
+const dayMonth = new Intl.DateTimeFormat('he-IL', { day: '2-digit', month: '2-digit', timeZone: TIME_ZONE });
+const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE });
 
 /** "16:58", or "03.10, 16:58" when the Timeline spans more than one day. */
 export function formatEventTime(iso: string, withDate: boolean): string {
@@ -54,11 +61,11 @@ export function formatEventTime(iso: string, withDate: boolean): string {
   return withDate ? `${dayMonth.format(date)}, ${time.format(date)}` : time.format(date);
 }
 
-/** Whether the first and last events fall on different local days. Events are in either order. */
+/** Whether the first and last events fall on different days in Israel. Events are in either order. */
 export function spansDays(events: TimelineEvent[]): boolean {
   const first = events[0];
   const last = events.at(-1);
-  return !!first && !!last && !sameDay(new Date(first.occurredAt), new Date(last.occurredAt));
+  return !!first && !!last && dayKey.format(new Date(first.occurredAt)) !== dayKey.format(new Date(last.occurredAt));
 }
 
 const plain = (badge: string, text: string, destination: EventView['destination'] = null): EventView => ({
@@ -110,9 +117,18 @@ const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] 
   ...(event.subject.label === null ? [] : [`, ${label}`]),
 ];
 
-const sosClosedSegments = (event: EventOf<'sos.closed'>, label: string): Segment[] => {
+/** Whose SOS it was, by the SOS the event is about: a commander closed it, so the sender is named. */
+export type SosSenderOf = (sosId: string) => { callsign: number; name: string } | undefined;
+
+const sosClosedSegments = (event: EventOf<'sos.closed'>, label: string, senderOf?: SosSenderOf): Segment[] => {
+  const sender = event.actor.kind === 'commander' ? senderOf?.(event.subject.id) : undefined;
   const closer = event.actor.kind === 'commander' ? [event.actor.name] : searcherOf(event);
-  return [...closer, ' סגר את ה-SOS', ...(event.subject.label === null ? [] : [`, ${label}`])];
+  return [
+    ...closer,
+    ' סגר את ה-SOS',
+    ...(sender ? [' של ', { callsign: sender.callsign }, ` ${sender.name}`] : []),
+    ...(event.subject.label === null ? [] : [`, ${label}`]),
+  ];
 };
 
 const segmented = (badge: string, segments: Segment[], danger = false): EventView => ({
@@ -138,13 +154,20 @@ function describePolygon(
 
 const PAUSE_TEXT = { 'mission.paused': 'המסע הושהה', 'mission.resumed': 'המסע חודש' } as const;
 
-const describeSos = (event: EventOf<'sos.activated'> | EventOf<'sos.closed'>, label: string): EventView =>
+const describeSos = (
+  event: EventOf<'sos.activated'> | EventOf<'sos.closed'>,
+  label: string,
+  senderOf?: SosSenderOf,
+): EventView =>
   event.type === 'sos.activated'
     ? segmented('SOS', sosSegments(event, label), true)
-    : segmented('SOS', sosClosedSegments(event, label));
+    : segmented('SOS', sosClosedSegments(event, label, senderOf));
 
-/** How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. */
-export function describeEvent(event: TimelineEvent): EventView {
+/**
+ * How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. `senderOf` names
+ * the sender of a closed SOS, which the event does not carry.
+ */
+export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): EventView {
   const label = event.subject.label ?? '';
   switch (event.type) {
     case 'mission.created':
@@ -168,7 +191,7 @@ export function describeEvent(event: TimelineEvent): EventView {
       return segmented('קשר', contactSegments(event, label));
     case 'sos.activated':
     case 'sos.closed':
-      return describeSos(event, label);
+      return describeSos(event, label, senderOf);
     default:
       return describePolygon(event, label);
   }

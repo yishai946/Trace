@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { formatLatLng } from '@trace/geo';
 import { describe, expect, it, vi } from 'vitest';
 import { SosAlert } from '.';
 import { polygonA, sosActive, sosClosed } from '../fixtures';
@@ -18,8 +19,9 @@ describe('SosAlert', () => {
     expect(within(alert).getByText('04')).toBeTruthy();
     expect(alert.textContent).toContain('דנה כהן');
     expect(alert.textContent).toContain(polygonA.name);
-    expect(within(alert).getByText('16:58')).toBeTruthy();
-    expect(alert.textContent).toContain('מיקום ידוע');
+    expect(within(alert).getAllByText('16:58').length).toBeGreaterThan(0);
+    expect(alert.textContent).toContain(formatLatLng(sosActive.location?.position.coordinates ?? [0, 0]));
+    expect(alert.textContent).toContain('עודכן');
   });
 
   it('says when the location is not known', () => {
@@ -33,7 +35,7 @@ describe('SosAlert', () => {
     render(<SosAlert sos={[sosActive, second]} onOpen={vi.fn()} />);
     const alert = screen.getByRole('alert', { name: 'התראת SOS' });
     expect(within(alert).getByText('SOS · 2')).toBeTruthy();
-    expect(within(alert).getByText('16:58')).toBeTruthy();
+    expect(within(alert).getAllByText('16:58').length).toBeGreaterThan(0);
   });
 
   it('opens the SOS view', () => {
@@ -46,5 +48,20 @@ describe('SosAlert', () => {
   it('is compact on the phone', () => {
     render(<SosAlert compact sos={[sosActive]} onOpen={vi.fn()} />);
     expect(screen.getByRole('alert', { name: 'התראת SOS' })).toHaveAttribute('data-compact');
+  });
+
+  it('says the state is unknown when the SOS could not be loaded, and retries on request', () => {
+    const onRetry = vi.fn();
+    render(<SosAlert sos={undefined} failed onRetry={onRetry} onOpen={vi.fn()} />);
+    const alert = screen.getByRole('alert', { name: 'מצב SOS לא ידוע' });
+    expect(alert.textContent).toContain('לא ניתן לטעון');
+    fireEvent.click(within(alert).getByRole('button', { name: 'נסה שוב' }));
+    expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('shows the last known SOS and the unknown state together when a refresh failed', () => {
+    render(<SosAlert sos={[sosActive]} failed onRetry={vi.fn()} onOpen={vi.fn()} />);
+    expect(screen.getByRole('alert', { name: 'התראת SOS' })).toBeTruthy();
+    expect(screen.getByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeTruthy();
   });
 });

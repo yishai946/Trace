@@ -48,6 +48,8 @@ function renderScreen(props: Partial<Props> = {}) {
       reportsFailed={false}
       onOpenReport={onOpenReport}
       sos={[sosClosed]}
+      sosFailed={false}
+      onRetrySos={vi.fn()}
       onOpenSos={onOpenSos}
       sosScreen={<div>מסך ה-SOS</div>}
       messagesScreen={<div>מסך ההודעות</div>}
@@ -193,6 +195,8 @@ describe('PhoneMissionScreen', () => {
         reportsFailed={false}
         onOpenReport={vi.fn()}
         sos={[]}
+        sosFailed={false}
+        onRetrySos={vi.fn()}
         onOpenSos={vi.fn()}
         sosScreen={<div>מסך ה-SOS</div>}
         messagesScreen={<div>מסך ההודעות</div>}
@@ -243,5 +247,31 @@ describe('PhoneMissionScreen', () => {
     fireEvent.click(screen.getByRole('link', { name: 'לוח' }));
     expect(screen.getByText('המפה')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /התראות/, selected: true })).toBeInTheDocument();
+  });
+
+  describe('SOS alert on every screen', () => {
+    it('stays above the Reports and Messages screens while an SOS is active', () => {
+      renderScreen({ sos: [sosActive], screen: 'reports' });
+      expect(screen.getByRole('alert', { name: 'התראת SOS' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('link', { name: /הודעות/ }));
+      expect(screen.getByRole('alert', { name: 'התראת SOS' })).toBeInTheDocument();
+      expect(screen.getByText('מסך ההודעות')).toBeInTheDocument();
+    });
+
+    it('is not repeated on the SOS screen', () => {
+      renderScreen({ sos: [sosActive], screen: 'sos' });
+      expect(screen.queryByRole('alert', { name: 'התראת SOS' })).toBeNull();
+    });
+
+    it('says the state is unknown when the SOS failed to load, on the map and on other screens', () => {
+      const onRetrySos = vi.fn();
+      const { unmount } = renderScreen({ sos: undefined, sosFailed: true, onRetrySos });
+      fireEvent.click(screen.getByRole('button', { name: 'נסה שוב' }));
+      expect(onRetrySos).toHaveBeenCalledOnce();
+      expect(screen.getByRole('link', { name: 'SOS, המצב לא ידוע' })).toBeInTheDocument();
+      unmount();
+      renderScreen({ sos: undefined, sosFailed: true, screen: 'messages' });
+      expect(screen.getByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeInTheDocument();
+    });
   });
 });

@@ -61,4 +61,9 @@ describe('MissionTabBar', () => {
     expect(link).toHaveAttribute('aria-current', 'page');
     expect(link).not.toHaveTextContent(/\d/);
   });
+
+  it('shows "?" on SOS when its state is not known', () => {
+    render(<MissionTabBar current="board" onNavigate={vi.fn()} counts={{ sos: null }} />);
+    expect(screen.getByRole('link', { name: 'SOS, המצב לא ידוע' }).textContent).toContain('?');
+  });
 });
