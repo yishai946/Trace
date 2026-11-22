@@ -4,6 +4,7 @@ import { AppState } from 'react-native';
 import { ApiRequestError } from '../../api';
 import { useSession } from '../../state/session';
 import { downloadOfflinePackage } from '../downloadPackage';
+import { requestOfflineRefresh } from '../refreshPackage';
 import { offlineProgress } from '../progress';
 import { useOfflineState } from '../state';
 import { clearOfflinePackages, keepOnly, savedSteps } from '../store';
@@ -49,6 +50,8 @@ export function useOfflineDownload(): void {
           onStepSaved: (step) => current() && state.getState().stepSaved(step),
         });
         state.getState().setFailed(false);
+        // An edit made while the download ran is not in what it saved.
+        if (current()) void requestOfflineRefresh({ missionId, token, signal: controller.signal });
       } catch (error) {
         if (!current()) return;
         const retry = worthRetrying(error);

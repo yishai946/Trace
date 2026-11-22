@@ -89,14 +89,39 @@ describe('refreshOfflinePackage', () => {
     expect(Array.from((await loadPhoto(MISSION_ID))?.bytes ?? [])).toEqual([1, 2]);
   });
 
-  it('leaves a step that is not saved yet to the download', async () => {
+  it('leaves an incomplete package to the download', async () => {
     serve();
     await saveStep(MISSION_ID, 'mission', { json: mission });
     vi.restoreAllMocks();
     const fetch = serve({ mission: edited });
     await refreshOfflinePackage(options);
-    expect(urls(fetch)).toEqual([`/api/missions/${MISSION_ID}`]);
-    expect(await savedPolygonName()).toBeUndefined();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(await savedName()).toBe('מסע 0412');
+  });
+
+  it('makes the screens read the replaced copy again', async () => {
+    await saveFullPackage();
+    useOfflineState.getState().start(MISSION_ID);
+    const before = useOfflineState.getState().revision;
+    serve({ mission: edited });
+    await refreshOfflinePackage(options);
+    expect(useOfflineState.getState().revision).toBe(before + 1);
+  });
+
+  it('does not bring a package back that was cleared while the answer was on its way', async () => {
+    await saveFullPackage();
+    let release = () => {};
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      await new Promise<void>((resolve) => (release = resolve));
+      const url = String(input);
+      return Response.json(url.endsWith('/polygons') ? [movedPolygon] : edited);
+    });
+    const refreshing = refreshOfflinePackage(options);
+    await vi.waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+    await clearOfflinePackages();
+    release();
+    await expect(refreshing).rejects.toBeDefined();
+    expect(await savedName()).toBeUndefined();
   });
 
   it('keeps the old copy, and the readiness, when the connection is down', async () => {

@@ -12,8 +12,10 @@ function useSaved<T>(step: OfflineStep, read: (missionId: string) => Promise<T |
   const missionId = useSession((s) => s.missionId);
   // The steps saved so far are part of the key, so a download or a clear makes the screens read the phone again.
   const savedNow = useOfflineState((s) => s.saved.join());
+  // A step replaced by a newer copy (the commander's edit) is read again too.
+  const revision = useOfflineState((s) => s.revision);
   return useQuery({
-    queryKey: [...key(missionId, step), savedNow],
+    queryKey: [...key(missionId, step), savedNow, revision],
     queryFn: () => (missionId ? read(missionId).catch(() => null) : null),
     enabled: !!missionId,
     // Always read what is on the phone now: a download or a clear changes it behind the cache.

@@ -1,7 +1,9 @@
 import { Mission, MissionPolygonList } from '@trace/schemas';
 import { apiBaseUrl, apiRequest } from '../../api';
 import { fetchPhoto } from '../downloadPackage';
-import { loadStep, saveStep, savedSteps } from '../store';
+import { OFFLINE_STEPS } from '../progress';
+import { useOfflineState } from '../state';
+import { loadStep, packageEpoch, saveStep, savedSteps } from '../store';
 
 export interface RefreshOptions {
   missionId: string;
@@ -11,16 +13,20 @@ export interface RefreshOptions {
 
 /**
  * Brings the saved offline package up to date with the commander's edits (UC-F03): the mission, its photo and its
- * polygons. Only steps that are saved are refreshed; one not saved yet is left to the download. A step is replaced
+ * polygons. A step is replaced
  * only after the new answer arrived, so a failure (usually the connection) leaves the old copy usable and the package
- * as ready as it was. The photo is fetched again only when its versioned address changed. Failures are thrown.
+ * as ready as it was. A package that is not complete yet is left to the download, which fetches the latest itself (and
+ * asks for a refresh when it ends), so a refresh and a download never write the same package. The photo is fetched again only when its versioned address changed. Failures are thrown.
  */
 export async function refreshOfflinePackage({ missionId, token, signal }: RefreshOptions): Promise<void> {
+  const epoch = packageEpoch();
   const saved = new Set(await savedSteps(missionId));
+  if (!OFFLINE_STEPS.every((step) => saved.has(step))) return;
   const request = { baseUrl: apiBaseUrl, token, signal };
   const replace = async (step: 'mission' | 'photo' | 'polygons', content: Parameters<typeof saveStep>[2]) => {
     // A cleared package (sign-out, the mission ended) must not come back with a late answer.
     signal?.throwIfAborted();
+    if (packageEpoch() !== epoch) throw new Error('The offline package was cleared');
     await saveStep(missionId, step, content);
   };
 
@@ -40,6 +46,8 @@ export async function refreshOfflinePackage({ missionId, token, signal }: Refres
     const polygons = await apiRequest(`/missions/${missionId}/polygons`, { ...request, schema: MissionPolygonList });
     await replace('polygons', { json: polygons });
   }
+  // Screens that show the saved copy read it again.
+  useOfflineState.getState().refreshed(missionId);
 }
 
 let running: Promise<void> | null = null;
