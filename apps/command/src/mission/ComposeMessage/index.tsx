@@ -37,10 +37,11 @@ const sendIcon = (
   </svg>
 );
 
-/** Why sending is closed, if it is: the mission ended, or there is no connection. */
-function blockedHint(ended: boolean, onSend: ComposeMessageProps['onSend']): string | null {
+/** Why sending is closed, if it is: the mission ended, there is no connection, or nobody would receive it. */
+function blockedHint(ended: boolean, onSend: ComposeMessageProps['onSend'], noRecipients: boolean): string | null {
   if (ended) return 'המסע הסתיים. אי אפשר לשלוח הודעות.';
-  return onSend ? null : 'אין חיבור לשרת. שליחה חסומה.';
+  if (!onSend) return 'אין חיבור לשרת. שליחה חסומה.';
+  return noRecipients ? 'אין מחפשים פעילים ביעד שנבחר.' : null;
 }
 
 /** The new-message form (wireframe Cd11 "הודעה חדשה"): target, urgency and free text, sent one way to searchers. */
@@ -55,15 +56,28 @@ export function ComposeMessage({
   onSent,
   phone,
 }: ComposeMessageProps) {
-  const { form, errors, setErrors, announcement, dismissedError, formRef, change, submit, count } = useComposeMessage({
+  const {
+    form,
+    errors,
+    setErrors,
+    announcement,
+    dismissedError,
+    formRef,
+    change,
+    submit,
+    count,
+    noRecipients,
+    blocked,
+  } = useComposeMessage({
     participants,
     sendError,
     onSend,
     sending,
+    participantsFailed,
     onSent,
   });
 
-  const hint = blockedHint(ended, onSend);
+  const hint = blockedHint(ended, onSend, noRecipients);
 
   return (
     <section className={phone ? styles.phone : `${styles.panel} ${styles.compose}`} aria-label="הודעה חדשה">
@@ -139,7 +153,7 @@ export function ComposeMessage({
           size={phone ? 'lg' : undefined}
           type="submit"
           className={styles.block}
-          isDisabled={!onSend || sending || participantsFailed}
+          isDisabled={blocked}
         >
           {sendIcon}
           {sendLabel(count)}
