@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './commanders';
 export * from './errors';
 export * from './geo';
 export * from './health';

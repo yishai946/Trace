@@ -1,4 +1,4 @@
-import { AuthSession, type SignInBody } from '@trace/schemas';
+import { AuthSession, OwnPhone, type SignInBody } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { ApiRequestError, apiRequest } from '../api';
 
@@ -54,4 +54,14 @@ const SIGN_IN_MESSAGES: Record<number, string> = {
 /** A Hebrew message for a failed sign-in. Better Auth errors do not use the API's error shape, so go by status. */
 export function signInErrorMessage(error: unknown): string {
   return (error instanceof ApiRequestError && SIGN_IN_MESSAGES[error.status]) || 'הכניסה נכשלה. נסו שוב.';
+}
+
+/** Saves the commander's phone number (or removes it with `null`), then reloads the session that carries it. */
+export function useSetOwnPhone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (phoneNumber: string | null) =>
+      apiRequest('/me/phone', { method: 'PUT', body: { phoneNumber }, schema: OwnPhone }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: sessionKey }),
+  });
 }

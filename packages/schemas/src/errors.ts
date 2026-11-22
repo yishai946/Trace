@@ -26,6 +26,8 @@ export const ERROR_CODES = [
   'NO_RECIPIENTS',
   /** Only a critical message can be acknowledged (decision 27). */
   'MESSAGE_NOT_CRITICAL',
+  /** The phone number already belongs to another account. */
+  'PHONE_IN_USE',
   'INTERNAL_ERROR',
 ] as const;
 
