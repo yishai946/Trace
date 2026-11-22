@@ -37,11 +37,12 @@ export function usePermissions(): PermissionsHook {
 
   const grant = useCallback(
     async (permission: RequiredPermission) => {
-      if (permissions?.[permission] === 'blocked') {
-        await Linking.openSettings();
-        return;
+      try {
+        if (permissions?.[permission] === 'blocked') await Linking.openSettings();
+        else await requestPermission(permission);
+      } catch {
+        // No native module (web, Expo Go) or the phone refused to open: the row stays as it was.
       }
-      await requestPermission(permission);
       setReloaded((count) => count + 1);
     },
     [permissions],

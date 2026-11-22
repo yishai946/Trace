@@ -41,4 +41,13 @@ describe('usePermissions', () => {
     expect(openSettings).toHaveBeenCalledTimes(1);
     expect(device.request).not.toHaveBeenCalled();
   });
+
+  it('stays as it was when the phone cannot show the prompt', async () => {
+    device.read.mockResolvedValue(all('ask'));
+    device.request.mockRejectedValue(new Error('no native module'));
+    const { result } = renderHook(() => usePermissions());
+    await waitFor(() => expect(result.current.permissions).not.toBeNull());
+    await act(() => result.current.grant('push'));
+    expect(result.current.permissions).toEqual(all('ask'));
+  });
 });
