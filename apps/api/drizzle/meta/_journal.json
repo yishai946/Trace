@@ -120,6 +120,13 @@
       "when": 1795143894687,
       "tag": "0016_sos_closed_event",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795306713774,
+      "tag": "0017_mission_details_changed_event",
+      "breakpoints": true
     }
   ]
 }

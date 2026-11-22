@@ -114,6 +114,40 @@ describe('realtime', () => {
       expect(missed).toEqual([]);
     });
 
+    describe('when the commander notifies the searchers', () => {
+      const flagged = { ...details, notifySearchers: true };
+
+      async function setup() {
+        const commander = await signInCommander(rt.ctx);
+        const mission = await createMissionAs(commander);
+        const searcher = await signInSearcher(rt.ctx);
+        await addParticipant(rt.ctx.db, { missionId: mission.id, callsign: 1, searcherId: searcher.searcherId });
+        const [commanderSocket, searcherSocket] = [commander, searcher].map(socketFor) as [Client, Client];
+        await Promise.all([connect(commanderSocket), connect(searcherSocket)]);
+        expect(await join(commanderSocket, mission.id)).toEqual({ ok: true });
+        expect(await join(searcherSocket, mission.id)).toEqual({ ok: true });
+        return { commander, mission, toCommander: record(commanderSocket), toSearcher: record(searcherSocket) };
+      }
+      const types = (events: unknown[]) => events.map((event) => MissionEvent.parse(event).type);
+
+      it('sends the commander the Timeline event after the update, and the searchers only the update', async () => {
+        const { commander, mission, toCommander, toSearcher } = await setup();
+        expect((await editAs(commander, mission.id, flagged)).statusCode).toBe(200);
+        await settle();
+        expect(types(toCommander)).toEqual(['mission.updated', 'timeline.recorded']);
+        const recorded = MissionEvent.parse(toCommander[1]);
+        expect(recorded.type === 'timeline.recorded' && recorded.event.type).toBe('mission.details_changed');
+        expect(types(toSearcher)).toEqual(['mission.updated']);
+      });
+
+      it('sends only the update without the flag', async () => {
+        const { commander, mission, toCommander } = await setup();
+        expect((await editAs(commander, mission.id)).statusCode).toBe(200);
+        await settle();
+        expect(types(toCommander)).toEqual(['mission.updated']);
+      });
+    });
+
     it('sends nothing when the edit is rejected', async () => {
       const commander = await signInCommander(rt.ctx);
       const mission = await createMissionAs(commander);

@@ -6,7 +6,7 @@ import {
   type RandomInt,
 } from '@trace/domain';
 import type { PointGeometry } from '@trace/schemas';
-import { type CreateMissionBody, type Mission, type UpdateMissionDetailsBody } from '@trace/schemas';
+import { type CreateMissionBody, type Mission } from '@trace/schemas';
 import type { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { randomInt } from 'node:crypto';
@@ -121,41 +121,6 @@ export async function updateRallyPoint(
     rallyPoint: mission.rallyPoint,
     updatedAt: mission.updatedAt,
   });
-  return mission;
-}
-
-export type MissionDetailsInput = z.output<typeof UpdateMissionDetailsBody>;
-
-/**
- * Replaces the mission name and the missing-person details (UC-C03). Only an active or paused mission can be edited
- * (decision 94). The status is locked while checking, so an ending mission cannot slip through.
- */
-export async function updateMissionDetails(
-  { db, realtime }: ServiceDeps,
-  missionId: string,
-  details: MissionDetailsInput,
-): Promise<Mission> {
-  await db.transaction(async (tx) => {
-    await lockMission(tx, missionId, {
-      allowed: canEditMissionDetails,
-      refusal: () => missionEnded('The details of an ended mission cannot be changed'),
-    });
-    const { missingPerson } = details;
-    await tx
-      .update(missions)
-      .set({
-        name: details.name,
-        missingPersonName: missingPerson.name,
-        missingPersonAge: missingPerson.age,
-        disappearedAt: missingPerson.disappearedAt ? new Date(missingPerson.disappearedAt) : null,
-        description: missingPerson.description,
-        additionalInfo: missingPerson.additionalInfo,
-        updatedAt: new Date(),
-      })
-      .where(eq(missions.id, missionId));
-  });
-  const mission = await getMission(db, missionId);
-  realtime.publish({ type: 'mission.updated', missionId, mission });
   return mission;
 }
 
