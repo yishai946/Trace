@@ -1,7 +1,7 @@
 /**
  * Mobile values the Trace Console design system does not define yet, taken from the Field wireframes (`Fm*`).
- * Each one is a design-system gap: add it to the Trace Console artifact as a token, run /sync-design, and replace
- * its uses with the token. Do not add values here without listing them as a gap in the Pull Request.
+ * Each one is a design-system gap: do not update the Trace Console artifact; list it in the Pull Request under
+ * Design deviations. Do not add values here without listing them as a gap in the Pull Request.
  */
 export const pendingTokens = {
   /** Brand book: every touch target on mobile is at least 44px. Wireframe `.tcx-touch`. */
