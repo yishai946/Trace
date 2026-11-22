@@ -3,6 +3,7 @@ import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabButton } from '../../components/TabButton';
 import { useMessagesInbox } from '../../messages/useMessagesInbox';
+import { useOfflineDownload } from '../../offline/useOfflineDownload';
 import { useLeaveWhenRemoved } from '../../navigation/useLeaveWhenRemoved';
 import { tabs } from '../../navigation/routes';
 import { useMissionLive } from '../../realtime';
@@ -16,6 +17,7 @@ export default function MissionLayout() {
   const { color } = useTheme().theme;
   const { bottom } = useSafeAreaInsets();
   useMissionLive();
+  useOfflineDownload();
   useLocationTracking();
   useGpsStatus();
   useLeaveWhenRemoved();

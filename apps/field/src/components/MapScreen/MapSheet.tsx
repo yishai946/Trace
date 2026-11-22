@@ -8,6 +8,7 @@ import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
 import { AssignedTask } from '../AssignedTask';
 import { Button } from '../Button';
+import { OfflineDownload } from '../OfflineDownload';
 import { PendingReports } from '../PendingReports';
 
 type Task = ComponentProps<typeof AssignedTask>;
@@ -36,6 +37,7 @@ export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
         { backgroundColor: color.surface, borderColor: color.border, boxShadow: theme.shadow.shadowPanel },
       ]}
     >
+      <OfflineDownload />
       {assigned ? (
         <AssignedTask participation={assigned} polygons={polygons} notice={notice} onDismissNotice={dismissNotice} />
       ) : null}

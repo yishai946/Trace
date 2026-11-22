@@ -3,6 +3,8 @@ import type { MissionPolygon, OwnParticipation } from '@trace/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AssignedTask } from '.';
+import { useOfflineState } from '../../offline/state';
+import { useSession } from '../../state/session';
 import { usePreferences } from '../../state/preferences';
 import { TestProviders } from '../../test/providers';
 
@@ -39,7 +41,17 @@ const participation: OwnParticipation = {
   taskStatus: 'ready',
 };
 
-afterEach(() => usePreferences.setState(usePreferences.getInitialState()));
+const MISSION = '00000000-0000-4000-8000-000000000001';
+const setSaved = (saved: ('mission' | 'photo' | 'polygons')[]) => {
+  useSession.setState({ missionId: MISSION });
+  useOfflineState.setState({ missionId: MISSION, saved, loaded: true, running: false, failed: false });
+};
+
+afterEach(() => {
+  usePreferences.setState(usePreferences.getInitialState());
+  useSession.setState({ missionId: null });
+  useOfflineState.setState({ missionId: null, saved: [], loaded: false });
+});
 const renderTask = (props: Partial<Parameters<typeof AssignedTask>[0]> = {}) =>
   render(
     <AssignedTask
@@ -59,6 +71,21 @@ describe('AssignedTask', () => {
     expect(screen.getByText('7 מחפשים בפוליגון')).toBeInTheDocument();
     expect(screen.getByText('04')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
+  });
+
+  it('blocks Start Search and says why until the offline package is saved', () => {
+    setSaved(['mission', 'photo']);
+    renderTask({ onStartSearch: () => {} });
+    expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
+    expect(screen.getByText(/רק אחרי שהורדת המידע ללא חיבור הושלמה/)).toBeInTheDocument();
+  });
+
+  it('opens Start Search once the offline package is saved', () => {
+    setSaved(['mission', 'photo', 'polygons']);
+    const onStartSearch = vi.fn();
+    renderTask({ onStartSearch });
+    fireEvent.click(screen.getByRole('button', { name: 'התחל חיפוש' }));
+    expect(onStartSearch).toHaveBeenCalled();
   });
 
   it('tells the searcher they were moved, until they dismiss it', () => {
