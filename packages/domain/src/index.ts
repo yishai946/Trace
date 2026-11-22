@@ -4,6 +4,7 @@ export * from './localTime';
 export * from './message';
 export * from './missionDetails';
 export * from './mission';
+export * from './offlinePackage';
 export * from './participation';
 export * from './phone';
 export * from './photo';
