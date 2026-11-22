@@ -12,6 +12,7 @@ import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
 import { MissingPersonPhoto } from '../MissingPersonPhoto';
 import { MissionMap } from '../MissionMap';
+import { OfflineDownload } from '../OfflineDownload';
 import { Screen } from '../Screen';
 
 export interface WaitingForAssignmentProps {
@@ -48,6 +49,7 @@ export function WaitingForAssignment({ mission, participation, onOpenDetails }: 
         </View>
         <Badge label="זמין" tone="accent" />
       </View>
+      <OfflineDownload />
       <View style={[styles.map, { borderColor: color.border }]}>
         <MissionMap area={area} />
       </View>

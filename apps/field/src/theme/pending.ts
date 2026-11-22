@@ -85,4 +85,6 @@ export const pendingTokens = {
   sosRingStroke: 3,
   sosLabelSize: 48,
   sosLabelLeading: 52,
+  /** Fm03 `.tc-meter` of the download card: 8px high (the Trace Console default is 3px). */
+  meterH: 8,
 } as const;

@@ -14,6 +14,7 @@ import { apiBaseUrl } from '../api';
 import { fetchOwnParticipation, missionKeys } from '../mission/queries';
 import { upsertMessage } from '../messages/messageList';
 import { useSession } from '../state/session';
+import { clearOfflinePackages } from '../offline/store';
 
 type MissionSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -116,6 +117,8 @@ export function useMissionLive(): void {
         } else if (result.code === 'NOT_FOUND') {
           // The searcher is no longer in this mission: the map then offers to join one.
           useSession.getState().setMissionId(null);
+          // The missing person's details do not stay on the phone of a searcher who left the mission.
+          void clearOfflinePackages().catch(() => undefined);
         } else {
           later(join);
         }

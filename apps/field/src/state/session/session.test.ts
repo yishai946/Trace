@@ -1,3 +1,4 @@
+import { saveStep, savedSteps } from '../../offline/store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useSession } from '.';
 import { enqueue, pendingCount } from '../../outbox';
@@ -47,6 +48,12 @@ describe('useSession', () => {
     await enqueue({ kind: 'track-point', missionId: 'm1', payloads: [1, 2] });
     await useSession.getState().signOut();
     expect(await pendingCount()).toBe(0);
+  });
+
+  it('drops the offline packages at sign-out, so the next person on the phone cannot read the missing person', async () => {
+    await saveStep('m1', 'mission', { json: {} });
+    await useSession.getState().signOut();
+    expect(await savedSteps('m1')).toEqual([]);
   });
 
   it('still signs in when the device refuses to store the token', async () => {
