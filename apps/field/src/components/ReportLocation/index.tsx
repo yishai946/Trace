@@ -2,8 +2,8 @@ import { radius, spacing, typography } from '@trace/design';
 import { formatLatLng } from '@trace/geo';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
+import type { CurrentFix } from '../../location/useCurrentFix';
 import { formatTime } from '../../mission/missionArea';
-import type { ReportFix } from '../../reports/useReportFix';
 import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Icon } from '../Icon';
@@ -18,7 +18,7 @@ export function ReportLocation({
   polygonName,
 }: {
   state: 'locating' | 'ready' | 'unavailable';
-  fix: ReportFix | null;
+  fix: CurrentFix | null;
   polygonName: string | null;
 }) {
   const { color } = useTheme().theme;

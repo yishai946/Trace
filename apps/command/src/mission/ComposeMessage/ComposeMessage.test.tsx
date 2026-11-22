@@ -178,4 +178,37 @@ describe('ComposeMessage', () => {
     act(() => (onSend.mock.calls[0]?.[1] as (message: typeof messageNormal) => void)(messageNormal));
     expect((text() as HTMLTextAreaElement).value).toBe('');
   });
+
+  it('blocks sending to a polygon with no searchers, before any request', () => {
+    const onSend = vi.fn();
+    render(<ComposeMessage {...composeProps({ onSend })} />);
+    fireEvent.change(text(), { target: { value: 'שלום' } });
+    fireEvent.click(screen.getByRole('radio', { name: 'פוליגון' }));
+    expect(screen.queryByText('אין מחפשים פעילים ביעד שנבחר.')).toBeNull();
+
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'פוליגונים' })).getByRole('checkbox', { name: /פוליגון 2/ }),
+    );
+    expect(screen.getByText('אין מחפשים פעילים ביעד שנבחר.')).toBeInTheDocument();
+    expect(send()).toBeDisabled();
+    fireEvent.click(send());
+    expect(onSend).not.toHaveBeenCalled();
+  });
+
+  it('blocks sending to the whole mission when it has no searchers, but not while they load', () => {
+    const { rerender } = render(<ComposeMessage {...composeProps({ participants: undefined })} />);
+    expect(send()).not.toBeDisabled();
+
+    rerender(<ComposeMessage {...composeProps({ participants: [] })} />);
+    expect(screen.getByText('אין מחפשים פעילים ביעד שנבחר.')).toBeInTheDocument();
+    expect(send()).toBeDisabled();
+  });
+
+  it('does not send a no-recipient target even when the form is submitted directly', () => {
+    const onSend = vi.fn();
+    render(<ComposeMessage {...composeProps({ onSend, participants: [] })} />);
+    fireEvent.change(text(), { target: { value: 'שלום' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'הודעה חדשה' }));
+    expect(onSend).not.toHaveBeenCalled();
+  });
 });

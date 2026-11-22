@@ -60,13 +60,22 @@ describe('submitSighting', () => {
     expect(await pending()).toEqual([]);
   });
 
-  it('keeps it when the send fails', async () => {
+  it('keeps it and says it will be retried when the send fails while online', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => Promise.reject(new TypeError('offline'))),
+      vi.fn(async () => json(500, { error: { code: 'INTERNAL', message: 'x' } })),
     );
-    await expect(submitSighting({ missionId, sighting })).resolves.toBe('pending');
+    await expect(submitSighting({ missionId, sighting })).resolves.toBe('retrying');
     expect(await pending()).toHaveLength(1);
+  });
+
+  it('says the sighting itself was refused when the server answers 400 or SIGHTING_ID_TAKEN', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION', message: 'x' } })),
+    );
+    await expect(submitSighting({ missionId, sighting })).resolves.toBe('invalid');
+    expect(await pending()).toEqual([]);
   });
 
   it('reports a refusal for good and drops it', async () => {

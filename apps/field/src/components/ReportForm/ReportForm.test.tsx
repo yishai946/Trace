@@ -162,7 +162,10 @@ describe('ReportForm', () => {
     fill();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    await screen.findByText('הדיווח נשלח למנהל.');
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe(`https://api.test/api/missions/${missionId}/reports`);
@@ -172,7 +175,7 @@ describe('ReportForm', () => {
       position: { type: 'Point', coordinates: [35.0139, 31.7412] },
       accuracy: 6,
     });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/לא הגיע|לא התקבל/)).toBeNull();
     expect(await pending()).toEqual([]);
   });
 
@@ -245,7 +248,10 @@ describe('ReportForm', () => {
     fill();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    await screen.findByText('הדיווח נשלח למנהל.');
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
     expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST']);
     expect(camera.take).not.toHaveBeenCalled();
   });
@@ -259,13 +265,99 @@ describe('ReportForm', () => {
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'צרף תמונה' }));
     expect(await screen.findByText('תמונה מצורפת')).toBeInTheDocument();
+    expect(screen.getByLabelText('תצוגה מקדימה של התמונה המצורפת')).toBeInTheDocument();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    await screen.findByText('הדיווח נשלח למנהל.');
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
     await waitFor(() =>
       expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST', 'PUT']),
     );
     expect(fetch.mock.calls[1]?.[0]).toMatch(/\/reports\/[0-9a-f-]+\/photo$/);
+  });
+
+  it('disables cancel while the report is being sent', async () => {
+    let release: (response: Response) => void = () => undefined;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => (release = resolve))),
+    );
+    const onCancel = vi.fn();
+    setup({ onCancel });
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    const cancel = await screen.findByRole('button', { name: 'ביטול' });
+    expect(cancel).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(cancel);
+    expect(onCancel).not.toHaveBeenCalled();
+    release(json(201, saved({})));
+  });
+
+  it('does not say the connection is down for a "הנעדר אותר" report the server did not take', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(500, { error: { code: 'INTERNAL_ERROR', message: 'boom' } })),
+    );
+    setup();
+    await ready();
+    fill('הנעדר אותר', 'נמצא ליד העץ');
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('ייתכן שהמנהל עדיין לא יודע עליו');
+    expect(warning).toHaveTextContent('השרת לא אישר');
+    expect(warning).not.toHaveTextContent('אין חיבור');
+  });
+
+  it('says the server refused a report it rejected as invalid, not that the mission ended', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION_ERROR', message: 'bad' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('השרת דחה');
+    expect(warning).not.toHaveTextContent('הפעילות הסתיימה');
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('says the server refused a "הנעדר אותר" report it rejected as invalid', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION_ERROR', message: 'bad' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill('הנעדר אותר', 'נמצא ליד העץ');
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('השרת דחה');
+    expect(warning).toHaveTextContent('המנהל לא קיבל');
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('finishes the form without a warning when a normal report is kept for a retry after a server error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(500, { error: { code: 'INTERNAL_ERROR', message: 'boom' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((await pending()).map((item) => item.kind)).toEqual(['report']);
   });
 
   it('saves one report when send is pressed twice', async () => {
@@ -277,9 +369,9 @@ describe('ReportForm', () => {
     fireEvent.click(button);
     fireEvent.click(button);
 
-    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    await screen.findByText('הדיווח נשלח למנהל.');
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it('tells the searcher when the report could not be saved on the phone, and keeps the form', async () => {
