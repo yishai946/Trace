@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { formatTime } from '../../mission/missionArea';
-import { CLOSE_REASON } from '../../sos/sendFailure/sendFailureText';
+import { canRetry, CLOSE_REASON } from '../../sos/sendFailure/sendFailureText';
 import type { SosSendFailure } from '../../sos/sendFailure';
 import { useTheme } from '../../theme';
 import { Button } from '../Button';
@@ -25,6 +25,12 @@ export interface SosActiveProps {
 export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProps) {
   const { color } = useTheme().theme;
   const [confirming, setConfirming] = useState(false);
+  // A failed close ends the confirmation: the failure notice replaces it and the searcher chooses again.
+  const [seenFailure, setSeenFailure] = useState(closeFailure);
+  if (closeFailure !== seenFailure) {
+    setSeenFailure(closeFailure);
+    if (closeFailure) setConfirming(false);
+  }
   const sentTo = sos.polygon ? `נשלח למנהל ולמחפשים בפוליגון ${sos.polygon.name}.` : 'נשלח למנהל.';
   const where = sos.location
     ? `${ltr(formatLatLng(sos.location.position.coordinates))}${sos.location.accuracy === null ? '' : ` ±${ltr(Math.round(sos.location.accuracy))} מ׳`}`
@@ -74,7 +80,7 @@ export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProp
           />
           <Button label="השאר פעיל" size="lg" block disabled={closing} onPress={() => setConfirming(false)} />
         </View>
-      ) : (
+      ) : closeFailure && !canRetry(closeFailure) ? null : (
         <Button label="בטל SOS…" size="lg" block onPress={() => setConfirming(true)} />
       )}
     </View>

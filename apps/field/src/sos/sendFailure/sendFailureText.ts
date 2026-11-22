@@ -8,13 +8,13 @@ export const SEND_REASON: Record<SosSendFailure, string> = {
   refused: 'השרת לא קיבל אותו, ולכן המנהל והמחפשים לא קיבלו אותו.',
 };
 
-/** Whether holding the button again can help: it cannot once the activity ended or the user is not allowed. */
-export const canRetrySend = (failure: SosSendFailure) => failure === 'offline' || failure === 'refused';
+/** Whether trying again (sending or closing) can help: it cannot once the activity ended or the user is not allowed. */
+export const canRetry = (failure: SosSendFailure) => failure === 'offline' || failure === 'refused';
 
 /** Why closing the SOS failed; the SOS stays active in every case. */
 export const CLOSE_REASON: Record<SosSendFailure, string> = {
   offline: 'הסגירה לא הצליחה. בדוק את החיבור ונסה שוב. ה-SOS עדיין פעיל.',
   ended: 'הפעילות שלך הסתיימה, ולכן אי אפשר לסגור את ה-SOS מהטלפון הזה. ה-SOS עדיין פעיל; פנה למנהל.',
-  forbidden: 'אין לך הרשאה לסגור את ה-SOS הזה. רק המנהל או מי ששלח אותו יכולים לסגור אותו.',
+  forbidden: 'אין לך הרשאה לסגור את ה-SOS הזה. ה-SOS עדיין פעיל; פנה למנהל.',
   refused: 'הסגירה לא הצליחה, השרת לא קיבל אותה. נסה שוב. ה-SOS עדיין פעיל.',
 };
