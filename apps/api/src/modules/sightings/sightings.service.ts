@@ -125,6 +125,24 @@ async function findSighting(tx: Tx, missionId: string, sightingId: string): Prom
   return row;
 }
 
+/** The sighting already saved under this id, null when there is none; 409 when it belongs to another reporter or mission. */
+async function savedSighting(
+  tx: Tx,
+  id: string,
+  input: { missionId: string; reportedBy: string },
+): Promise<Sighting | null> {
+  const [existing] = await tx
+    .select({ missionId: sightings.missionId, reportedBy: sightings.reportedBy })
+    .from(sightings)
+    .where(eq(sightings.id, id));
+  if (!existing) return null;
+  if (existing.missionId !== input.missionId || existing.reportedBy !== input.reportedBy) {
+    throw new AppError(409, 'SIGHTING_ID_TAKEN', 'This sighting id is already used');
+  }
+  const row = await findSighting(tx, input.missionId, id);
+  return toSighting(row, await currentLkp(tx, input.missionId));
+}
+
 /**
  * Adds a sighting (UC-C04 by the commander, UC-F10 by a searcher). It shows on the map at once and never becomes the
  * LKP by itself (decision 59). A searcher must still take part in the mission (not ended). The phone makes the id, so
@@ -136,6 +154,10 @@ export async function createSighting(
   input: CreateSightingInput,
 ): Promise<{ sighting: Sighting; created: boolean }> {
   const result = await db.transaction(async (tx) => {
+    // A sighting already saved is answered as saved even if the mission ended since: the answer was lost, and
+    // refusing the retry would leave it stuck in the phone's queue.
+    const saved = input.id ? await savedSighting(tx, input.id, input) : null;
+    if (saved) return { sighting: saved, created: false };
     await lockLkp(tx, input.missionId);
     if (input.searcherId !== null) {
       const [participation] = await tx
@@ -165,17 +187,9 @@ export async function createSighting(
       const row = await findSighting(tx, input.missionId, inserted.id);
       return { sighting: toSighting(row, await currentLkp(tx, input.missionId)), created: true };
     }
-    const id = input.id;
-    if (!id) throw new Error('Sighting insert returned no row');
-    const [existing] = await tx
-      .select({ missionId: sightings.missionId, reportedBy: sightings.reportedBy })
-      .from(sightings)
-      .where(eq(sightings.id, id));
-    if (!existing || existing.missionId !== input.missionId || existing.reportedBy !== input.reportedBy) {
-      throw new AppError(409, 'SIGHTING_ID_TAKEN', 'This sighting id is already used');
-    }
-    const row = await findSighting(tx, input.missionId, id);
-    return { sighting: toSighting(row, await currentLkp(tx, input.missionId)), created: false };
+    const existing = input.id ? await savedSighting(tx, input.id, input) : null;
+    if (!existing) throw new Error('Sighting insert returned no row');
+    return { sighting: existing, created: false };
   });
   if (result.created)
     realtime.publish({ type: 'sighting.saved', missionId: input.missionId, sighting: result.sighting });

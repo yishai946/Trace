@@ -2,7 +2,7 @@ import { isCriticalReport, MAX_PHOTO_BYTES } from '@trace/domain';
 import { ApiError, Mission, Report, TimelineEvent, type MissionEvent } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { missions, reportPhotos, timelineEvents } from '../../db/schema';
+import { missions, participations, reportPhotos, timelineEvents } from '../../db/schema';
 import { addParticipant, signInSearcher } from '../../testing';
 import { ID, JPEG, body, setupReports } from './fixtures';
 
@@ -97,6 +97,26 @@ describe('field reports (UC-F09)', () => {
       const res = await send();
       expect(res.statusCode).toBe(409);
       expect(ApiError.parse(res.json()).error.code).toBe('MISSION_ENDED');
+    });
+
+    it('answers 200 with the saved report when a report sent before the mission ended is sent again', async () => {
+      const first = await send();
+      await setStatus('ended_stopped');
+      const again = await send();
+      expect(again.statusCode).toBe(200);
+      expect(again.json()).toEqual(first.json());
+      expect(await rows()).toHaveLength(1);
+    });
+
+    it('answers 200 with the saved report when the searcher finished the activity after sending it', async () => {
+      const first = await send();
+      await rt.ctx.db
+        .update(participations)
+        .set({ status: 'ended' })
+        .where(eq(participations.missionId, rt.mission.id));
+      const again = await send();
+      expect(again.statusCode).toBe(200);
+      expect(again.json()).toEqual(first.json());
     });
 
     it('takes a report in a paused mission', async () => {
