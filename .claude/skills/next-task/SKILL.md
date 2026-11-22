@@ -92,7 +92,7 @@ BLOCKING findings go to the implementer, then QA verifies once more. At most **2
 
 ## 6. Design deviations
 
-In every run (with or without `--merge`): never update the claude.ai artifacts, never run `/sync-design` for a deviation, and never edit `packages/design/source/`, `packages/design/wireframes/` or `packages/design/src/generated/` by hand. A screen may differ from the wireframe or Trace Console as long as the theme values themselves (colors, spacing, radius, sizes, typography in `@trace/design`) stay unchanged; a one-off difference needs no design update; listing it in the PR is optional.
+In every run (with or without `--merge`): never update the claude.ai artifacts, never run `/sync-design` for a deviation (a version sync is not a deviation), and never edit `packages/design/source/`, `packages/design/wireframes/` or `packages/design/src/generated/` by hand. A screen may differ from the wireframe or Trace Console as long as the theme values themselves (colors, spacing, radius, sizes, typography in `@trace/design`) stay unchanged; a one-off difference needs no design update; list in the PR only recurring or color changes (one-offs, including QA NOTES, may be omitted).
 
 Do not change theme values. If you want to change colors or a recurring element or pattern (not a one-off), do not change it and do not update the design system; flag it in the PR under **Design deviations** (screen, what differs, why, the token or component you would add). Deviations do not block the merge and need no `design-change` label; the design is updated by a human from these lists.
 
