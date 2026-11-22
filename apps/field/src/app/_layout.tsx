@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react-native';
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { ThemedStack } from '../components/ThemedStack';
@@ -8,17 +8,15 @@ import { ThemedStack } from '../components/ThemedStack';
 import { useOutboxSync } from '../tracking';
 import { applyDocumentDirection } from '../i18n/rtl';
 import { useNotifications } from '../notifications';
-import { initMonitoring, reportQueryError } from '../monitoring';
+import { initMonitoring } from '../monitoring';
+import { createQueryClient } from '../queryClient';
 import { useSession } from '../state/session';
 import { ThemeProvider } from '../theme';
 
 // Before anything renders, so errors from the first screen are caught. Does nothing without a Sentry DSN.
 initMonitoring();
 
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({ onError: reportQueryError }),
-  mutationCache: new MutationCache({ onError: reportQueryError }),
-});
+const queryClient = createQueryClient();
 
 function RootLayout() {
   // Sends the track points, sightings and reports kept on the device when the connection or the session allows (UC-S01).
