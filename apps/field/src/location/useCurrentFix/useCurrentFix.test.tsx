@@ -1,6 +1,6 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useCurrentFix } from '.';
+import { FIX_TIMEOUT_MS, useCurrentFix } from '.';
 
 const location = vi.hoisted(() => ({
   get: vi.fn(),
@@ -66,5 +66,19 @@ describe('useCurrentFix', () => {
     const { result } = renderHook(() => useCurrentFix({ prompt: false }));
     await waitFor(() => expect(result.current.state).toBe('ready'));
     expect(location.request).not.toHaveBeenCalled();
+  });
+
+  it('gives up and is unavailable when the phone takes too long for a fix', async () => {
+    vi.useFakeTimers();
+    try {
+      location.position.mockReturnValue(new Promise(() => {}));
+      const { result } = renderHook(() => useCurrentFix());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(FIX_TIMEOUT_MS);
+      });
+      expect(result.current).toEqual({ state: 'unavailable', fix: null });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
