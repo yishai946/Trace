@@ -77,6 +77,7 @@ describe('UpdateMissionDetailsBody', () => {
     ).toEqual({
       name: 'מסע 0412',
       missingPerson: { name: null, age: null, disappearedAt: null, description: 'מעיל חום', additionalInfo: null },
+      notifySearchers: false,
     });
   });
 
