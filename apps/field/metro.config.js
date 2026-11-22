@@ -2,4 +2,9 @@
 // then turns the upload off (docs/MONITORING.md).
 const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 
-module.exports = getSentryExpoConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
+
+// expo-sqlite's web build loads `wa-sqlite.wasm`; Metro bundles it as an asset only when `wasm` is an asset extension.
+config.resolver.assetExts.push('wasm');
+
+module.exports = config;

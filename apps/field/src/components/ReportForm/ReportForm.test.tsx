@@ -162,7 +162,10 @@ describe('ReportForm', () => {
     fill();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    await screen.findByText('הדיווח נשלח למנהל.');
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
     expect(fetch).toHaveBeenCalledTimes(1);
     const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe(`https://api.test/api/missions/${missionId}/reports`);
@@ -172,7 +175,7 @@ describe('ReportForm', () => {
       position: { type: 'Point', coordinates: [35.0139, 31.7412] },
       accuracy: 6,
     });
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/לא הגיע|לא התקבל/)).toBeNull();
     expect(await pending()).toEqual([]);
   });
 
@@ -245,7 +248,10 @@ describe('ReportForm', () => {
     fill();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    await screen.findByText('הדיווח נשלח למנהל.');
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
     expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST']);
     expect(camera.take).not.toHaveBeenCalled();
   });
@@ -262,7 +268,10 @@ describe('ReportForm', () => {
     expect(screen.getByLabelText('תצוגה מקדימה של התמונה המצורפת')).toBeInTheDocument();
     fireEvent.click(send());
 
-    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    await screen.findByText('הדיווח נשלח למנהל.');
+    expect(onDone).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה למפה' }));
+    expect(onDone).toHaveBeenCalledOnce();
     await waitFor(() =>
       expect(fetch.mock.calls.map((call) => (call[1] as RequestInit).method)).toEqual(['POST', 'PUT']),
     );
@@ -360,9 +369,9 @@ describe('ReportForm', () => {
     fireEvent.click(button);
     fireEvent.click(button);
 
-    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    await screen.findByText('הדיווח נשלח למנהל.');
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it('tells the searcher when the report could not be saved on the phone, and keeps the form', async () => {

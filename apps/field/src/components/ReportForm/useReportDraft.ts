@@ -5,11 +5,12 @@ import { useCurrentFix } from '../../location/useCurrentFix';
 import { type Delivery, newReportId, submitReport } from '../../reports/submit';
 import type { ReportPhotoValue } from '../ReportPhoto';
 
-export type ReportPhase = 'editing' | 'sending' | 'located-pending' | 'located-retrying' | 'rejected' | 'invalid';
+export type ReportPhase =
+  'editing' | 'sending' | 'sent' | 'located-pending' | 'located-retrying' | 'rejected' | 'invalid';
 
 /** The screen that says what became of the report, or null when it was sent or waits and the form is simply done. */
 function outcomePhase(delivery: Delivery, type: ReportType): ReportPhase | null {
-  if (delivery === 'rejected' || delivery === 'invalid') return delivery;
+  if (delivery === 'sent' || delivery === 'rejected' || delivery === 'invalid') return delivery;
   if (type !== 'located') return null;
   return delivery === 'pending' ? 'located-pending' : delivery === 'retrying' ? 'located-retrying' : null;
 }

@@ -1,6 +1,6 @@
 import type { CreateReportBody } from '@trace/schemas';
 import { getNetworkStateAsync } from 'expo-network';
-import { droppedReason, enqueue, isPending } from '../../outbox';
+import { droppedReason, enqueue, isPending, markDroppedSeen } from '../../outbox';
 import { uuidv7 } from '../../outbox/uuidv7';
 import { syncOutbox } from '../../tracking';
 
@@ -40,5 +40,7 @@ export async function submitReport({
   await syncOutbox();
   if (await isPending(report.id)) return 'retrying';
   const reason = droppedReason(report.id);
+  // The form says it right now, so the list of reports need not say it again.
+  if (reason) markDroppedSeen([report.id]);
   return reason === 'batch' ? 'invalid' : reason === 'mission' ? 'rejected' : 'sent';
 }

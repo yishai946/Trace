@@ -6,7 +6,7 @@ import type { OutboxItem, OutboxKind, OutboxSender, Row, SendOutcome } from './t
 import { uuidv7 } from './uuidv7';
 
 export { onOutboxChange } from './changes';
-export { droppedReason, wasDropped } from './dropped';
+export { droppedReason, markDroppedSeen, unseenDropped, wasDropped } from './dropped';
 export type { DroppedReason } from './dropped';
 export type { OutboxItem, OutboxKind, OutboxSender, SendOutcome } from './types';
 
@@ -157,6 +157,7 @@ async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Pr
         head.mission_id,
       );
       rememberDropped(
+        head.kind,
         ids.map((row) => row.id),
         'mission',
       );
@@ -166,7 +167,7 @@ async function flushOnce(senders: Partial<Record<OutboxKind, OutboxSender>>): Pr
       notifyChange();
     } else {
       const ids = items.map((item) => item.id);
-      if (outcome === 'drop-batch') rememberDropped(ids, 'batch');
+      if (outcome === 'drop-batch') rememberDropped(head.kind, ids, 'batch');
       await deleteIds(db, ids);
     }
   }

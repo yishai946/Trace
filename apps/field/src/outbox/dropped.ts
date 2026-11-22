@@ -6,15 +6,29 @@ const dropped = new Map<string, DroppedReason>();
 /** `batch`: the server will never take this item. `mission`: it takes nothing more of the mission (it ended, or access is gone). */
 export type DroppedReason = 'batch' | 'mission';
 
-export function rememberDropped(ids: string[], reason: DroppedReason): void {
+/** The dropped items nobody has told the searcher about yet, by id, with their kind. Not capped: none may go unsaid. */
+const unseen = new Map<string, string>();
+
+export function rememberDropped(kind: string, ids: string[], reason: DroppedReason): void {
   for (const id of ids) {
     dropped.delete(id);
     dropped.set(id, reason);
+    unseen.set(id, kind);
   }
   for (const id of dropped.keys()) {
     if (dropped.size <= DROPPED_MEMORY) break;
     dropped.delete(id);
   }
+}
+
+/** The ids of the items of this kind the server refused for good that the searcher has not been told about. */
+export function unseenDropped(kind: string): string[] {
+  return [...unseen].filter(([, itemKind]) => itemKind === kind).map(([id]) => id);
+}
+
+/** The searcher has been told about these items. */
+export function markDroppedSeen(ids: string[]): void {
+  for (const id of ids) unseen.delete(id);
 }
 
 /** Why the item with this id was dropped, or null when it was not. */
@@ -33,4 +47,5 @@ export function wasDropped(id: string): boolean {
 /** Forgets which items were dropped, e.g. at sign-out. */
 export function forgetDropped(): void {
   dropped.clear();
+  unseen.clear();
 }
