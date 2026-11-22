@@ -23,8 +23,12 @@ export function useMissionReports() {
     enabled: !!token && !!missionId && !!apiBaseUrl,
   });
   const data = query.data;
+  // Once the activity ended the phone was cleared: a later answer must not put the reports back.
+  const ended = useSession((s) => s.participation?.status === 'ended');
   useEffect(() => {
-    if (missionId && data) void saveReports(missionId, data);
-  }, [missionId, data]);
-  return withSaved(query, useSavedReports());
+    if (missionId && data && !ended) void saveReports(missionId, data);
+  }, [missionId, data, ended]);
+  const result = withSaved(query, useSavedReports());
+  // The list in memory is out of date too when the refresh after it failed.
+  return { ...result, notUpToDate: result.notUpToDate || (query.isError && data !== undefined) };
 }

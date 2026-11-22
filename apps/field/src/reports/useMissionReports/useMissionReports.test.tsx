@@ -1,12 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMissionReports } from '.';
 import { loadStep, saveStep } from '../../offline/store';
 import { ReportList } from '@trace/schemas';
 import { useSession } from '../../state/session';
-import { makeReport, MISSION_ID } from '../fixtures';
+import { assigned, makeReport, MISSION_ID } from '../fixtures';
 
 const wrapper = ({ children }: { children: ReactNode }) => (
   <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -90,5 +90,39 @@ describe('useMissionReports', () => {
     const { result } = renderHook(() => useMissionReports(), { wrapper });
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(result.current.data).toBeUndefined();
+  });
+
+  it('marks the list in memory not up to date when a later refresh fails', async () => {
+    const reports = [makeReport()];
+    let ok = true;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => (ok ? json(reports) : json({ error: { code: 'INTERNAL_ERROR', message: 'x' } }, 500))),
+    );
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const shared = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useMissionReports(), { wrapper: shared });
+    await waitFor(() => expect(result.current.data).toEqual(reports));
+    expect(result.current.notUpToDate).toBe(false);
+    ok = false;
+    await act(async () => {
+      await result.current.refetch();
+    });
+    await waitFor(() => expect(result.current.notUpToDate).toBe(true));
+    expect(result.current.data).toEqual(reports);
+  });
+
+  it('does not save the list again once the activity has ended', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json([makeReport()])),
+    );
+    useSession.setState({ participation: { ...assigned, status: 'ended' } });
+    const { result } = renderHook(() => useMissionReports(), { wrapper });
+    await waitFor(() => expect(result.current.data).toHaveLength(1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await loadStep(MISSION_ID, 'reports', ReportList)).toBeNull();
   });
 });
