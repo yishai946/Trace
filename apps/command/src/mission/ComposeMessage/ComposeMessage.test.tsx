@@ -203,4 +203,12 @@ describe('ComposeMessage', () => {
     expect(screen.getByText('אין מחפשים פעילים ביעד שנבחר.')).toBeInTheDocument();
     expect(send()).toBeDisabled();
   });
+
+  it('does not send a no-recipient target even when the form is submitted directly', () => {
+    const onSend = vi.fn();
+    render(<ComposeMessage {...composeProps({ onSend, participants: [] })} />);
+    fireEvent.change(text(), { target: { value: 'שלום' } });
+    fireEvent.submit(screen.getByRole('form', { name: 'הודעה חדשה' }));
+    expect(onSend).not.toHaveBeenCalled();
+  });
 });

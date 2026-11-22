@@ -61,7 +61,7 @@ export function useComposeMessage({
       formRef.current?.querySelector<HTMLElement>(first)?.focus();
       return;
     }
-    if (!onSend || inFlight.current) return;
+    if (!onSend || noRecipients || inFlight.current) return;
     inFlight.current = true;
     setDismissedError(null);
     onSend(toSendBody(form), (message) => {
