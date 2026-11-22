@@ -13,6 +13,9 @@ vi.mock('expo-crypto', () => ({
 // expo-sqlite is native only; tests use an in-memory database on node:sqlite.
 vi.mock('expo-sqlite', () => import('./sqlite'));
 
+// expo-battery is native only; by default the level is unknown (-1), so nothing is reported.
+vi.mock('expo-battery', () => ({ getBatteryLevelAsync: async () => -1 }));
+
 // `findBy*` and `waitFor` give up after 1 s by default. A full `pnpm check` runs every package's tests at once, and
 // on a loaded machine the first render of a screen (location fix, database, queries) can take longer than that.
 // The limit only matters when a test fails; a passing test still finishes as soon as its condition holds.
