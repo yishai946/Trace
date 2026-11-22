@@ -32,7 +32,7 @@ export function ReportForm({ missionId, polygonName, onCancel, onDone }: ReportF
     <Button label="ביטול" icon="close" variant="ghost" onPress={onCancel} disabled={phase === 'sending'} />
   );
 
-  if (phase === 'rejected' || phase === 'located-pending') {
+  if (phase === 'rejected' || phase === 'invalid' || phase === 'located-pending' || phase === 'located-retrying') {
     return <ReportOutcome outcome={phase} type={type} onDone={onDone} />;
   }
 

@@ -299,8 +299,56 @@ describe('ReportForm', () => {
     fireEvent.click(send());
 
     const warning = await screen.findByRole('alert');
-    expect(warning).toHaveTextContent('לא הגיע למנהל');
-    expect(warning).toHaveTextContent('השרת לא זמין');
+    expect(warning).toHaveTextContent('ייתכן שהמנהל עדיין לא יודע עליו');
+    expect(warning).toHaveTextContent('השרת לא אישר');
+    expect(warning).not.toHaveTextContent('אין חיבור');
+  });
+
+  it('says the server refused a report it rejected as invalid, not that the mission ended', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION_ERROR', message: 'bad' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('השרת דחה');
+    expect(warning).not.toHaveTextContent('הפעילות הסתיימה');
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('says the server refused a "הנעדר אותר" report it rejected as invalid', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION_ERROR', message: 'bad' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill('הנעדר אותר', 'נמצא ליד העץ');
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('השרת דחה');
+    expect(warning).toHaveTextContent('המנהל לא קיבל');
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it('finishes the form without a warning when a normal report is kept for a retry after a server error', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(500, { error: { code: 'INTERNAL_ERROR', message: 'boom' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    await waitFor(() => expect(onDone).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((await pending()).map((item) => item.kind)).toEqual(['report']);
   });
 
   it('saves one report when send is pressed twice', async () => {
