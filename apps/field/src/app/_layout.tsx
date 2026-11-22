@@ -7,6 +7,7 @@ import { ThemedStack } from '../components/ThemedStack';
 // (expo-task-manager); `useOutboxSync` is the hook that sends what is queued.
 import { useOutboxSync } from '../tracking';
 import { applyDocumentDirection } from '../i18n/rtl';
+import { useNotifications } from '../notifications';
 import { initMonitoring, reportQueryError } from '../monitoring';
 import { useSession } from '../state/session';
 import { ThemeProvider } from '../theme';
@@ -22,6 +23,8 @@ const queryClient = new QueryClient({
 function RootLayout() {
   // Sends the track points, sightings and reports kept on the device when the connection or the session allows (UC-S01).
   useOutboxSync();
+  // Registers the push token after sign-in and opens the screen a tapped notification names (UC-C14).
+  useNotifications();
   useEffect(() => {
     if (Platform.OS === 'web') applyDocumentDirection(document);
     // Reads the session saved on the device; the start screen waits for it (UC-F01).
