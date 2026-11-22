@@ -190,6 +190,7 @@
   height: var(--pending-touch-target);
 }
 
-.phone .check {
+.phone .check,
+.phone .polygonCheck {
   min-height: var(--pending-control-lg-h);
 }

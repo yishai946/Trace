@@ -1,5 +1,5 @@
 import { sameDay } from '../sameDay';
-import type { TimelineEventType } from '@trace/domain';
+import { detailChangesText, type TimelineEventType } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 
 export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'contact' | 'mission' | 'pause';
@@ -24,6 +24,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'contact.lost': 'contact',
   'mission.created': 'mission',
   'mission.ended': 'mission',
+  'mission.details_changed': 'mission',
   'lkp.changed': 'mission',
   'polygon.created': 'mission',
   'polygon.boundary_changed': 'mission',
@@ -153,6 +154,8 @@ export function describeEvent(event: TimelineEvent): EventView {
       return plain('השהיה', PAUSE_TEXT[event.type]);
     case 'mission.ended':
       return plain('מסע', endedText(event));
+    case 'mission.details_changed':
+      return plain('פרטי מסע', detailChangesText(event.details.fields));
     case 'lkp.changed':
       return plain('LKP', lkpText(event), 'map');
     case 'search.started':
@@ -169,4 +172,18 @@ export function describeEvent(event: TimelineEvent): EventView {
     default:
       return describePolygon(event, label);
   }
+}
+
+/** Whether an event is a change worth showing in "שינויים אחרונים" (Cd05): a details change, or an LKP that moved. */
+function isRecentChange(event: TimelineEvent): boolean {
+  if (event.type === 'lkp.changed') return event.details.previousObservedAt !== null;
+  return event.type === 'mission.details_changed';
+}
+
+/**
+ * The recent changes, newest first, from the Timeline as the API orders it (oldest first). The first LKP is the
+ * mission's creation, not a change.
+ */
+export function recentChanges(events: TimelineEvent[]): TimelineEvent[] {
+  return events.filter(isRecentChange).reverse();
 }

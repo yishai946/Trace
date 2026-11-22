@@ -206,6 +206,13 @@ describe('timeline', () => {
       const bySearcher = { role: 'searcher', userId: searcher.userId, searcherId: searcher.searcherId } as const;
       const byCommander = { role: 'commander', userId: commander.userId } as const;
       const samples: Record<TimelineEventType, RecordEventInput> = {
+        'mission.details_changed': {
+          missionId,
+          actor: byCommander,
+          type: 'mission.details_changed',
+          subject: subject('mission'),
+          details: { fields: ['description'] },
+        },
         'mission.created': {
           missionId,
           actor: byCommander,

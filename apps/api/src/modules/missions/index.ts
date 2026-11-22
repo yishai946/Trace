@@ -16,7 +16,8 @@ import { unsupportedPhoto } from '../../errors';
 import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import type { ServiceDeps } from '../serviceDeps';
 import { getMission, getMissionPhoto, listMissions } from './missions.read';
-import { createMission, setMissionPhoto, updateMissionDetails, updateRallyPoint } from './missions.service';
+import { updateMissionDetails } from './missions.details';
+import { createMission, setMissionPhoto, updateRallyPoint } from './missions.service';
 
 export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
   const { db } = deps;
@@ -93,14 +94,21 @@ export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
           'Replaces the mission name and the missing-person details; a field sent empty or null is cleared. ' +
           'Only the mission commander, while the mission is active or paused (decision 94): 409 MISSION_ENDED once ' +
           'it ended. Every member of the mission gets the new details at once; the others with the mission when they ' +
-          'reconnect.',
+          'reconnect. With notifySearchers true the change is significant (decision 34): the active ' +
+          'searchers of the mission get a push notification and the Timeline records mission.details_changed with the changed ' +
+          'fields. Without it nothing is recorded or sent (decision 54).',
         params: MissionParams,
         body: UpdateMissionDetailsBody,
         response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    (request) => updateMissionDetails(deps, request.params.missionId, request.body),
+    (request) =>
+      updateMissionDetails(deps, {
+        missionId: request.params.missionId,
+        actor: actorOf(request),
+        details: request.body,
+      }),
   );
 
   app.put(

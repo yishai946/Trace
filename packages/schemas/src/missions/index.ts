@@ -72,11 +72,13 @@ export const UpdateRallyPointBody = z.object({ rallyPoint: PointGeometry });
 
 /**
  * UC-C03: the commander's edited mission name and missing-person details. It replaces them all: a field sent empty
- * or null is cleared. The photo is replaced separately (`PUT /missions/:id/photo`).
+ * or null is cleared. The photo is replaced separately (`PUT /missions/:id/photo`). `notifySearchers` marks the change
+ * as significant (decision 34): the searchers get a push and the Timeline records it (decision 54).
  */
 export const UpdateMissionDetailsBody = z.object({
   name: MissionName,
   missingPerson: MissingPersonInput,
+  notifySearchers: z.boolean().default(false),
 });
 
 export const Mission = z

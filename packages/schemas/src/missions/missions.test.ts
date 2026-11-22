@@ -77,7 +77,17 @@ describe('UpdateMissionDetailsBody', () => {
     ).toEqual({
       name: 'מסע 0412',
       missingPerson: { name: null, age: null, disappearedAt: null, description: 'מעיל חום', additionalInfo: null },
+      notifySearchers: false,
     });
+  });
+
+  it('does not notify the searchers unless the commander says so', () => {
+    const body = (notifySearchers?: unknown) =>
+      UpdateMissionDetailsBody.safeParse({ name: 'מסע', missingPerson: {}, notifySearchers });
+    expect(body().data?.notifySearchers).toBe(false);
+    expect(body(true).data?.notifySearchers).toBe(true);
+    expect(body('yes').success).toBe(false);
+    expect(body(1).success).toBe(false);
   });
 
   it('rejects an impossible age or a time without an offset', () => {

@@ -1,4 +1,5 @@
 import type { MissionView } from '../../mission/MissionNav';
+import type { ConsolePanel } from './useConsoleNav';
 import {
   useLkps,
   useMessages,
@@ -12,15 +13,16 @@ import {
 
 /**
  * Everything the open mission's screens read. It is fetched here, once, so moving between the views does not fetch it
- * again. The Timeline and the messages load when their view first opens.
+ * again. The Timeline loads when its view or the mission details first open (the details list its recent changes), and
+ * the messages when their view first opens.
  */
-export function useMissionData(missionId: string | undefined, view: MissionView) {
+export function useMissionData(missionId: string | undefined, view: MissionView, panel: ConsolePanel | null) {
   return {
     polygons: usePolygons(missionId),
     participants: useParticipants(missionId),
     sightings: useSightings(missionId),
     lkps: useLkps(missionId),
-    timeline: useTimeline(view === 'timeline' ? missionId : undefined),
+    timeline: useTimeline(view === 'timeline' || panel === 'details' ? missionId : undefined),
     messages: useMessages(view === 'messages' ? missionId : undefined),
     // Always loaded: the map draws them, the navigation counts the New ones and the alert needs the located one.
     reports: useReports(missionId),

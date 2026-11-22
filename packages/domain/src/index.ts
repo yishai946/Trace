@@ -2,6 +2,7 @@ export * from './callsign';
 export * from './joinCode';
 export * from './localTime';
 export * from './message';
+export * from './missionDetails';
 export * from './mission';
 export * from './participation';
 export * from './phone';

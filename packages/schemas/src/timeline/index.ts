@@ -1,8 +1,10 @@
-import { TIMELINE_EVENT_TYPES } from '@trace/domain';
+import { MISSION_DETAIL_FIELDS, TIMELINE_EVENT_TYPES } from '@trace/domain';
 import { z } from 'zod';
 import { IsoDateTime } from '../datetime';
 
 const callsign = z.number().int().min(0).max(99);
+
+export const MissionDetailField = z.enum(MISSION_DETAIL_FIELDS).meta({ id: 'MissionDetailField' });
 
 export const TimelineEventType = z.enum(TIMELINE_EVENT_TYPES).meta({ id: 'TimelineEventType' });
 
@@ -49,6 +51,15 @@ export const TimelineEvent = z
       ...base,
       type: z.literal('mission.ended'),
       details: z.object({ outcome: z.enum(['located', 'stopped']) }),
+    }),
+    /**
+     * Subject: the mission (label = its name after the change). Actor: the commander. Only when the commander chose to
+     * notify the searchers (decisions 34, 54). `fields`: what changed, may be empty.
+     */
+    z.object({
+      ...base,
+      type: z.literal('mission.details_changed'),
+      details: z.object({ fields: z.array(MissionDetailField) }),
     }),
     /** Subject: the LKP (label null). Actor: the commander or a searcher. */
     z.object({

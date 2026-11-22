@@ -59,14 +59,17 @@ describe('validate', () => {
 describe('toUpdateBody', () => {
   it('trims text, turns blanks into null and converts the age and the time', () => {
     expect(
-      toUpdateBody({
-        name: ' מסע 0412 ',
-        personName: '  ',
-        age: ' 75 ',
-        disappearedAt: '2026-10-03T11:20',
-        description: ' מעיל חום ',
-        additionalInfo: '',
-      }),
+      toUpdateBody(
+        {
+          name: ' מסע 0412 ',
+          personName: '  ',
+          age: ' 75 ',
+          disappearedAt: '2026-10-03T11:20',
+          description: ' מעיל חום ',
+          additionalInfo: '',
+        },
+        false,
+      ),
     ).toEqual({
       name: 'מסע 0412',
       missingPerson: {
@@ -76,8 +79,14 @@ describe('toUpdateBody', () => {
         description: 'מעיל חום',
         additionalInfo: null,
       },
+      notifySearchers: false,
     });
-    expect(toUpdateBody(form({ age: '' })).missingPerson.age).toBeNull();
+    expect(toUpdateBody(form({ age: '' }), false).missingPerson.age).toBeNull();
+  });
+
+  it("carries the commander's choice to notify the searchers", () => {
+    expect(toUpdateBody(form(), true).notifySearchers).toBe(true);
+    expect(toUpdateBody(form(), false).notifySearchers).toBe(false);
   });
 });
 

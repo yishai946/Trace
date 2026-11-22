@@ -209,6 +209,17 @@ describe('useMissionLive', () => {
     await waitFor(() => expect(result.current.timeline).toEqual([earlier, e1, tie, e2]));
   });
 
+  it('adds a recorded change of the mission details to the open Timeline', async () => {
+    serverTimeline = [];
+    const { result } = setup();
+    const socket = sockets[0] as FakeSocket;
+    const changed: TimelineEvent = { ...eventSamples['mission.details_changed'], missionId };
+    await waitFor(() => expect(result.current.timeline).toEqual([]));
+
+    act(() => socket.fire('mission:event', { type: 'timeline.recorded', missionId, event: changed }));
+    await waitFor(() => expect(result.current.timeline).toEqual([changed]));
+  });
+
   it('keeps a Timeline event that arrives while the first fetch is in flight', async () => {
     let open: () => void = () => {};
     timelineGate = new Promise((resolve) => (open = resolve));
