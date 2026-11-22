@@ -299,8 +299,25 @@ describe('ReportForm', () => {
     fireEvent.click(send());
 
     const warning = await screen.findByRole('alert');
-    expect(warning).toHaveTextContent('לא הגיע למנהל');
-    expect(warning).toHaveTextContent('השרת לא זמין');
+    expect(warning).toHaveTextContent('המנהל לא יודע עליו');
+    expect(warning).toHaveTextContent('השרת לא קיבל');
+    expect(warning).not.toHaveTextContent('אין חיבור');
+  });
+
+  it('says the server refused a report it rejected as invalid, not that the mission ended', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json(400, { error: { code: 'VALIDATION_ERROR', message: 'bad' } })),
+    );
+    const { onDone } = setup();
+    await ready();
+    fill();
+    fireEvent.click(send());
+
+    const warning = await screen.findByRole('alert');
+    expect(warning).toHaveTextContent('השרת דחה');
+    expect(warning).not.toHaveTextContent('הפעילות הסתיימה');
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it('saves one report when send is pressed twice', async () => {

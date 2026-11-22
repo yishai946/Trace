@@ -1,14 +1,16 @@
 import type { CreateReportBody } from '@trace/schemas';
 import { getNetworkStateAsync } from 'expo-network';
-import { enqueue, isPending, wasDropped } from '../../outbox';
+import { droppedReason, enqueue, isPending } from '../../outbox';
 import { uuidv7 } from '../../outbox/uuidv7';
 import { syncOutbox } from '../../tracking';
 
 /**
- * `sent`: the server has the report. `pending`: it waits on the phone and goes out when the connection is back.
- * `rejected`: the server refused it for good (the mission ended, or access is gone) and the phone dropped it.
+ * `sent`: the server has the report. `pending`: there is no connection; it waits on the phone and goes out when the
+ * connection is back. `retrying`: the phone is online but the send failed (server error, timeout); it waits and is sent
+ * again. `rejected`: the server refused it for good because the mission or the searcher's activity ended. `invalid`:
+ * the server refused this report itself (400, or its id is taken). The phone dropped both kinds of refusal.
  */
-export type Delivery = 'sent' | 'pending' | 'rejected';
+export type Delivery = 'sent' | 'pending' | 'retrying' | 'rejected' | 'invalid';
 
 /** A new report's id: a UUIDv7 made on the phone, so a send repeated after a lost answer saves it once. */
 export const newReportId = uuidv7;
@@ -36,6 +38,7 @@ export async function submitReport({
   const network = await getNetworkStateAsync();
   if (!network.isConnected || network.isInternetReachable === false) return 'pending';
   await syncOutbox();
-  if (await isPending(report.id)) return 'pending';
-  return wasDropped(report.id) ? 'rejected' : 'sent';
+  if (await isPending(report.id)) return 'retrying';
+  const reason = droppedReason(report.id);
+  return reason === 'batch' ? 'invalid' : reason === 'mission' ? 'rejected' : 'sent';
 }
