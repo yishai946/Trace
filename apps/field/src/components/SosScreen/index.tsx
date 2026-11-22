@@ -41,7 +41,7 @@ export function SosScreen() {
           <SosActive
             sos={active}
             closing={close.isPending}
-            closeFailed={close.isError}
+            closeFailure={sosSendFailure(close.error)}
             onClose={() => close.mutate(active.id)}
           />
         ) : (

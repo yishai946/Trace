@@ -149,9 +149,64 @@ describe('SosScreen activation', () => {
     await waitFor(() => expect(posts('/sos')).toHaveLength(2));
   });
 
+  it.each([
+    ['PARTICIPATION_ENDED', 409, /הפעילות שלך הסתיימה/],
+    ['FORBIDDEN', 403, /אין לך הרשאה/],
+  ])('says why when sending fails with %s and still offers the emergency call', async (code, status, text) => {
+    fetchMock.mockImplementation(async (url: string, init?: { method?: string }) =>
+      String(url).endsWith('/sos') && init?.method === 'POST'
+        ? json({ error: { code, message: 'x' } }, status)
+        : json([]),
+    );
+    view();
+    hold(SOS_HOLD_MS);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(text);
+    expect(alert).not.toHaveTextContent(/אין חיבור/);
+    expect(screen.getByRole('button', { name: /חירום 112/ })).toBeInTheDocument();
+  });
+
   it('limits the message to the allowed length', () => {
     view();
     expect(screen.getByLabelText('הודעה קצרה (אופציונלי)')).toHaveAttribute('maxlength', '500');
+  });
+});
+
+describe('SosScreen close errors', () => {
+  const failClose = (status: number, code: string) => {
+    existing = [makeSos()];
+    fetchMock.mockImplementation(async (url: string, init?: { method?: string }) =>
+      String(url).endsWith('/close')
+        ? json({ error: { code, message: 'x' } }, status)
+        : String(url).endsWith('/sos') && init?.method !== 'POST'
+          ? json(existing)
+          : json([]),
+    );
+  };
+  const tryClose = async () => {
+    view();
+    fireEvent.click(await screen.findByRole('button', { name: 'בטל SOS…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'כן, סגור את ה-SOS' }));
+  };
+
+  it.each([
+    ['PARTICIPATION_ENDED', 409, /הפעילות שלך הסתיימה/],
+    ['FORBIDDEN', 403, /אין לך הרשאה לסגור/],
+  ])('says why closing fails with %s', async (code, status, text) => {
+    failClose(status, code);
+    await tryClose();
+    expect(await screen.findByRole('alert')).toHaveTextContent(text);
+    expect(screen.queryByText(/בדוק את החיבור/)).toBeNull();
+  });
+
+  it('asks to check the connection when closing fails with no connection', async () => {
+    failClose(500, 'INTERNAL_ERROR');
+    fetchMock.mockImplementation(async (url: string, init?: { method?: string }) => {
+      if (String(url).endsWith('/close')) throw new TypeError('Network request failed');
+      return String(url).endsWith('/sos') && init?.method !== 'POST' ? json(existing) : json([]);
+    });
+    await tryClose();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/בדוק את החיבור/);
   });
 });
 

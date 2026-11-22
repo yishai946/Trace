@@ -16,9 +16,20 @@ describe('sosSendFailure', () => {
     expect(sosSendFailure(error)).toBe('offline');
   });
 
+  it('is ended when the activity of the searcher has ended (409 PARTICIPATION_ENDED)', () => {
+    expect(sosSendFailure(new ApiRequestError(409, 'PARTICIPATION_ENDED', 'x'))).toBe('ended');
+  });
+
+  it('is forbidden when the server refuses the searcher (403)', () => {
+    expect(sosSendFailure(new ApiRequestError(403, 'FORBIDDEN', 'x'))).toBe('forbidden');
+  });
+
+  it('is refused for another conflict', () => {
+    expect(sosSendFailure(new ApiRequestError(409, 'MISSION_ENDED', 'x'))).toBe('refused');
+  });
+
   it.each([
     ['a server error', new ApiRequestError(500, 'INTERNAL_ERROR', 'x')],
-    ['a refusal', new ApiRequestError(403, 'FORBIDDEN', 'x')],
     ['an answer that does not parse', new ZodError([])],
     ['an unknown error', new Error('x')],
   ])('is refused for %s', (_, error) => {
