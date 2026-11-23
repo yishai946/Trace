@@ -181,4 +181,11 @@ describe('assigning from the pool (UC-C09)', () => {
     fireEvent.click(within(first).getByRole('button', { name: 'פרטי דנה כהן' }));
     expect(onOpen).toHaveBeenCalledWith(dana.id);
   });
+
+  it('shows the last update, which may be a battery report, beside Offline (UC-C10)', () => {
+    const later = '2026-10-03T15:30:00.000Z';
+    const offline = { ...dana, offline: true, lastUpdateAt: later };
+    render(<SearchersPage {...props({ participants: [offline] })} />);
+    expect(within(rows()[0] as HTMLElement).getByText(timeLabel(later))).toBeTruthy();
+  });
 });
