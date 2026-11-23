@@ -100,11 +100,12 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
         })),
       );
       return;
-    case 'participant.tracked':
+    case 'participant.tracked': {
       // Only a route the commander opened is patched (an updater that returns nothing leaves the cache alone); a
       // closed one is fetched whole when opened.
+      const key = missionKeys.track(missionId, event.participantId);
       queryClient.setQueryData<ParticipantTrack>(
-        missionKeys.track(missionId, event.participantId),
+        key,
         (track) =>
           track && {
             ...track,
@@ -114,7 +115,13 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
             ],
           },
       );
+      // A fetch in flight may have read the server before these points: fetch again instead of trusting it.
+      // (Cancelled first: a first fetch in flight is otherwise reused by the refetch.)
+      if (queryClient.isFetching({ queryKey: key })) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+      }
       return;
+    }
     case 'participant.updated':
       participants(replaceById(event.participant));
       return;

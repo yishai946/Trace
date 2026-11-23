@@ -1,6 +1,6 @@
 import type { Participant, ParticipantTrack } from '@trace/schemas';
-import { QueryClient } from '@tanstack/react-query';
-import { describe, expect, it } from 'vitest';
+import { QueryClient, QueryObserver } from '@tanstack/react-query';
+import { describe, expect, it, vi } from 'vitest';
 import { mission, participants } from '../mission/fixtures';
 import { missionKeys } from '../mission/missionQueries';
 import { applyEvent } from './applyEvent';
@@ -61,6 +61,28 @@ describe('applyEvent: searchers', () => {
     applyEvent(queryClient, { type: 'participant.tracked', missionId, participantId, points: [point(2), point(3)] });
 
     expect(queryClient.getQueryData<ParticipantTrack>(key)?.points).toEqual([point(1), point(2), point(3)]);
+  });
+
+  it('fetches the route again when points arrive while it is being fetched', async () => {
+    const queryClient = new QueryClient();
+    const key = missionKeys.track(missionId, participantId);
+    let fetches = 0;
+    let release = () => {};
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const observer = new QueryObserver(queryClient, {
+      queryKey: key,
+      queryFn: async () => {
+        fetches += 1;
+        await gate;
+        return { participantId, points: [] };
+      },
+    });
+    const unsubscribe = observer.subscribe(() => undefined);
+    await vi.waitFor(() => expect(queryClient.isFetching({ queryKey: key })).toBe(1));
+    applyEvent(queryClient, { type: 'participant.tracked', missionId, participantId, points: [point(1)] });
+    release();
+    await vi.waitFor(() => expect(fetches).toBe(2));
+    unsubscribe();
   });
 
   it('leaves a route that was never opened alone', () => {
