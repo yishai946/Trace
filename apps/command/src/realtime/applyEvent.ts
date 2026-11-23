@@ -4,6 +4,7 @@ import type {
   MissionEvent,
   MissionPolygon,
   Participant,
+  ParticipantTrack,
   Sighting,
   TimelineEvent,
 } from '@trace/schemas';
@@ -20,7 +21,11 @@ import {
   type ListUpdate,
   type MissionCacheShape,
 } from '@trace/mission-cache';
+import { OFFLINE_AFTER_MS } from '@trace/domain';
 import { missionKeys } from '../mission/missionQueries';
+
+const later = (a: string | null, b: string) => (a && Date.parse(a) > Date.parse(b) ? a : b);
+const isRecent = (iso: string) => Date.now() - Date.parse(iso) <= OFFLINE_AFTER_MS;
 
 /** Command keeps every mission in one list (`missionKeys.all`). */
 const missionList: MissionCacheShape = {
@@ -84,9 +89,39 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
       return;
     case 'participant.moved':
       participants(
-        patchById(event.participantId, (p) => ({ ...p, position: event.position, positionAt: event.positionAt })),
+        // A position is an update, so a searcher shown as Offline is online again (UC-C10, decision 13).
+        patchById(event.participantId, (p) => ({
+          ...p,
+          position: event.position,
+          positionAt: event.positionAt,
+          lastUpdateAt: later(p.lastUpdateAt, event.positionAt),
+          // A late batch of old fixes does not bring a searcher back online.
+          offline: p.offline && !isRecent(event.positionAt),
+        })),
       );
       return;
+    case 'participant.tracked': {
+      // Only a route the commander opened is patched (an updater that returns nothing leaves the cache alone); a
+      // closed one is fetched whole when opened.
+      const key = missionKeys.track(missionId, event.participantId);
+      queryClient.setQueryData<ParticipantTrack>(
+        key,
+        (track) =>
+          track && {
+            ...track,
+            points: [
+              ...track.points,
+              ...event.points.filter((n) => !track.points.some((p) => p.recordedAt === n.recordedAt)),
+            ],
+          },
+      );
+      // A fetch in flight may have read the server before these points: fetch again instead of trusting it.
+      // (Cancelled first: a first fetch in flight is otherwise reused by the refetch.)
+      if (queryClient.isFetching({ queryKey: key })) {
+        void queryClient.cancelQueries({ queryKey: key }).then(() => queryClient.invalidateQueries({ queryKey: key }));
+      }
+      return;
+    }
     case 'participant.updated':
       participants(replaceById(event.participant));
       return;

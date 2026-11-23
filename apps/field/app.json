@@ -14,6 +14,7 @@
       }
     },
     "android": {
+      "package": "com.yishai946.tracefield",
       "adaptiveIcon": {
         "backgroundColor": "#16181b",
         "foregroundImage": "./assets/android-icon-foreground.png",

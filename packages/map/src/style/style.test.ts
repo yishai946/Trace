@@ -117,3 +117,65 @@ describe('map style options', () => {
     expect(style.layers.map((l) => l.id)).not.toContain('contour-lines');
   });
 });
+
+const views = [
+  { base: 'map', color: 'bw' },
+  { base: 'map', color: 'color' },
+  { base: 'satellite', color: 'bw' },
+] as const;
+
+describe.each(themeIds.flatMap((themeId) => views.map((view) => ({ themeId, view }))))(
+  'map view $view.base/$view.color ($themeId)',
+  ({ themeId, view }) => {
+    const style = buildMapStyle({ themeId, provider, terrain: allTerrain, data: sampleData, view });
+    const ids = style.layers.map((l) => l.id);
+
+    it('is valid and uses only theme colors', () => {
+      expect(validateStyleMin(style)).toEqual([]);
+      const tokens = new Set(Object.values(themes[themeId].color));
+      for (const color of colorsIn(style.layers)) expect(tokens).toContain(color);
+    });
+
+    it('keeps the mission overlays and the labels in every view', () => {
+      expect(ids).toContain('mission-polygon-fill');
+      expect(ids).toContain('mission-lkp');
+      expect(ids).toContain('road-major');
+    });
+
+    it('draws imagery only for the satellite base, under the roads and the mission', () => {
+      const satellite = ids.indexOf('satellite');
+      if (view.base !== 'satellite') {
+        expect(satellite).toBe(-1);
+        expect(style.sources['trace-satellite']).toBeUndefined();
+        expect(ids).toContain('landcover-wood');
+        return;
+      }
+      expect(satellite).toBeGreaterThan(ids.indexOf('background'));
+      expect(satellite).toBeLessThan(ids.indexOf('road-major'));
+      expect(satellite).toBeLessThan(ids.indexOf('mission-polygon-fill'));
+      expect(ids).not.toContain('landcover-wood');
+      expect(ids).not.toContain('hillshade');
+      expect(style.sources['trace-satellite']).toMatchObject({ type: 'raster', maxzoom: provider.satelliteMaxZoom });
+    });
+
+    it('colors woods and water only in the colored map', () => {
+      if (view.base === 'satellite') return;
+      const wood = style.layers.find((l) => l.type === 'fill' && l.id === 'landcover-wood');
+      const color = wood?.type === 'fill' ? wood.paint?.['fill-color'] : undefined;
+      expect(color).toBe(view.color === 'color' ? themes[themeId].color.success : themes[themeId].color.inkFaint);
+    });
+  },
+);
+
+describe('map view default', () => {
+  it('is the black and white map', () => {
+    const withView = buildMapStyle({
+      themeId: 'day',
+      provider,
+      terrain: allTerrain,
+      view: { base: 'map', color: 'bw' },
+    });
+    const without = buildMapStyle({ themeId: 'day', provider, terrain: allTerrain });
+    expect(without).toEqual(withView);
+  });
+});

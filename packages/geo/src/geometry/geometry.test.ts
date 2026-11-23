@@ -8,6 +8,7 @@ import {
   findOutside,
   isInsidePolygon,
   isValidPolygon,
+  routeLengthMeters,
 } from '.';
 
 describe('geometry', () => {
@@ -126,5 +127,19 @@ describe('geometry', () => {
       const b: [number, number] = [35.2, 31.9];
       expect(distanceMeters(a, b)).toBeCloseTo(distanceMeters(b, a), 6);
     });
+  });
+});
+
+describe('routeLengthMeters', () => {
+  it('is 0 for no point and for one point', () => {
+    expect(routeLengthMeters([])).toBe(0);
+    expect(routeLengthMeters([[35, 31.7]])).toBe(0);
+  });
+
+  it('adds the distance between consecutive points', () => {
+    const a: [number, number] = [35, 31.7];
+    const b: [number, number] = [35.01, 31.7];
+    const c: [number, number] = [35.01, 31.71];
+    expect(routeLengthMeters([a, b, c])).toBeCloseTo(distanceMeters(a, b) + distanceMeters(b, c), 6);
   });
 });

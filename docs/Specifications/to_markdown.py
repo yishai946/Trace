@@ -123,10 +123,8 @@ def use_case_spec() -> list[tuple[str, str]]:
 
 def xlsx_sheets(path: Path) -> list[tuple[str, list[list[str]]]]:
     z = zipfile.ZipFile(path)
-    strings = [
-        unescape(re.sub(r"<[^>]+>", "", s))
-        for s in re.findall(r"<(?:x:)?si>.*?</(?:x:)?si>", z.read("xl/sharedStrings.xml").decode("utf-8"), re.S)
-    ]
+    shared = z.read("xl/sharedStrings.xml").decode("utf-8") if "xl/sharedStrings.xml" in z.namelist() else ""
+    strings = [unescape(re.sub(r"<[^>]+>", "", s)) for s in re.findall(r"<(?:x:)?si>.*?</(?:x:)?si>", shared, re.S)]
     workbook = z.read("xl/workbook.xml").decode("utf-8")
     rels = z.read("xl/_rels/workbook.xml.rels").decode("utf-8")
     targets = dict(re.findall(r'Target="/?([^"]+)"[^>]*Id="([^"]+)"', rels))

@@ -21,6 +21,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'sos.closed': 'sos',
   'coverage.threshold_reached': 'coverage',
   'contact.lost': 'contact',
+  'contact.restored': 'contact',
   'mission.created': 'mission',
   'mission.ended': 'mission',
   'mission.details_changed': 'mission',
@@ -107,9 +108,10 @@ function reportSegments(event: EventOf<'report.submitted'>, label: string): Segm
   return who.length ? [`${label}, מ-`, ...who] : [label];
 }
 
-function contactSegments(event: EventOf<'contact.lost'>, label: string): Segment[] {
+function contactSegments(event: EventOf<'contact.lost'> | EventOf<'contact.restored'>, label: string): Segment[] {
   const { callsign } = event.subject;
-  return ['אבד קשר עם ', ...(callsign === null ? [label] : [{ callsign }, ` ${label}`])];
+  const who = callsign === null ? [label] : [{ callsign }, ` ${label}`];
+  return event.type === 'contact.lost' ? ['אבד קשר עם ', ...who] : ['הקשר עם ', ...who, ' חזר'];
 }
 
 const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] => [
@@ -188,6 +190,7 @@ export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): Eve
     case 'coverage.threshold_reached':
       return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
     case 'contact.lost':
+    case 'contact.restored':
       return segmented('קשר', contactSegments(event, label));
     case 'sos.activated':
     case 'sos.closed':

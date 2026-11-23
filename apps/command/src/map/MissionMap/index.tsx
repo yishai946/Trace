@@ -1,16 +1,25 @@
 import type { Bounds, LngLat, Polygon } from '@trace/geo';
 import type { ThemeId } from '@trace/design';
-import { buildMapStyle, type MapProvider, type MissionMapData, type TerrainOptions } from '@trace/map';
+import {
+  buildMapStyle,
+  SATELLITE_SOURCE,
+  type MapProvider,
+  type MissionMapData,
+  type TerrainOptions,
+} from '@trace/map';
 import { Map as MapLibreMap } from 'maplibre-gl';
 import '../maplibre-worker';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { TerraDraw } from 'terra-draw';
 import { preloadMapIcons, registerMapIcons } from '../icons';
 import type { MapTool } from '../MapToolbar';
 import { bindMapEvents } from './mapEvents';
 import { MapControls } from './MapControls';
-import { FIT_BOUNDS_PADDING_PX, useMapSync } from './useMapSync';
+import { MapNotices } from './MapNotices';
+import { searchAreaFocus } from '../focusTargets';
+import { FIT_BOUNDS_PADDING_PX, moveMapTo, useMapSync } from './useMapSync';
+import { useMapView } from './useMapView';
 import { useDrawMode } from './useDrawMode';
 import { createDraw } from './createDraw';
 import styles from './MissionMap.module.css';
@@ -21,9 +30,9 @@ export interface MapFocus {
   bounds?: Bounds;
 }
 
-/** What a click on an LKP, sighting or report symbol hit. The current LKP has the id `lkp`. */
+/** What a click on an LKP, sighting, report or searcher symbol hit. The current LKP has the id `lkp`; a searcher's id is the participant's. */
 export interface PointTarget {
-  kind: 'lkp' | 'sighting' | 'report';
+  kind: 'lkp' | 'sighting' | 'report' | 'searcher';
   id: string;
 }
 
@@ -45,7 +54,7 @@ interface MissionMapProps {
   onEditChange?: (geometry: Polygon) => void;
   /** A click on the map while placing a point, such as the LKP or rally point. Turns off polygon selection. */
   onMapClick?: (point: LngLat) => void;
-  /** A click on an LKP or sighting symbol in selection mode. */
+  /** A click on an LKP, sighting, report or searcher symbol in selection mode. */
   onPointSelect?: (target: PointTarget) => void;
   /** Starts or ends adding a sighting from the toolbar. Without it that tool is disabled. */
   onSighting?: () => void;
@@ -83,6 +92,9 @@ export function MissionMap({
   const onPointSelectRef = useRef(onPointSelect);
   const editFeatureRef = useRef<string | null>(null);
   const toolRef = useRef<MapTool>('select');
+  const mapView = useMapView();
+  const { view } = mapView;
+  const onSatelliteErrorRef = useRef(mapView.onSatelliteError);
 
   const [ready, setReady] = useState(false);
   const [tool, setTool] = useState<MapTool>('select');
@@ -96,11 +108,12 @@ export function MissionMap({
     onMapClickRef.current = onMapClick;
     onPointSelectRef.current = onPointSelect;
     toolRef.current = tool;
+    onSatelliteErrorRef.current = mapView.onSatelliteError;
   });
 
   const style = () => {
     const web = getWebTerrainSources(provider);
-    return buildMapStyle({ themeId, provider, terrain, data: dataRef.current, ...web });
+    return buildMapStyle({ themeId, provider, terrain, view, data: dataRef.current, ...web });
   };
 
   // Create the map once.
@@ -125,7 +138,16 @@ export function MissionMap({
       mapRef.current = created;
       registerMapIcons(created);
 
-      bindMapEvents(created, { toolRef, editFeatureRef, onMapClickRef, onPointSelectRef, onSelectRef }, setCursor);
+      bindMapEvents(
+        created,
+        { dataRef, toolRef, editFeatureRef, onMapClickRef, onPointSelectRef, onSelectRef },
+        setCursor,
+      );
+
+      // Imagery that cannot load (provider or network) sends the map back to its base map.
+      created.on('error', (e) => {
+        if ('sourceId' in e && e.sourceId === SATELLITE_SOURCE) onSatelliteErrorRef.current();
+      });
 
       created.once('load', () => {
         const draw = createDraw(created, themeId, { editFeatureRef, onEditChangeRef, onDrawnRef });
@@ -145,7 +167,9 @@ export function MissionMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- creating the map again on a prop change would reset it
   }, []);
 
-  useMapSync({ mapRef, drawRef, ready, themeId, terrain, data, focus, style });
+  useMapSync({ mapRef, drawRef, ready, themeId, terrain, view, data, focus, style });
+
+  const searchArea = useMemo(() => searchAreaFocus(data), [data]);
 
   const editingId = editing?.polygonId ?? null;
   const placing = !!onMapClick;
@@ -164,15 +188,17 @@ export function MissionMap({
           sightingActive={sightingActive}
           terrain={terrain}
           onTerrainChange={setTerrain}
+          view={mapView.view}
+          onViewChange={mapView.change}
+          satelliteAvailable={!!provider.satelliteTilesTemplate}
+          onSearchArea={searchArea ? () => mapRef.current && moveMapTo(mapRef.current, searchArea) : undefined}
           cursor={cursor}
           onZoomIn={() => mapRef.current?.zoomIn()}
           onZoomOut={() => mapRef.current?.zoomOut()}
         />
       )}
 
-      {tool === 'polygon' && !editingId && (
-        <p className={styles.hint}>לחץ על המפה להוספת נקודות. לחץ על הנקודה הראשונה לסגירה.</p>
-      )}
+      <MapNotices tool={tool} editing={!!editingId} satelliteFailed={mapView.satelliteFailed} />
     </div>
   );
 }

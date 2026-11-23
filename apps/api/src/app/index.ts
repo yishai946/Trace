@@ -29,6 +29,7 @@ import { sightingRoutes } from '../modules/sightings';
 import { sosRoutes } from '../modules/sos';
 import { searcherRoutes } from '../modules/searchers';
 import { timelineRoutes } from '../modules/timeline';
+import { startConnectivityMonitor } from '../modules/timeline/timeline.connectivity';
 import { trackingRoutes } from '../modules/tracking';
 import type { ServiceDeps } from '../modules/serviceDeps';
 import { createRealtime } from '../realtime';
@@ -45,11 +46,24 @@ interface AppOptions {
   pushSender?: PushSender;
   /** Where log lines go instead of stdout. Tests pass one to read them. */
   logStream?: LogStream;
+  /** How often to record searchers going Offline or coming back (UC-C10). Off when omitted, so tests run the check themselves. */
+  connectivityCheckMs?: number;
 }
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
-export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSender, logStream }: AppOptions) {
-  const app = Fastify(serverLogOptions(env, logStream)).withTypeProvider<ZodTypeProvider>();
+export async function buildApp({
+  env,
+  db,
+  sendOtp,
+  realtimeRevalidateMs,
+  pushSender,
+  logStream,
+  connectivityCheckMs,
+}: AppOptions) {
+  const app = Fastify({
+    ...serverLogOptions(env, logStream),
+    trustProxy: env.TRUST_PROXY,
+  }).withTypeProvider<ZodTypeProvider>();
   const auth = createAuth({
     env,
     db,
@@ -80,6 +94,10 @@ export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSen
   });
 
   const deps: ServiceDeps = { db, realtime, push, log: app.log };
+  if (connectivityCheckMs) {
+    const stop = startConnectivityMonitor(deps, connectivityCheckMs);
+    app.addHook('onClose', async () => stop());
+  }
 
   await app.register(cors, {
     origin: env.WEB_ORIGIN,

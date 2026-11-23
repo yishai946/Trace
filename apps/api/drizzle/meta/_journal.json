@@ -127,6 +127,13 @@
       "when": 1795306713774,
       "tag": "0017_mission_details_changed_event",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795472272051,
+      "tag": "0018_contact_restored_event",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,14 @@ const EnvInput = z.object({
   AUTH_SECRET: z.string().min(32).default(DEV_AUTH_SECRET),
   /** Expo's access token for enhanced push security. Optional: push is sent without it when unset. */
   EXPO_ACCESS_TOKEN: z.string().min(1).optional(),
+  /**
+   * Set to `true` behind a reverse proxy (Railway) so the client address is read from `X-Forwarded-For`. Off by default:
+   * without a proxy the header comes from the client and anyone could forge it.
+   */
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   /** Error tracking is off without a DSN. */
   SENTRY_DSN: optional(z.url()),
   /** Defaults to NODE_ENV. */

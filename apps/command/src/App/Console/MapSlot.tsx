@@ -49,6 +49,8 @@ export function MapSlot({
       reports={data.reports.data ?? []}
       sos={data.sos.data ?? []}
       onOpenReport={nav.openReport}
+      selectedSearcherId={nav.selectedSearcherId}
+      onSelectSearcher={nav.setSelectedSearcherId}
       alerts={
         alertOnMap && (
           <FloatingAlerts

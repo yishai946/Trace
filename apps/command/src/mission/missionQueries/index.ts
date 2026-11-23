@@ -8,3 +8,4 @@ export * from './polygons';
 export * from './reports';
 export * from './sightings';
 export * from './sos';
+export * from './tracking';
