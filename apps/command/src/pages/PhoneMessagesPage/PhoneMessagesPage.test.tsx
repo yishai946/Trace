@@ -201,11 +201,11 @@ describe('PhoneMessagesPage', () => {
   });
 
   it('PMS14: blocks sending without a connection and shows the connection light', () => {
-    const connection = { state: 'down', label: 'לא זמין', detail: 'אין חיבור לשרת.' } as const;
+    const connection = { state: 'down', label: 'לא Live', detail: 'אין חיבור לשרת.' } as const;
     render(<PhoneMessagesPage {...props({ onSend: undefined, connection })} />);
     expect(screen.getByText('אין חיבור לשרת. שליחה חסומה.')).toBeInTheDocument();
     expect(send()).toBeDisabled();
-    expect(screen.getByRole('status', { name: /^לא זמין/ })).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: /^לא Live/ })).toBeInTheDocument();
   });
 
   it('PMS15: sends once when the button is clicked twice', () => {
