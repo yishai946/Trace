@@ -79,6 +79,7 @@ describe('describeEvent', () => {
     expect(text(eventSamples['report.submitted'])).toBe('מפגע, מדרון חלק, מ-[7] אלון שגיא');
     expect(text(eventSamples['coverage.threshold_reached'])).toBe('ואדי צפוני הגיע ל-80% Coverage');
     expect(text(eventSamples['contact.lost'])).toBe('אבד קשר עם [7] אלון שגיא');
+    expect(text(eventSamples['contact.restored'])).toBe('הקשר עם [7] אלון שגיא חזר');
   });
 
   it('gives every type a badge and a category', () => {

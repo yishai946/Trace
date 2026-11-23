@@ -87,8 +87,13 @@ export const TimelineEvent = z
       type: z.literal('coverage.threshold_reached'),
       details: z.object({ threshold: z.union([z.literal(80), z.literal(90)]) }),
     }),
-    /** Subject: the participant (label = name, with callsign). Actor: the system. */
+    /**
+     * Subject: the participant (label = name, with callsign). Actor: the system. The searcher went Offline: no live
+     * connection and no update within the threshold (UC-C10).
+     */
     z.object({ ...base, type: z.literal('contact.lost'), details: empty }),
+    /** Subject: the participant. Actor: the system. A searcher recorded as Offline is online again (UC-C10). */
+    z.object({ ...base, type: z.literal('contact.restored'), details: empty }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
     z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
     /** Subject: the SOS (label = polygon name or null). Actor: the commander, or the searcher who sent it. */

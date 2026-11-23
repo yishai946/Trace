@@ -303,6 +303,15 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     subject: subjectOf('participant', 'אלון שגיא', searcher07.participantId, 7),
     details: {},
   },
+  'contact.restored': {
+    id: '00000000-0000-4000-8000-00000000031e',
+    missionId: mission.id,
+    occurredAt: '2026-10-03T13:40:00.000Z',
+    type: 'contact.restored',
+    actor: { kind: 'system' },
+    subject: subjectOf('participant', 'אלון שגיא', searcher07.participantId, 7),
+    details: {},
+  },
   'sos.activated': {
     id: '00000000-0000-4000-8000-00000000030d',
     missionId: mission.id,
