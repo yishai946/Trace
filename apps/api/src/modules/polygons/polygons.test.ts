@@ -1,8 +1,16 @@
-import { ApiError, Mission, MissionPolygon, MissionPolygonList, SearchersOutsideDetails } from '@trace/schemas';
+import {
+  ApiError,
+  Mission,
+  MessageList,
+  MissionPolygon,
+  MissionPolygonList,
+  SearcherOfflineDetails,
+  SearchersOutsideDetails,
+} from '@trace/schemas';
 import type { Polygon } from 'geojson';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { missions, polygons } from '../../db/schema';
+import { missions, participations, polygons } from '../../db/schema';
 import { addParticipant, createTestApp, injectAs, resetDb, signInCommander, type TestContext } from '../../testing';
 
 const box = (west: number, south: number, east: number, north: number): Polygon => ({
@@ -191,6 +199,101 @@ describe('polygons', () => {
       const confirmed = await patch(a.id, { geometry: SMALLER, confirmSearchersOutside: true });
       expect(confirmed.statusCode).toBe(200);
       expect(MissionPolygon.parse(confirmed.json()).geometry).toEqual(SMALLER);
+    });
+
+    describe('alert and Offline block (decisions 35, 86)', () => {
+      const staleUpdate = () => new Date(Date.now() - 10 * 60_000);
+      const makeOffline = (participationId: string) =>
+        ctx.db
+          .update(participations)
+          .set({ lastPositionAt: staleUpdate() })
+          .where(eq(participations.id, participationId));
+      const sentMessages = async () => {
+        const res = await inject({ method: 'GET', url: `/api/missions/${missionId}/messages` });
+        expect(res.statusCode).toBe(200);
+        return MessageList.parse(res.json());
+      };
+
+      it('alerts only the searchers the boundary leaves outside, after the commander confirmed', async () => {
+        const a = await create();
+        const outsideId = await addParticipant(ctx.db, {
+          missionId,
+          callsign: 4,
+          polygonId: a.id,
+          position: INSIDE_ONLY_AREA,
+        });
+        await addParticipant(ctx.db, { missionId, callsign: 5, polygonId: a.id, position: [35.124, 31.772] });
+        await addParticipant(ctx.db, { missionId, callsign: 6, position: INSIDE_ONLY_AREA });
+
+        expect((await patch(a.id, { geometry: SMALLER })).statusCode).toBe(409);
+        expect(await sentMessages()).toHaveLength(0);
+
+        expect((await patch(a.id, { geometry: SMALLER, confirmSearchersOutside: true })).statusCode).toBe(200);
+        const messages = await sentMessages();
+        expect(messages).toHaveLength(1);
+        expect(messages[0]?.urgency).toBe('important');
+        expect(messages[0]?.recipients.map((recipient) => recipient.participantId)).toEqual([outsideId]);
+      });
+
+      it('sends no alert when nobody ends up outside, or when only the name changes', async () => {
+        const a = await create();
+        await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id, position: [35.124, 31.772] });
+        await patch(a.id, { geometry: SMALLER });
+        await patch(a.id, { name: 'חורשה' });
+        expect(await sentMessages()).toHaveLength(0);
+      });
+
+      it('blocks a boundary that leaves an Offline searcher outside, and saves nothing', async () => {
+        const a = await create();
+        const offlineId = await addParticipant(ctx.db, {
+          missionId,
+          callsign: 4,
+          polygonId: a.id,
+          position: INSIDE_ONLY_AREA,
+        });
+        await makeOffline(offlineId);
+
+        // Confirming the warning does not lift the block.
+        for (const confirmSearchersOutside of [false, true]) {
+          const res = await patch(a.id, { geometry: SMALLER, confirmSearchersOutside });
+          expect(res.statusCode).toBe(409);
+          const error = ApiError.parse(res.json()).error;
+          expect(error.code).toBe('SEARCHER_OFFLINE');
+          expect(SearcherOfflineDetails.parse(error.details).searchers).toEqual([
+            { participantId: offlineId, callsign: 4, name: 'מחפש 4' },
+          ]);
+        }
+        const [stored] = await ctx.db.select({ updatedAt: polygons.updatedAt }).from(polygons);
+        expect(stored?.updatedAt.toISOString()).toBe(a.updatedAt);
+        expect(await sentMessages()).toHaveLength(0);
+      });
+
+      it('lets a boundary change through when the Offline searcher is in another polygon or stays inside', async () => {
+        const a = await create();
+        const b = await create(box(35.2, 31.8, 35.21, 31.81));
+        const elsewhere = await addParticipant(ctx.db, {
+          missionId,
+          callsign: 4,
+          polygonId: b.id,
+          position: INSIDE_ONLY_AREA,
+        });
+        const inside = await addParticipant(ctx.db, {
+          missionId,
+          callsign: 5,
+          polygonId: a.id,
+          position: [35.124, 31.772],
+        });
+        await makeOffline(elsewhere);
+        await makeOffline(inside);
+        expect((await patch(a.id, { geometry: SMALLER })).statusCode).toBe(200);
+      });
+
+      it('does not block a searcher who is online by their last update', async () => {
+        const a = await create();
+        await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id, position: INSIDE_ONLY_AREA });
+        const res = await patch(a.id, { geometry: SMALLER, confirmSearchersOutside: true });
+        expect(res.statusCode).toBe(200);
+      });
     });
 
     it('returns 404 for a deleted polygon', async () => {
