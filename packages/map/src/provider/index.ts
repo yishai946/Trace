@@ -14,6 +14,9 @@ export interface MapProvider {
   demMaxZoom: number;
   /** `{fontstack}/{range}` template of glyph PBFs. The fonts must include Hebrew. */
   glyphsTemplate: string;
+  /** `{z}/{x}/{y}` template of satellite imagery (raster). Optional: without it the satellite base is unavailable. */
+  satelliteTilesTemplate?: string;
+  satelliteMaxZoom?: number;
   fonts: { regular: string[]; bold: string[] };
   /** Forward geocoding (place and address search). */
   geocodingUrl?: (query: string) => string;
@@ -30,6 +33,8 @@ export function maptilerProvider(apiKey: string): MapProvider {
     demTilesTemplate: `https://api.maptiler.com/tiles/terrain-rgb-v2/{z}/{x}/{y}.webp?key=${key}`,
     demEncoding: 'mapbox',
     demMaxZoom: 14,
+    satelliteTilesTemplate: `https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=${key}`,
+    satelliteMaxZoom: 20,
     glyphsTemplate: `https://api.maptiler.com/fonts/{fontstack}/{range}.pbf?key=${key}`,
     fonts: { regular: ['Noto Sans Regular'], bold: ['Noto Sans Bold'] },
     // MapTiler's country filter drops Israeli results; a bounding box works.

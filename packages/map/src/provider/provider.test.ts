@@ -8,4 +8,12 @@ describe('maptiler provider', () => {
     expect(url).toContain('bbox=34.2,29.4,35.95,33.4');
     expect(url).toContain(encodeURIComponent('נחל עמוד'));
   });
+
+  it('serves satellite imagery from the same key', () => {
+    const provider = maptilerProvider('k y');
+    expect(provider.satelliteTilesTemplate).toBe(
+      'https://api.maptiler.com/tiles/satellite-v2/{z}/{x}/{y}.jpg?key=k%20y',
+    );
+    expect(provider.satelliteMaxZoom).toBeGreaterThan(0);
+  });
 });

@@ -2,11 +2,20 @@ import { typography } from '@trace/design';
 import type { LayerSpecification } from '@maplibre/maplibre-gl-style-spec';
 import type { MapProvider } from '../provider';
 import { labelHalo } from './labelLayers';
-import { BASE, CONTOURS, DEM } from './sources';
-import type { ThemeColors } from './types';
+import { BASE, CONTOURS, DEM, SATELLITE } from './sources';
+import type { MapColor, ThemeColors } from './types';
 
-/** The ground, woods, settlements and water. */
-export function landLayers(c: ThemeColors): LayerSpecification[] {
+/** Satellite imagery over the ground color, in place of the drawn land. */
+export function satelliteLayers(c: ThemeColors): LayerSpecification[] {
+  return [
+    { id: 'background', type: 'background', paint: { 'background-color': c.mapGround } },
+    { id: 'satellite', type: 'raster', source: SATELLITE },
+  ];
+}
+
+/** The ground, woods, settlements and water. The colored map paints woods and water with the theme's tokens. */
+export function landLayers(c: ThemeColors, color: MapColor = 'bw'): LayerSpecification[] {
+  const colored = color === 'color';
   return [
     { id: 'background', type: 'background', paint: { 'background-color': c.mapGround } },
     {
@@ -15,7 +24,7 @@ export function landLayers(c: ThemeColors): LayerSpecification[] {
       source: BASE,
       'source-layer': 'landcover',
       filter: ['==', ['get', 'class'], 'wood'],
-      paint: { 'fill-color': c.inkFaint, 'fill-opacity': 0.12 },
+      paint: { 'fill-color': colored ? c.success : c.inkFaint, 'fill-opacity': colored ? 0.3 : 0.12 },
     },
     {
       id: 'landcover-bare',
@@ -42,7 +51,7 @@ export function landLayers(c: ThemeColors): LayerSpecification[] {
       type: 'fill',
       source: BASE,
       'source-layer': 'water',
-      paint: { 'fill-color': c.water, 'fill-opacity': 0.3 },
+      paint: { 'fill-color': c.water, 'fill-opacity': colored ? 0.6 : 0.3 },
     },
   ];
 }
