@@ -49,7 +49,10 @@ interface AppOptions {
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
 export async function buildApp({ env, db, sendOtp, realtimeRevalidateMs, pushSender, logStream }: AppOptions) {
-  const app = Fastify(serverLogOptions(env, logStream)).withTypeProvider<ZodTypeProvider>();
+  const app = Fastify({
+    ...serverLogOptions(env, logStream),
+    trustProxy: env.TRUST_PROXY,
+  }).withTypeProvider<ZodTypeProvider>();
   const auth = createAuth({
     env,
     db,

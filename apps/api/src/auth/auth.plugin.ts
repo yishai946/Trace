@@ -45,6 +45,16 @@ export function sessionIdOf(request: FastifyRequest): string {
   return request.sessionId;
 }
 
+/**
+ * The request's headers with `x-forwarded-for` set to the client address Fastify resolved (`request.ip`, which honours
+ * `trustProxy`). Better Auth rate-limits by that header, so a value sent by an untrusted client never reaches it.
+ */
+function withClientIp(request: FastifyRequest): Headers {
+  const headers = fromNodeHeaders(request.headers);
+  headers.set('x-forwarded-for', request.ip);
+  return headers;
+}
+
 /** Serves Better Auth's own endpoints (sign-in, OTP, sign-out, session) under /api/auth. */
 export const authRoutes: FastifyPluginAsync<{ auth: Auth }> = async (app, { auth }) => {
   app.route({
@@ -55,7 +65,7 @@ export const authRoutes: FastifyPluginAsync<{ auth: Auth }> = async (app, { auth
       const response = await auth.handler(
         new Request(new URL(request.url, auth.options.baseURL), {
           method: request.method,
-          headers: fromNodeHeaders(request.headers),
+          headers: withClientIp(request),
           body: request.method === 'GET' || request.body === undefined ? undefined : JSON.stringify(request.body),
         }),
       );

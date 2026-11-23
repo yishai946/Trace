@@ -32,3 +32,11 @@ describe('monitoring environment', () => {
     expect(() => loadEnv({ LOKI_URL: all.LOKI_URL, LOKI_USER: '1' })).toThrow(/LOKI_TOKEN/);
   });
 });
+
+describe('proxy environment', () => {
+  it('does not trust a proxy unless TRUST_PROXY is true', () => {
+    expect(loadEnv({}).TRUST_PROXY).toBe(false);
+    expect(loadEnv({ TRUST_PROXY: 'true' }).TRUST_PROXY).toBe(true);
+    expect(() => loadEnv({ TRUST_PROXY: 'yes' })).toThrow(/TRUST_PROXY/);
+  });
+});
