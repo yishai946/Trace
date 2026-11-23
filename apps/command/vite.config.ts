@@ -31,6 +31,13 @@ export default defineConfig(({ mode }) => ({
   worker: { format: 'es' },
   // ws: the realtime channel (Socket.IO) upgrades to a WebSocket under /api/realtime.
   server: { port, strictPort: true, proxy: { '/api': { target: apiTarget, ws: true } } },
-  preview: { port, strictPort: true, proxy: { '/api': { target: apiTarget, ws: true } } },
+  // The deployed Command is served by `vite preview` (docs/DEPLOYMENT.md): any host name is allowed (Railway's
+  // domain), and changeOrigin sends the API's own Host header, or its host would route the request back to Command.
+  preview: {
+    port,
+    strictPort: true,
+    allowedHosts: true,
+    proxy: { '/api': { target: apiTarget, ws: true, changeOrigin: true } },
+  },
   test: { environment: 'jsdom', setupFiles: ['./src/test-setup.ts'], css: false },
 }));
