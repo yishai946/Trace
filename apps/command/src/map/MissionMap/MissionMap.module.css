@@ -97,7 +97,7 @@
     /* Never reach under the expanded bottom sheet (min(sheet height, 45%)); scroll instead. */
     max-height: calc(
       100% - var(--space-6) * 2 - var(--header-h) - var(--map-overlay-top, 0px) - min(var(--pending-sheet-h), 45%) -
-        var(--space-6)
+        var(--space-6) * 2
     );
     overflow-y: auto;
   }

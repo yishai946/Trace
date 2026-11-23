@@ -1,12 +1,14 @@
 import { themes } from '@trace/design';
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec';
-import { featureLayers, landLayers, terrainLayers } from './baseLayers';
+import { featureLayers, landLayers, satelliteLayers, terrainLayers } from './baseLayers';
 import { labelLayers } from './labelLayers';
 import { missionLayers } from './missionLayers';
-import { DEM, mapSources, showsContours } from './sources';
-import type { BuildMapStyleOptions } from './types';
+import { DEM, mapSources, showsContours, showsSatellite } from './sources';
+import { defaultMapView, type BuildMapStyleOptions } from './types';
 
-export type { BuildMapStyleOptions, TerrainOptions } from './types';
+export { defaultMapView } from './types';
+export { SATELLITE as SATELLITE_SOURCE } from './sources';
+export type { BuildMapStyleOptions, MapBase, MapColor, MapView, TerrainOptions } from './types';
 
 /**
  * The Trace Console map style: a quiet topographic base, every color taken from the theme's tokens, and the
@@ -17,6 +19,8 @@ export function buildMapStyle(options: BuildMapStyleOptions): StyleSpecification
   const { themeId, provider, terrain } = options;
   const c = themes[themeId].color;
   const { fonts } = provider;
+  const view = options.view ?? defaultMapView;
+  const satellite = showsSatellite(options);
 
   return {
     version: 8,
@@ -25,12 +29,13 @@ export function buildMapStyle(options: BuildMapStyleOptions): StyleSpecification
     sources: mapSources(options),
     // The order is the drawing order: ground, relief, features, labels, then the mission on top.
     layers: [
-      ...landLayers(c),
+      ...(satellite ? satelliteLayers(c) : landLayers(c, view.color)),
       ...terrainLayers({
         c,
         night: themeId === 'night',
         fonts,
-        hillshade: terrain.hillshade,
+        // Imagery already carries the relief.
+        hillshade: terrain.hillshade && !satellite,
         contours: showsContours(options),
       }),
       ...featureLayers(c),

@@ -1,10 +1,15 @@
 import type { SourceSpecification } from '@maplibre/maplibre-gl-style-spec';
 import { emptyMissionMapData, toMissionSources } from '../data';
-import type { BuildMapStyleOptions } from './types';
+import { defaultMapView, type BuildMapStyleOptions } from './types';
 
 export const BASE = 'trace-base';
 export const DEM = 'trace-dem';
 export const CONTOURS = 'trace-contours';
+export const SATELLITE = 'trace-satellite';
+
+/** Whether the satellite base is drawn: it is asked for and the provider has imagery. */
+export const showsSatellite = ({ view = defaultMapView, provider }: BuildMapStyleOptions) =>
+  view.base === 'satellite' && !!provider.satelliteTilesTemplate;
 
 /** Whether the contour lines can be drawn: they are asked for and a contour tile URL exists. */
 export const showsContours = ({ terrain, contourTilesUrl }: BuildMapStyleOptions) =>
@@ -23,6 +28,14 @@ export function mapSources(options: BuildMapStyleOptions): Record<string, Source
       maxzoom: provider.demMaxZoom,
     },
   };
+  if (showsSatellite(options) && options.provider.satelliteTilesTemplate) {
+    sources[SATELLITE] = {
+      type: 'raster',
+      tiles: [options.provider.satelliteTilesTemplate],
+      tileSize: 256,
+      maxzoom: options.provider.satelliteMaxZoom ?? 18,
+    };
+  }
   if (showsContours(options) && options.contourTilesUrl) {
     sources[CONTOURS] = { type: 'vector', tiles: [options.contourTilesUrl], maxzoom: 15 };
   }
