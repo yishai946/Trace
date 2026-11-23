@@ -42,7 +42,7 @@ export function createFakePushSender() {
 }
 
 /** Builds the app on the test database. Call `close` in `afterAll`. */
-export async function createTestApp() {
+export async function createTestApp(envOverrides: Record<string, string> = {}) {
   const database = createDb(TEST_DATABASE_URL);
   /** The last sign-in code sent to each phone number. */
   const sentCodes = new Map<string, string>();
@@ -50,7 +50,7 @@ export async function createTestApp() {
   const sentOtps: { phoneNumber: string; code: string }[] = [];
   const pushSender = createFakePushSender();
   const { app, auth, realtime, push } = await buildApp({
-    env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL }),
+    env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL, ...envOverrides }),
     db: database.db,
     realtimeRevalidateMs: 100,
     pushSender: pushSender.sender,

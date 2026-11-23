@@ -85,8 +85,14 @@ export function createAuth({ env, db, sendOtp, log }: AuthOptions) {
       provider: 'pg',
       schema: { user: users, session: sessions, account: accounts, verification: verifications },
     }),
-    advanced: { database: { generateId: 'uuid' } },
+    advanced: {
+      database: { generateId: 'uuid' },
+      // The route handler puts the resolved client address here (auth.plugin.ts), so each address gets its own bucket.
+      ipAddress: { ipAddressHeaders: ['x-forwarded-for'] },
+    },
     telemetry: { enabled: false },
+    // Better Auth decides this from process.env.NODE_ENV; follow the validated setting instead. Limits are per IP.
+    rateLimit: { enabled: env.NODE_ENV === 'production' },
     user: {
       additionalFields: {
         // Set only on the server: by the create-commander script, or `searcher` for anyone who signs up by phone.
