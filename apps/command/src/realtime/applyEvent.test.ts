@@ -1,4 +1,4 @@
-import type { ParticipantTrack } from '@trace/schemas';
+import type { Participant, ParticipantTrack } from '@trace/schemas';
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { mission, participants } from '../mission/fixtures';
@@ -17,29 +17,30 @@ const point = (n: number) => ({
 });
 
 describe('applyEvent: searchers', () => {
-  it('moves the searcher, marks them online and stamps the update time', () => {
+  const move = (positionAt: string, change: object) => {
     const queryClient = new QueryClient();
-    const offline = { ...participants[0], offline: true, lastUpdateAt: null };
-    queryClient.setQueryData(missionKeys.participants(missionId), [offline]);
-
+    const searcher = { ...participants[0], offline: true, lastUpdateAt: null, ...change };
+    queryClient.setQueryData(missionKeys.participants(missionId), [searcher]);
     applyEvent(queryClient, {
       type: 'participant.moved',
       missionId,
       participantId,
-      searcherId: offline.searcherId ?? '',
+      searcherId: searcher.searcherId ?? '',
       position: [35.2, 31.8],
-      positionAt: '2026-10-03T12:05:00.000Z',
+      positionAt,
     });
+    return queryClient.getQueryData<Participant[]>(missionKeys.participants(missionId))?.[0];
+  };
 
-    expect(queryClient.getQueryData(missionKeys.participants(missionId))).toEqual([
-      {
-        ...offline,
-        position: [35.2, 31.8],
-        positionAt: '2026-10-03T12:05:00.000Z',
-        lastUpdateAt: '2026-10-03T12:05:00.000Z',
-        offline: false,
-      },
-    ]);
+  it('moves the searcher, marks them online and stamps the update time', () => {
+    const now = new Date().toISOString();
+    expect(move(now, {})).toMatchObject({ position: [35.2, 31.8], positionAt: now, lastUpdateAt: now, offline: false });
+  });
+
+  it('keeps a newer battery time as the last update, and a late batch of old fixes offline', () => {
+    const battery = new Date().toISOString();
+    const result = move('2026-10-03T12:05:00.000Z', { lastUpdateAt: battery });
+    expect(result).toMatchObject({ lastUpdateAt: battery, offline: true });
   });
 
   it('appends the new route points to a route that is open', () => {

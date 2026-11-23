@@ -16,10 +16,8 @@ interface SlotSelectionInput {
 export function useSlotSelection({ polygon, sighting, onOpenReport, onSelectSearcher }: SlotSelectionInput) {
   const selectPolygon = (polygonId: string | null) => {
     polygon.select(polygonId);
-    if (polygonId) {
-      sighting.hide();
-      onSelectSearcher(null);
-    }
+    onSelectSearcher(null);
+    if (polygonId) sighting.hide();
   };
   const openLkpPanel = (sightingId: string | null) => {
     polygon.select(null);

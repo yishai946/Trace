@@ -21,7 +21,11 @@ import {
   type ListUpdate,
   type MissionCacheShape,
 } from '@trace/mission-cache';
+import { OFFLINE_AFTER_MS } from '@trace/domain';
 import { missionKeys } from '../mission/missionQueries';
+
+const later = (a: string | null, b: string) => (a && Date.parse(a) > Date.parse(b) ? a : b);
+const isRecent = (iso: string) => Date.now() - Date.parse(iso) <= OFFLINE_AFTER_MS;
 
 /** Command keeps every mission in one list (`missionKeys.all`). */
 const missionList: MissionCacheShape = {
@@ -90,8 +94,9 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
           ...p,
           position: event.position,
           positionAt: event.positionAt,
-          lastUpdateAt: event.positionAt,
-          offline: false,
+          lastUpdateAt: later(p.lastUpdateAt, event.positionAt),
+          // A late batch of old fixes does not bring a searcher back online.
+          offline: p.offline && !isRecent(event.positionAt),
         })),
       );
       return;
