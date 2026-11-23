@@ -297,6 +297,13 @@ describe('timeline', () => {
           subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
           details: {},
         },
+        'contact.restored': {
+          missionId,
+          actor: 'system',
+          type: 'contact.restored',
+          subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
+          details: {},
+        },
         'sos.activated': {
           missionId,
           actor: bySearcher,
