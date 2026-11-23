@@ -70,6 +70,12 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('participant', 'אלון שגיא', 7),
     details: {},
   },
+  'contact.restored': {
+    type: 'contact.restored',
+    actor: system,
+    subject: subject('participant', 'אלון שגיא', 7),
+    details: {},
+  },
   'sos.activated': {
     type: 'sos.activated',
     actor: searcher,
