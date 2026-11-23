@@ -21,6 +21,10 @@
 @media (width <= 768px) {
   .toolbar {
     flex-direction: column;
+
+    /* The column scrolls inside the room MissionMap leaves above the bottom sheet. */
+    max-height: inherit;
+    overflow-y: auto;
   }
 
   .separator {
