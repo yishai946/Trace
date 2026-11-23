@@ -122,6 +122,14 @@
 - `DeviceNotRegistered` עלול להגיע רק בקבלה כ-15 דקות אחרי השליחה; בדיקת קבלות דורשת job ברקע (pg-boss).
 - אפליקציה שנסגרה: התראה עם תוכן גלוי מוצגת על ידי מערכת ההפעלה; התראה שקטה (data-only) אינה מובטחת, ובפרט ב-iOS אחרי סגירה יזומה.
 
+## הפצת Field כ-APK (Android)
+
+הפרויקט לא מיועד לחנויות; ההפצה היא התקנה ידנית, בלי EAS Build. ה-workflow `.github/workflows/field-android-apk.yml` (הרצה ידנית: Actions, `Field Android APK`, בחירת `configuration`: Release או Debug) מפיק APK חתום ומעלה אותו כ-artifact.
+
+- **חתימה:** הבנייה נחתמת במפתח קבוע, כדי שטביעת האצבע (SHA-256) לא תשתנה בין בניות (היא נחוצה ל-`assetlinks.json`, #141). ה-workflow מדפיס אותה בסוף ובסיכום הריצה.
+- **הכנה חד-פעמית (הבעלים):** יוצרים keystore (`keytool -genkeypair -v -keystore trace-field.jks -alias trace-field -keyalg RSA -keysize 2048 -validity 10000`) ושומרים ב-Secrets של הריפו: `ANDROID_KEYSTORE_BASE64` (`base64 -w0 trace-field.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. אם אחד חסר ה-workflow נכשל מיד עם הודעה ברורה. את ה-keystore יש לשמור בגיבוי: בלעדיו אי אפשר לעדכן אפליקציה מותקנת.
+- **התקנה:** מורידים את ה-artifact `TraceField-<configuration>-apk` מדף הריצה, פותחים את ה-zip ומעבירים את `TraceField.apk` למכשיר. באנדרואיד מאשרים "התקנה ממקורות לא ידועים" לאפליקציה שפותחת את הקובץ (הגדרות, אבטחה).
+
 ## פיתוח מקומי
 
 בסיס הנתונים המקומי רץ ב-Docker (`docker-compose.yml`, ‏PostGIS על פורט 5433, כדי לא להתנגש ב-PostgreSQL שמותקן על המחשב). הפריסה לסביבות אחרות בהחלטת איש התשתיות.
