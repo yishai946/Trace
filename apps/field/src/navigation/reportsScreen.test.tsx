@@ -215,6 +215,8 @@ describe('the reports screen (Fm10)', () => {
           positionAt: null,
           gpsUnavailableSince: null,
           battery: null,
+          lastUpdateAt: null,
+          offline: false,
         },
       });
     });

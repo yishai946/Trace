@@ -1,9 +1,11 @@
+import { isSearcherOffline, latestUpdateAt } from '@trace/domain';
 import { PointGeometry, type JoinPreview, type OwnParticipation, type Participant } from '@trace/schemas';
 import { and, asc, eq } from 'drizzle-orm';
 import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { missions, participations, searchers } from '../../db/schema';
 import { notFound } from '../../errors';
+import type { Realtime } from '../../realtime';
 
 /** The mission behind a join code, as shown before the searcher confirms (UC-F02). 404 for a code no mission has. */
 export async function previewJoin(db: Db, code: string): Promise<JoinPreview> {
@@ -42,8 +44,19 @@ export async function getOwnParticipation(db: Db, missionId: string, searcherId:
   return participation;
 }
 
+/** What reading the commander's view of searchers needs: the rows, and who holds the live connection. */
+export interface ParticipantReadDeps {
+  db: Db;
+  realtime: Pick<Realtime, 'connectedSearcherIds'>;
+}
+
 /** The mission's searchers. The route's access check has already answered 404 for an unknown mission. */
-export async function listParticipants(db: Db, missionId: string): Promise<Participant[]> {
+export async function listParticipants(
+  { db, realtime }: ParticipantReadDeps,
+  missionId: string,
+): Promise<Participant[]> {
+  const now = new Date();
+  const connected = await realtime.connectedSearcherIds(missionId);
   const rows = await db
     .select({
       id: participations.id,
@@ -65,23 +78,28 @@ export async function listParticipants(db: Db, missionId: string): Promise<Parti
     .where(eq(participations.missionId, missionId))
     .orderBy(asc(participations.callsign));
 
-  return rows.map(({ batteryLevel, batteryMeasuredAt, ...row }) => ({
-    ...row,
-    battery:
-      batteryLevel === null || batteryMeasuredAt === null
-        ? null
-        : { level: batteryLevel, measuredAt: batteryMeasuredAt.toISOString() },
-    position: row.position ? PointGeometry.parse(JSON.parse(row.position)).coordinates : null,
-    positionAt: row.positionAt?.toISOString() ?? null,
-    gpsUnavailableSince: row.gpsUnavailableSince?.toISOString() ?? null,
-  }));
+  return rows.map(({ batteryLevel, batteryMeasuredAt, ...row }) => {
+    const lastUpdateAt = latestUpdateAt([row.positionAt, batteryMeasuredAt]);
+    return {
+      ...row,
+      lastUpdateAt: lastUpdateAt?.toISOString() ?? null,
+      offline: isSearcherOffline({ connected: connected.has(row.searcherId), lastUpdateAt, now }),
+      battery:
+        batteryLevel === null || batteryMeasuredAt === null
+          ? null
+          : { level: batteryLevel, measuredAt: batteryMeasuredAt.toISOString() },
+      position: row.position ? PointGeometry.parse(JSON.parse(row.position)).coordinates : null,
+      positionAt: row.positionAt?.toISOString() ?? null,
+      gpsUnavailableSince: row.gpsUnavailableSince?.toISOString() ?? null,
+    };
+  });
 }
 
 /** One searcher of the mission as the commander sees them, or undefined when the mission has no such participant. */
 export async function findParticipant(
-  db: Db,
+  deps: ParticipantReadDeps,
   missionId: string,
   participantId: string,
 ): Promise<Participant | undefined> {
-  return (await listParticipants(db, missionId)).find((participant) => participant.id === participantId);
+  return (await listParticipants(deps, missionId)).find((participant) => participant.id === participantId);
 }

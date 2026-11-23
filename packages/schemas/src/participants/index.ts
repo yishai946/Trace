@@ -29,6 +29,10 @@ export const Participant = z
       .object({ level: z.number().int().min(0).max(100), measuredAt: IsoDateTime })
       .nullable()
       .default(null),
+    /** When the phone last reported a GPS point or its battery; null before the first report (UC-C10). */
+    lastUpdateAt: IsoDateTime.nullable().default(null),
+    /** No live connection to the mission and no update within the threshold (UC-C10, decision 13). */
+    offline: z.boolean().default(false),
   })
   .meta({ id: 'Participant' });
 

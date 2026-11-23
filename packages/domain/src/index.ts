@@ -1,4 +1,5 @@
 export * from './callsign';
+export * from './connectivity';
 export * from './joinCode';
 export * from './localTime';
 export * from './message';

@@ -34,7 +34,7 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
       },
       preHandler: missionAccess(db, 'commander'),
     },
-    (request) => listParticipants(db, request.params.missionId),
+    (request) => listParticipants(deps, request.params.missionId),
   );
 
   app.get(

@@ -79,6 +79,8 @@ export const participants: Participant[] = [
     positionAt: '2026-10-03T12:00:00.000Z',
     gpsUnavailableSince: null,
     battery: null,
+    lastUpdateAt: null,
+    offline: false,
   },
   {
     id: '00000000-0000-4000-8000-000000000009',
@@ -93,6 +95,8 @@ export const participants: Participant[] = [
     positionAt: null,
     gpsUnavailableSince: null,
     battery: null,
+    lastUpdateAt: null,
+    offline: false,
   },
 ];
 

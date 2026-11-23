@@ -24,6 +24,8 @@ export interface Realtime {
    * it; an event that needs it and gets none reaches the commander only.
    */
   publish(event: MissionEvent, options?: { searcherIds?: readonly string[] }): void;
+  /** The searchers whose phone holds the mission's live connection now (UC-C10 connectivity). */
+  connectedSearcherIds(missionId: string): Promise<ReadonlySet<string>>;
 }
 
 interface SocketData {
@@ -173,6 +175,14 @@ export function createRealtime({
   const realtime: Realtime = {
     publish(event, options) {
       io.to(audienceOf(event, options?.searcherIds)).emit('mission:event', event);
+    },
+    async connectedSearcherIds(missionId) {
+      const sockets = await io.in(membersRoom(missionId)).fetchSockets();
+      const ids = new Set<string>();
+      for (const { data } of sockets) {
+        if (data.actor.role !== 'commander' && data.actor.searcherId) ids.add(data.actor.searcherId);
+      }
+      return ids;
     },
   };
   return realtime;
