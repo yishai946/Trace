@@ -21,6 +21,7 @@ interface SearcherRowProps {
 
 /** One searcher in the pool table (wireframe Cd08). */
 export function SearcherRow({ participant: p, polygonName, polygons, onOpen, onAssign, onEnd }: SearcherRowProps) {
+  const updatedAt = p.lastUpdateAt ?? p.positionAt;
   return (
     <tr>
       <td>
@@ -49,9 +50,9 @@ export function SearcherRow({ participant: p, polygonName, polygons, onOpen, onA
             </time>{' '}
           </span>
         ) : null}
-        {p.positionAt ? (
-          <time dateTime={p.positionAt} className={styles.num}>
-            {timeLabel(p.positionAt)}
+        {updatedAt ? (
+          <time dateTime={updatedAt} className={styles.num}>
+            {timeLabel(updatedAt)}
           </time>
         ) : (
           <span className={styles.meta}>אין עדיין</span>

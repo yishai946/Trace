@@ -5,9 +5,9 @@ import { ConnectionStatus } from '.';
 describe('ConnectionStatus', () => {
   it('shows a down connection with its reason in the tooltip and accessible name', () => {
     const detail = 'אין אינטרנט. פעולות חדשות חסומות.';
-    render(<ConnectionStatus connection={{ state: 'down', label: 'לא זמין', detail }} />);
-    const status = screen.getByRole('status', { name: `לא זמין. ${detail}` });
-    expect(status).toHaveTextContent('לא זמין');
+    render(<ConnectionStatus connection={{ state: 'down', label: 'לא Live', detail }} />);
+    const status = screen.getByRole('status', { name: `לא Live. ${detail}` });
+    expect(status).toHaveTextContent('לא Live');
     expect(status).toHaveAttribute('title', detail);
     expect(status).toHaveAttribute('data-state', 'down');
   });
