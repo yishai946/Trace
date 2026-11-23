@@ -72,7 +72,7 @@ export async function joinMission(
   });
   const { missionId, participation, joined } = result;
   if (joined) {
-    const participant = await findParticipant(db, missionId, participation.id);
+    const participant = await findParticipant({ db, realtime }, missionId, participation.id);
     if (participant) realtime.publish({ type: 'participant.joined', missionId, participant });
   }
   return { joined, mission: await getMission(db, missionId), participation };
@@ -140,7 +140,7 @@ export async function assignParticipant(
     return polygon.id;
   });
 
-  const participant = await findParticipant(db, input.missionId, input.participantId);
+  const participant = await findParticipant({ db, realtime }, input.missionId, input.participantId);
   if (!participant) throw notFound('Searcher');
   realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
   const polygon =
@@ -175,7 +175,7 @@ export async function endParticipation(
       .set({ status: 'ended', polygonId: null, taskStatus: null })
       .where(eq(participations.id, participation.id));
   });
-  const participant = await findParticipant(db, input.missionId, input.participantId);
+  const participant = await findParticipant({ db, realtime }, input.missionId, input.participantId);
   if (!participant) throw notFound('Searcher');
   realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
   return participant;
@@ -199,7 +199,7 @@ export async function setGpsStatus(
     .update(participations)
     .set({ gpsUnavailableSince: input.available ? null : new Date() })
     .where(eq(participations.id, participation.id));
-  const participant = await findParticipant(db, input.missionId, participation.id);
+  const participant = await findParticipant({ db, realtime }, input.missionId, participation.id);
   if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
 }
 
@@ -237,6 +237,6 @@ export async function setBattery(
     return participation.id;
   });
   if (!participationId) return;
-  const participant = await findParticipant(db, input.missionId, participationId);
+  const participant = await findParticipant({ db, realtime }, input.missionId, participationId);
   if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
 }

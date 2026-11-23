@@ -142,7 +142,7 @@ export async function recordTrackPoints(
     });
   }
   if (result.gpsBack) {
-    const participant = await findParticipant(db, missionId, result.participantId);
+    const participant = await findParticipant({ db, realtime }, missionId, result.participantId);
     if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
   }
   return { stored: result.stored, duplicates: result.duplicates };
