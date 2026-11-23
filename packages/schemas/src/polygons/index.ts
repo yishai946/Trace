@@ -66,8 +66,16 @@ export const SearchersOutsideDetails = z
   })
   .meta({ id: 'SearchersOutsideDetails' });
 
+/** `details` of a SEARCHER_OFFLINE error: the Offline searchers the new boundary would leave outside. */
+export const SearcherOfflineDetails = z
+  .object({
+    searchers: z.array(z.object({ participantId: z.uuid(), callsign: z.number().int(), name: z.string() })),
+  })
+  .meta({ id: 'SearcherOfflineDetails' });
+
 export type PolygonStatus = z.infer<typeof PolygonStatus>;
 export type MissionPolygon = z.infer<typeof MissionPolygon>;
 export type CreatePolygonBody = z.input<typeof CreatePolygonBody>;
 export type UpdatePolygonBody = z.input<typeof UpdatePolygonBody>;
+export type SearcherOfflineDetails = z.infer<typeof SearcherOfflineDetails>;
 export type SearchersOutsideDetails = z.infer<typeof SearchersOutsideDetails>;

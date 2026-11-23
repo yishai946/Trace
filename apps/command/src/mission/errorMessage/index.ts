@@ -1,4 +1,5 @@
-import { ApiRequestError } from '../api';
+import { SearcherOfflineDetails } from '@trace/schemas';
+import { ApiRequestError } from '../../api';
 
 const MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
   NETWORK_ERROR: 'אין חיבור לשרת. השינוי לא נשמר.',
@@ -8,8 +9,16 @@ const MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
   POLYGON_HAS_ACTIVE_SEARCHERS: 'אי אפשר למחוק פוליגון שיש בו מחפש פעיל.',
 };
 
+/** Names the Offline searchers a blocked boundary change would leave outside (decision 86). */
+function offlineBlockMessage(details: unknown): string {
+  const parsed = SearcherOfflineDetails.safeParse(details);
+  const names = parsed.success ? parsed.data.searchers.map((s) => `${s.name} (${s.callsign})`).join(', ') : '';
+  return `אי אפשר לשנות את הגבול: ${names || 'מחפש'} במצב Offline ויישאר מחוץ לו. נסו שוב כשהחיבור יחזור.`;
+}
+
 /** A Hebrew message for a failed polygon change. */
 export function errorMessage(error: unknown): string {
+  if (error instanceof ApiRequestError && error.code === 'SEARCHER_OFFLINE') return offlineBlockMessage(error.details);
   return (error instanceof ApiRequestError && MESSAGES[error.code]) || 'השינוי לא נשמר. נסו שוב.';
 }
 

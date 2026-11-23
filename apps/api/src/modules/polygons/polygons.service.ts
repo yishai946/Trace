@@ -1,10 +1,10 @@
-import { canChangePolygons, isActiveInPolygon, nextPolygonName } from '@trace/domain';
-import { findOutside, isValidPolygon } from '@trace/geo';
+import { canChangePolygons, nextPolygonName } from '@trace/domain';
+import { isValidPolygon } from '@trace/geo';
 import {
-  PointGeometry,
   PolygonGeometry,
   type CreatePolygonBody,
   type MissionPolygon,
+  type SearcherOfflineDetails,
   type SearchersOutsideDetails,
   type UpdatePolygonBody,
 } from '@trace/schemas';
@@ -12,12 +12,13 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
-import { participations, polygons, searchers } from '../../db/schema';
+import { polygons } from '../../db/schema';
 import type { Actor } from '../../auth/auth.plugin';
 import { AppError, notFound } from '../../errors';
 import { lockMission } from '../lockMission';
 import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
+import { alertSearchersOutside, searchersOutside } from './polygons.outside';
 
 export type CreatePolygonInput = z.output<typeof CreatePolygonBody>;
 export type UpdatePolygonInput = z.output<typeof UpdatePolygonBody>;
@@ -81,39 +82,6 @@ async function assertValid(db: Db, geometry: CreatePolygonInput['geometry']) {
   if (!row?.valid) throw invalid();
 }
 
-/** Searchers assigned to the polygon who would end up outside the new boundary. */
-async function searchersOutside(
-  tx: Tx,
-  polygonId: string,
-  geometry: CreatePolygonInput['geometry'],
-): Promise<SearchersOutsideDetails['searchers']> {
-  const rows = await tx
-    .select({
-      participantId: participations.id,
-      callsign: participations.callsign,
-      name: searchers.name,
-      status: participations.status,
-      polygonId: participations.polygonId,
-      position: asGeoJson(participations.lastPosition),
-    })
-    .from(participations)
-    .innerJoin(searchers, eq(searchers.id, participations.searcherId))
-    .where(eq(participations.polygonId, polygonId));
-
-  const located = rows
-    .filter((row) => isActiveInPolygon(row, polygonId) && row.position)
-    .map((row) => ({ ...row, position: PointGeometry.parse(JSON.parse(row.position)).coordinates }));
-  const byId = new Map(located.map((row) => [row.participantId, row]));
-
-  return findOutside(
-    located.map((row) => ({ id: row.participantId, position: row.position })),
-    geometry,
-  ).flatMap(({ id, meters }) => {
-    const row = byId.get(id);
-    return row ? [{ participantId: id, callsign: row.callsign, name: row.name, meters: Math.round(meters) }] : [];
-  });
-}
-
 /** The mission's polygons. The route's access check has already answered 404 for an unknown mission. */
 export async function listPolygons(db: Db, missionId: string): Promise<MissionPolygon[]> {
   const rows = await selectPolygons(db)
@@ -159,10 +127,11 @@ export async function createPolygon(
 
 /**
  * Renames a polygon or changes its boundary (UC-C06). A boundary that leaves assigned searchers outside is rejected
- * with their list, until the commander confirms it.
+ * with their list, until the commander confirms it, and one that leaves an Offline searcher outside is blocked until
+ * they are back (decision 86). Once saved, the searchers left outside get an alert (decision 35).
  */
 export async function updatePolygon(
-  { db, realtime }: ServiceDeps,
+  deps: ServiceDeps,
   {
     missionId,
     polygonId,
@@ -170,14 +139,35 @@ export async function updatePolygon(
     actor,
   }: { missionId: string; polygonId: string; input: UpdatePolygonInput; actor: Actor },
 ): Promise<MissionPolygon> {
+  const { db, realtime } = deps;
   if (input.geometry) await assertValid(db, input.geometry);
-  const { polygon, event } = await db.transaction(async (tx) => {
+  const connected = input.geometry ? await realtime.connectedSearcherIds(missionId) : new Set<string>();
+  const { polygon, event, outside } = await db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     const existing = await findPolygon(tx, missionId, polygonId);
 
-    const outside = input.geometry ? await searchersOutside(tx, polygonId, input.geometry) : [];
+    const outside = input.geometry ? await searchersOutside(tx, polygonId, input.geometry, connected) : [];
+    const offline = outside.filter((searcher) => searcher.offline);
+    if (offline.length > 0) {
+      const details: SearcherOfflineDetails = {
+        searchers: offline.map(({ participantId, callsign, name }) => ({ participantId, callsign, name })),
+      };
+      throw new AppError(
+        409,
+        'SEARCHER_OFFLINE',
+        'An Offline searcher would be left outside the new boundary',
+        details,
+      );
+    }
     if (outside.length > 0 && !input.confirmSearchersOutside) {
-      const details: SearchersOutsideDetails = { searchers: outside };
+      const details: SearchersOutsideDetails = {
+        searchers: outside.map(({ participantId, callsign, name, meters }) => ({
+          participantId,
+          callsign,
+          name,
+          meters,
+        })),
+      };
       throw new AppError(
         409,
         'SEARCHERS_OUTSIDE_POLYGON',
@@ -185,8 +175,6 @@ export async function updatePolygon(
         details,
       );
     }
-    // TODO(realtime): notify the searchers left outside once Socket.IO and push notifications exist.
-    // TODO(tracking): block the change while an affected searcher is offline (decision 86); needs connectivity state.
 
     await tx
       .update(polygons)
@@ -205,10 +193,11 @@ export async function updatePolygon(
           details: { searchersOutside: outside.length },
         })
       : null;
-    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), event };
+    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), event, outside };
   });
   realtime.publish({ type: 'polygon.saved', missionId, polygon });
   if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+  await alertSearchersOutside(deps, { missionId, polygonName: polygon.name, outside, actor });
   return polygon;
 }
 

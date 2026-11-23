@@ -13,6 +13,8 @@ export const ERROR_CODES = [
   'INVALID_GEOMETRY',
   'POLYGON_HAS_ACTIVE_SEARCHERS',
   'SEARCHERS_OUTSIDE_POLYGON',
+  /** A boundary change that leaves an Offline searcher outside is blocked until they are back (decision 86). */
+  'SEARCHER_OFFLINE',
   'UNSUPPORTED_PHOTO',
   'PHOTO_TOO_LARGE',
   'SIGHTING_NOT_LKP_CANDIDATE',
