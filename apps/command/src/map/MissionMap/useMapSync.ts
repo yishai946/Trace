@@ -1,6 +1,6 @@
 import type { ThemeId } from '@trace/design';
 import type { LngLat, Bounds } from '@trace/geo';
-import { toMissionSources, type MissionMapData, type TerrainOptions } from '@trace/map';
+import { toMissionSources, type MapView, type MissionMapData, type TerrainOptions } from '@trace/map';
 import { GeoJSONSource, type Map as MapLibreMap, type StyleSpecification } from 'maplibre-gl';
 import { useEffect, type RefObject } from 'react';
 import type { TerraDraw, TerraDrawPolygonMode, TerraDrawSelectMode } from 'terra-draw';
@@ -10,12 +10,19 @@ import { drawStyles, selectStyles } from './drawStyles';
 /** Screen pixels kept free around a place when zooming to it: camera behavior, not a design value. */
 export const FIT_BOUNDS_PADDING_PX = 80;
 
+/** Moves the camera to a place: its bounds when it has them, else its center. */
+export function moveMapTo(map: MapLibreMap, focus: { center: LngLat; bounds?: Bounds }) {
+  if (focus.bounds) map.fitBounds(focus.bounds, { padding: FIT_BOUNDS_PADDING_PX, maxZoom: 15, duration: 900 });
+  else map.flyTo({ center: focus.center, zoom: 14, duration: 900 });
+}
+
 interface MapSyncInput {
   mapRef: RefObject<MapLibreMap | null>;
   drawRef: RefObject<TerraDraw | null>;
   ready: boolean;
   themeId: ThemeId;
   terrain: TerrainOptions;
+  view: MapView;
   data: MissionMapData;
   /** Moves the map, e.g. to a place-search result. A new object triggers a new move. */
   focus: { center: LngLat; bounds?: Bounds } | null | undefined;
@@ -24,8 +31,8 @@ interface MapSyncInput {
 }
 
 /** Applies what changes after the map was created: the style, the mission data and where the map looks. */
-export function useMapSync({ mapRef, drawRef, ready, themeId, terrain, data, focus, style }: MapSyncInput) {
-  // Theme and terrain change the style. Keep Terra Draw's own layers across the swap.
+export function useMapSync({ mapRef, drawRef, ready, themeId, terrain, view, data, focus, style }: MapSyncInput) {
+  // Theme, terrain and the map view change the style. Keep Terra Draw's own layers across the swap.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
@@ -44,7 +51,7 @@ export function useMapSync({ mapRef, drawRef, ready, themeId, terrain, data, foc
     drawRef.current?.updateModeOptions<typeof TerraDrawSelectMode>('select', { styles: selectStyles(themeId) });
     map.easeTo({ pitch: terrain.terrain3d ? 55 : 0, duration: 600 });
     // `style` reads the latest props through a ref, so it is not a dependency.
-  }, [mapRef, drawRef, ready, themeId, terrain]); // eslint-disable-line react-hooks/exhaustive-deps -- `style` is rebuilt from the latest props on every render
+  }, [mapRef, drawRef, ready, themeId, terrain, view]); // eslint-disable-line react-hooks/exhaustive-deps -- `style` is rebuilt from the latest props on every render
 
   // Mission data updates only replace the overlay sources' data.
   useEffect(() => {
@@ -59,7 +66,6 @@ export function useMapSync({ mapRef, drawRef, ready, themeId, terrain, data, foc
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready || !focus) return;
-    if (focus.bounds) map.fitBounds(focus.bounds, { padding: FIT_BOUNDS_PADDING_PX, maxZoom: 15, duration: 900 });
-    else map.flyTo({ center: focus.center, zoom: 14, duration: 900 });
+    moveMapTo(map, focus);
   }, [mapRef, ready, focus]);
 }

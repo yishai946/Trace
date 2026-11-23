@@ -159,9 +159,9 @@ describe.each(themeIds.flatMap((themeId) => views.map((view) => ({ themeId, view
     });
 
     it('colors woods and water only in the colored map', () => {
-      const wood = style.layers.find((l) => l.id === 'landcover-wood');
-      const color = wood && 'paint' in wood ? wood.paint?.['fill-color'] : undefined;
       if (view.base === 'satellite') return;
+      const wood = style.layers.find((l) => l.type === 'fill' && l.id === 'landcover-wood');
+      const color = wood?.type === 'fill' ? wood.paint?.['fill-color'] : undefined;
       expect(color).toBe(view.color === 'color' ? themes[themeId].color.success : themes[themeId].color.inkFaint);
     });
   },

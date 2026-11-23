@@ -7,6 +7,7 @@ import { DEM, mapSources, showsContours, showsSatellite } from './sources';
 import { defaultMapView, type BuildMapStyleOptions } from './types';
 
 export { defaultMapView } from './types';
+export { SATELLITE as SATELLITE_SOURCE } from './sources';
 export type { BuildMapStyleOptions, MapBase, MapColor, MapView, TerrainOptions } from './types';
 
 /**

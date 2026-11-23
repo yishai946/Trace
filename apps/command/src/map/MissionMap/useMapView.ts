@@ -1,0 +1,20 @@
+import type { MapView } from '@trace/map';
+import { useState } from 'react';
+import { readMapView, saveMapView } from '../mapView';
+
+/**
+ * The map view the commander chose, saved on this device. When the satellite imagery fails to load the map shows its
+ * base map instead, without overwriting the choice, until the commander picks a view again.
+ */
+export function useMapView() {
+  const [chosen, setChosen] = useState(readMapView);
+  const [satelliteFailed, setSatelliteFailed] = useState(false);
+  const view: MapView = satelliteFailed ? { ...chosen, base: 'map' } : chosen;
+
+  const change = (next: MapView) => {
+    setSatelliteFailed(false);
+    setChosen(next);
+    saveMapView(next);
+  };
+  return { view, change, satelliteFailed, onSatelliteError: () => setSatelliteFailed(true) };
+}
