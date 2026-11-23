@@ -44,7 +44,50 @@ export function withSentryUpload(plugins: readonly PluginEntry[], env: SentryUpl
   return plugins.map((plugin) => (isSentry(plugin) ? entry : plugin));
 }
 
+/** The `android` section of the Expo config. */
+type AndroidConfig = NonNullable<ExpoConfig['android']>;
+
+/** An Android intent filter, as Expo's `android.intentFilters` takes it. */
+export interface IntentFilter {
+  action: string;
+  autoVerify?: boolean;
+  data: { scheme: string; host: string; pathPrefix: string }[];
+  category: string[];
+}
+
+/** Where Field answers join links: the public address of Command (`JOIN_LINK_BASE`, the same as in Command's build). */
+export type JoinLinkEnv = Readonly<Record<string, string | undefined>>;
+
+/**
+ * The Android App Link filter for `https://<host>/j/<code>` (UC-F02, #141): with `autoVerify` Android checks the
+ * site's `/.well-known/assetlinks.json` and opens the link in Field. Without an address there is no filter, so a build
+ * without it passes and only the app's own scheme (`trace-field://`) opens links. The address is baked into the APK:
+ * another domain later needs a new APK. iOS has no `associatedDomains`, which a free signing certificate does not allow.
+ */
+export function joinLinkIntentFilter(env: JoinLinkEnv): IntentFilter | null {
+  const base = env.JOIN_LINK_BASE?.trim();
+  if (!base) return null;
+  const host = URL.canParse(base) && new URL(base).protocol === 'https:' ? new URL(base).host : '';
+  if (!host)
+    throw new Error(
+      `JOIN_LINK_BASE is "${base}": set the public https address of Command, e.g. https://trace.example.com.`,
+    );
+  return {
+    action: 'VIEW',
+    autoVerify: true,
+    data: [{ scheme: 'https', host, pathPrefix: '/j/' }],
+    category: ['BROWSABLE', 'DEFAULT'],
+  };
+}
+
+/** The Android config with the join link filter added to its intent filters. */
+export function withJoinLinks(android: AndroidConfig, env: JoinLinkEnv): AndroidConfig {
+  const filter = joinLinkIntentFilter(env);
+  return filter ? { ...android, intentFilters: [...(android.intentFilters ?? []), filter] } : android;
+}
+
 export default ({ config }: ConfigContext) => ({
   ...config,
+  android: withJoinLinks(config.android ?? {}, process.env),
   plugins: withSentryUpload(config.plugins ?? [], process.env),
 });

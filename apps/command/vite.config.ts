@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 import packageJson from './package.json' with { type: 'json' };
+import { assetLinksPlugin } from './config/assetLinks';
 import { sourceMapUploadOptions } from './config/sourceMapUpload';
 
 const port = Number(process.env.WEB_PORT ?? 5173);
@@ -15,6 +16,8 @@ const distDir = fileURLToPath(new URL('./dist', import.meta.url));
 export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
+    // Lets Android open join links in Field (/.well-known/assetlinks.json, from ANDROID_CERT_SHA256).
+    assetLinksPlugin(loadEnv(mode, process.cwd(), ['ANDROID_'])),
     // Last, so it sees the final bundle: uploads the hidden maps and deletes them when SENTRY_AUTH_TOKEN is set.
     sentryVitePlugin(
       sourceMapUploadOptions(loadEnv(mode, process.cwd(), ['VITE_SENTRY_', 'SENTRY_']), {
