@@ -1,5 +1,5 @@
 import type { MapView } from '@trace/map';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { readMapView, saveMapView } from '../mapView';
 
 /**
@@ -9,7 +9,11 @@ import { readMapView, saveMapView } from '../mapView';
 export function useMapView() {
   const [chosen, setChosen] = useState(readMapView);
   const [satelliteFailed, setSatelliteFailed] = useState(false);
-  const view: MapView = satelliteFailed ? { ...chosen, base: 'map' } : chosen;
+  // Stable between renders: the style is rebuilt whenever this object changes, and the map rerenders on every mousemove.
+  const view = useMemo<MapView>(
+    () => (satelliteFailed ? { ...chosen, base: 'map' } : chosen),
+    [chosen, satelliteFailed],
+  );
 
   const change = (next: MapView) => {
     setSatelliteFailed(false);
