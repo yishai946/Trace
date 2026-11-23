@@ -26,6 +26,14 @@ export function distanceMeters(a: LngLat, b: LngLat): number {
   return 2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+/** The length of a route through the points in order, in meters; 0 for fewer than two points. */
+export function routeLengthMeters(points: readonly LngLat[]): number {
+  return points.reduce((total, point, i) => {
+    const previous = points[i - 1];
+    return previous ? total + distanceMeters(previous, point) : total;
+  }, 0);
+}
+
 export interface PositionedItem<Id> {
   id: Id;
   position: LngLat;

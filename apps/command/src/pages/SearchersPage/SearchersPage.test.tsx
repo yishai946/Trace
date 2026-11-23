@@ -166,4 +166,19 @@ describe('assigning from the pool (UC-C09)', () => {
     expect(other.getAttribute('aria-disabled')).toBeNull();
     expect(other.getAttribute('href')).toBe(`tel:${michal.phone}`);
   });
+
+  it('shows connectivity and battery, and opens the searcher panel (UC-C10)', () => {
+    const onOpen = vi.fn();
+    const offline = { ...michal, offline: true, battery: { level: 12, measuredAt: '2026-10-03T12:00:00.000Z' } };
+    render(<SearchersPage {...props({ participants: [dana, offline], onOpen })} />);
+
+    const [second, first] = rows() as [HTMLElement, HTMLElement];
+    expect(within(first).getByText('מקוון')).toBeTruthy();
+    expect(within(first).getByText('—')).toBeTruthy();
+    expect(within(second).getByText('לא מקוון')).toBeTruthy();
+    expect(within(second).getByText('12%')).toBeTruthy();
+
+    fireEvent.click(within(first).getByRole('button', { name: 'פרטי דנה כהן' }));
+    expect(onOpen).toHaveBeenCalledWith(dana.id);
+  });
 });

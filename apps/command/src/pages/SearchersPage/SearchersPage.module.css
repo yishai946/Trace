@@ -163,3 +163,11 @@ a.num:focus-visible {
   color: var(--warning);
   font-weight: 600;
 }
+
+.ok {
+  color: var(--success);
+}
+
+.warn {
+  color: var(--warning);
+}

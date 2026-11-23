@@ -4,6 +4,7 @@ import type {
   MissionEvent,
   MissionPolygon,
   Participant,
+  ParticipantTrack,
   Sighting,
   TimelineEvent,
 } from '@trace/schemas';
@@ -84,7 +85,29 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
       return;
     case 'participant.moved':
       participants(
-        patchById(event.participantId, (p) => ({ ...p, position: event.position, positionAt: event.positionAt })),
+        // A position is an update, so a searcher shown as Offline is online again (UC-C10, decision 13).
+        patchById(event.participantId, (p) => ({
+          ...p,
+          position: event.position,
+          positionAt: event.positionAt,
+          lastUpdateAt: event.positionAt,
+          offline: false,
+        })),
+      );
+      return;
+    case 'participant.tracked':
+      // Only a route the commander opened is patched (an updater that returns nothing leaves the cache alone); a
+      // closed one is fetched whole when opened.
+      queryClient.setQueryData<ParticipantTrack>(
+        missionKeys.track(missionId, event.participantId),
+        (track) =>
+          track && {
+            ...track,
+            points: [
+              ...track.points,
+              ...event.points.filter((n) => !track.points.some((p) => p.recordedAt === n.recordedAt)),
+            ],
+          },
       );
       return;
     case 'participant.updated':
