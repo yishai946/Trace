@@ -21,9 +21,9 @@ export interface MapFocus {
   bounds?: Bounds;
 }
 
-/** What a click on an LKP, sighting or report symbol hit. The current LKP has the id `lkp`. */
+/** What a click on an LKP, sighting, report or searcher symbol hit. The current LKP has the id `lkp`; a searcher's id is the participant's. */
 export interface PointTarget {
-  kind: 'lkp' | 'sighting' | 'report';
+  kind: 'lkp' | 'sighting' | 'report' | 'searcher';
   id: string;
 }
 
@@ -45,7 +45,7 @@ interface MissionMapProps {
   onEditChange?: (geometry: Polygon) => void;
   /** A click on the map while placing a point, such as the LKP or rally point. Turns off polygon selection. */
   onMapClick?: (point: LngLat) => void;
-  /** A click on an LKP or sighting symbol in selection mode. */
+  /** A click on an LKP, sighting, report or searcher symbol in selection mode. */
   onPointSelect?: (target: PointTarget) => void;
   /** Starts or ends adding a sighting from the toolbar. Without it that tool is disabled. */
   onSighting?: () => void;

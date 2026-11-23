@@ -1,4 +1,5 @@
-import { emptyMissionMapData, type MissionMapData } from '@trace/map';
+import type { LngLat } from '@trace/geo';
+import { emptyMissionMapData, type MapUnit, type MissionMapData } from '@trace/map';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import { timeLabel } from '../timeLabel';
 
@@ -15,7 +16,12 @@ interface MapDataSource {
   selectedPolygonId: string | null;
   /** The polygon being reshaped is drawn by the editor, so the overlay hides it. */
   editingPolygonId: string | null;
+  /** The route of the searcher whose panel is open (UC-C10); drawn on the map. */
+  route?: { participantId: string; positions: LngLat[] } | null;
 }
+
+const unitState = (p: Participant): MapUnit['state'] =>
+  p.offline ? 'offline' : p.gpsUnavailableSince ? 'warning' : 'normal';
 
 /** What the map shows for a mission from the server's mission, polygons and participants. */
 export function toMapData({
@@ -28,6 +34,7 @@ export function toMapData({
   lkps,
   selectedPolygonId,
   editingPolygonId,
+  route = null,
 }: MapDataSource): MissionMapData {
   return {
     ...emptyMissionMapData,
@@ -41,12 +48,14 @@ export function toMapData({
         geometry: p.geometry,
         selected: p.id === selectedPolygonId,
       })),
-    // Live connectivity and safety states arrive with tracking; until then every searcher shows as normal.
+    // Offline (no live connection and no recent update) wins over a GPS warning. Battery and out-of-polygon warnings
+    // wait for their alert rules (UC-S04).
     units: participants.flatMap((p) =>
       p.position && p.status !== 'ended'
-        ? [{ id: p.id, callsign: p.callsign, state: 'normal' as const, position: p.position }]
+        ? [{ id: p.id, callsign: p.callsign, state: unitState(p), position: p.position }]
         : [],
     ),
+    tracks: route ? [{ unitId: route.participantId, positions: route.positions }] : [],
     lkp: mission.lkp
       ? {
           id: 'lkp',

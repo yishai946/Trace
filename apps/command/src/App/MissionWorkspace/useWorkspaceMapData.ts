@@ -15,6 +15,8 @@ interface WorkspaceMapInput {
   editingPolygonId: string | null;
   /** The spot chosen for a new sighting: it shows on the map before it is saved. */
   draftPosition: LngLat | null;
+  /** The route of the searcher whose panel is open. */
+  route: { participantId: string; positions: LngLat[] } | null;
 }
 
 /** What the mission's map draws, and where it opens. */
@@ -29,6 +31,7 @@ export function useWorkspaceMapData({
   selectedPolygonId,
   editingPolygonId,
   draftPosition,
+  route,
 }: WorkspaceMapInput) {
   // The map opens on everything the mission has placed: polygons, rally point and LKP. Read once, at mount.
   const [initialView] = useState(() => {
@@ -52,8 +55,9 @@ export function useWorkspaceMapData({
         sos,
         selectedPolygonId,
         editingPolygonId,
+        route,
       }),
-    [mission, polygons, participants, sightings, lkps, reports, sos, selectedPolygonId, editingPolygonId],
+    [mission, polygons, participants, sightings, lkps, reports, sos, selectedPolygonId, editingPolygonId, route],
   );
   const data = useMemo(
     () =>

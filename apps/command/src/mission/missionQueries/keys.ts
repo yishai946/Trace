@@ -6,6 +6,8 @@ export const missionKeys = {
   all: ['missions'] as const,
   ...missionDataKeys,
   participants: (missionId: string) => ['missions', missionId, 'participants'] as const,
+  track: (missionId: string, participantId: string) =>
+    ['missions', missionId, 'participants', participantId, 'track'] as const,
   sightings: (missionId: string) => ['missions', missionId, 'sightings'] as const,
   lkps: (missionId: string) => ['missions', missionId, 'lkps'] as const,
   timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,

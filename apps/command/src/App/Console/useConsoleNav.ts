@@ -17,6 +17,8 @@ export function useConsoleNav() {
   const [view, setView] = useState<MissionView>('map');
   /** The report open in the Reports page; the alert and the map symbols open it. */
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+  /** The searcher whose panel is open over the map (UC-C10); the table and the map symbols open it. */
+  const [selectedSearcherId, setSelectedSearcherId] = useState<string | null>(null);
 
   return {
     openId,
@@ -25,6 +27,8 @@ export function useConsoleNav() {
     createdNotice,
     view,
     selectedReportId,
+    selectedSearcherId,
+    setSelectedSearcherId,
     setView,
     setSelectedReportId,
     setCreating,
@@ -33,6 +37,7 @@ export function useConsoleNav() {
       setOpenId(id);
       setView('map');
       setSelectedReportId(null);
+      setSelectedSearcherId(null);
       setPanel(null);
       setCreatedNotice(null);
     },
@@ -49,6 +54,11 @@ export function useConsoleNav() {
       setPanel((current) => (open ? target : current === target ? null : current)),
     /** The alert opens the SOS page, or the SOS screen on the phone. */
     openSos: () => setView('sos'),
+    /** Shows a searcher's panel on the map. */
+    openSearcher: (id: string) => {
+      setSelectedSearcherId(id);
+      setView('map');
+    },
     openReport: (id: string) => {
       setSelectedReportId(id);
       setView('reports');

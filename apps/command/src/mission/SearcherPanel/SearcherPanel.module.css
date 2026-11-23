@@ -1,0 +1,83 @@
+/* Trace Console Inspector (.tc-panel, .tc-inspector__head, .tc-dl, .tc-actions), wireframe Cd09. */
+.panel {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.sub {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.warning {
+  margin: 0;
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--warning);
+  font: var(--text-meta);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5) var(--space-6);
+  margin: 0;
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font: var(--text-caption);
+}
+
+.facts dd {
+  margin: 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+/* Coordinates read left to right, but sit at the start edge of the row. */
+.start {
+  text-align: end;
+  unicode-bidi: plaintext;
+}
+
+.ok {
+  color: var(--success);
+}
+
+.warn {
+  color: var(--warning);
+}
+
+.actions {
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-top: 1px solid var(--border-subtle);
+}

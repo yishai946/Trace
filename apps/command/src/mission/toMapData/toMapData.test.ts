@@ -41,6 +41,26 @@ describe('toMapData', () => {
     ]);
   });
 
+  it('shows an offline searcher as offline and one without GPS as a warning', () => {
+    const [dana] = participants;
+    const state = (change: object) => toMapData({ ...base, participants: [{ ...dana!, ...change }] }).units[0]?.state;
+    expect(state({ offline: true })).toBe('offline');
+    expect(state({ gpsUnavailableSince: '2026-10-03T12:01:00.000Z' })).toBe('warning');
+    expect(state({ offline: true, gpsUnavailableSince: '2026-10-03T12:01:00.000Z' })).toBe('offline');
+  });
+
+  it('draws the route of the searcher whose panel is open', () => {
+    const positions: [number, number][] = [
+      [35.1, 31.7],
+      [35.2, 31.8],
+    ];
+    const id = participants[0]?.id;
+    expect(toMapData({ ...base, route: { participantId: id ?? '', positions } }).tracks).toEqual([
+      { unitId: id, positions },
+    ]);
+    expect(toMapData(base).tracks).toEqual([]);
+  });
+
   it('marks the selected polygon and hides the one being reshaped', () => {
     const data = toMapData({ ...base, selectedPolygonId: polygonA.id, editingPolygonId: polygonB.id });
     expect(data.polygons.map((p) => [p.name, p.selected])).toEqual([['ואדי צפוני', true]]);

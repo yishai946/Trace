@@ -1,12 +1,6 @@
-import { formatPhone } from '@trace/domain';
 import type { MissionPolygon, Participant } from '@trace/schemas';
 import styles from './SearchersPage.module.css';
-import { CallButton } from '../../components/CallButton';
-import { CallsignChip } from '../../components/CallsignChip';
-import { timeLabel } from '../../mission/timeLabel';
-import { statusLabel } from '../../mission/participantStatus';
-import { AssignMenu } from './AssignMenu';
-import { EndParticipation } from './EndParticipation';
+import { SearcherRow } from './SearcherRow';
 import { ListState } from '../../components/ListState';
 
 export interface SearchersPageProps {
@@ -15,6 +9,8 @@ export interface SearchersPageProps {
   polygons: MissionPolygon[];
   loadFailed: boolean;
   onRetry: () => void;
+  /** Opens a searcher's panel over the map (UC-C10, wireframe Cd09). */
+  onOpen?: (participantId: string) => void;
   /** Assigns or moves a searcher (UC-C09). Without it, offline or once the mission ended, the menu is disabled. */
   onAssign?: (participantId: string, polygonId: string) => void;
   /** Ends a searcher's participation (UC-C18), after the commander confirms. Without it the action is disabled. */
@@ -38,6 +34,7 @@ export function SearchersPage({
   polygons,
   loadFailed,
   onRetry,
+  onOpen,
   onAssign,
   onEnd,
   assigning = false,
@@ -86,53 +83,23 @@ export function SearchersPage({
                   <th scope="col">טלפון</th>
                   <th scope="col">סטטוס</th>
                   <th scope="col">פוליגון</th>
+                  <th scope="col">קישוריות</th>
+                  <th scope="col">סוללה</th>
                   <th scope="col">עדכון אחרון</th>
                   <th scope="col">פעולות</th>
                 </tr>
               </thead>
               <tbody>
                 {inMission.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <span className={styles.who}>
-                        <CallsignChip callsign={p.callsign} state={p.status === 'available' ? 'waiting' : 'normal'} />
-                        <span>{p.name}</span>
-                      </span>
-                    </td>
-                    <td>
-                      <a className={styles.num} href={`tel:${p.phone}`}>
-                        {formatPhone(p.phone)}
-                      </a>
-                    </td>
-                    <td>
-                      <span className={styles.badge}>{statusLabel(p)}</span>
-                    </td>
-                    <td>{p.status === 'assigned' ? polygonName(p.polygonId) : '—'}</td>
-                    <td>
-                      {p.gpsUnavailableSince ? (
-                        <span className={styles.warning}>
-                          GPS לא זמין מ-
-                          <time dateTime={p.gpsUnavailableSince} className={styles.num}>
-                            {timeLabel(p.gpsUnavailableSince)}
-                          </time>{' '}
-                        </span>
-                      ) : null}
-                      {p.positionAt ? (
-                        <time dateTime={p.positionAt} className={styles.num}>
-                          {timeLabel(p.positionAt)}
-                        </time>
-                      ) : (
-                        <span className={styles.meta}>אין עדיין</span>
-                      )}
-                    </td>
-                    <td>
-                      <span className={styles.actions}>
-                        <CallButton phone={p.phone} name={p.name} display="icon" />
-                        <AssignMenu participant={p} polygons={polygons} onAssign={assigning ? undefined : onAssign} />
-                        <EndParticipation participant={p} onEnd={assigning ? undefined : onEnd} />
-                      </span>
-                    </td>
-                  </tr>
+                  <SearcherRow
+                    key={p.id}
+                    participant={p}
+                    polygonName={polygonName(p.polygonId)}
+                    polygons={polygons}
+                    onOpen={onOpen}
+                    onAssign={assigning ? undefined : onAssign}
+                    onEnd={assigning ? undefined : onEnd}
+                  />
                 ))}
               </tbody>
             </table>

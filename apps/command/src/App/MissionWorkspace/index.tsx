@@ -4,10 +4,13 @@ import type { MapProvider } from '@trace/map';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import type { ReactNode } from 'react';
 import styles from '../App.module.css';
-import { MissionMap, type MapFocus, type PointTarget } from '../../map/MissionMap';
+import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { RallyPointPanel } from '../../mission/RallyPointPanel';
 import { usePolygonEdit } from './usePolygonEdit';
+import { SearcherSlot } from './SearcherSlot';
+import { useSlotSelection } from './useSlotSelection';
 import { useRallyPointEdit } from './useRallyPointEdit';
+import { useSearcherPanel } from './useSearcherPanel';
 import { useSightingPanel } from './useSightingPanel';
 import { useWorkspaceMapData } from './useWorkspaceMapData';
 import { WorkspacePanels } from './WorkspacePanels';
@@ -28,6 +31,9 @@ interface MissionWorkspaceProps {
   sos: Sos[];
   /** Opens a report in the Reports page or screen. */
   onOpenReport: (id: string) => void;
+  /** The searcher whose panel is open (UC-C10), or null; a click on a searcher symbol selects one. */
+  selectedSearcherId: string | null;
+  onSelectSearcher: (id: string | null) => void;
   /** The alerts floating over the map; the phone shows its own under the top bar. */
   alerts: ReactNode;
   sightingsLoading: boolean;
@@ -55,6 +61,8 @@ export function MissionWorkspace({
   reports,
   sos,
   onOpenReport,
+  selectedSearcherId,
+  onSelectSearcher,
   alerts,
   sightingsLoading,
   sightingsFailed,
@@ -70,6 +78,12 @@ export function MissionWorkspace({
   const rally = useRallyPointEdit(mission, online);
   const canEditPolygons = canChangePolygons(mission.status) && online;
   const canChangeSightings = canChangeLkp(mission.status) && online;
+  const searcherPanel = useSearcherPanel({
+    missionId: mission.id,
+    searcherId: selectedSearcherId,
+    participants,
+    polygons,
+  });
   const map = useWorkspaceMapData({
     mission,
     polygons,
@@ -81,26 +95,17 @@ export function MissionWorkspace({
     selectedPolygonId: polygon.selectedId,
     editingPolygonId: polygon.editing?.polygonId ?? null,
     draftPosition: sighting.draftPosition,
+    route: searcherPanel.searcher
+      ? { participantId: searcherPanel.searcher.id, positions: searcherPanel.positions }
+      : null,
   });
 
-  // The polygon Inspector and the LKP panel share one slot: opening one puts the other away.
-  const selectPolygon = (polygonId: string | null) => {
-    polygon.select(polygonId);
-    if (polygonId) sighting.hide();
-  };
-  const openLkpPanel = (sightingId: string | null) => {
-    polygon.select(null);
-    sighting.show(sightingId);
-  };
-  const toggleAddSighting = () => {
-    if (sighting.adding) return sighting.cancelAdd();
-    polygon.select(null);
-    sighting.startAdd();
-  };
-  const selectPoint = (target: PointTarget) => {
-    if (target.kind === 'report') onOpenReport(target.id);
-    else openLkpPanel(target.kind === 'sighting' ? target.id : null);
-  };
+  const { selectPolygon, toggleAddSighting, selectPoint } = useSlotSelection({
+    polygon,
+    sighting,
+    onOpenReport,
+    onSelectSearcher,
+  });
   // A click on the map moves the rally point while its panel asks for one, else it places the new sighting.
   const onMapClick = rallyOpen && rally.placesOnMap ? rally.change : sighting.adding ? sighting.place : undefined;
   const canToggleSighting = (canChangeSightings || !!sighting.adding) && !polygon.editing;
@@ -142,6 +147,12 @@ export function MissionWorkspace({
           />
         </div>
       )}
+
+      <SearcherSlot
+        panel={searcherPanel}
+        taken={!!polygon.selected || !!polygon.edit}
+        onClose={() => onSelectSearcher(null)}
+      />
 
       <WorkspacePanels
         mission={mission}

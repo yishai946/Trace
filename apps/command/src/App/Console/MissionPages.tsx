@@ -63,6 +63,7 @@ export function MissionPages({
           polygons={polygons}
           loadFailed={data.participants.isError}
           onRetry={() => void data.participants.refetch()}
+          onOpen={nav.openSearcher}
           {...searcherActions}
         />
       )}

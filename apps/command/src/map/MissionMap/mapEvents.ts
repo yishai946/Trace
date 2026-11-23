@@ -9,7 +9,8 @@ const SIGHTING_LAYER = 'mission-sightings';
 const REPORT_LAYER = 'mission-reports';
 const LKP_LAYER = 'mission-lkp';
 const LKP_HISTORY_LAYER = 'mission-lkp-history';
-const POINT_LAYERS = [SIGHTING_LAYER, REPORT_LAYER, LKP_LAYER, LKP_HISTORY_LAYER];
+const UNIT_LAYER = 'mission-units';
+const POINT_LAYERS = [SIGHTING_LAYER, REPORT_LAYER, LKP_LAYER, LKP_HISTORY_LAYER, UNIT_LAYER];
 
 interface MapEventRefs {
   toolRef: RefObject<MapTool>;
@@ -24,6 +25,7 @@ interface MapEventRefs {
 function pointTarget(layerId: string, id: unknown): PointTarget {
   if (layerId === SIGHTING_LAYER && typeof id === 'string') return { kind: 'sighting', id };
   if (layerId === REPORT_LAYER && typeof id === 'string') return { kind: 'report', id };
+  if (layerId === UNIT_LAYER && typeof id === 'string') return { kind: 'searcher', id };
   return { kind: 'lkp', id: typeof id === 'string' ? id : 'lkp' };
 }
 
