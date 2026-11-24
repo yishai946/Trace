@@ -6,6 +6,12 @@ import { useOfflineState } from '../state';
 import { clearOfflinePackages, loadPhoto, loadStep, saveStep } from '../store';
 import { refreshOfflinePackage, requestOfflineRefresh } from './index';
 
+const mapPack = vi.hoisted(() => ({ download: vi.fn(async (_options: unknown) => undefined) }));
+vi.mock('../mapPack', () => ({
+  downloadMapPack: (options: unknown) => mapPack.download(options),
+  removeMapPacks: async () => undefined,
+}));
+
 const base = 'https://api.test';
 const options = { missionId: MISSION_ID, token: 'tok' };
 const edited = { ...mission, name: 'מסע 0412 (עודכן)' };
@@ -13,7 +19,21 @@ const newPhoto = {
   ...edited,
   missingPerson: { ...edited.missingPerson, photoUrl: `/api/missions/${MISSION_ID}/photo?v=2` },
 };
-const movedPolygon = { ...polygon, name: 'פוליגון 1 (הוזז)' };
+const movedPolygon = {
+  ...polygon,
+  name: 'פוליגון 1 (הוזז)',
+  geometry: {
+    ...polygon.geometry,
+    coordinates: [
+      [
+        [35.3, 31.9],
+        [35.31, 31.9],
+        [35.31, 31.91],
+        [35.3, 31.9],
+      ],
+    ],
+  },
+};
 
 interface Server {
   mission?: typeof mission;
@@ -142,6 +162,48 @@ describe('refreshOfflinePackage', () => {
     controller.abort();
     await expect(refreshing).rejects.toBeDefined();
     expect(await savedName()).toBe('מסע 0412');
+  });
+});
+
+describe('refreshOfflinePackage and the base map', () => {
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    mapPack.download.mockReset();
+    await clearOfflinePackages();
+  });
+
+  it('asks for the map of the new area after the polygons moved', async () => {
+    await saveFullPackage();
+    mapPack.download.mockClear();
+    serve({ mission: edited });
+    await refreshOfflinePackage(options);
+    expect(mapPack.download).toHaveBeenCalledTimes(1);
+    const [request] = mapPack.download.mock.calls[0] ?? [];
+    const [west, south, east, north] = (request as { bounds: number[] }).bounds;
+    expect(request).toMatchObject({ missionId: MISSION_ID });
+    expect([west, south, east, north]).toEqual([35.13, 31.769, 35.31, 31.91].map((n) => expect.closeTo(n, 5)));
+  });
+
+  it('keeps the new polygons and rejects, for the next refresh to retry, when the map fails', async () => {
+    await saveFullPackage();
+    mapPack.download.mockRejectedValueOnce(new Error('tiles unreachable'));
+    serve({ mission: edited });
+    await expect(refreshOfflinePackage(options)).rejects.toThrow('tiles unreachable');
+    expect(await savedPolygonName()).toBe('פוליגון 1 (הוזז)');
+    mapPack.download.mockClear();
+    serve({ mission: edited });
+    await refreshOfflinePackage(options);
+    expect(mapPack.download).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not ask for a map when the package is not complete', async () => {
+    serve();
+    await saveStep(MISSION_ID, 'mission', { json: mission });
+    vi.restoreAllMocks();
+    mapPack.download.mockClear();
+    serve({ mission: edited });
+    await refreshOfflinePackage(options);
+    expect(mapPack.download).not.toHaveBeenCalled();
   });
 });
 

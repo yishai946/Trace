@@ -27,7 +27,14 @@ type Failure = (pack: unknown, error: { message: string }) => void;
 const bounds: Bounds = [35, 31.7, 35.1, 31.8];
 const A = 'mission-a';
 
-function fakeManager(packs: { id: string; metadata: { missionId: string }; state?: string }[] = []) {
+interface FakePack {
+  id: string;
+  metadata: { missionId: string; area?: Bounds };
+  bounds?: Bounds;
+  state?: string;
+}
+
+function fakeManager(packs: FakePack[] = []) {
   const handlers: { progress?: Progress; error?: Failure } = {};
   const live = packs.map((pack) => ({
     ...pack,
@@ -129,6 +136,79 @@ describe('downloadMapPack', () => {
     controller.abort(new Error('stopped'));
     await expect(done).rejects.toThrow('stopped');
     await vi.waitFor(() => expect(live[0]?.pause).toHaveBeenCalled());
+  });
+});
+
+describe('downloadMapPack when the mission area changes', () => {
+  beforeEach(() => {
+    mocks.provider = {};
+  });
+  afterEach(() => {
+    mocks.library = null;
+  });
+
+  const oldArea: Bounds = [34.99, 31.69, 35.11, 31.81];
+  const moved: Bounds = [35.2, 31.7, 35.3, 31.8];
+  const oldPack = { id: 'p1', metadata: { missionId: A, area: oldArea }, state: 'complete' };
+
+  it('keeps a complete pack whose saved area holds the new area', async () => {
+    const { manager } = fakeManager([oldPack]);
+    await downloadMapPack({ missionId: A, bounds: [35, 31.7, 35.05, 31.75] });
+    expect(manager.createPack).not.toHaveBeenCalled();
+    expect(manager.deletePack).not.toHaveBeenCalled();
+  });
+
+  it('reads the area from the native pack when its metadata has none', async () => {
+    const { manager } = fakeManager([{ id: 'p1', metadata: { missionId: A }, bounds: oldArea, state: 'complete' }]);
+    await downloadMapPack({ missionId: A, bounds: [35, 31.7, 35.05, 31.75] });
+    expect(manager.createPack).not.toHaveBeenCalled();
+    const done = downloadMapPack({ missionId: A, bounds: moved });
+    await vi.waitFor(() => expect(manager.createPack).toHaveBeenCalled());
+    void done.catch(() => undefined);
+  });
+
+  it('downloads the new area and drops the old pack only once the new one is complete', async () => {
+    const { manager, handlers } = fakeManager([oldPack]);
+    const done = downloadMapPack({ missionId: A, bounds: moved });
+    await vi.waitFor(() => expect(handlers.progress).toBeDefined());
+    const [options] = manager.createPack.mock.calls[0] ?? [];
+    const area = [35.19, 31.69, 35.31, 31.81].map((n) => expect.closeTo(n, 5));
+    expect(options).toMatchObject({ bounds: area, metadata: { missionId: A, area } });
+    handlers.progress?.({}, { state: 'active' });
+    expect(manager.deletePack).not.toHaveBeenCalled();
+    handlers.progress?.({}, { state: 'complete' });
+    await done;
+    expect(manager.deletePack.mock.calls).toEqual([['p1']]);
+  });
+
+  it('keeps the old pack when the extension fails', async () => {
+    const { manager, handlers } = fakeManager([oldPack]);
+    const done = downloadMapPack({ missionId: A, bounds: moved });
+    await vi.waitFor(() => expect(handlers.error).toBeDefined());
+    handlers.error?.({}, { message: 'network lost' });
+    await expect(done).rejects.toThrow('network lost');
+    expect(manager.deletePack).not.toHaveBeenCalled();
+  });
+
+  it('resumes the cut-off extension on the next try instead of starting a third pack', async () => {
+    const partial = { id: 'p2', metadata: { missionId: A, area: [35.19, 31.69, 35.31, 31.81] as Bounds } };
+    const { manager, handlers, live } = fakeManager([oldPack, partial]);
+    const done = downloadMapPack({ missionId: A, bounds: moved });
+    await vi.waitFor(() => expect(live[1]?.resume).toHaveBeenCalled());
+    handlers.progress?.({}, { state: 'complete' });
+    await done;
+    expect(manager.createPack).not.toHaveBeenCalled();
+    expect(manager.deletePack.mock.calls).toEqual([['p1']]);
+  });
+
+  it('leaves the packs of other missions alone', async () => {
+    const other = { id: 'p9', metadata: { missionId: 'mission-b', area: oldArea }, state: 'complete' };
+    const { manager, handlers } = fakeManager([oldPack, other]);
+    const done = downloadMapPack({ missionId: A, bounds: moved });
+    await vi.waitFor(() => expect(handlers.progress).toBeDefined());
+    handlers.progress?.({}, { state: 'complete' });
+    await done;
+    expect(manager.deletePack.mock.calls).toEqual([['p1']]);
   });
 });
 
