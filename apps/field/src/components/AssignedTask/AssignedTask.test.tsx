@@ -56,7 +56,7 @@ const granted = (override: Partial<FieldPermissions> = {}): FieldPermissions => 
 });
 
 const MISSION = '00000000-0000-4000-8000-000000000001';
-const setSaved = (saved: ('mission' | 'photo' | 'polygons')[]) => {
+const setSaved = (saved: ('mission' | 'photo' | 'polygons' | 'map')[]) => {
   useSession.setState({ missionId: MISSION });
   useOfflineState.setState({ missionId: MISSION, saved, loaded: true, running: false, failed: false });
 };
@@ -100,7 +100,7 @@ describe('AssignedTask', () => {
   });
 
   it('opens Start Search once the offline package is saved and the permissions are granted', async () => {
-    setSaved(['mission', 'photo', 'polygons']);
+    setSaved(['mission', 'photo', 'polygons', 'map']);
     const onStartSearch = vi.fn();
     renderTask({ onStartSearch });
     expect(await screen.findByText(/מעקב המיקום והמסלול מתחילים/)).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe('AssignedTask', () => {
 
   it('blocks Start Search and names the missing permissions and how to grant them', async () => {
     device.read.mockResolvedValue(granted({ backgroundLocation: 'ask', push: 'ask' }));
-    setSaved(['mission', 'photo', 'polygons']);
+    setSaved(['mission', 'photo', 'polygons', 'map']);
     renderTask({ onStartSearch: () => {} });
     expect(await screen.findByText(/חסר: מיקום ברקע, התראות Push/)).toBeInTheDocument();
     expect(screen.getByText(/בהגדרות הטלפון/)).toBeInTheDocument();
@@ -121,7 +121,7 @@ describe('AssignedTask', () => {
 
   it('keeps Start Search closed without a claim about permissions until the phone answers', () => {
     device.read.mockReturnValue(new Promise(() => {}));
-    setSaved(['mission', 'photo', 'polygons']);
+    setSaved(['mission', 'photo', 'polygons', 'map']);
     renderTask({ onStartSearch: () => {} });
     expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
     expect(screen.queryByText(/חסר:/)).not.toBeInTheDocument();

@@ -1,8 +1,8 @@
 import type { SavedOfflineParts } from '@trace/domain';
 import type { OfflineStep } from '../store';
 
-/** What a download saves, in order: the mission (details, LKP, rally point), the photo, the polygons. */
-export const OFFLINE_STEPS: readonly OfflineStep[] = ['mission', 'photo', 'polygons'];
+/** What a download saves, in order: the mission (details, LKP, rally point), the photo, the polygons, the base map of the area. */
+export const OFFLINE_STEPS: readonly OfflineStep[] = ['mission', 'photo', 'polygons', 'map'];
 
 export interface OfflineProgress {
   done: number;
@@ -20,5 +20,5 @@ export function offlineProgress(saved: readonly OfflineStep[]): OfflineProgress 
 /** The essential parts of the domain rule (decision 85) that the saved steps make up. */
 export function savedParts(saved: readonly OfflineStep[]): SavedOfflineParts {
   const has = (step: OfflineStep) => saved.includes(step);
-  return { missionInfo: has('mission') && has('photo'), map: has('mission') && has('polygons') };
+  return { missionInfo: has('mission') && has('photo'), map: has('mission') && has('polygons') && has('map') };
 }

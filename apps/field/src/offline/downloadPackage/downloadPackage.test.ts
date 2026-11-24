@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { loadPhoto, loadStep, savedSteps } from '../store';
 import { Mission } from '@trace/schemas';
+import { downloadMapPack } from '../mapPack';
 import { downloadOfflinePackage } from './index';
 import { MISSION_ID, mission, polygon } from './fixtures';
+
+vi.mock('../mapPack', () => ({
+  downloadMapPack: vi.fn(async () => undefined),
+  removeMapPacks: vi.fn(async () => undefined),
+}));
 
 const base = `https://api.test`;
 const options = { missionId: MISSION_ID, token: 'tok' };
@@ -33,12 +39,15 @@ function serve({ photo = 'ok', polygons = 'ok', mission: served = mission }: Ser
 const urls = (fetch: ReturnType<typeof serve>) => fetch.mock.calls.map(([input]) => String(input).replace(base, ''));
 
 describe('downloadOfflinePackage', () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.mocked(downloadMapPack).mockReset().mockResolvedValue(undefined);
+  });
 
   it('saves the mission, the photo and the polygons', async () => {
     serve();
     await downloadOfflinePackage(options);
-    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['mission', 'photo', 'polygons']);
+    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['map', 'mission', 'photo', 'polygons']);
     expect((await loadStep(MISSION_ID, 'mission', Mission))?.name).toBe('מסע 0412');
     const photo = await loadPhoto(MISSION_ID);
     expect(photo && Array.from(photo.bytes)).toEqual([9, 8, 7]);
@@ -48,7 +57,7 @@ describe('downloadOfflinePackage', () => {
     serve();
     const saved: string[] = [];
     await downloadOfflinePackage({ ...options, onStepSaved: (step) => saved.push(step) });
-    expect(saved).toEqual(['mission', 'photo', 'polygons']);
+    expect(saved).toEqual(['mission', 'photo', 'polygons', 'map']);
   });
 
   it('counts a mission without a photo as saved, without asking for one', async () => {
@@ -62,7 +71,7 @@ describe('downloadOfflinePackage', () => {
   it('counts a photo that is gone from the server as no photo', async () => {
     serve({ photo: 'missing' });
     await downloadOfflinePackage(options);
-    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['mission', 'photo', 'polygons']);
+    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['map', 'mission', 'photo', 'polygons']);
   });
 
   it('saves a mission without polygons yet', async () => {
@@ -91,7 +100,7 @@ describe('downloadOfflinePackage', () => {
     const fetch = serve();
     await downloadOfflinePackage(options);
     expect(urls(fetch)).toEqual([`/api/missions/${MISSION_ID}/polygons`]);
-    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['mission', 'photo', 'polygons']);
+    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['map', 'mission', 'photo', 'polygons']);
   });
 
   it('resumes the photo from the saved mission without fetching the mission again', async () => {
@@ -119,5 +128,24 @@ describe('downloadOfflinePackage', () => {
     controller.abort();
     await expect(downloadOfflinePackage({ ...options, signal: controller.signal })).rejects.toBeDefined();
     expect(await savedSteps(MISSION_ID)).toEqual([]);
+  });
+
+  it('saves the base map of the area framing the polygons, the LKP and the rally point', async () => {
+    serve();
+    await downloadOfflinePackage(options);
+    expect(downloadMapPack).toHaveBeenCalledTimes(1);
+    expect(downloadMapPack).toHaveBeenCalledWith(
+      expect.objectContaining({ missionId: MISSION_ID, bounds: [35, 31.7, 35.137, 31.78] }),
+    );
+  });
+
+  it('does not count the map as saved when its download fails, and tries it again next time', async () => {
+    serve();
+    vi.mocked(downloadMapPack).mockRejectedValueOnce(new Error('network lost'));
+    await expect(downloadOfflinePackage(options)).rejects.toThrow('network lost');
+    expect((await savedSteps(MISSION_ID)).sort()).toEqual(['mission', 'photo', 'polygons']);
+    await downloadOfflinePackage(options);
+    expect(downloadMapPack).toHaveBeenCalledTimes(2);
+    expect(await savedSteps(MISSION_ID)).toContain('map');
   });
 });
