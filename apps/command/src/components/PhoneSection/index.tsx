@@ -29,6 +29,7 @@ export function PhoneSection({ phoneNumber }: PhoneSectionProps) {
   const save = useSetOwnPhone();
 
   const submit = () => {
+    if (save.isPending) return;
     const typed = value.trim();
     if (typed !== '' && parsePhone(typed) === null) {
       setInvalid(true);
@@ -66,7 +67,11 @@ export function PhoneSection({ phoneNumber }: PhoneSectionProps) {
       <Button type="submit" variant="secondary" size="sm" isDisabled={save.isPending}>
         {save.isPending ? 'שומר…' : 'שמירה'}
       </Button>
-      {save.isSuccess && <p className={styles.note}>המספר נשמר.</p>}
+      {save.isSuccess && (
+        <p className={styles.note} role="status">
+          המספר נשמר.
+        </p>
+      )}
       {save.isError && (
         <p className={styles.note} role="alert">
           {failureMessage(save.error)}
