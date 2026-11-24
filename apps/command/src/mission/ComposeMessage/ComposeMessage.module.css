@@ -231,3 +231,16 @@
 .chip[data-focus-visible] {
   outline: 2px solid var(--focus);
 }
+
+/* On the phone (wireframe Cm11 tcx-chipbtn--lg) the chips are 44px and scroll sideways. */
+.phone .chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.phone .chip {
+  flex: 0 0 auto;
+  height: var(--pending-touch-target);
+  padding-inline: var(--space-7);
+  border-radius: calc(var(--pending-touch-target) / 2);
+}
