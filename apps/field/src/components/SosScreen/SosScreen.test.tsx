@@ -337,4 +337,11 @@ describe('SosScreen calls (UC-F14, decision 79)', () => {
     expect(screen.getByRole('button', { name: /חירום 100/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'התקשר למנהל' })).not.toBeInTheDocument();
   });
+
+  it('says the emergency call did not open when the dialer is missing', async () => {
+    vi.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no dialer'));
+    view();
+    fireEvent.click(screen.getByRole('button', { name: /חירום 100/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('לא ניתן לפתוח את החייגן');
+  });
 });
