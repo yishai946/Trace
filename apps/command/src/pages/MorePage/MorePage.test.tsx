@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MorePage, type MorePageProps } from '.';
@@ -17,9 +18,11 @@ function renderPage(overrides: Partial<MorePageProps> = {}) {
     ...overrides,
   };
   render(
-    <ThemeProvider>
-      <MorePage {...props} />
-    </ThemeProvider>,
+    <QueryClientProvider client={new QueryClient()}>
+      <ThemeProvider>
+        <MorePage {...props} />
+      </ThemeProvider>
+    </QueryClientProvider>,
   );
   return props;
 }

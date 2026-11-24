@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatPhone, telHref } from '.';
+import { formatPhone, parsePhone, telHref } from '.';
 
 describe('formatPhone', () => {
   it('writes an Israeli mobile number the local way', () => {
@@ -21,6 +21,27 @@ describe('telHref', () => {
     'has no link for %j',
     (phone) => {
       expect(telHref(phone)).toBeNull();
+    },
+  );
+});
+
+describe('parsePhone', () => {
+  it.each([
+    ['052-340-1187', '+972523401187'],
+    ['0523401187', '+972523401187'],
+    ['  052 340 1187 ', '+972523401187'],
+    ['+972-52-340-1187', '+972523401187'],
+    ['+972523401187', '+972523401187'],
+    ['02-5551234', '+97225551234'],
+    ['+1 (415) 555-0123', '+14155550123'],
+  ])('reads %s as %s', (input, e164) => {
+    expect(parsePhone(input)).toBe(e164);
+  });
+
+  it.each(['', '   ', 'abc', '052', '05234011871234', '+0123456789', '+12', '052-340-118a', '00972523401187'])(
+    'rejects %j',
+    (input) => {
+      expect(parsePhone(input)).toBeNull();
     },
   );
 });

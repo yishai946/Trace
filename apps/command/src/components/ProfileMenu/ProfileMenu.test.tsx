@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PHONE_QUERY } from '../../hooks/usePhoneLayout';
@@ -25,9 +26,11 @@ function renderMenu(overrides: Partial<ProfileMenuProps> = {}) {
     ...overrides,
   };
   render(
-    <ThemeProvider>
-      <ProfileMenu {...props} />
-    </ThemeProvider>,
+    <QueryClientProvider client={new QueryClient()}>
+      <ThemeProvider>
+        <ProfileMenu {...props} />
+      </ThemeProvider>
+    </QueryClientProvider>,
   );
   fireEvent.click(screen.getByRole('button', { name: /פרופיל: ישי ביטון/ }));
   return props;
@@ -42,6 +45,11 @@ describe('ProfileMenu', () => {
   it('opens as a popover on desktop', () => {
     renderMenu();
     expect(screen.getByRole('dialog', { name: 'פרופיל' })).toHaveAttribute('data-presentation', 'popover');
+  });
+
+  it('holds the phone number field with the saved number', () => {
+    renderMenu({ user: { ...user, phoneNumber: '+972523401187' } });
+    expect(screen.getByLabelText('מספר טלפון')).toHaveValue('052-340-1187');
   });
 
   describe('on a phone', () => {

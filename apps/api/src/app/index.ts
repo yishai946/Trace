@@ -15,6 +15,7 @@ import type { Db } from '../db';
 import type { Env } from '../env';
 import { registerErrorHandlers } from '../errors';
 import { serverLogOptions, type LogStream } from '../logging';
+import { commanderRoutes } from '../modules/commanders';
 import { healthRoutes } from '../modules/health/routes';
 import { createExpoPushSender } from '../modules/notifications/expoPushSender';
 import { notificationRoutes } from '../modules/notifications';
@@ -128,6 +129,7 @@ export async function buildApp({
         await signedIn.register(reportRoutes, deps);
         await signedIn.register(searcherRoutes, { db });
         await signedIn.register(notificationRoutes, { db });
+        await signedIn.register(commanderRoutes, { db });
         await signedIn.register(timelineRoutes, { db });
       });
     },

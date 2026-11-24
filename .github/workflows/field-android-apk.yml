@@ -51,6 +51,9 @@ jobs:
 
       - name: Generate the native Android project
         working-directory: apps/field
+        env:
+          # Public https address of Command (repository variable): Android App Links for join links (#141).
+          JOIN_LINK_BASE: ${{ vars.JOIN_LINK_BASE }}
         run: npx expo prebuild --platform android --no-install
 
       - name: Build

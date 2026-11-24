@@ -1,5 +1,6 @@
 import { ConnectionStatus, type Connection } from '../../components/ConnectionStatus';
 import { ChevronIcon, MissionsListIcon, SignOutIcon } from '../../components/icons';
+import { PhoneSection } from '../../components/PhoneSection';
 import { ROLE_LABELS, initials, type ProfileMenuProps } from '../../components/ProfileMenu';
 import { ThemeSelect } from '../../components/ThemeSelect';
 import styles from './MorePage.module.css';
@@ -45,6 +46,10 @@ export function MorePage({
               {user.email}
             </span>
           </span>
+        </div>
+
+        <div className={styles.row}>
+          <PhoneSection phoneNumber={user.phoneNumber} />
         </div>
 
         <div className={styles.row}>

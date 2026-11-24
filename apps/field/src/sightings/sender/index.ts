@@ -1,12 +1,15 @@
-import { CreateSightingBody } from '@trace/schemas';
+import { CreateSightingFields } from '@trace/schemas';
 import { z } from 'zod';
 import { ApiRequestError } from '../../api';
 import type { OutboxSender } from '../../outbox';
 import { useSession } from '../../state/session';
 import { postSighting } from '../requests';
 
-/** A sighting as the outbox keeps it: the id is made on the phone, so a retry cannot add it twice (UC-F10). */
-export const QueuedSighting = CreateSightingBody.extend({ id: z.uuid() });
+/**
+ * A sighting as the outbox keeps it: the id is made on the phone, so a retry cannot add it twice (UC-F10). The "not in
+ * the future" check is left to the server: a phone clock corrected backwards must not drop a stored sighting.
+ */
+export const QueuedSighting = CreateSightingFields.extend({ id: z.uuid() });
 export type QueuedSighting = z.infer<typeof QueuedSighting>;
 
 /**

@@ -23,8 +23,22 @@ Root Directory ריק בשני שירותי הריפו: זה monorepo של pnpm,
 - Build: `pnpm install --frozen-lockfile && pnpm --filter @trace/command build`
 - Start: `WEB_PORT=$PORT pnpm --filter @trace/command exec vite preview --host 0.0.0.0`. ההגדרה קוראת `WEB_PORT`, לכן מעבירים אליה את `PORT` של Railway.
 - Command קורא ל-`/api` באותו origin; `vite preview` מעביר ל-API (`VITE_API_PROXY`, גם WebSocket), כך שעוגיית הכניסה שייכת לדומיין של Command.
-- משתנים: `VITE_API_PROXY` (הכתובת הציבורית של ה-API), `VITE_JOIN_LINK_BASE` (הכתובת הציבורית של Command), `MAPTILER_API_KEY` (נצרב בבנייה; בלי זה אין מפה, ואחרי הוספה צריך לבנות מחדש).
+- משתנים: `VITE_API_PROXY` (הכתובת הציבורית של ה-API), `VITE_JOIN_LINK_BASE` (הכתובת הציבורית של Command), `ANDROID_CERT_SHA256` (ראו "קישורי הצטרפות"), `MAPTILER_API_KEY` (נצרב בבנייה; בלי זה אין מפה, ואחרי הוספה צריך לבנות מחדש).
 - `vite preview` אינו שרת פרודקשן. זה מספיק ל-POC; בהמשך אפשר להחליף בשרת סטטי עם proxy.
+
+## קישורי הצטרפות (App Links ב-Android)
+
+הקישור וה-QR של מסע הם `https://<כתובת Command>/j/<קוד>`. ב-Android עם Field מותקן הם פותחים את האפליקציה במסך ההצטרפות; בלי האפליקציה, וב-iOS (אין Universal Links בחתימה חינמית), נפתח ב-Command עמוד נחיתה בלי כניסה, עם הקוד, הסבר התקנה וכפתור שפותח `trace-field://j/<קוד>`.
+
+הכתובת נצרבת ב-APK, ולכן ההגדרה היא בסדר הזה:
+
+1. ב-`command`: `VITE_JOIN_LINK_BASE` הוא הכתובת הציבורית (`https://….up.railway.app`, בלי `/` בסוף).
+2. ב-GitHub, Settings, Variables: משתנה הריפו `JOIN_LINK_BASE` עם אותה כתובת. ה-workflow `Field Android APK` מעביר אותו ל-`expo prebuild`, וה-`intentFilters` (עם `autoVerify`) נוצרים רק כשהוא מוגדר. כתובת שאינה https נכשלת בבנייה.
+3. מריצים את ה-workflow ומעתיקים את `Signing certificate SHA-256` מסיכום הריצה.
+4. ב-`command`: `ANDROID_CERT_SHA256` עם הטביעה (אפשר כמה, מופרדות בפסיק, למשל Debug ו-Release). הבנייה כותבת `/.well-known/assetlinks.json` ל-`dist`, ו-`vite preview` מגיש אותו; בלי המשתנה הקובץ לא נוצר. אחרי הגדרה בונים את `command` מחדש.
+5. מתקינים את ה-APK שנבנה בשלב 3 ובודקים: `adb shell pm get-app-links com.yishai946.tracefield` מציג את הדומיין כ-`verified`, וסריקת ה-QR במצלמת הטלפון פותחת את Field.
+
+מעבר לדומיין אחר בעתיד דורש APK חדש.
 
 ## מנהל ראשון
 
