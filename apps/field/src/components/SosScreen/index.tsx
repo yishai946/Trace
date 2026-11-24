@@ -36,7 +36,7 @@ export function SosScreen() {
   const send = (message: string) => activate.mutate({ message, location: sosLocationOf(fix) });
 
   return (
-    <Screen title="חירום" tabbed>
+    <Screen title="חירום" tabbed footer={<SosCalls />}>
       <View style={styles.stack}>
         {list.isError ? (
           <Notice icon="alert" tone="warn">
@@ -61,7 +61,6 @@ export function SosScreen() {
             onActivate={send}
           />
         )}
-        <SosCalls />
       </View>
     </Screen>
   );
