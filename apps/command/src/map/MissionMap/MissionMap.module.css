@@ -19,12 +19,19 @@
   transform: translateX(-50%);
 }
 
-.zoom {
+.layers {
   position: absolute;
   bottom: var(--space-6);
   inset-inline-end: var(--space-6);
+}
+
+.nav {
+  position: absolute;
+  bottom: calc(var(--space-6) * 2 + 72px);
+  inset-inline-end: var(--space-6);
   display: flex;
   flex-direction: column;
+  align-items: center;
   padding: var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -37,10 +44,86 @@
  * it is placed with a physical `left`: the zoom buttons sit at the inline end, which is the left in Command's RTL.
  * The offset is the zoom box: one button wide plus its padding and border.
  */
+/* The commander's own position (useCommanderMarker): a blue dot with a white ring and a soft halo. */
+.me {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--surface);
+  border-radius: var(--radius-xl);
+  background-color: var(--accent);
+  box-shadow: var(--shadow-panel);
+  pointer-events: none;
+}
+
+.me::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: var(--radius-xl);
+  background-color: var(--accent);
+  opacity: 0.2;
+}
+
+.compass {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--pending-touch-target);
+}
+
+.needle,
+.turn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.needle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xl);
+}
+
+.needle svg {
+  width: 28px;
+  height: 28px;
+  transition: transform 0.1s linear;
+}
+
+.north {
+  fill: var(--danger);
+}
+
+.turn {
+  width: 10px;
+  height: 24px;
+}
+
+.turn svg {
+  width: 7px;
+  height: 11px;
+}
+
+.needle[data-hovered],
+.turn[data-hovered] {
+  color: var(--ink);
+}
+
+.needle[data-focus-visible],
+.turn[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
 .coords {
   position: absolute;
   bottom: var(--space-6);
-  left: calc(var(--space-6) * 2 + var(--control-h) + var(--space-2) * 2 + 2px);
+  left: calc(var(--space-6) * 2 + 72px);
   display: flex;
   gap: var(--space-5);
   padding-block: var(--space-2);
@@ -102,9 +185,23 @@
     overflow-y: auto;
   }
 
-  .zoom,
   .coords {
     display: none;
+  }
+
+  /* Above the collapsed bottom sheet at the inline start. */
+  .layers {
+    inset-inline-end: auto;
+    inset-inline-start: var(--space-6);
+    bottom: calc(min(var(--pending-sheet-h), 45%) + var(--space-6) * 2);
+  }
+
+  /* Under the app bar at the inline start, clear of the tool column and the bottom sheet. */
+  .nav {
+    top: calc(var(--space-6) * 2 + var(--header-h) + var(--map-overlay-top, 0px));
+    bottom: auto;
+    inset-inline-end: auto;
+    inset-inline-start: var(--space-6);
   }
 
   /* Beside the toolbar column: one tool button plus its padding and border. */

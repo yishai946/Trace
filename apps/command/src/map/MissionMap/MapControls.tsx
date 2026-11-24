@@ -1,9 +1,9 @@
 import { formatItm, formatLatLng, toItm, type LngLat } from '@trace/geo';
+import type { ThemeId } from '@trace/design';
 import type { MapView, TerrainOptions } from '@trace/map';
-import { Button } from '../../components/Button';
 import { MapLayersControl } from '../MapLayersControl';
 import { MapToolbar, type MapTool } from '../MapToolbar';
-import { ActionButton } from '../ToolButton/ActionButton';
+import { NavControls, type NavControlsProps } from './NavControls';
 import styles from './MissionMap.module.css';
 
 interface MapControlsProps {
@@ -17,16 +17,15 @@ interface MapControlsProps {
   onTerrainChange: (terrain: TerrainOptions) => void;
   view: MapView;
   onViewChange: (view: MapView) => void;
-  satelliteAvailable: boolean;
-  /** Flies back to the search area. Without it (nothing to go to) the button is disabled. */
-  onSearchArea: (() => void) | undefined;
+  themeId: ThemeId;
+  /** A satellite image tile for the layer picker, when the provider has imagery. */
+  satelliteTile: string | undefined;
+  nav: NavControlsProps;
   /** Where the pointer is on the map, if it is over it. */
   cursor: LngLat | null;
-  onZoomIn: () => void;
-  onZoomOut: () => void;
 }
 
-/** The map's tools, zoom buttons and the coordinates under the pointer. */
+/** The map's tools, navigation column and the coordinates under the pointer. */
 export function MapControls({
   tool,
   onToolChange,
@@ -37,11 +36,10 @@ export function MapControls({
   onTerrainChange,
   view,
   onViewChange,
-  satelliteAvailable,
-  onSearchArea,
+  themeId,
+  satelliteTile,
+  nav,
   cursor,
-  onZoomIn,
-  onZoomOut,
 }: MapControlsProps) {
   return (
     <>
@@ -60,27 +58,13 @@ export function MapControls({
           sightingActive={sightingActive}
           terrain={terrain}
           onTerrainChange={onTerrainChange}
-          viewTools={
-            <>
-              <MapLayersControl view={view} onChange={onViewChange} satelliteAvailable={satelliteAvailable} />
-              <ActionButton aria-label="חזרה לאזור החיפוש" isDisabled={!onSearchArea} onPress={onSearchArea}>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-                </svg>
-              </ActionButton>
-            </>
-          }
         />
       </div>
 
-      <div className={styles.zoom}>
-        <Button variant="icon" aria-label="התקרב" onPress={onZoomIn}>
-          +
-        </Button>
-        <Button variant="icon" aria-label="התרחק" onPress={onZoomOut}>
-          −
-        </Button>
+      <NavControls {...nav} />
+
+      <div className={styles.layers}>
+        <MapLayersControl view={view} onChange={onViewChange} themeId={themeId} satelliteTile={satelliteTile} />
       </div>
 
       {cursor && (

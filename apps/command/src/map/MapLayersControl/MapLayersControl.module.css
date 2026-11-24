@@ -1,30 +1,53 @@
+/* The tile in the corner of the map: the current map style, named "שכבות". */
 .trigger {
-  display: inline-flex;
-  align-items: center;
-  height: var(--control-h);
-  padding-inline: var(--space-4);
-  border: 0;
-  border-radius: var(--radius-md);
-  background-color: transparent;
-  color: var(--ink-secondary);
-  font: var(--text-body);
-  white-space: nowrap;
+  position: relative;
+  display: block;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--surface);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
   cursor: pointer;
   outline: none;
 }
 
-.trigger[data-hovered] {
-  background-color: var(--surface-hover);
+.trigger .thumb {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
 }
 
-.trigger[data-pressed],
-.trigger[data-focused] {
-  color: var(--ink);
+.trigger[data-hovered] {
+  border-color: var(--border-strong);
 }
 
 .trigger[data-focus-visible] {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+.caption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  background-color: var(--surface);
+  color: var(--ink);
+  font: var(--text-meta);
+  font-weight: 600;
+}
+
+.caption svg {
+  width: 14px;
+  height: 14px;
 }
 
 .popover {
@@ -35,10 +58,6 @@
 }
 
 .dialog {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  min-width: 240px;
   padding: var(--space-5);
   outline: none;
 }
@@ -46,7 +65,7 @@
 .group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .label {
@@ -54,67 +73,53 @@
   font: var(--text-meta);
 }
 
-.seg {
+.tiles {
   display: flex;
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
-  background-color: var(--surface-sunken);
+  gap: var(--space-4);
 }
 
-.option {
+.tile {
   display: flex;
-  flex: 1;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: var(--segment-h);
-  padding-inline: var(--space-3);
-  border-radius: var(--radius-md);
+  gap: var(--space-2);
   color: var(--ink-secondary);
-  white-space: nowrap;
   cursor: pointer;
   outline: none;
 }
 
-.option[data-hovered] {
-  background-color: var(--surface-hover);
+.thumb {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  object-fit: cover;
 }
 
-.option[data-selected] {
-  background-color: var(--surface-raised);
+.tile[data-hovered] .thumb {
+  border-color: var(--border-strong);
+}
+
+.tile[data-selected] {
   color: var(--ink);
   font-weight: 600;
 }
 
-.option[data-focus-visible] {
-  outline: 2px solid var(--focus);
+.tile[data-selected] .thumb {
+  border-color: var(--focus);
 }
 
-.option[data-disabled] {
+.tile[data-focus-visible] .thumb {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tile[data-disabled] {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
-@media (width <= 768px) {
-  .trigger,
-  .option {
-    height: var(--pending-touch-target);
-  }
-
-  /* In the narrow tool column the trigger is a square showing the layers glyph; the name stays for screen readers. */
-  .trigger {
-    width: var(--pending-touch-target);
-    padding: 0;
-    justify-content: center;
-    overflow: hidden;
-    font-size: 0;
-  }
-
-  .trigger::before {
-    content: '';
-    width: 16px;
-    height: 16px;
-    background-color: currentcolor;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linejoin='round'%3E%3Cpath d='M12 3l9 5-9 5-9-5z M3 13l9 5 9-5'/%3E%3C/svg%3E")
-      center / contain no-repeat;
-  }
+.name {
+  font: var(--text-meta);
 }
