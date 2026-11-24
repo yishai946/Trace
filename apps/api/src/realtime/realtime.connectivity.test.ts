@@ -137,6 +137,34 @@ describe('searcher connectivity (UC-C10)', () => {
       );
     });
 
+    it('turns Offline after an upload received without a connection once its time gets old', async () => {
+      const { commander, searcher, mission, participationId } = await setup(null);
+      const commanderSocket = socketFor(commander);
+      await connect(commanderSocket);
+      await join(commanderSocket, mission.id);
+      const events = record(commanderSocket);
+      const recordedAt = new Date(Date.now() - OFFLINE_AFTER_MS + 800).toISOString();
+      const res = await injectAs(
+        rt.ctx,
+        searcher,
+      )({
+        method: 'POST',
+        url: `/api/missions/${mission.id}/track-points`,
+        payload: { points: [{ position: [35.13, 31.78], recordedAt, context: 'search' }] },
+      });
+      expect(res.statusCode).toBe(200);
+      await vi.waitFor(
+        () =>
+          expect(connectivityOf(events).at(-1)).toEqual({
+            type: 'participant.connectivity',
+            missionId: mission.id,
+            participantId: participationId,
+            offline: true,
+          }),
+        { timeout: 4000 },
+      );
+    });
+
     it('does not tell searchers about anyone', async () => {
       const { commander, searcher, mission } = await setup(minutesAgo(10));
       const other = await signInSearcher(rt.ctx);

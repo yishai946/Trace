@@ -20,7 +20,7 @@ export interface ConnectivityWatcherDeps {
 export function createConnectivityWatcher({ db, connectedSearcherIds, publish, onError }: ConnectivityWatcherDeps) {
   const timers = new Map<string, NodeJS.Timeout>();
 
-  async function announce(missionId: string, searcherId: string): Promise<void> {
+  async function announce(missionId: string, searcherId: string, silent = false): Promise<void> {
     const key = `${missionId}:${searcherId}`;
     clearTimeout(timers.get(key));
     timers.delete(key);
@@ -37,7 +37,7 @@ export function createConnectivityWatcher({ db, connectedSearcherIds, publish, o
     const lastUpdateAt = latestUpdateAt([row.positionAt, row.batteryMeasuredAt]);
     const now = new Date();
     const offline = isSearcherOffline({ connected, lastUpdateAt, now });
-    publish({ type: 'participant.connectivity', missionId, participantId: row.id, offline });
+    if (!silent) publish({ type: 'participant.connectivity', missionId, participantId: row.id, offline });
     if (connected || offline || !lastUpdateAt) return;
     // Online by its last update only: look again when that update gets old enough.
     const wait = lastUpdateAt.getTime() + OFFLINE_AFTER_MS - now.getTime() + 1;
@@ -53,6 +53,10 @@ export function createConnectivityWatcher({ db, connectedSearcherIds, publish, o
     /** A searcher's phone joined or left a mission: announce the state they are in now. */
     changed(missionId: string, searcherId: string) {
       announce(missionId, searcherId).catch(onError);
+    },
+    /** A new update arrived: only look again when it gets old, without announcing (the update itself says Online). */
+    rearm(missionId: string, searcherId: string) {
+      announce(missionId, searcherId, true).catch(onError);
     },
     close() {
       for (const timer of timers.values()) clearTimeout(timer);

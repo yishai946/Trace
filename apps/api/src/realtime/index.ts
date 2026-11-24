@@ -201,6 +201,10 @@ export function createRealtime({
 
   const realtime: Realtime = {
     publish(event, options) {
+      // A position or report received while the phone holds no connection keeps it Online for the threshold only:
+      // the watcher looks again when that time is over.
+      if (event.type === 'participant.moved') watcher.rearm(event.missionId, event.searcherId);
+      if (event.type === 'participant.updated') watcher.rearm(event.missionId, event.participant.searcherId);
       io.to(audienceOf(event, options?.searcherIds)).emit('mission:event', event);
     },
     async connectedSearcherIds(missionId) {
