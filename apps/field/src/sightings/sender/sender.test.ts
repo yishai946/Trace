@@ -58,6 +58,15 @@ describe('sightingSender', () => {
     await expect(sightingSender.send(missionId, [item(queued)])).resolves.toBe('sent');
   });
 
+  it('still sends a stored sighting when the phone clock was later corrected backwards', async () => {
+    vi.useFakeTimers({ now: new Date('2026-10-03T12:00:00.000Z'), toFake: ['Date'] });
+    const fetch = vi.fn(async () => json(201, saved));
+    vi.stubGlobal('fetch', fetch);
+    await expect(sightingSender.send(missionId, [item(queued)])).resolves.toBe('sent');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
   it('drops the batch, without a request, when the stored sighting is not valid', async () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
