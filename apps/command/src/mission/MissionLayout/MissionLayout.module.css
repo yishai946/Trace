@@ -20,7 +20,8 @@
 .start {
   position: absolute;
   top: calc(var(--space-6) * 2 + var(--header-h));
-  bottom: var(--space-6);
+  /* The bottom controls (attribution, toolbar) keep their strip, as the rally point panel does. */
+  bottom: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-start: var(--space-6);
   /* The column is as tall as its parts; only the searchers panel scrolls when they do not fit. */
   display: flex;
