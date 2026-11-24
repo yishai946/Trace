@@ -16,6 +16,7 @@ import type { Db } from '../db';
 import type { Env } from '../env';
 import { AppError } from '../errors';
 import { logAndReport } from '../monitoring';
+import { createConnectivityWatcher } from './connectivity';
 
 /** Sends live updates to the users connected to a mission. */
 export interface Realtime {
@@ -67,7 +68,11 @@ function audienceOf(event: MissionEvent, searcherIds: readonly string[] = []): s
   // The Timeline is the commander's (UC-C19); searchers do not get it.
   if (event.type === 'timeline.recorded') return [commanderRoom(event.missionId)];
   // Positions and route points are the commander's alone (decision 32).
-  if (event.type === 'participant.moved' || event.type === 'participant.tracked')
+  if (
+    event.type === 'participant.moved' ||
+    event.type === 'participant.tracked' ||
+    event.type === 'participant.connectivity'
+  )
     return [commanderRoom(event.missionId)];
   // Assignments go to the commander and the searcher concerned (decision 32).
   if (event.type === 'participant.updated') {
@@ -137,8 +142,19 @@ export function createRealtime({
     }
   });
 
+  const watcher = createConnectivityWatcher({
+    db,
+    connectedSearcherIds: (missionId) => realtime.connectedSearcherIds(missionId),
+    publish: (event) => realtime.publish(event),
+    onError: (error) =>
+      logAndReport(app.log, error, { source: 'realtime.connectivity', message: 'Searcher connectivity update failed' }),
+  });
+
   io.on('connection', (socket: RealtimeSocket) => {
     const { actor } = socket.data;
+    const searcherId = actor.role === 'searcher' ? actor.searcherId : null;
+    // The missions this connection joined, to tell the commander when the searcher drops off them.
+    const joined = new Set<string>();
 
     socket.on('mission:join', async (raw, ack) => {
       if (typeof ack !== 'function') return;
@@ -157,17 +173,28 @@ export function createRealtime({
       if (rooms.length === 0) return ack({ ok: false, code: 'NOT_FOUND' });
       await socket.join(rooms);
       ack({ ok: true });
+      if (searcherId) {
+        joined.add(missionId);
+        watcher.changed(missionId, searcherId);
+      }
     });
 
     socket.on('mission:leave', async (raw) => {
       const request = JoinMissionRequest.safeParse(raw);
       if (!request.success) return;
       await Promise.all(roomsFor(actor, request.data.missionId).map((room) => socket.leave(room)));
+      if (searcherId && joined.delete(request.data.missionId)) watcher.changed(request.data.missionId, searcherId);
+    });
+
+    socket.on('disconnect', () => {
+      if (!searcherId) return;
+      for (const missionId of joined) watcher.changed(missionId, searcherId);
     });
   });
 
   // Close open sockets first: they would otherwise keep the HTTP server from closing.
   app.addHook('preClose', async () => {
+    watcher.close();
     io.disconnectSockets(true);
     io.engine.close();
   });
