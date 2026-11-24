@@ -20,7 +20,22 @@
 .start {
   position: absolute;
   top: calc(var(--space-6) * 2 + var(--header-h));
+  /* The bottom controls (attribution, toolbar) keep their strip, as the rally point panel does. */
+  bottom: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-start: var(--space-6);
+  /* The column is as tall as its parts; only the searchers panel scrolls when they do not fit. */
+  display: flex;
+  min-height: 0;
+  pointer-events: none;
+}
+
+.start > .startColumn {
+  max-height: 100%;
+  pointer-events: auto;
+}
+
+.startColumn > :last-child {
+  min-height: 0;
 }
 
 /* The SOS alert sits under the navigation, as wide as the join panel; it covers nothing of the page. */
