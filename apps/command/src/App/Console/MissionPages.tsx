@@ -5,6 +5,7 @@ import { JoinCodePanel } from '../../mission/JoinCodePanel';
 import { MissionLayout } from '../../mission/MissionLayout';
 import { MessagesPage } from '../../pages/MessagesPage';
 import { ReportsPage } from '../../pages/ReportsPage';
+import { SearchersByPolygon } from '../../mission/SearchersByPolygon';
 import { SearchersPage } from '../../pages/SearchersPage';
 import { SosPage } from '../../pages/SosPage';
 import { TimelinePage } from '../../pages/TimelinePage';
@@ -28,6 +29,10 @@ interface MissionPagesProps {
 /** The number on the SOS item: the active ones, or null (shown as "?") when the SOS could not be loaded. */
 const sosCount = (sos: MissionData['sos']) =>
   sos.isError ? null : (sos.data?.filter((s) => s.status === 'active').length ?? 0);
+
+/** The searchers whose SOS is active. */
+const activeSosParticipantIds = (sos: MissionData['sos']['data']) =>
+  sos?.filter((s) => s.status === 'active').map((s) => s.sender.participantId) ?? [];
 
 /** The mission's navigation and, beside it, the page of the open view. The map view has no page: the map shows. */
 export function MissionPages({
@@ -53,6 +58,16 @@ export function MissionPages({
         sos: sosCount(data.sos),
       }}
       alert={<PageSosAlert view={view} sos={data.sos} onOpenSos={nav.openSos} />}
+      sidePanel={
+        <SearchersByPolygon
+          participants={data.participants.data}
+          polygons={polygons}
+          loadFailed={data.participants.isError}
+          onRetry={() => void data.participants.refetch()}
+          activeSosParticipantIds={activeSosParticipantIds(data.sos.data)}
+          onOpen={nav.openSearcher}
+        />
+      }
       joinPanel={
         nav.panel === 'join' && <JoinCodePanel mission={mission} onClose={() => nav.setPanelOpen('join', false)} />
       }
