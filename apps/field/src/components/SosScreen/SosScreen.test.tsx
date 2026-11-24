@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SosScreen } from '.';
 import { missionKeys } from '../../mission/queries';
+import { makeMissionOf } from '../../messages/fixtures';
 import { assigned, MISSION_ID } from '../../reports/fixtures';
 import { SOS_HOLD_MS } from '../../sos/useHoldToActivate';
 import { makeSos } from '../../sos/fixtures';
@@ -112,8 +113,8 @@ describe('SosScreen activation', () => {
     expect(alert).toHaveTextContent(/אין חיבור/);
     expect(posts('/sos')).toHaveLength(0);
     expect(screen.getByLabelText('הודעה קצרה (אופציונלי)')).toHaveValue('עזרה');
-    fireEvent.click(screen.getByRole('button', { name: /חירום 112/ }));
-    expect(open).toHaveBeenCalledWith('tel:112');
+    fireEvent.click(screen.getByRole('button', { name: /חירום 100/ }));
+    expect(open).toHaveBeenCalledWith('tel:100');
   });
 
   it('sends on the next hold once the connection is back and the not-delivered card goes away', async () => {
@@ -141,7 +142,7 @@ describe('SosScreen activation', () => {
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('ה-SOS לא נמסר');
     expect(alert).toHaveTextContent(/השרת/);
-    expect(screen.getByRole('button', { name: /חירום 112/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /חירום 100/ })).toBeInTheDocument();
     expect(screen.getByLabelText('הודעה קצרה (אופציונלי)')).toHaveValue('עזרה');
     expect(screen.queryByLabelText('SOS פעיל')).toBeNull();
     fireEvent.mouseUp(sosButton());
@@ -163,7 +164,7 @@ describe('SosScreen activation', () => {
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(text);
     expect(alert).not.toHaveTextContent(/אין חיבור/);
-    expect(screen.getByRole('button', { name: /חירום 112/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /חירום 100/ })).toBeInTheDocument();
   });
 
   it('limits the message to the allowed length', () => {
@@ -311,5 +312,36 @@ describe('SosScreen active state', () => {
     act(() => client.setQueryData(missionKeys.sos(MISSION_ID), [closedByCommander]));
     expect(await screen.findByText(/נסגר על ידי המנהל/)).toBeInTheDocument();
     expect(sosButton()).toBeInTheDocument();
+  });
+});
+
+describe('SosScreen calls (UC-F14, decision 79)', () => {
+  it('shows the commander and emergency call buttons together, before and after an SOS, and both open the dialer', async () => {
+    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    client.setQueryData(missionKeys.mission(MISSION_ID), makeMissionOf('+972501234567'));
+    view();
+    fireEvent.click(screen.getByRole('button', { name: 'התקשר למנהל' }));
+    expect(open).toHaveBeenLastCalledWith('tel:+972501234567');
+    fireEvent.click(screen.getByRole('button', { name: /חירום 100/ }));
+    expect(open).toHaveBeenLastCalledWith('tel:100');
+
+    hold(SOS_HOLD_MS);
+    await screen.findByLabelText('SOS פעיל');
+    expect(screen.getByRole('button', { name: 'התקשר למנהל' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /חירום 100/ })).toBeInTheDocument();
+  });
+
+  it('keeps the emergency call and omits the commander call while the commander has no phone', () => {
+    client.setQueryData(missionKeys.mission(MISSION_ID), makeMissionOf(null));
+    view();
+    expect(screen.getByRole('button', { name: /חירום 100/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'התקשר למנהל' })).not.toBeInTheDocument();
+  });
+
+  it('says the emergency call did not open when the dialer is missing', async () => {
+    vi.spyOn(Linking, 'openURL').mockRejectedValue(new Error('no dialer'));
+    view();
+    fireEvent.click(screen.getByRole('button', { name: /חירום 100/ }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('לא ניתן לפתוח את החייגן');
   });
 });
