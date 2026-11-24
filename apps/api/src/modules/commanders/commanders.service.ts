@@ -7,7 +7,7 @@ import { phoneInUse } from '../../errors';
 const UNIQUE_VIOLATION = '23505';
 
 function isPhoneConflict(error: unknown): boolean {
-  const cause = error instanceof Error ? error.cause : undefined;
+  const cause = error instanceof Error && 'cause' in error ? error.cause : error;
   return typeof cause === 'object' && cause !== null && 'code' in cause && cause.code === UNIQUE_VIOLATION;
 }
 
