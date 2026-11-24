@@ -14,7 +14,7 @@ Rules in `AGENTS.md` and `docs/CODING_STANDARDS.md` (and `apps/field/AGENTS.md` 
 ## Hard rules
 
 - Never commit to `main` or `dev`, never force-push, never change repository settings or branch protection, never use admin or bypass options.
-- One task per run. Never touch an issue another agent or person holds.
+- One task per run: one stuck PR (step 0 or No free issue) or one new issue, never both. Never touch an issue another agent or person holds.
 - Run every subagent in the foreground and wait for its result.
 - Use `gh api` REST on `repos/yishai946/Trace/...` for GitHub (it works from any environment). Do not use `gh issue`, `gh pr`, `gh project`. The one GraphQL use is resolving review threads (7b), which has no REST endpoint.
   - issues: `gh api 'repos/yishai946/Trace/issues?state=open&per_page=100' --paginate` (drop items with `pull_request`); one: `.../issues/<N>`; blockers: `.../issues/<N>/dependencies/blocked_by`
@@ -41,13 +41,13 @@ Stop and ask (see Questions) only when the task needs one of these:
 
 ## 0. Finish a stuck Pull Request first (only with `--merge` and no issue number)
 
-Finishing an open PR is worth more than starting a new one. An **agent PR** is an open, non-draft PR into `dev` whose `Closes #<N>` issue has a `claude:working … branch <head.ref>` comment (that is how you tell it from a human's PR; never touch a PR without one). It is **stuck** when it is not merged and any of these hold: `mergeable_state` is `blocked`, `behind` or `dirty`; the `checks` run on its head failed; a review thread is unresolved; or a review comment (Codex or human) has no reply. A thread whose last comment is your numbered question does not count (it waits for the user, who was already notified); once the user replies under it, it counts again.
+Finishing an open PR is worth more than starting a new one. An **agent PR** is an open, non-draft PR into `dev` whose `Closes #<N>` issue has a `claude:working … branch <head.ref>` comment (that is how you tell it from a human's PR; never touch a PR without one). It is **stuck** when it is not merged and any of these hold: `mergeable_state` is `blocked`, `behind` or `dirty`; the `checks` run on its head failed; a review thread is unresolved; or a review comment (Codex or human) has no reply. A thread whose last comment starts with `Question for the owner:` does not count (it waits for the user, who was already notified); once anyone comments after it, it counts again. The agent and the user share one GitHub login, so tell comments apart by these prefixes, never by author.
 
-Take the oldest stuck agent PR whose issue has no `claude:working` label, claim its issue as in step 1 (assign is already done; comment, lowest id wins, label), check out its branch, and do only what is missing:
+Take the oldest stuck agent PR whose issue has no `claude:working` label, claim its issue as in step 1 (assign is already done; comment, lowest id wins, label; on losing, try the next stuck PR, then step 1), check out its branch, and do only what is missing:
 
 1. **Bring it up to date:** `git merge origin/dev` (never rebase: it needs a force-push). Resolve conflicts by reading both sides and keeping both intents; then `pnpm format` and `pnpm check`; plain push.
 2. **Failing `checks`:** read the job log (`.../actions/jobs/<id>/logs`). A failure in code this PR touches: fix it test-first. A failure in an unrelated test that passes locally: rerun the job once (`-X POST .../actions/jobs/<id>/rerun`); if it fails again, open an issue for the flaky test and say so in the PR.
-3. **Review comments:** handle every unanswered one (Codex or human) as in 7b steps 3–6: fix, reply, resolve; a thread that needs the user gets the numbered options and the push notification of 7b step 6. A thread where the user already answered one of your options: do what they chose, reply "Fixed in <sha>: …" and resolve it.
+3. **Review comments:** handle every unanswered one (Codex or human) as in 7b steps 3–6: fix, reply, resolve; a thread that needs the user gets the numbered options and the push notification of 7b step 6. A thread with a comment after your `Question for the owner:` is the user's answer: do what they chose, reply "Fixed in <sha>: …" and resolve it.
 4. Update the PR's **Review** section, then go to 7c and 8.
 
 If there is no stuck agent PR, go to step 1.
@@ -128,8 +128,8 @@ Codex (login containing `codex`) reviews on its own a few minutes after opening.
 3. **Decide each:** real defect, deviation or missing test: fix. Wrong, taste or out of scope: no change. Needs an open value: decide it (see above) or, if fateful, Questions.
 4. **Fix** in one pass: failing test first where one applies; commit `fix(<scope>): <what> (Refs #<N>)`; `pnpm format` and `pnpm check`; plain push.
 5. **Reply to every comment** (inline: `gh api -X POST .../pulls/<PR>/comments/<id>/replies -F body=@reply.md`, "Fixed in <sha>: …" or "Not changed: <reason>"; review bodies and PR comments: one PR comment answering each point).
-6. **Resolve the threads you answered.** The `dev` ruleset refuses to merge while any review thread is unresolved (`mergeable_state: blocked` with green checks). List them: `gh api graphql -f query='query{repository(owner:"yishai946",name:"Trace"){pullRequest(number:<PR>){reviewThreads(first:100){nodes{id isResolved comments(first:1){nodes{databaseId author{login}}}}}}}}'`; resolve each one whose reply starts with "Fixed in <sha>:" or "Not changed: <reason>": `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`.
-   A thread you cannot settle without the user (a fateful case, or a human asking the owner to decide) stays unresolved: reply in it with the question and 2–4 numbered options, your recommendation first, then send a push notification (`PushNotification`) with the PR link, the question and the same options, and do not merge this run. The user answers in the thread; the next run acts on the answer, then resolves the thread.
+6. **Resolve the threads you answered.** The `dev` ruleset refuses to merge while any review thread is unresolved (`mergeable_state: blocked` with green checks). List them: `gh api graphql -f query='query{repository(owner:"yishai946",name:"Trace"){pullRequest(number:<PR>){reviewThreads(first:100){pageInfo{hasNextPage endCursor} nodes{id isResolved comments(last:1){nodes{body}}}}}}}'` (page with `after:"<endCursor>"` while `hasNextPage`); resolve each unresolved one whose **last** comment starts with "Fixed in <sha>:" or "Not changed:" (anything after your reply is new input: handle it first): `gh api graphql -f query='mutation{resolveReviewThread(input:{threadId:"<id>"}){thread{isResolved}}}'`.
+   A thread you cannot settle without the user (a fateful case, or a human asking the owner to decide) stays unresolved: reply in it starting with `Question for the owner:`, then the question and 2–4 numbered options, your recommendation first; send a push notification (`PushNotification`) with the PR link, the question and the same options, and add it to the `Agent: waiting on you` issue (see No free issue; this is the fallback when no notification can be sent), and do not merge this run. The user answers in the thread; the next run acts on the answer, then resolves the thread.
    If GraphQL is refused, say in the report which threads are open; the PR then waits for the user.
 7. **One round only.** Do not wait for a second review of your fixes.
 8. **Write the Review section** into the PR body (`-X PATCH ... -F body=@pr.md`, keep the first line): what Codex found, fixed (commits), declined and why; or "found nothing". Recheck the first line.
@@ -149,10 +149,10 @@ Then `gh api -X PUT .../pulls/<PR>/merge -f merge_method=squash -f commit_title=
 Find out why each open, non-epic issue was excluded, and act on what an agent may fix, in this order; the first action that gives you work becomes this run's task:
 
 1. **Blocked by an issue whose PR is open:** that PR is the bottleneck. If it is an agent PR, finish it as in step 0 even if it is not stuck by step 0's test (for example, waiting on checks). A human's PR: list it for the user.
-2. **Stale labels:** an issue labelled `blocked` whose "Blocked by" issues are all closed: remove `blocked`, comment why, and take it (back to step 1). An issue with `claude:working` and no new commit on its branch for over 3 hours is a dead run: list it for the user, do not take it.
+2. **Stale labels:** an issue labelled `blocked` whose "Blocked by" issues are all closed: remove `blocked`, comment why, and run the step 1 checks again (it may still fail another). An issue with `claude:working` and no new commit on its branch for over 3 hours (`gh api repos/yishai946/Trace/branches/<branch> --jq .commit.commit.committer.date`) is a dead run: list it for the user, do not take it.
 3. **Unclaimed without a reason:** an issue held only because it is assigned to `<me>` with no `claude:working`, no open PR and no branch is a leftover; list it for the user, do not take it.
 
-Everything that is left needs a human (`needs-input`, accounts, secrets, an infrastructure approval, a human's PR). Keep **one** open issue titled `Agent: waiting on you` (find it by title; create it once, label `needs-input`) and replace its body with the current list: issue, what it waits for, the exact step you need. Do not open a second one and do not push a notification when the list did not change since the last run. Then end the run.
+Everything that is left needs a human (`needs-input`, accounts, secrets, an infrastructure approval, a human's PR). Keep **one** open issue titled `Agent: waiting on you` (find it by title; create it once, label `needs-input`) and replace its body with the current list: issue, what it waits for, the exact step you need. Do not open a second one and do not push a notification when the new body is the same text as the current one. Then end the run.
 
 ## Questions
 
