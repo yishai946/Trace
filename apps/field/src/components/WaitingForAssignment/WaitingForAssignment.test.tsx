@@ -1,9 +1,12 @@
 import { themes } from '@trace/design';
 import type { Mission, OwnParticipation } from '@trace/schemas';
+import { QueryClient } from '@tanstack/react-query';
+import { Linking } from 'react-native';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WaitingForAssignment } from '.';
 import { formatTime } from '../../mission/missionArea';
+import { missionKeys } from '../../mission/queries';
 import { usePreferences } from '../../state/preferences';
 import { useSession } from '../../state/session';
 import { TestProviders } from '../../test/providers';
@@ -114,5 +117,25 @@ describe('WaitingForAssignment', () => {
 
     expect(screen.getByTestId('screen')).toHaveStyle({ backgroundColor: themes[id].color.surface });
     expect(screen.getByLabelText('סטטוס שיבוץ')).toHaveStyle({ backgroundColor: themes[id].color.surfaceSunken });
+  });
+
+  it('offers a call to the commander (Fm04, UC-F14) that opens the dialer', async () => {
+    const open = vi.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+    const withPhone: Mission = { ...mission, commander: { name: 'ישי', phoneNumber: '+972501234567' } };
+    useSession.setState({ missionId: mission.id });
+    const client = new QueryClient();
+    client.setQueryData(missionKeys.mission(mission.id), withPhone);
+    render(<WaitingForAssignment mission={withPhone} participation={participation} onOpenDetails={onOpenDetails} />, {
+      wrapper: ({ children }) => <TestProviders client={client}>{children}</TestProviders>,
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'התקשר למנהל' }));
+    expect(open).toHaveBeenCalledWith('tel:+972501234567');
+  });
+
+  it('shows no call button while the commander has no phone', async () => {
+    renderScreen();
+    await screen.findByText('דנה כהן');
+    expect(screen.queryByRole('button', { name: 'התקשר למנהל' })).not.toBeInTheDocument();
   });
 });
