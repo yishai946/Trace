@@ -8,7 +8,7 @@ import { useSession } from '../../state/session';
 import { TestProviders } from '../../test/providers';
 
 const MISSION = '00000000-0000-4000-8000-000000000001';
-const FULL: OfflineStep[] = ['mission', 'photo', 'polygons'];
+const FULL: OfflineStep[] = ['mission', 'photo', 'polygons', 'map'];
 
 const device = vi.hoisted(() => ({ read: vi.fn(), request: vi.fn() }));
 vi.mock('../../permissions/devicePermissions', () => ({

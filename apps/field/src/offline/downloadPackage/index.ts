@@ -1,5 +1,7 @@
 import { Mission, MissionPolygonList } from '@trace/schemas';
 import { apiBaseUrl, apiBytes, apiRequest, ApiRequestError } from '../../api';
+import { toMissionArea } from '../../mission/missionArea';
+import { downloadMapPack } from '../mapPack';
 import { loadStep, saveStep, savedSteps, type OfflineStep } from '../store';
 
 export interface DownloadOptions {
@@ -12,9 +14,9 @@ export interface DownloadOptions {
 
 /**
  * Downloads what the searcher's phone needs to work without a connection (UC-F03, decision 84): the mission with the
- * missing person's details, LKP and rally point, the photo, and the polygons. Each step is saved before the next
+ * missing person's details, LKP and rally point, the photo, the polygons and the base map of the area. Each step is saved before the next
  * starts, so a failure (usually the connection) leaves a partial package, and calling this again downloads only what
- * is missing. Failures are thrown for the caller to retry. Base-map tiles are not part of it yet.
+ * is missing. Failures are thrown for the caller to retry.
  */
 export async function downloadOfflinePackage({
   missionId,
@@ -45,6 +47,13 @@ export async function downloadOfflinePackage({
   if (!saved.has('polygons')) {
     const polygons = await apiRequest(`/missions/${missionId}/polygons`, { ...request, schema: MissionPolygonList });
     await done('polygons', { json: polygons });
+  }
+
+  if (!saved.has('map')) {
+    const polygons = await loadStep(missionId, 'polygons', MissionPolygonList);
+    const bounds = polygons ? toMissionArea(polygons, mission).bounds : null;
+    if (bounds) await downloadMapPack({ missionId, bounds, signal });
+    await done('map', {});
   }
 }
 

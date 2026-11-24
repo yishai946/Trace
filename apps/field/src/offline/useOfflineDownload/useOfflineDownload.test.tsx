@@ -66,7 +66,7 @@ describe('useOfflineDownload', () => {
     await waitFor(() => expect(hook.result.current.status).toBe('ready'));
     expect(hook.result.current.progress.percent).toBe(100);
     expect(hook.result.current.startSearch.ready).toBe(true);
-    expect(await savedSteps(MISSION_ID)).toHaveLength(3);
+    expect(await savedSteps(MISSION_ID)).toHaveLength(4);
   });
 
   it('keeps the searcher in the mission with Start Search blocked when the connection drops, and completes on return', async () => {
@@ -149,7 +149,7 @@ describe('useOfflineDownload', () => {
     await waitFor(() => expect(useOfflineState.getState().missionId).toBe(OTHER));
     await waitFor(() => expect(hook.result.current.status).toBe('ready'));
     expect(await savedSteps(MISSION_ID)).toEqual([]);
-    expect(await savedSteps(OTHER)).toHaveLength(3);
+    expect(await savedSteps(OTHER)).toHaveLength(4);
   });
 
   it('downloads nothing for a participation that ended', async () => {
@@ -182,7 +182,7 @@ describe('useOfflineDownload', () => {
     release();
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(useOfflineState.getState().missionId).toBe(OTHER);
-    expect(useOfflineState.getState().saved).toHaveLength(3);
+    expect(useOfflineState.getState().saved).toHaveLength(4);
     expect(await savedSteps(MISSION_ID)).toEqual([]);
   });
 

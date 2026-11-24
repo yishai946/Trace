@@ -127,11 +127,11 @@ describe('refreshOfflinePackage', () => {
   it('keeps the old copy, and the readiness, when the connection is down', async () => {
     await saveFullPackage();
     useOfflineState.getState().start(MISSION_ID);
-    useOfflineState.getState().setSaved(['mission', 'photo', 'polygons']);
+    useOfflineState.getState().setSaved(['mission', 'photo', 'polygons', 'map']);
     serve({ down: true });
     await expect(refreshOfflinePackage(options)).rejects.toMatchObject({ code: 'NETWORK_ERROR' });
     expect(await savedName()).toBe('מסע 0412');
-    expect(useOfflineState.getState()).toMatchObject({ saved: ['mission', 'photo', 'polygons'], failed: false });
+    expect(useOfflineState.getState()).toMatchObject({ saved: ['mission', 'photo', 'polygons', 'map'], failed: false });
   });
 
   it('does not write after the package was cleared', async () => {

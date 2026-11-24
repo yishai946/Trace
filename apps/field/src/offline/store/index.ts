@@ -1,8 +1,9 @@
 import type { z } from 'zod';
 import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
+import { removeMapPacks } from '../mapPack';
 
-/** The pieces of the offline package, saved one by one so an interrupted download can resume (UC-F03). */
-export type OfflineStep = 'mission' | 'photo' | 'polygons' | 'reports';
+/** The pieces of the offline package (`map` is the base map's tile pack, kept by MapLibre), saved one by one so an interrupted download can resume (UC-F03). */
+export type OfflineStep = 'mission' | 'photo' | 'polygons' | 'map' | 'reports';
 
 export interface StepContent {
   json?: unknown;
@@ -57,7 +58,7 @@ export async function saveStep(missionId: string, step: OfflineStep, content: St
 }
 
 const isStep = (value: unknown): value is OfflineStep =>
-  value === 'mission' || value === 'photo' || value === 'polygons' || value === 'reports';
+  value === 'mission' || value === 'photo' || value === 'polygons' || value === 'map' || value === 'reports';
 
 /** The steps of the mission's package that are saved. */
 export async function savedSteps(missionId: string): Promise<OfflineStep[]> {
@@ -104,6 +105,7 @@ export async function loadPhoto(missionId: string): Promise<{ bytes: Uint8Array;
 export async function keepOnly(missionId: string): Promise<void> {
   const db = await database();
   await db.runAsync('DELETE FROM offline_steps WHERE mission_id <> ?', missionId);
+  await removeMapPacks(missionId).catch(() => undefined);
 }
 
 /** Drops every saved package, on sign-out: the missing person's details belong to this searcher's mission only. */
@@ -111,6 +113,7 @@ export async function clearOfflinePackages(): Promise<void> {
   epoch += 1;
   const db = await database();
   await db.runAsync('DELETE FROM offline_steps');
+  await removeMapPacks().catch(() => undefined);
 }
 
 /** Saves the reports list the searcher last saw (UC-F11). Unlike the package steps it is rewritten whenever the list changes. */

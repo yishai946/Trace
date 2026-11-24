@@ -1,46 +1,17 @@
 import { radius, spacing, typography } from '@trace/design';
 import type { LngLat } from '@trace/geo';
-import {
-  buildMapStyle,
-  iconId,
-  ISRAEL_BOUNDS,
-  mapIcons,
-  maptilerProvider,
-  type MapIconName,
-  type MapReport,
-  type MapProvider,
-} from '@trace/map';
+import { buildMapStyle, iconId, ISRAEL_BOUNDS, mapIcons, type MapIconName, type MapReport } from '@trace/map';
 import { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 import type { MissionArea } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
+import { loadMapLibre, mapProvider, mapTerrain as terrain } from '../../map/provider';
 import { pendingTokens } from '../../theme/pending';
 import { reportLabel } from './reportLabel';
 
-/** MapTiler client key (public, restricted to the app in MapTiler's settings). Set in `apps/field/.env.local`. */
-const mapTilerKey = process.env.EXPO_PUBLIC_MAPTILER_API_KEY?.trim();
-const provider: MapProvider | null = mapTilerKey ? maptilerProvider(mapTilerKey) : null;
-
-// MapLibre Native has no client-side contour generation and 3D is an open decision (TECH_STACK.md): relief only.
-import type * as MapLibre from '@maplibre/maplibre-react-native';
-type MapLibreModule = typeof MapLibre;
-
-/**
- * MapLibre Native is a native module: it is missing from Expo Go, and importing it there throws at load time, which
- * would take the whole route down. Load it lazily so the app still opens and the map shows a notice instead.
- */
-function loadMapLibre(): MapLibreModule | null {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded lazily: the native module is missing on web and in tests
-    return require('@maplibre/maplibre-react-native');
-  } catch {
-    return null;
-  }
-}
 const mapLibre = loadMapLibre();
-
-const terrain = { hillshade: true, contours: false, terrain3d: false };
+const provider = mapProvider;
 
 export interface MissionMapProps {
   area: MissionArea;

@@ -39,8 +39,8 @@ describe('OfflineDownload', () => {
   it('shows the progress while downloading', () => {
     showing(['mission']);
     expect(screen.getByText('הורדת מידע ללא חיבור')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'התקדמות ההורדה' })).toHaveAttribute('aria-valuenow', '33');
-    expect(screen.getByText(/33.%/)).toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'התקדמות ההורדה' })).toHaveAttribute('aria-valuenow', '25');
+    expect(screen.getByText(/25.%/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'נסה שוב' })).not.toBeInTheDocument();
   });
 
@@ -59,7 +59,7 @@ describe('OfflineDownload', () => {
   });
 
   it('says the device is ready for Offline when everything is saved', () => {
-    showing(['mission', 'photo', 'polygons']);
+    showing(['mission', 'photo', 'polygons', 'map']);
     expect(screen.getByText('מוכן ל-Offline')).toBeInTheDocument();
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
