@@ -16,11 +16,11 @@ const CLOCK_SKEW_MS = 60_000;
 const NotInTheFuture = (value: string) => Date.parse(value) <= Date.now() + CLOCK_SKEW_MS;
 
 /** A new sighting (decision 61). Location, time and source are required; the description may be blank. */
-export const CreateSightingBody = z.object({
+export const CreateSightingFields = z.object({
   /** Made on the phone (UUIDv7) so a retry after a lost answer cannot add the sighting twice; Command omits it. */
   id: z.uuid().optional(),
   position: PointGeometry,
-  observedAt: IsoDateTime.refine(NotInTheFuture, { error: 'observedAt cannot be in the future' }),
+  observedAt: IsoDateTime,
   source: SightingSource,
   description: z
     .string()
@@ -29,6 +29,11 @@ export const CreateSightingBody = z.object({
     .transform((value) => value || null)
     .nullable()
     .default(null),
+});
+
+/** The request body: the fields plus the rule that the sighting is not in the future (the server's clock decides). */
+export const CreateSightingBody = CreateSightingFields.extend({
+  observedAt: IsoDateTime.refine(NotInTheFuture, { error: 'observedAt cannot be in the future' }),
 });
 
 export const Sighting = z
