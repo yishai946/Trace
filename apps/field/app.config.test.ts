@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { type PluginEntry, sentryPluginProps, withSentryUpload } from './app.config';
+import {
+  joinLinkIntentFilter,
+  type PluginEntry,
+  sentryPluginProps,
+  withJoinLinks,
+  withSentryUpload,
+} from './app.config';
 
 describe('sentryPluginProps', () => {
   it('skips the upload when no auth token is set, so a build without secrets still passes', () => {
@@ -50,5 +56,46 @@ describe('withSentryUpload', () => {
       'expo-router',
       ['@sentry/react-native/expo', { project: 'trace-field', disableAutoUpload: true }],
     ]);
+  });
+});
+
+describe('joinLinkIntentFilter', () => {
+  it('makes Android verify and open https join links of the site in the app', () => {
+    expect(joinLinkIntentFilter({ JOIN_LINK_BASE: 'https://trace.up.railway.app' })).toEqual({
+      action: 'VIEW',
+      autoVerify: true,
+      data: [{ scheme: 'https', host: 'trace.up.railway.app', pathPrefix: '/j/' }],
+      category: ['BROWSABLE', 'DEFAULT'],
+    });
+  });
+
+  it('takes only the host of the address, whatever follows it', () => {
+    expect(joinLinkIntentFilter({ JOIN_LINK_BASE: 'https://trace.up.railway.app/' })?.data[0]?.host).toBe(
+      'trace.up.railway.app',
+    );
+  });
+
+  it('is absent without an address, so a build without it passes and only the app scheme opens links', () => {
+    expect(joinLinkIntentFilter({})).toBeNull();
+    expect(joinLinkIntentFilter({ JOIN_LINK_BASE: ' ' })).toBeNull();
+  });
+
+  it('fails the build on an address that is not https, which Android would never verify', () => {
+    expect(() => joinLinkIntentFilter({ JOIN_LINK_BASE: 'trace-field://' })).toThrow(/JOIN_LINK_BASE/);
+    expect(() => joinLinkIntentFilter({ JOIN_LINK_BASE: 'http://trace.example.com' })).toThrow(/JOIN_LINK_BASE/);
+    expect(() => joinLinkIntentFilter({ JOIN_LINK_BASE: 'not a url' })).toThrow(/JOIN_LINK_BASE/);
+  });
+});
+
+describe('withJoinLinks', () => {
+  it('adds the intent filter next to the ones the config already has', () => {
+    const existing = { action: 'VIEW', data: [{ scheme: 'x' }] };
+    const android = withJoinLinks({ intentFilters: [existing] }, { JOIN_LINK_BASE: 'https://trace.example.com' });
+    expect(android.intentFilters).toHaveLength(2);
+    expect(android.intentFilters?.[0]).toEqual(existing);
+  });
+
+  it('leaves the Android config as it is without an address', () => {
+    expect(withJoinLinks({ package: 'a.b' }, {})).toEqual({ package: 'a.b' });
   });
 });
