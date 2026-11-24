@@ -122,6 +122,9 @@ function applyMapEvent(queryClient: QueryClient, event: MissionEvent) {
       }
       return;
     }
+    case 'participant.connectivity':
+      participants(patchById(event.participantId, (p) => ({ ...p, offline: event.offline })));
+      return;
     case 'participant.updated':
       participants(replaceById(event.participant));
       return;

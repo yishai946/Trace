@@ -43,6 +43,13 @@ describe('applyEvent: searchers', () => {
     expect(result).toMatchObject({ lastUpdateAt: battery, offline: true });
   });
 
+  it.each([true, false])('sets Offline to %s when the searcher connects or drops', (offline) => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(missionKeys.participants(missionId), [{ ...participants[0], offline: !offline }]);
+    applyEvent(queryClient, { type: 'participant.connectivity', missionId, participantId, offline });
+    expect(queryClient.getQueryData<Participant[]>(missionKeys.participants(missionId))?.[0]?.offline).toBe(offline);
+  });
+
   it('appends the new route points to a route that is open', () => {
     const queryClient = new QueryClient();
     const key = missionKeys.track(missionId, participantId);

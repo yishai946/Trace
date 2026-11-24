@@ -76,8 +76,19 @@ export function setupRealtime() {
   const join = (client: Client, missionId: string) =>
     new Promise<JoinMissionAck>((resolve) => client.emit('mission:join', { missionId }, resolve));
 
-  /** Collects every mission event the client receives from now on. */
+  /**
+   * Collects the mission events the client receives from now on, except connectivity changes: a socket that joins or
+   * leaves sets them off, and the tests of other events do not care. Those tests use `recordAll`.
+   */
   const record = (client: Client) => {
+    const events: MissionEvent[] = [];
+    client.on('mission:event', (event) => {
+      if (event.type !== 'participant.connectivity') events.push(event);
+    });
+    return events;
+  };
+
+  const recordAll = (client: Client) => {
     const events: MissionEvent[] = [];
     client.on('mission:event', (event) => events.push(event));
     return events;
@@ -85,7 +96,15 @@ export function setupRealtime() {
 
   const settle = () => new Promise((resolve) => setTimeout(resolve, QUIET_MS));
 
-  const nextEvent = (client: Client) => new Promise<MissionEvent>((resolve) => client.once('mission:event', resolve));
+  const nextEvent = (client: Client) =>
+    new Promise<MissionEvent>((resolve) => {
+      const listener = (event: MissionEvent) => {
+        if (event.type === 'participant.connectivity') return;
+        client.off('mission:event', listener);
+        resolve(event);
+      };
+      client.on('mission:event', listener);
+    });
 
   const createMissionAs = async (user: TestUser) => {
     const res = await injectAs(
@@ -147,6 +166,7 @@ export function setupRealtime() {
     connect,
     join,
     record,
+    recordAll,
     settle,
     nextEvent,
     createMissionAs,

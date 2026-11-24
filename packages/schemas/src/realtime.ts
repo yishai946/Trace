@@ -80,6 +80,18 @@ const ParticipantJoined = z.object({
 });
 
 /**
+ * A searcher's Online/Offline state changed without a new position (UC-C10, decision 13): their phone joined or left
+ * the mission's live connection, or the time since their last update passed the threshold. Only the mission's
+ * commander gets it, with the new state of `Participant.offline`.
+ */
+const ParticipantConnectivity = z.object({
+  type: z.literal('participant.connectivity'),
+  missionId: z.uuid(),
+  participantId: z.uuid(),
+  offline: z.boolean(),
+});
+
+/**
  * The commander assigned or moved a searcher (UC-C09). The commander and that searcher get it; other searchers do
  * not see who searches where (decision 32).
  */
@@ -151,6 +163,7 @@ export const MissionEvent = z.discriminatedUnion('type', [
   ParticipantMoved,
   ParticipantTracked,
   ParticipantJoined,
+  ParticipantConnectivity,
   ParticipantUpdated,
   SightingSaved,
   LkpChanged,
