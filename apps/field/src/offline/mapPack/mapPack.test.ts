@@ -10,6 +10,15 @@ vi.mock('../../map/provider', () => ({
   },
   mapTerrain: { hillshade: false, contours: false, terrain3d: false },
 }));
+const files = vi.hoisted(() => ({ written: [] as string[] }));
+vi.mock('expo-file-system', () => ({
+  Paths: { document: 'file:///documents/' },
+  File: class {
+    uri = 'file:///documents/trace-offline-map-style.json';
+    create = vi.fn();
+    write = (content: string) => files.written.push(content);
+  },
+}));
 vi.mock('@trace/map', () => ({ buildMapStyle: () => ({ version: 8 }), emptyMissionMapData: {} }));
 
 type Progress = (pack: unknown, status: { state: string }) => void;
@@ -70,6 +79,8 @@ describe('downloadMapPack', () => {
     await done;
     const [options] = manager.createPack.mock.calls[0] ?? [];
     expect(options).toMatchObject({ metadata: { missionId: A }, minZoom: 10, maxZoom: 16 });
+    expect(options).toMatchObject({ mapStyle: 'file:///documents/trace-offline-map-style.json' });
+    expect(files.written).toEqual([JSON.stringify({ version: 8 })]);
     expect((options as { bounds: Bounds }).bounds).toEqual(
       [34.99, 31.69, 35.11, 31.81].map((n) => expect.closeTo(n, 5)),
     );
@@ -96,6 +107,17 @@ describe('downloadMapPack', () => {
     await vi.waitFor(() => expect(live[0]?.resume).toHaveBeenCalled());
     handlers.progress?.({}, { state: 'complete' });
     await done;
+    expect(manager.createPack).not.toHaveBeenCalled();
+  });
+
+  it('creates nothing when stopped while the packs were being listed', async () => {
+    const { manager } = fakeManager();
+    const controller = new AbortController();
+    manager.getPacks.mockImplementation(async () => {
+      controller.abort(new Error('stopped'));
+      return [];
+    });
+    await expect(downloadMapPack({ missionId: A, bounds, signal: controller.signal })).rejects.toThrow('stopped');
     expect(manager.createPack).not.toHaveBeenCalled();
   });
 

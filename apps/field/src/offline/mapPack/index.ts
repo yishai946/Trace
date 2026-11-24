@@ -1,5 +1,6 @@
 import type { Bounds } from '@trace/geo';
-import { buildMapStyle, emptyMissionMapData } from '@trace/map';
+import { buildMapStyle, emptyMissionMapData, type MapProvider } from '@trace/map';
+import { File, Paths } from 'expo-file-system';
 import { loadMapLibre, mapProvider, mapTerrain } from '../../map/provider';
 
 /** Zoom levels saved for the mission area: from the whole area down to single paths (decision: tile count stays small). */
@@ -17,6 +18,19 @@ export interface MapPackOptions {
 }
 
 /**
+ * The offline pack takes the address of a style, not the style itself, and ours is built in code. It is written to a
+ * file the pack reads (also when it resumes after a restart). The pack is the same whichever theme the style was built
+ * for: day and night use the same tiles, glyphs and sprites.
+ */
+function writeStyleFile(provider: MapProvider): string {
+  const style = buildMapStyle({ themeId: 'night', provider, terrain: mapTerrain, data: emptyMissionMapData });
+  const file = new File(Paths.document, 'trace-offline-map-style.json');
+  file.create({ overwrite: true });
+  file.write(JSON.stringify(style));
+  return file.uri;
+}
+
+/**
  * Saves the base map of the mission area on the phone with MapLibre's offline pack (UC-F03). Resolves once the pack is
  * complete, and at once when it already is; a cut-off pack resumes where it stopped. Without the native module or the
  * tile key (Expo Go, web) there is no map to keep, so it resolves without doing anything. Rejects when the download
@@ -29,10 +43,9 @@ export async function downloadMapPack({ missionId, bounds, signal }: MapPackOpti
   signal?.throwIfAborted();
 
   const existing = (await OfflineManager.getPacks()).find((pack) => pack.metadata.missionId === missionId);
-  // The pack is the same whichever theme the style was built for: both use the same tiles, glyphs and sprites.
-  const mapStyle = JSON.stringify(
-    buildMapStyle({ themeId: 'night', provider: mapProvider, terrain: mapTerrain, data: emptyMissionMapData }),
-  );
+  // Stopped while the packs were listed: nothing may be created or resumed after the caller cleaned up.
+  signal?.throwIfAborted();
+  const mapStyle = writeStyleFile(mapProvider);
   const [west, south, east, north] = bounds;
 
   await new Promise<void>((resolve, reject) => {
