@@ -1,6 +1,7 @@
 import type { SessionUser } from '@trace/schemas';
 import styles from './ProfileMenu.module.css';
 import { Button } from '../Button';
+import { PhoneSection } from '../PhoneSection';
 import { SignOutIcon } from '../icons';
 import { ThemeSelect } from '../ThemeSelect';
 
@@ -24,7 +25,7 @@ export interface ProfileDetailsProps {
   onSignOut: () => void;
 }
 
-/** What the profile popover and the profile sheet hold: identity, the theme choice and sign-out. */
+/** What the profile popover and the profile sheet hold: identity, the phone number, the theme choice and sign-out. */
 export function ProfileDetails({ user, canSignOut, signingOut, signOutFailed, onSignOut }: ProfileDetailsProps) {
   return (
     <>
@@ -41,6 +42,10 @@ export function ProfileDetails({ user, canSignOut, signingOut, signOutFailed, on
             </div>
           </div>
         </div>
+      </div>
+
+      <div className={styles.section}>
+        <PhoneSection phoneNumber={user.phoneNumber} />
       </div>
 
       <div className={styles.section}>

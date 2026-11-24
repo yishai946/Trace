@@ -26,6 +26,8 @@ export const participationEnded = (message = 'The activity in this mission has e
 export const unsupportedPhoto = (message = 'The photo must be a JPEG, PNG or WebP image') =>
   new AppError(415, 'UNSUPPORTED_PHOTO', message);
 
+export const phoneInUse = () => new AppError(409, 'PHONE_IN_USE', 'This phone number belongs to another account');
+
 const body = (code: ErrorCode, message: string, details?: unknown): ApiError => ({
   error: details === undefined ? { code, message } : { code, message, details },
 });

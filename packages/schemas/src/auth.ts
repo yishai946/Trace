@@ -7,6 +7,8 @@ export const SessionUser = z.object({
   name: z.string(),
   email: z.string(),
   role: z.enum(USER_ROLES),
+  /** E.164. Absent or null until the user has one (a commander sets it for Field's "call the commander"). */
+  phoneNumber: z.string().nullish(),
 });
 
 /** /api/auth/get-session: the current session, or null when nobody is signed in. */
