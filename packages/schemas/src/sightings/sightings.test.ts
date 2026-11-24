@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreateSightingBody, LkpDecisionBody } from '.';
 
 const valid = {
@@ -40,6 +40,32 @@ describe('CreateSightingBody', () => {
 
   it('requires a time-zone offset on the time', () => {
     expect(failingPaths({ ...valid, observedAt: '2026-10-03T13:05' })).toContain('/observedAt');
+  });
+
+  describe('observedAt is not in the future', () => {
+    const NOW = new Date('2026-10-03T12:00:00Z');
+    const at = (offsetMs: number) => new Date(NOW.getTime() + offsetMs).toISOString();
+
+    afterEach(() => vi.useRealTimers());
+
+    it('refuses a time later than a minute of clock skew', () => {
+      vi.useFakeTimers({ now: NOW });
+      expect(failingPaths({ ...valid, observedAt: at(61_000) })).toContain('/observedAt');
+      expect(failingPaths({ ...valid, observedAt: '2030-01-01T00:00:00Z' })).toContain('/observedAt');
+    });
+
+    it('accepts now, a small skew ahead and any time in the past', () => {
+      vi.useFakeTimers({ now: NOW });
+      expect(failingPaths({ ...valid, observedAt: at(0) })).toEqual([]);
+      expect(failingPaths({ ...valid, observedAt: at(60_000) })).toEqual([]);
+      expect(failingPaths({ ...valid, observedAt: '1970-01-01T00:00:00Z' })).toEqual([]);
+    });
+
+    it('compares the instant, not the written offset', () => {
+      vi.useFakeTimers({ now: NOW });
+      expect(failingPaths({ ...valid, observedAt: '2026-10-03T14:30:00+03:00' })).toEqual([]);
+      expect(failingPaths({ ...valid, observedAt: '2026-10-03T16:30:00+03:00' })).toContain('/observedAt');
+    });
   });
 
   it('refuses an unknown source', () => {

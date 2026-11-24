@@ -9,12 +9,18 @@ export const LkpDecision = z.enum(LKP_DECISIONS).meta({ id: 'LkpDecision' });
 
 // Request bodies with defaults or transforms have no OpenAPI component id: their input and output differ.
 
+/** How far ahead of the server's clock a phone's clock may be before its sighting time counts as the future. */
+const CLOCK_SKEW_MS = 60_000;
+
+/** A sighting happened already: a time later than the server's clock plus a small skew is refused (decided on #162). */
+const NotInTheFuture = (value: string) => Date.parse(value) <= Date.now() + CLOCK_SKEW_MS;
+
 /** A new sighting (decision 61). Location, time and source are required; the description may be blank. */
 export const CreateSightingBody = z.object({
   /** Made on the phone (UUIDv7) so a retry after a lost answer cannot add the sighting twice; Command omits it. */
   id: z.uuid().optional(),
   position: PointGeometry,
-  observedAt: IsoDateTime,
+  observedAt: IsoDateTime.refine(NotInTheFuture, { error: 'observedAt cannot be in the future' }),
   source: SightingSource,
   description: z
     .string()

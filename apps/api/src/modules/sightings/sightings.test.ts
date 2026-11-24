@@ -123,6 +123,14 @@ describe('sightings', () => {
       expect((await post(body({ observedAt: '2026-10-03T14:22' }))).statusCode).toBe(400);
     });
 
+    it('rejects a time in the future and accepts one a few seconds ahead', async () => {
+      const future = await post(body({ observedAt: '2030-01-01T00:00:00Z' }));
+      expect(future.statusCode).toBe(400);
+      expect(issuePaths(future.json())).toContain('/observedAt');
+      const soon = new Date(Date.now() + 10_000).toISOString();
+      expect((await post(body({ observedAt: soon }))).statusCode).toBe(201);
+    });
+
     it('rejects an unknown source', async () => {
       expect((await post(body({ source: 'certain' }))).statusCode).toBe(400);
     });
