@@ -211,4 +211,36 @@ describe('ComposeMessage', () => {
     fireEvent.submit(screen.getByRole('form', { name: 'הודעה חדשה' }));
     expect(onSend).not.toHaveBeenCalled();
   });
+
+  it('templates: a chip fills the text, which stays editable and is sent as typed', () => {
+    const onSend = vi.fn();
+    render(<ComposeMessage {...composeProps({ onSend })} />);
+
+    const chip = screen.getByRole('button', { name: 'הישארו במקום' });
+    expect(chip).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(chip);
+    expect(text()).toHaveValue('הישארו במקום ואל תתקדמו עד להנחיה נוספת.');
+    expect(chip).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.change(text(), { target: { value: 'הישארו במקום 10 דקות' } });
+    expect(chip).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(send());
+    expect(onSend).toHaveBeenCalledWith(
+      expect.objectContaining({ body: 'הישארו במקום 10 דקות' }),
+      expect.any(Function),
+    );
+  });
+
+  it('templates: a second chip replaces the text, and a pressed chip clears it', () => {
+    render(<ComposeMessage {...composeProps()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'בדיקת קשר' }));
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה לכינוס' }));
+    expect(text()).toHaveValue('חזרו מיד לנקודת הכינוס.');
+    expect(screen.getByRole('button', { name: 'בדיקת קשר' })).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(screen.getByRole('button', { name: 'חזרה לכינוס' }));
+    expect(text()).toHaveValue('');
+  });
 });

@@ -4,6 +4,7 @@ import {
   canRecordReceipt,
   canSendMessage,
   isMessageRecipient,
+  MESSAGE_TEMPLATES,
   recipientStatus,
   requiresAcknowledgement,
   type ReceiptTimes,
@@ -107,5 +108,25 @@ describe('applyReceipt', () => {
     const read = applyReceipt(empty, 'read', t1);
     expect(applyReceipt(read, 'read', t2)).toBe(read);
     expect(read.readAt).toBe(t1);
+  });
+});
+
+describe('MESSAGE_TEMPLATES', () => {
+  it('has the four Cd11 templates, in order', () => {
+    expect(MESSAGE_TEMPLATES.map((template) => template.label)).toEqual([
+      'חזרה לכינוס',
+      'סיום בפוליגון',
+      'בדיקת קשר',
+      'הישארו במקום',
+    ]);
+  });
+
+  it('has unique ids and texts that fit a message', () => {
+    expect(new Set(MESSAGE_TEMPLATES.map((template) => template.id)).size).toBe(MESSAGE_TEMPLATES.length);
+    for (const template of MESSAGE_TEMPLATES) {
+      expect(template.text.trim()).toBe(template.text);
+      expect(template.text.length).toBeGreaterThan(0);
+      expect(template.text.length).toBeLessThanOrEqual(2000);
+    }
   });
 });

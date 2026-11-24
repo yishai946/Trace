@@ -36,7 +36,7 @@ const states = () =>
     .map((item) => within(item).getByText(/^(נשלחה|נמסרה|נקראה|אושרה)/).textContent);
 
 describe('PhoneMessagesPage', () => {
-  it('PMS1: shows the title, the two views, the form and no templates', () => {
+  it('PMS1: shows the title, the two views, the form and the templates', () => {
     render(<PhoneMessagesPage {...props()} />);
     expect(screen.getByRole('heading', { level: 1, name: 'הודעות' })).toBeInTheDocument();
     expect(screen.getByRole('status', { name: /^זמין/ })).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('PhoneMessagesPage', () => {
     expect(text()).toBeInTheDocument();
     expect(send().textContent).toBe('שלח ל-2 מחפשים');
     expect(screen.queryByRole('heading', { name: 'הודעה חדשה' })).toBeNull();
-    expect(screen.queryByText('תבניות')).toBeNull();
+    expect(screen.getByRole('group', { name: 'תבניות' })).toBeInTheDocument();
   });
 
   it('PMS2: sends the chosen target, urgency and trimmed text, then clears and stays on the new view', () => {
