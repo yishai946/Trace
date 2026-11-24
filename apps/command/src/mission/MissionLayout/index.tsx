@@ -10,6 +10,8 @@ interface MissionLayoutProps {
   counts?: Partial<Record<MissionView, number | null>>;
   /** The join code panel, under the navigation, when open. */
   joinPanel: ReactNode;
+  /** The searchers panel under the join code on the map view (wireframe Cd04); the other views show none. */
+  sidePanel?: ReactNode;
   /** The critical SOS alert, under the navigation, in the flow so it covers no page content; it renders nothing when there is none or the view shows it already. */
   alert?: ReactNode;
   /** The searchers, Reports, Messages or Timeline page; nothing on the map view. */
@@ -26,6 +28,7 @@ export function MissionLayout({
   onNavigate,
   counts,
   joinPanel,
+  sidePanel,
   alert,
   children,
 }: MissionLayoutProps) {
@@ -35,6 +38,7 @@ export function MissionLayout({
         <MissionNav missionName={missionName} view={view} onNavigate={onNavigate} counts={counts} />
         <div className={styles.alert}>{alert}</div>
         {joinPanel}
+        {view === 'map' && sidePanel}
       </div>
       {children}
     </div>

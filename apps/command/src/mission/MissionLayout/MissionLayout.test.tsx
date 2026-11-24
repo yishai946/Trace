@@ -7,7 +7,13 @@ import type { MissionView } from '../MissionNav';
 function Harness() {
   const [view, setView] = useState<MissionView>('map');
   return (
-    <MissionLayout missionName="מסע 0412" view={view} onNavigate={setView} joinPanel={null}>
+    <MissionLayout
+      missionName="מסע 0412"
+      view={view}
+      onNavigate={setView}
+      joinPanel={null}
+      sidePanel={<p>רשימת מחפשים</p>}
+    >
       {view === 'timeline' && <p>ציר הזמן</p>}
     </MissionLayout>
   );
@@ -31,5 +37,13 @@ describe('MissionLayout', () => {
     expect(screen.getByRole('link', { name: 'לוח מבצעי' })).toBe(map);
     expect(document.activeElement).toBe(map);
     expect(map.getAttribute('aria-current')).toBe('page');
+  });
+
+  it('shows the side panel on the map view only', () => {
+    render(<Harness />);
+    expect(screen.getByText('רשימת מחפשים')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('link', { name: 'ציר זמן' }));
+    expect(screen.queryByText('רשימת מחפשים')).toBeNull();
   });
 });
