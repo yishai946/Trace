@@ -4,6 +4,7 @@ import { TextField } from '../../components/TextField';
 import styles from './ComposeMessage.module.css';
 import { TargetChoice } from './TargetChoice';
 import { TargetKindChoice } from './TargetKindChoice';
+import { TemplateChoice } from './TemplateChoice';
 import { UrgencyChoice } from './UrgencyChoice';
 import { useComposeMessage } from './useComposeMessage';
 import { sendLabel } from '../messageView';
@@ -130,6 +131,8 @@ export function ComposeMessage({
         )}
 
         <UrgencyChoice value={form.urgency} onChange={(urgency) => change({ urgency })} />
+
+        <TemplateChoice body={form.body} onChange={(body) => change({ body })} />
 
         <TextField
           label="טקסט חופשי"

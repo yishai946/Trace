@@ -80,3 +80,15 @@ export function applyReceipt(times: ReceiptTimes, receipt: MessageReceipt, at: D
     next.acknowledgedAt !== times.acknowledgedAt;
   return changed ? next : times;
 }
+
+/**
+ * A ready-made operational message (decision 26). The list is fixed in the product: a commander picks one to fill
+ * the text field, then may edit it. `label` is the chip, `text` is what goes in the field.
+ */
+export const MESSAGE_TEMPLATES = [
+  { id: 'return-to-assembly', label: 'חזרה לכינוס', text: 'חזרו מיד לנקודת הכינוס.' },
+  { id: 'finish-in-polygon', label: 'סיום בפוליגון', text: 'סיימו את הסריקה בפוליגון שלכם ודווחו בסיום.' },
+  { id: 'comms-check', label: 'בדיקת קשר', text: 'בדיקת קשר: אשרו שהודעה זו התקבלה.' },
+  { id: 'stay-put', label: 'הישארו במקום', text: 'הישארו במקום ואל תתקדמו עד להנחיה נוספת.' },
+] as const;
+export type MessageTemplate = (typeof MESSAGE_TEMPLATES)[number];

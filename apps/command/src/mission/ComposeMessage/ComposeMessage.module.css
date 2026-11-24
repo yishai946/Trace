@@ -194,3 +194,53 @@
 .phone .polygonCheck {
   min-height: var(--pending-control-lg-h);
 }
+
+/* The template chips (wireframe Cd11 tcx-chipbtn, 26px). */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: var(--pending-chip-h);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--pending-chip-h) / 2);
+  background-color: transparent;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+}
+
+.chip[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.chip[data-selected] {
+  border-color: var(--border-strong);
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.chip[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+/* On the phone (wireframe Cm11 tcx-chipbtn--lg) the chips are 44px and scroll sideways. */
+.phone .chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.phone .chip {
+  flex: 0 0 auto;
+  height: var(--pending-touch-target);
+  padding-inline: var(--space-7);
+  border-radius: calc(var(--pending-touch-target) / 2);
+}
