@@ -1,6 +1,8 @@
 import { Mission, MissionPolygonList } from '@trace/schemas';
 import { apiBaseUrl, apiRequest } from '../../api';
+import { toMissionArea } from '../../mission/missionArea';
 import { fetchPhoto } from '../downloadPackage';
+import { downloadMapPack } from '../mapPack';
 import { OFFLINE_STEPS } from '../progress';
 import { useOfflineState } from '../state';
 import { loadStep, packageEpoch, saveStep, savedSteps } from '../store';
@@ -13,9 +15,8 @@ export interface RefreshOptions {
 
 /**
  * Brings the saved offline package up to date with the commander's edits (UC-F03): the mission, its photo and its
- * polygons. A step is replaced
- * only after the new answer arrived, so a failure (usually the connection) leaves the old copy usable and the package
- * as ready as it was. A package that is not complete yet is left to the download, which fetches the latest itself (and
+ * polygons, and the base map when the polygons left the saved area. A step is replaced only after the new answer
+ * arrived, so a failure (usually the connection) leaves the old copy usable and the package as ready as it was. A package that is not complete yet is left to the download, which fetches the latest itself (and
  * asks for a refresh when it ends), so a refresh and a download never write the same package. The photo is fetched again only when its versioned address changed. Failures are thrown.
  */
 export async function refreshOfflinePackage({ missionId, token, signal }: RefreshOptions): Promise<void> {
@@ -48,6 +49,18 @@ export async function refreshOfflinePackage({ missionId, token, signal }: Refres
   }
   // Screens that show the saved copy read it again.
   useOfflineState.getState().refreshed(missionId);
+
+  if (saved.has('map')) {
+    // Polygons moved past the saved map: the map of the new area is added; the old one stays until it is complete.
+    const [mission, polygons] = await Promise.all([
+      loadStep(missionId, 'mission', Mission),
+      loadStep(missionId, 'polygons', MissionPolygonList),
+    ]);
+    const bounds = mission && polygons ? toMissionArea(polygons, mission).bounds : null;
+    signal?.throwIfAborted();
+    if (packageEpoch() !== epoch) throw new Error('The offline package was cleared');
+    if (bounds) await downloadMapPack({ missionId, bounds, signal });
+  }
 }
 
 let running: Promise<void> | null = null;
