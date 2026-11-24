@@ -1,5 +1,4 @@
 import type { TerrainOptions } from '@trace/map';
-import type { ReactNode } from 'react';
 import { Separator, Toolbar } from 'react-aria-components';
 import styles from './MapToolbar.module.css';
 import { ToolButton } from '../ToolButton';
@@ -17,8 +16,6 @@ interface MapToolbarProps {
   sightingActive?: boolean;
   terrain: TerrainOptions;
   onTerrainChange: (terrain: TerrainOptions) => void;
-  /** More view tools, after the terrain ones: the base map and the way back to the search area. */
-  viewTools?: ReactNode;
 }
 
 const icon = (path: string) => (
@@ -43,7 +40,6 @@ export function MapToolbar({
   sightingActive,
   terrain,
   onTerrainChange,
-  viewTools,
 }: MapToolbarProps) {
   const toggle = (key: keyof TerrainOptions) => onTerrainChange({ ...terrain, [key]: !terrain[key] });
 
@@ -78,7 +74,6 @@ export function MapToolbar({
       <ToolButton aria-label="תלת-ממד" isSelected={terrain.terrain3d} onChange={() => toggle('terrain3d')}>
         {icon('M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5')}
       </ToolButton>
-      {viewTools}
     </Toolbar>
   );
 }

@@ -40,3 +40,8 @@ export function getWebTerrainSources(provider: MapProvider): WebTerrainSources {
   };
   return terrainSources;
 }
+
+/** One satellite tile (over Jerusalem) for the layer picker's miniature, or undefined without imagery. */
+export function satelliteSampleTile(provider: MapProvider): string | undefined {
+  return provider.satelliteTilesTemplate?.replace('{z}', '13').replace('{x}', '4897').replace('{y}', '3300');
+}

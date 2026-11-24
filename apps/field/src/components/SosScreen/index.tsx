@@ -13,6 +13,7 @@ import { Notice } from '../Notice';
 import { Screen } from '../Screen';
 import { SosActivation } from '../SosActivation';
 import { SosActive } from '../SosActive';
+import { SosCalls } from '../SosCalls';
 
 /** Fm12: the SOS tab (UC-F13). It shows the activation view, or the active SOS with a way to close it. */
 export function SosScreen() {
@@ -35,7 +36,7 @@ export function SosScreen() {
   const send = (message: string) => activate.mutate({ message, location: sosLocationOf(fix) });
 
   return (
-    <Screen title="חירום" tabbed>
+    <Screen title="חירום" tabbed footer={<SosCalls />}>
       <View style={styles.stack}>
         {list.isError ? (
           <Notice icon="alert" tone="warn">

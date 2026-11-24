@@ -10,6 +10,7 @@ import { useTheme } from '../../theme';
 import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
+import { CallCommanderButton } from '../CallCommanderButton';
 import { CallsignChip } from '../CallsignChip';
 import { MissingPersonPhoto } from '../MissingPersonPhoto';
 import { MissionMap } from '../MissionMap';
@@ -64,6 +65,7 @@ export function WaitingForAssignment({
           {NOT_UP_TO_DATE}
         </Notice>
       ) : null}
+      <CallCommanderButton />
       <OfflineDownload />
       <ReadinessPermissions />
       <View style={[styles.map, { borderColor: color.border }]}>
