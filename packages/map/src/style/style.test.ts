@@ -2,6 +2,7 @@ import { validateStyleMin, type SymbolLayerSpecification } from '@maplibre/mapli
 import { themeIds, themes } from '@trace/design';
 import { describe, expect, it } from 'vitest';
 import { buildMapStyle } from '.';
+import { colorfulPalette } from './colorfulPalette';
 import { SOURCE } from '../data';
 import { sampleData } from '../fixtures';
 import { iconId, mapIcons } from '../icons';
@@ -132,7 +133,11 @@ describe.each(themeIds.flatMap((themeId) => views.map((view) => ({ themeId, view
 
     it('is valid and uses only theme colors', () => {
       expect(validateStyleMin(style)).toEqual([]);
-      const tokens = new Set(Object.values(themes[themeId].color));
+      // The colored map has its own Google-style palette; every other color is a token.
+      const tokens = new Set([
+        ...Object.values(themes[themeId].color),
+        ...(view.color === 'color' ? Object.values(colorfulPalette[themeId]) : []),
+      ]);
       for (const color of colorsIn(style.layers)) expect(tokens).toContain(color);
     });
 
@@ -162,7 +167,7 @@ describe.each(themeIds.flatMap((themeId) => views.map((view) => ({ themeId, view
       if (view.base === 'satellite') return;
       const wood = style.layers.find((l) => l.type === 'fill' && l.id === 'landcover-wood');
       const color = wood?.type === 'fill' ? wood.paint?.['fill-color'] : undefined;
-      expect(color).toBe(view.color === 'color' ? themes[themeId].color.success : themes[themeId].color.inkFaint);
+      expect(color).toBe(view.color === 'color' ? colorfulPalette[themeId].wood : themes[themeId].color.inkFaint);
     });
   },
 );
@@ -177,5 +182,33 @@ describe('map view default', () => {
     });
     const without = buildMapStyle({ themeId: 'day', provider, terrain: allTerrain });
     expect(without).toEqual(withView);
+  });
+});
+
+describe.each(themeIds)('colored map style (%s)', (themeId) => {
+  const build = (color: 'bw' | 'color') =>
+    buildMapStyle({ themeId, provider, terrain: allTerrain, view: { base: 'map', color } });
+  const paint = (color: 'bw' | 'color', id: string) => build(color).layers.find((l) => l.id === id)?.paint;
+
+  it('paints woods and water with their own opaque colors, unlike the black and white map', () => {
+    expect(paint('color', 'water')).not.toEqual(paint('bw', 'water'));
+    expect(paint('color', 'landcover-wood')).not.toHaveProperty('fill-opacity');
+    expect(paint('bw', 'landcover-wood')).toHaveProperty('fill-opacity');
+  });
+
+  it('is a valid MapLibre style', () => {
+    expect(validateStyleMin(build('color'))).toEqual([]);
+  });
+});
+
+describe('satellite map style', () => {
+  it('keeps the imagery visible: buildings stay translucent even when the colored map is chosen', () => {
+    const style = buildMapStyle({
+      themeId: 'night',
+      provider,
+      terrain: allTerrain,
+      view: { base: 'satellite', color: 'color' },
+    });
+    expect(style.layers.find((l) => l.id === 'building')?.paint).toMatchObject({ 'fill-opacity': 0.25 });
   });
 });

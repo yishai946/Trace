@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { ToggleButton, type ToggleButtonProps } from 'react-aria-components';
+import { Tip } from './Tip';
 import styles from './ToolButton.module.css';
 
 export interface ToolButtonProps extends Omit<ToggleButtonProps, 'children' | 'className'> {
@@ -10,5 +11,9 @@ export interface ToolButtonProps extends Omit<ToggleButtonProps, 'children' | 'c
 
 /** Trace Console icon button with a pressed state (MapToolbar tools). */
 export function ToolButton(props: ToolButtonProps) {
-  return <ToggleButton {...props} className={styles.tool} />;
+  return (
+    <Tip label={props['aria-label']}>
+      <ToggleButton {...props} className={styles.tool} />
+    </Tip>
+  );
 }

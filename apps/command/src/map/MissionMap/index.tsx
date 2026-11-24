@@ -10,20 +10,20 @@ import {
 import { Map as MapLibreMap } from 'maplibre-gl';
 import '../maplibre-worker';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { TerraDraw } from 'terra-draw';
 import { preloadMapIcons, registerMapIcons } from '../icons';
 import type { MapTool } from '../MapToolbar';
 import { bindMapEvents } from './mapEvents';
 import { MapControls } from './MapControls';
 import { MapNotices } from './MapNotices';
-import { searchAreaFocus } from '../focusTargets';
-import { FIT_BOUNDS_PADDING_PX, moveMapTo, useMapSync } from './useMapSync';
+import { FIT_BOUNDS_PADDING_PX, useMapSync } from './useMapSync';
 import { useMapView } from './useMapView';
+import { useNavControls } from './useNavControls';
 import { useDrawMode } from './useDrawMode';
 import { createDraw } from './createDraw';
 import styles from './MissionMap.module.css';
-import { getWebTerrainSources } from '../provider';
+import { getWebTerrainSources, satelliteSampleTile } from '../provider';
 
 export interface MapFocus {
   center: LngLat;
@@ -93,7 +93,7 @@ export function MissionMap({
   const editFeatureRef = useRef<string | null>(null);
   const toolRef = useRef<MapTool>('select');
   const mapView = useMapView();
-  const { view } = mapView;
+  const { view, satelliteFailed } = mapView;
   const onSatelliteErrorRef = useRef(mapView.onSatelliteError);
 
   const [ready, setReady] = useState(false);
@@ -169,9 +169,8 @@ export function MissionMap({
 
   useMapSync({ mapRef, drawRef, ready, themeId, terrain, view, data, focus, style });
 
-  const searchArea = useMemo(() => searchAreaFocus(data), [data]);
+  const { nav, locationFailed } = useNavControls(mapRef, data, ready);
 
-  const editingId = editing?.polygonId ?? null;
   const placing = !!onMapClick;
   useDrawMode({ drawRef, mapRef, editFeatureRef, ready, editing, tool, placing });
 
@@ -183,22 +182,21 @@ export function MissionMap({
         <MapControls
           tool={tool}
           onToolChange={setTool}
-          drawingDisabled={!!editingId || !onPolygonDrawn || placing}
+          drawingDisabled={!!editing || !onPolygonDrawn || placing}
           onSighting={onSighting}
           sightingActive={sightingActive}
           terrain={terrain}
           onTerrainChange={setTerrain}
           view={mapView.view}
           onViewChange={mapView.change}
-          satelliteAvailable={!!provider.satelliteTilesTemplate}
-          onSearchArea={searchArea ? () => mapRef.current && moveMapTo(mapRef.current, searchArea) : undefined}
+          themeId={themeId}
+          satelliteTile={satelliteSampleTile(provider)}
+          nav={nav}
           cursor={cursor}
-          onZoomIn={() => mapRef.current?.zoomIn()}
-          onZoomOut={() => mapRef.current?.zoomOut()}
         />
       )}
 
-      <MapNotices tool={tool} editing={!!editingId} satelliteFailed={mapView.satelliteFailed} />
+      <MapNotices tool={tool} editing={!!editing} satelliteFailed={satelliteFailed} locationFailed={locationFailed} />
     </div>
   );
 }
