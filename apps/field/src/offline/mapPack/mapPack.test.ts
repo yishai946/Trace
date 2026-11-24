@@ -181,6 +181,16 @@ describe('downloadMapPack when the mission area changes', () => {
     expect(manager.deletePack.mock.calls).toEqual([['p1']]);
   });
 
+  it('never drops the new pack, even when it reports complete before it is created', async () => {
+    const { manager } = fakeManager([oldPack]);
+    manager.createPack.mockImplementation(async (_options: unknown, progress: Progress) => {
+      progress({}, { state: 'complete' });
+      return { id: 'new' };
+    });
+    await downloadMapPack({ missionId: A, bounds: moved });
+    expect(manager.deletePack.mock.calls).toEqual([['p1']]);
+  });
+
   it('keeps the old pack when the extension fails', async () => {
     const { manager, handlers } = fakeManager([oldPack]);
     const done = downloadMapPack({ missionId: A, bounds: moved });

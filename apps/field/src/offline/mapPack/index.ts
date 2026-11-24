@@ -56,16 +56,16 @@ interface Follow {
   signal?: AbortSignal;
 }
 
-/** Resumes or creates the pack and resolves with its id once it is complete; rejects on failure or abort. */
-function followPack({ manager, pack, signal }: Follow): Promise<string> {
-  return new Promise<string>((resolve, reject) => {
+/** Resumes or creates the pack and resolves once it is complete; rejects on failure or abort. */
+function followPack({ manager, pack, signal }: Follow): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     let packId: string | null = null;
     const finish = (outcome: () => void) => {
       signal?.removeEventListener('abort', onAbort);
       if (packId) manager.removeListener(packId);
       outcome();
     };
-    const done = () => finish(() => resolve(packId ?? ''));
+    const done = () => finish(resolve);
     const onAbort = () => {
       if (packId)
         void manager
@@ -117,7 +117,7 @@ export async function downloadMapPack({ missionId, bounds, signal }: MapPackOpti
   const mapStyle = writeStyleFile(mapProvider);
   const [west, south, east, north] = bounds;
   const area: Bounds = [west - MARGIN, south - MARGIN, east + MARGIN, north + MARGIN];
-  const keptId = await followPack({
+  await followPack({
     manager,
     signal,
     pack: existing ?? {
@@ -128,9 +128,10 @@ export async function downloadMapPack({ missionId, bounds, signal }: MapPackOpti
       metadata: { missionId, area },
     },
   });
-  // The old area is no longer needed once the new one is on the phone.
+  // The old area is no longer needed once the new one is on the phone. Only packs listed before are dropped: the new
+  // pack is never one of them.
   await Promise.all(
-    packs.filter((pack) => pack.id !== keptId).map((pack) => manager.deletePack(pack.id).catch(() => undefined)),
+    packs.filter((pack) => pack !== existing).map((pack) => manager.deletePack(pack.id).catch(() => undefined)),
   );
 }
 
