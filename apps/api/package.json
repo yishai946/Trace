@@ -13,9 +13,11 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "db:seed": "tsx src/scripts/seed.ts",
     "db:reset": "tsx src/scripts/reset.ts",
+    "photos:move": "tsx src/scripts/move-photos.ts",
     "auth:create-commander": "tsx src/scripts/create-commander.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1176.0",
     "@fastify/cors": "^11.3.1",
     "@fastify/swagger": "^9.9.2",
     "@fastify/swagger-ui": "^6.1.2",

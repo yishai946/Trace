@@ -2,7 +2,8 @@ import { isJoinCode, MAX_PHOTO_BYTES } from '@trace/domain';
 import { ApiError, Mission, MissionList } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { missions, users } from '../../db/schema';
+import { missionPhotos, missions, users } from '../../db/schema';
+import { missionPhotoKey } from '../../storage';
 import {
   addParticipant,
   createTestApp,
@@ -193,6 +194,9 @@ describe('missing person photo', () => {
     expect(photo.statusCode).toBe(200);
     expect(photo.headers['content-type']).toBe('image/png');
     expect(photo.rawPayload.equals(PNG)).toBe(true);
+    // The image is in the bucket, not in the row.
+    expect((await ctx.photos.get(missionPhotoKey(missionId)))?.data.equals(PNG)).toBe(true);
+    expect((await ctx.db.select().from(missionPhotos))[0]?.data).toBeNull();
   });
 
   it('replaces the photo with a new version', async () => {

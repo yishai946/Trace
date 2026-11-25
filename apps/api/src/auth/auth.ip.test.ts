@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { createTestApp, resetDb, type TestContext } from '../testing';
-import { TEST_DATABASE_URL } from '../testing/testing.config';
+import { TEST_BUCKET_ENV, TEST_DATABASE_URL } from '../testing/testing.config';
 
 /** Better Auth limits only in production, so these apps run as production with the settings it requires. */
 const production = (extra: Record<string, string>) => ({
@@ -8,6 +8,7 @@ const production = (extra: Record<string, string>) => ({
   API_URL: 'https://api.trace.test',
   AUTH_SECRET: 'x'.repeat(32),
   DATABASE_URL: TEST_DATABASE_URL,
+  ...TEST_BUCKET_ENV,
   ...extra,
 });
 

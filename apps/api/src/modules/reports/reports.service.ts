@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Tx } from '../../db';
 import { missions, participations, reportPhotos, reports } from '../../db/schema';
+import { reportPhotoKey } from '../../storage';
 import { AppError, forbidden, notFound, missionEnded, participationEnded, unsupportedPhoto } from '../../errors';
 import { logAndReport } from '../../monitoring';
 import type { ServiceDeps } from '../serviceDeps';
@@ -135,7 +136,7 @@ export async function setReportPhoto(
     data,
   }: { missionId: string; reportId: string; userId: string; searcherId: string; data: Buffer },
 ): Promise<Report> {
-  const { db } = deps;
+  const { db, photos } = deps;
   const contentType = detectPhotoType(data);
   const report = await db.transaction(async (tx) => {
     // Locked like createReport does, so the check and the save are ordered with Finish Activity.
@@ -155,10 +156,11 @@ export async function setReportPhoto(
     }
     if (participation && !acceptsReports(participation.status)) throw participationEnded();
     if (!contentType) throw unsupportedPhoto();
+    await photos.put(reportPhotoKey(reportId), { contentType, data });
     await tx
       .insert(reportPhotos)
-      .values({ reportId, contentType, data })
-      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data, updatedAt: new Date() } });
+      .values({ reportId, contentType })
+      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data: null, updatedAt: new Date() } });
     return findReport(tx, reportId);
   });
   await publishSaved(deps, missionId, report);
@@ -240,7 +242,7 @@ export async function updateReport(
  * report is gone.
  */
 export async function deleteReport(
-  { db, realtime }: ServiceDeps,
+  { db, realtime, photos, log }: ServiceDeps,
   { missionId, reportId }: { missionId: string; reportId: string },
 ): Promise<void> {
   const searcherIds = await db.transaction(async (tx) => {
@@ -250,5 +252,9 @@ export async function deleteReport(
     await tx.delete(reports).where(eq(reports.id, reportId));
     return searcherIds;
   });
+  // The report is gone already: a photo left behind (bucket unreachable) is logged, not an error for the commander.
+  await photos
+    .remove(reportPhotoKey(reportId))
+    .catch((error: unknown) => log.error({ err: error, reportId }, 'Report photo not deleted'));
   realtime.publish({ type: 'report.deleted', missionId, reportId }, { searcherIds });
 }

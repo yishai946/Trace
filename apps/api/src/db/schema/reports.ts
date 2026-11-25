@@ -34,13 +34,14 @@ export const reports = pgTable(
 );
 
 /**
- * A report's photo, at most one. Kept in Postgres like `mission_photos`, until the infrastructure decision (R2 follow-up).
+ * A report's photo, at most one. In the bucket (`reports/<id>/photo`) like `mission_photos`; `data` is only for a photo
+ * saved before the move.
  */
 export const reportPhotos = pgTable('report_photos', {
   reportId: uuid('report_id')
     .primaryKey()
     .references(() => reports.id, { onDelete: 'cascade' }),
   contentType: text('content_type').notNull(),
-  data: bytea().notNull(),
+  data: bytea(),
   ...timestamps,
 });

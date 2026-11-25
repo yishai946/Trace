@@ -33,6 +33,35 @@ describe('monitoring environment', () => {
   });
 });
 
+describe('photo bucket environment', () => {
+  const bucket = {
+    BUCKET_ENDPOINT: 'https://t3.storageapi.dev',
+    BUCKET_NAME: 'trace-photos',
+    BUCKET_ACCESS_KEY_ID: 'key',
+    BUCKET_SECRET_ACCESS_KEY: 'secret',
+  };
+
+  it('works without a bucket outside production and reads one when all four values are set', () => {
+    expect(loadEnv({}).BUCKET_ENDPOINT).toBeUndefined();
+    expect(loadEnv(bucket)).toMatchObject({ ...bucket, BUCKET_REGION: 'auto' });
+  });
+
+  it('refuses a bucket that is only partly set', () => {
+    expect(() => loadEnv({ BUCKET_ENDPOINT: bucket.BUCKET_ENDPOINT })).toThrow(/BUCKET_NAME/);
+  });
+
+  it('requires the bucket in production, so photos are never kept only in memory', () => {
+    const production = {
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgres://u:p@db/trace',
+      API_URL: 'https://api.example.net',
+    };
+    const withSecret = { ...production, AUTH_SECRET: 'x'.repeat(32) };
+    expect(() => loadEnv(withSecret)).toThrow(/BUCKET_ENDPOINT is required in production/);
+    expect(loadEnv({ ...withSecret, ...bucket }).BUCKET_NAME).toBe('trace-photos');
+  });
+});
+
 describe('proxy environment', () => {
   it('does not trust a proxy unless TRUST_PROXY is true', () => {
     expect(loadEnv({}).TRUST_PROXY).toBe(false);

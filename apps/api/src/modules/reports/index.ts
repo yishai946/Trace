@@ -130,7 +130,7 @@ export const reportRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps
     },
     async (request, reply) => {
       const { missionId, reportId } = request.params;
-      const photo = await getReportPhoto(db, { missionId, reportId, actor: actorOf(request) });
+      const photo = await getReportPhoto(deps, { missionId, reportId, actor: actorOf(request) });
       // A URL with the current version (`?v=`, from photoUrl) never changes, so the browser may keep it.
       const current = request.query.v === String(photo.updatedAt.getTime());
       return reply

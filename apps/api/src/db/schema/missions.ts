@@ -23,15 +23,16 @@ export const missions = pgTable('missions', {
 });
 
 /**
- * The missing person's photo (UC-C02), at most one per mission. Kept in Postgres so the server needs no other storage
- * until the infrastructure decision (TECH_STACK.md); the size limit keeps rows small.
+ * The missing person's photo (UC-C02), at most one per mission. The image is in the bucket (`missions/<id>/photo`); the
+ * row keeps its type and version. `data` holds the bytes only for a photo saved before the move to the bucket, until
+ * `photos:move` copies it.
  */
 export const missionPhotos = pgTable('mission_photos', {
   missionId: uuid('mission_id')
     .primaryKey()
     .references(() => missions.id, { onDelete: 'cascade' }),
   contentType: text('content_type').notNull(),
-  data: bytea().notNull(),
+  data: bytea(),
   ...timestamps,
 });
 

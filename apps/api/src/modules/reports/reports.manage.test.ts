@@ -1,6 +1,7 @@
 import { ApiError, Report } from '@trace/schemas';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { reportPhotos } from '../../db/schema';
+import { reportPhotoKey } from '../../storage';
 import { addParticipant, signInCommander, signInSearcher } from '../../testing';
 import { ID, JPEG, body, setupReports } from './fixtures';
 
@@ -182,6 +183,7 @@ describe('field reports (UC-F09)', () => {
       });
       expect(await rows()).toHaveLength(0);
       expect(await rt.ctx.db.select().from(reportPhotos)).toHaveLength(0);
+      expect(await rt.ctx.photos.get(reportPhotoKey(ID))).toBeNull();
       expect((await list()).json()).toEqual([]);
       expect(reportEvents(events)).toEqual([{ type: 'report.deleted', missionId: rt.mission.id, reportId: ID }]);
     });

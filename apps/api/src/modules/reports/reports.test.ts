@@ -3,6 +3,7 @@ import { ApiError, Mission, Report, TimelineEvent, type MissionEvent } from '@tr
 import { eq } from 'drizzle-orm';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { missions, participations, reportPhotos, timelineEvents } from '../../db/schema';
+import { reportPhotoKey } from '../../storage';
 import { addParticipant, signInSearcher } from '../../testing';
 import { ID, JPEG, body, setupReports } from './fixtures';
 
@@ -192,7 +193,9 @@ describe('field reports (UC-F09)', () => {
       expect(again.statusCode).toBe(200);
       const stored = await photoRows();
       expect(stored).toHaveLength(1);
-      expect(stored[0]?.data.length).toBe(JPEG.length + 3);
+      // The image is in the bucket, not in the row.
+      expect(stored[0]?.data).toBeNull();
+      expect((await rt.ctx.photos.get(reportPhotoKey(ID)))?.data.length).toBe(JPEG.length + 3);
     });
 
     it('hides the report from other searchers, refuses the commander and unknown ids', async () => {

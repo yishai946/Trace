@@ -160,7 +160,7 @@ export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
       preHandler: missionAccess(db, 'member'),
     },
     async (request, reply) => {
-      const photo = await getMissionPhoto(db, request.params.missionId);
+      const photo = await getMissionPhoto(deps, request.params.missionId);
       // A URL with the current version (`?v=`, from photoUrl) never changes, so the browser may keep it.
       // Any other URL may point at a newer photo next time. Only the signed-in user's browser may cache either.
       const current = request.query.v === String(photo.updatedAt.getTime());

@@ -14,6 +14,7 @@ import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { lkpPoints, missionPhotos, missions } from '../../db/schema';
 import { notFound, missionEnded, unsupportedPhoto } from '../../errors';
+import { missionPhotoKey } from '../../storage';
 import { lockMission } from '../lockMission';
 import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
@@ -129,7 +130,7 @@ export async function updateRallyPoint(
  * An ended mission is read-only (UC-C03 edits only an active or paused mission).
  */
 export async function setMissionPhoto(
-  { db, realtime }: ServiceDeps,
+  { db, realtime, photos }: ServiceDeps,
   missionId: string,
   data: Buffer,
 ): Promise<Mission> {
@@ -138,10 +139,11 @@ export async function setMissionPhoto(
   if (!canEditMissionDetails(current.status)) throw missionEnded('The photo of an ended mission cannot be changed');
   const contentType = detectPhotoType(data);
   if (!contentType) throw unsupportedPhoto();
+  await photos.put(missionPhotoKey(missionId), { contentType, data });
   await db
     .insert(missionPhotos)
-    .values({ missionId, contentType, data })
-    .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, data, updatedAt: new Date() } });
+    .values({ missionId, contentType })
+    .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, data: null, updatedAt: new Date() } });
   const mission = await getMission(db, missionId);
   realtime.publish({ type: 'mission.updated', missionId: mission.id, mission });
   return mission;

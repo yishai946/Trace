@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/node';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadEnv } from '../env';
 import { createFakeSentryTransport } from '../testing/sentryTransport';
+import { TEST_BUCKET_ENV } from '../testing/testing.config';
 import { VERSION } from '../version';
 import { flushMonitoring, initMonitoring, logAndReport, reportError, sentryOptions } from '.';
 
@@ -11,6 +12,7 @@ const PRODUCTION = {
   DATABASE_URL: 'postgres://u:p@db.example.net/trace',
   API_URL: 'https://api.example.net',
   AUTH_SECRET: 'x'.repeat(32),
+  ...TEST_BUCKET_ENV,
 };
 
 describe('sentryOptions', () => {
