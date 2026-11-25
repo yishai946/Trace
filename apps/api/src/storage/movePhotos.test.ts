@@ -24,14 +24,13 @@ describe('report photos saved before the bucket', () => {
     expect(await movePhotos(rt.ctx.db, rt.ctx.photos)).toBe(0);
   });
 
-  it('keeps a photo already in the bucket, because it was uploaded after the move began', async () => {
+  it('replaces an object left over from a failed upload with the photo in the row', async () => {
     await rt.send();
     await rt.ctx.db.insert(reportPhotos).values({ reportId: ID, contentType: 'image/jpeg', data: JPEG });
-    const newer = { contentType: 'image/png', data: PNG };
-    await rt.ctx.photos.put(reportPhotoKey(ID), newer);
+    await rt.ctx.photos.put(reportPhotoKey(ID), { contentType: 'image/png', data: PNG });
     await movePhotos(rt.ctx.db, rt.ctx.photos);
-    expect(await rt.ctx.photos.get(reportPhotoKey(ID))).toEqual(newer);
-    expect((await rt.ctx.db.select().from(reportPhotos))[0]?.data).toBeNull();
+    expect(await rt.ctx.photos.get(reportPhotoKey(ID))).toEqual({ contentType: 'image/jpeg', data: JPEG });
+    expect((await rt.getPhoto()).rawPayload.equals(JPEG)).toBe(true);
   });
 
   it('answers 404 for a photo with neither bytes in its row nor an object in the bucket', async () => {

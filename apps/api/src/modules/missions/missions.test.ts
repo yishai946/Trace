@@ -1,7 +1,7 @@
 import { isJoinCode, MAX_PHOTO_BYTES } from '@trace/domain';
 import { ApiError, Mission, MissionList } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { missionPhotos, missions, users } from '../../db/schema';
 import { missionPhotoKey } from '../../storage';
 import {
@@ -197,6 +197,17 @@ describe('missing person photo', () => {
     // The image is in the bucket, not in the row.
     expect((await ctx.photos.get(missionPhotoKey(missionId)))?.data.equals(PNG)).toBe(true);
     expect((await ctx.db.select().from(missionPhotos))[0]?.data).toBeNull();
+  });
+
+  it('answers 500 and keeps the old photo when the bucket fails', async () => {
+    await upload(PNG, 'image/png');
+    const failing = vi.spyOn(ctx.photos, 'put').mockRejectedValueOnce(new Error('bucket down'));
+    const res = await upload(JPEG, 'image/jpeg');
+    failing.mockRestore();
+    expect(res.statusCode).toBe(500);
+    expect(ApiError.parse(res.json()).error.code).toBe('INTERNAL_ERROR');
+    const photo = await inject({ method: 'GET', url: `/api/missions/${missionId}/photo` });
+    expect(photo.headers['content-type']).toBe('image/png');
   });
 
   it('replaces the photo with a new version', async () => {

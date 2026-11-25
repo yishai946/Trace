@@ -255,6 +255,8 @@ export async function deleteReport(
   // The report is gone already: a photo left behind (bucket unreachable) is logged, not an error for the commander.
   await photos
     .remove(reportPhotoKey(reportId))
-    .catch((error: unknown) => log.error({ err: error, reportId }, 'Report photo not deleted'));
+    .catch((error: unknown) =>
+      logAndReport(log, error, { source: 'reports.photo', message: 'Report photo not deleted', fields: { reportId } }),
+    );
   realtime.publish({ type: 'report.deleted', missionId, reportId }, { searcherIds });
 }

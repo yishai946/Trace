@@ -45,6 +45,9 @@ export function createPhotoStorage(env: Env): PhotoStorage {
     region: env.BUCKET_REGION,
     // Only send a checksum when the store asks for one: other S3-compatible stores (R2) reject the SDK newer default.
     requestChecksumCalculation: 'WHEN_REQUIRED',
+    // A slow or silent bucket must not hold a mission lock or a database connection for long: fail after a few seconds.
+    requestHandler: { connectionTimeout: 3000, requestTimeout: 8000 },
+    maxAttempts: 2,
     credentials: { accessKeyId: BUCKET_ACCESS_KEY_ID, secretAccessKey: BUCKET_SECRET_ACCESS_KEY },
   });
   return createBucketStorage(BUCKET_NAME, client);
