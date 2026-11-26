@@ -21,6 +21,7 @@ export const TIMELINE_EVENT_TYPES = [
   'searcher.returned_to_polygon',
   'battery.low',
   'gps.lost_escalated',
+  'contact.no_updates',
   'sos.activated',
   'sos.closed',
   'mission.details_changed',

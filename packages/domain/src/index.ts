@@ -5,6 +5,7 @@ export * from './outOfPolygon';
 export * from './joinCode';
 export * from './localTime';
 export * from './gpsLoss';
+export * from './lostContact';
 export * from './lowBattery';
 export * from './message';
 export * from './missionDetails';

@@ -42,6 +42,11 @@ const EnvInput = z.object({
    * is no default: unset means no escalation.
    */
   GPS_LOST_ESCALATION_SECONDS: optional(z.coerce.number().int().positive()),
+  /**
+   * Seconds without an update (GPS point or battery report) before the commander is alerted that contact with a
+   * searcher is lost (UC-S04, decision 44). TBD in the spec, so there is no default: unset means no alert.
+   */
+  LOST_CONTACT_AFTER_SECONDS: optional(z.coerce.number().int().positive()),
   /** Error tracking is off without a DSN. */
   SENTRY_DSN: optional(z.url()),
   /** Defaults to NODE_ENV. */

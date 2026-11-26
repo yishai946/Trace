@@ -113,6 +113,7 @@ export async function buildApp({
       env.GPS_LOST_ESCALATION_SECONDS && gpsLossScheduler
         ? { afterSeconds: env.GPS_LOST_ESCALATION_SECONDS, scheduler: gpsLossScheduler }
         : undefined,
+    lostContact: env.LOST_CONTACT_AFTER_SECONDS ? { afterSeconds: env.LOST_CONTACT_AFTER_SECONDS } : undefined,
   };
   if (connectivityCheckMs) {
     const stop = startConnectivityMonitor(deps, connectivityCheckMs);

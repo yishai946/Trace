@@ -3,6 +3,7 @@ import { createDb } from './db';
 import { loadEnv } from './env';
 import { createJobs } from './jobs';
 import { escalateGpsLoss } from './modules/gpsLoss';
+import { alertLostContact } from './modules/lostContact';
 import { flushMonitoring, reportError } from './monitoring';
 
 const env = loadEnv();
@@ -26,7 +27,15 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 try {
-  if (env.GPS_LOST_ESCALATION_SECONDS) await jobs.start((job) => escalateGpsLoss(deps, job), app.log);
+  if (env.GPS_LOST_ESCALATION_SECONDS || env.LOST_CONTACT_AFTER_SECONDS) {
+    await jobs.start(
+      {
+        escalate: env.GPS_LOST_ESCALATION_SECONDS ? (job) => escalateGpsLoss(deps, job) : undefined,
+        alertLostContact: env.LOST_CONTACT_AFTER_SECONDS ? () => alertLostContact(deps) : undefined,
+      },
+      app.log,
+    );
+  }
   await app.listen({ host: env.HOST, port: env.PORT });
 } catch (error) {
   app.log.fatal(error);

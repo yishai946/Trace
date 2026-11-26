@@ -27,6 +27,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'contact.lost': 'contact',
   'contact.restored': 'contact',
   'gps.lost_escalated': 'contact',
+  'contact.no_updates': 'contact',
   'battery.low': 'battery',
   'mission.created': 'mission',
   'mission.ended': 'mission',

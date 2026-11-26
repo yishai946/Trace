@@ -332,6 +332,13 @@ describe('timeline', () => {
           subject: subject('sos', null),
           details: { message: null },
         },
+        'contact.no_updates': {
+          missionId,
+          actor: 'system',
+          type: 'contact.no_updates',
+          subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
+          details: { lastUpdateAt: '2026-10-03T13:00:00.000Z' },
+        },
         'gps.lost_escalated': {
           missionId,
           actor: 'system',
