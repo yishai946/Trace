@@ -94,7 +94,7 @@ export const searchRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps
         summary: 'Finish Activity: the searcher leaves the field, Activity Ended (UC-F15)',
         description:
           'Searchers in the mission only. Warns nothing and never blocks: how far the searcher is from the Rally ' +
-          'Point is the phone\'s warning (decision 30). The open assignment and the task end, the route and Coverage ' +
+          "Point is the phone's warning (decision 30). The open assignment and the task end, the route and Coverage " +
           'collected stay, and GPS points are refused afterwards (409 PARTICIPATION_ENDED). Allowed whatever the ' +
           "mission's status, since safety tracking runs until now (decision 65). The commander sees the change at " +
           'once. Sending it again changes nothing. The searcher may join the active mission again as Available ' +
