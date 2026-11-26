@@ -75,14 +75,14 @@ describe('polygon Coverage (UC-S02)', () => {
     ({ searcher, participationId } = await assignedSearcher(4));
   });
 
-  async function assignedSearcher(callsign: number, endedAt: Date | null = null) {
+  async function assignedSearcher(callsign: number, endedAt: Date | null = null, assignedAt = ASSIGNED_AT) {
     const user = await signInSearcher(ctx);
     const id = await addParticipant(ctx.db, { missionId, callsign, searcherId: user.searcherId, polygonId });
     await ctx.db.insert(assignments).values({
       participationId: id,
       polygonId,
       assignedBy: commanderId,
-      assignedAt: ASSIGNED_AT,
+      assignedAt,
       endedAt,
     });
     return { searcher: user, participationId: id };
@@ -154,6 +154,24 @@ describe('polygon Coverage (UC-S02)', () => {
     const { searcher: moved } = await assignedSearcher(6, new Date('2026-10-03T12:30:00Z'));
     await upload(walk(31.7805), moved);
     expect(await coverage()).toBeNull();
+  });
+
+  it('does not count a segment across the gap between two assignments to the same polygon', async () => {
+    await upload(walk(31.7805));
+    const alone = (await coverage()) ?? 0;
+    // The walk is cut in two by a stretch in another polygon: one assignment ends at 13:00:12, the next starts at 13:00:28.
+    const other = await assignedSearcher(5, new Date('2026-10-03T13:00:12Z'));
+    await ctx.db.insert(assignments).values({
+      participationId: other.participationId,
+      polygonId,
+      assignedBy: commanderId,
+      assignedAt: new Date('2026-10-03T13:00:28Z'),
+    });
+    await upload(walk(31.7803), other.searcher);
+
+    const added = ((await coverage()) ?? 0) - alone;
+    expect(added).toBeGreaterThan(0);
+    expect(added).toBeLessThan(alone);
   });
 
   it('counts a late batch that arrives after newer points', async () => {

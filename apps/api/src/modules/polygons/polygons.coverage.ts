@@ -9,12 +9,12 @@ import { selectPolygons, toPolygon } from './polygons.read';
 
 /**
  * The searchers' points that count toward one polygon: those recorded while the searcher was assigned to it
- * (decisions 39 and 72), grouped by searcher. Safety points come too, because they break a run of counted segments.
+ * (decisions 39 and 72), grouped by assignment: a route never runs across the time the searcher was elsewhere. Safety points come too, because they break a run of counted segments.
  */
 async function routesOf(tx: Tx, polygonId: string): Promise<{ routes: CoverageRoute[]; searched: boolean }> {
   const rows = await tx
     .select({
-      participationId: trackPoints.participationId,
+      assignmentId: assignments.id,
       position: asGeoJson(trackPoints.position),
       recordedAt: trackPoints.recordedAt,
       accuracy: trackPoints.accuracy,
@@ -30,10 +30,10 @@ async function routesOf(tx: Tx, polygonId: string): Promise<{ routes: CoverageRo
       ),
     )
     .where(eq(assignments.polygonId, polygonId));
-  const byParticipation = new Map<string, CoverageRoute>();
+  const byAssignment = new Map<string, CoverageRoute>();
   for (const row of rows) {
-    const route = byParticipation.get(row.participationId) ?? { points: [] };
-    byParticipation.set(row.participationId, {
+    const route = byAssignment.get(row.assignmentId) ?? { points: [] };
+    byAssignment.set(row.assignmentId, {
       points: [
         ...route.points,
         {
@@ -45,7 +45,7 @@ async function routesOf(tx: Tx, polygonId: string): Promise<{ routes: CoverageRo
       ],
     });
   }
-  return { routes: [...byParticipation.values()], searched: rows.some((row) => row.context === 'search') };
+  return { routes: [...byAssignment.values()], searched: rows.some((row) => row.context === 'search') };
 }
 
 /**
