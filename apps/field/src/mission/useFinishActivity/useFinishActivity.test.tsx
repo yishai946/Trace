@@ -51,6 +51,23 @@ describe('useFinishActivity (UC-F15)', () => {
     expect(useSession.getState().assignmentNotice).toBeNull();
   });
 
+  it('ends the mission it was confirmed in, even if the session moves to another during the flush', async () => {
+    const OTHER = '00000000-0000-4000-8000-0000000000ff';
+    syncOutbox.mockImplementationOnce(async () => {
+      useSession.setState({ missionId: OTHER });
+    });
+    const fetch = vi.fn(async () => json(ended));
+    vi.stubGlobal('fetch', fetch);
+    const { result } = renderHook(() => useFinishActivity(), { wrapper });
+    act(() => result.current.finish());
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(fetch).toHaveBeenCalledWith(
+      `https://api.test/api/missions/${MISSION_ID}/participation/finish-activity`,
+      expect.anything(),
+    );
+    expect(useSession.getState().participation?.status).toBe('assigned');
+  });
+
   it('sends one request for a double tap', async () => {
     const fetch = vi.fn(async () => json(ended));
     vi.stubGlobal('fetch', fetch);

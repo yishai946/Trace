@@ -14,9 +14,10 @@ export function finishActivityError(error: unknown): string {
 }
 
 async function postFinishActivity() {
+  // The mission is the one the searcher confirmed in, whatever happens to the session during the flush.
+  const { token, missionId } = useSession.getState();
   // What the phone collected goes first: the server refuses points once the activity ended.
   await syncOutbox();
-  const { token, missionId } = useSession.getState();
   const participation = await apiRequest(`/missions/${missionId}/participation/finish-activity`, {
     baseUrl: apiBaseUrl,
     token,
