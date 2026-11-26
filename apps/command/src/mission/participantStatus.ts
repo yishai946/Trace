@@ -6,5 +6,7 @@ export function statusLabel(p: Pick<Participant, 'status' | 'taskStatus'>): stri
   if (p.status === 'ended') return 'סיים';
   if (p.taskStatus === 'searching') return 'בחיפוש';
   if (p.taskStatus === 'paused') return 'מושהה';
+  // Finished the search task, still assigned to the polygon until the commander decides (UC-F08, decision 100).
+  if (p.taskStatus === 'finished') return 'סיים חיפוש';
   return 'משובץ';
 }

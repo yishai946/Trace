@@ -110,7 +110,7 @@ describe('statusLabel', () => {
     expect(statusLabel({ status: 'assigned', taskStatus: 'ready' })).toBe('משובץ');
     expect(statusLabel({ status: 'assigned', taskStatus: 'searching' })).toBe('בחיפוש');
     expect(statusLabel({ status: 'assigned', taskStatus: 'paused' })).toBe('מושהה');
-    expect(statusLabel({ status: 'assigned', taskStatus: 'finished' })).toBe('משובץ');
+    expect(statusLabel({ status: 'assigned', taskStatus: 'finished' })).toBe('סיים חיפוש');
     expect(statusLabel({ status: 'ended', taskStatus: null })).toBe('סיים');
   });
 });
