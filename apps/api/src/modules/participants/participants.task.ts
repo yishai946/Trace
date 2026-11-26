@@ -2,7 +2,7 @@ import type { MissionStatus, TaskStatus } from '@trace/domain';
 import type { OwnParticipation } from '@trace/schemas';
 import { and, eq } from 'drizzle-orm';
 import { missions, participations } from '../../db/schema';
-import { AppError, notFound } from '../../errors';
+import { notFound, type AppError } from '../../errors';
 import type { ServiceDeps } from '../serviceDeps';
 import { findParticipant, ownColumns } from './participants.read';
 

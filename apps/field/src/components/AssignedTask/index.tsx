@@ -8,6 +8,7 @@ import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
 import { SearchPauseControls } from './SearchPauseControls';
 import { StartSearchControls } from './StartSearchControls';
+import { taskState } from './taskState';
 
 export interface AssignedTaskProps {
   participation: OwnParticipation;
@@ -56,6 +57,7 @@ export function AssignedTask({
 
   const paused = participation.taskStatus === 'paused';
   const searching = participation.taskStatus === 'searching' || paused;
+  const state = taskState(participation.taskStatus, name);
   return (
     <View style={styles.task} accessibilityLabel="המשימה שלי">
       {notice ? (
@@ -75,25 +77,14 @@ export function AssignedTask({
       <View style={styles.row}>
         <CallsignChip callsign={participation.callsign} />
         <View style={styles.grow}>
-          <Text style={[typography.title, { color: color.ink }]}>
-            {searching
-              ? name
-                ? `${paused ? 'מושהה' : 'בחיפוש'}, ${name}`
-                : paused
-                  ? 'מושהה'
-                  : 'בחיפוש'
-              : `שובצת ${to(name)}`}
-          </Text>
+          <Text style={[typography.title, { color: color.ink }]}>{state.title}</Text>
           {polygon ? (
             <Text style={[typography.meta, { color: color.inkMuted }]}>
               {polygon.activeSearchers === 1 ? 'מחפש אחד בפוליגון' : `${polygon.activeSearchers} מחפשים בפוליגון`}
             </Text>
           ) : null}
         </View>
-        <Badge
-          label={paused ? 'מושהה' : searching ? 'בחיפוש' : 'משובץ'}
-          tone={paused ? 'warn' : searching ? 'ok' : 'accent'}
-        />
+        <Badge label={state.badge} tone={state.tone} />
       </View>
       {searching ? (
         // Finishing the search is UC-F08.
