@@ -82,6 +82,17 @@ describe('describeEvent', () => {
     expect(text(eventSamples['contact.restored'])).toBe('הקשר עם [7] אלון שגיא חזר');
   });
 
+  it('words leaving the polygon as a warning with the distance, and the return as plain', () => {
+    expect(text(eventSamples['searcher.left_polygon'])).toBe('[7] אלון שגיא יצא מהגבול של ואדי צפוני, 80 מ׳ מחוץ לו');
+    expect(describeEvent(eventSamples['searcher.left_polygon'])).toMatchObject({ badge: 'גבול', warning: true });
+    expect(text(eventSamples['searcher.returned_to_polygon'])).toBe('[7] אלון שגיא חזר לגבול של ואדי צפוני');
+    expect(describeEvent(eventSamples['searcher.returned_to_polygon']).warning).toBe(false);
+  });
+
+  it('marks only a warning event, never an SOS, as a warning', () => {
+    expect(describeEvent(eventSamples['sos.activated'])).toMatchObject({ danger: true, warning: false });
+  });
+
   it('gives every type a badge and a category', () => {
     const categories = new Set(TIMELINE_CATEGORIES.map((c) => c.id));
     for (const type of TIMELINE_EVENT_TYPES) {

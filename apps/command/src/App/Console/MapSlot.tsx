@@ -4,6 +4,7 @@ import type { Mission } from '@trace/schemas';
 import styles from '../App.module.css';
 import type { MapFocus } from '../../map/MissionMap';
 import { FloatingAlerts } from '../../mission/FloatingAlerts';
+import { outsideSearchers } from '../../mission/outsideSearchers';
 import { MissionWorkspace } from '../MissionWorkspace';
 import type { ConsoleNav } from './useConsoleNav';
 import type { MissionData } from './useMissionData';
@@ -58,6 +59,8 @@ export function MapSlot({
             sos={data.sos.data ?? []}
             sosFailed={data.sos.isError}
             onRetrySos={() => void data.sos.refetch()}
+            outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
+            onOpenSearcher={nav.setSelectedSearcherId}
             onOpenReport={nav.openReport}
             onOpenSos={nav.openSos}
           />

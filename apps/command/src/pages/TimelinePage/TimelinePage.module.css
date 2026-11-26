@@ -147,6 +147,13 @@
   color: var(--on-danger);
 }
 
+/* A warning (UC-S04): the warning line and the word carry it, not a fill. */
+.badge[data-warning] {
+  border: 1px solid var(--warning);
+  background-color: transparent;
+  color: var(--ink);
+}
+
 .link {
   display: inline-flex;
   align-items: center;

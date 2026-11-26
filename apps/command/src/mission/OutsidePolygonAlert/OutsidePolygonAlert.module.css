@@ -1,0 +1,34 @@
+.alert {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-7);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  height: var(--pending-badge-h);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font: var(--text-caption);
+  font-weight: 600;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+}
+
+.num {
+  direction: ltr;
+  unicode-bidi: isolate;
+}

@@ -86,7 +86,10 @@ async function setup(ctx: TestContext, taskStatus?: 'searching' | 'paused' | 're
 }
 
 const upload = (s: Setup, ...points: TrackPointInput[]) =>
-  injectAs(s.ctx, s.searcher)({
+  injectAs(
+    s.ctx,
+    s.searcher,
+  )({
     method: 'POST',
     url: `/api/missions/${s.missionId}/track-points`,
     payload: { points },
@@ -146,7 +149,10 @@ describe('Out-of-polygon alert (UC-S04, decision 14)', () => {
 
     const messages = await sentMessages(s);
     expect(messages).toHaveLength(1);
-    expect(messages[0]).toMatchObject({ urgency: 'important', target: { kind: 'searcher', participantId: s.participantId } });
+    expect(messages[0]).toMatchObject({
+      urgency: 'important',
+      target: { kind: 'searcher', participantId: s.participantId },
+    });
     expect(messages[0]?.body).toContain('גזרה א');
   });
 
@@ -200,7 +206,10 @@ describe('Out-of-polygon alert (UC-S04, decision 14)', () => {
   it('raises nothing for a searcher with no polygon', async () => {
     const free = await signInSearcher(ctx);
     await addParticipant(ctx.db, { missionId: s.missionId, callsign: 5, searcherId: free.searcherId });
-    await injectAs(ctx, free)({
+    await injectAs(
+      ctx,
+      free,
+    )({
       method: 'POST',
       url: `/api/missions/${s.missionId}/track-points`,
       payload: { points: [fix(FAR_OUTSIDE, 'safety')] },
@@ -216,7 +225,10 @@ describe('Out-of-polygon alert (UC-S04, decision 14)', () => {
       url: `/api/missions/${s.missionId}/polygons`,
       payload: {
         name: 'גזרה ב',
-        geometry: { ...AREA, coordinates: [AREA.coordinates[0]?.map(([lng, lat]) => [lng ?? 0, (lat ?? 0) + 0.0099]) ?? []] },
+        geometry: {
+          ...AREA,
+          coordinates: [AREA.coordinates[0]?.map(([lng, lat]) => [lng ?? 0, (lat ?? 0) + 0.0099]) ?? []],
+        },
       },
     });
     const otherId = MissionPolygon.parse(other.json()).id;

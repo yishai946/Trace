@@ -29,7 +29,7 @@ export function EventRow({
         </time>
       </td>
       <td>
-        <span className={styles.badge} data-danger={view.danger || undefined}>
+        <span className={styles.badge} data-danger={view.danger || undefined} data-warning={view.warning || undefined}>
           {view.badge}
         </span>
       </td>

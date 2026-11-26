@@ -39,6 +39,38 @@ interface RecordTrackResult extends TrackPointsResult {
   presence: PresenceAlert | null;
 }
 
+/** Tells the commander what the committed batch changed: the position, the new points, the Coverage and the alerts. */
+async function publishTrack(
+  deps: ServiceDeps,
+  { missionId, searcherId }: { missionId: string; searcherId: string },
+  result: RecordTrackResult,
+): Promise<void> {
+  const { db, realtime } = deps;
+  if (result.moved) {
+    realtime.publish({
+      type: 'participant.moved',
+      missionId,
+      participantId: result.participantId,
+      searcherId,
+      ...result.moved,
+    });
+  }
+  if (result.storedPoints.length > 0) {
+    realtime.publish({
+      type: 'participant.tracked',
+      missionId,
+      participantId: result.participantId,
+      points: result.storedPoints,
+    });
+  }
+  await publishCoverage({ db, realtime }, missionId, result.coverage);
+  if (result.presence) await announcePresence(deps, result.presence);
+  if (result.gpsBack) {
+    const participant = await findParticipant({ db, realtime }, missionId, result.participantId);
+    if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+  }
+}
+
 /**
  * Saves a batch of the searcher's own GPS points (UC-S01). A point already saved (same participation and recording
  * time) is left as it was, so an upload repeated after a lost connection adds nothing. The newest point becomes the
@@ -48,7 +80,7 @@ export async function recordTrackPoints(
   deps: ServiceDeps,
   { missionId, searcherId, body }: { missionId: string; searcherId: string; body: z.output<typeof TrackPointsBody> },
 ): Promise<TrackPointsResult> {
-  const { db, realtime } = deps;
+  const { db } = deps;
   const result: RecordTrackResult = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({ id: participations.id, status: participations.status })
@@ -147,29 +179,7 @@ export async function recordTrackPoints(
       moved: updated ? { position: newest.position, positionAt: newestAt.toISOString() } : null,
     };
   });
-  if (result.moved) {
-    realtime.publish({
-      type: 'participant.moved',
-      missionId,
-      participantId: result.participantId,
-      searcherId,
-      ...result.moved,
-    });
-  }
-  if (result.storedPoints.length > 0) {
-    realtime.publish({
-      type: 'participant.tracked',
-      missionId,
-      participantId: result.participantId,
-      points: result.storedPoints,
-    });
-  }
-  await publishCoverage({ db, realtime }, missionId, result.coverage);
-  if (result.presence) await announcePresence(deps, result.presence);
-  if (result.gpsBack) {
-    const participant = await findParticipant({ db, realtime }, missionId, result.participantId);
-    if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
-  }
+  await publishTrack(deps, { missionId, searcherId }, result);
   return { stored: result.stored, duplicates: result.duplicates };
 }
 

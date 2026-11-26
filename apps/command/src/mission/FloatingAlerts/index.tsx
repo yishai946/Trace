@@ -1,6 +1,8 @@
 import { isCriticalReport } from '@trace/domain';
 import type { Report, Sos } from '@trace/schemas';
 import { CriticalReportAlert } from '../CriticalReportAlert';
+import { OutsidePolygonAlert } from '../OutsidePolygonAlert';
+import type { OutsideSearcher } from '../outsideSearchers';
 import { SosAlert } from '../SosAlert';
 import styles from './FloatingAlerts.module.css';
 
@@ -12,16 +14,33 @@ export interface FloatingAlertsProps {
   sosFailed?: boolean;
   onRetrySos?: () => void;
   onOpenReport: (reportId: string) => void;
+  /** Searchers outside their polygon now (UC-S04), outside the longest first. */
+  outside?: OutsideSearcher[];
+  onOpenSearcher?: (participantId: string) => void;
   onOpenSos: () => void;
 }
 
-/** The alerts that float at the top centre of the live map: the SOS on top (UC-C14), the critical report under it (UC-C11). */
-export function FloatingAlerts({ reports, sos, sosFailed, onRetrySos, onOpenReport, onOpenSos }: FloatingAlertsProps) {
-  if (!sosFailed && !sos.some((s) => s.status === 'active') && !reports.some(isCriticalReport)) return null;
+/**
+ * The alerts that float at the top centre of the live map, by severity: the SOS on top (UC-C14), the critical report
+ * under it (UC-C11), the out-of-polygon warning last (UC-S04).
+ */
+export function FloatingAlerts({
+  reports,
+  sos,
+  sosFailed,
+  onRetrySos,
+  outside = [],
+  onOpenSearcher,
+  onOpenReport,
+  onOpenSos,
+}: FloatingAlertsProps) {
+  const quiet = !sosFailed && !sos.some((s) => s.status === 'active') && !reports.some(isCriticalReport);
+  if (quiet && outside.length === 0) return null;
   return (
     <div className={styles.stack}>
       <SosAlert sos={sos} failed={sosFailed} onRetry={onRetrySos} onOpen={onOpenSos} />
       <CriticalReportAlert reports={reports} onOpen={onOpenReport} />
+      <OutsidePolygonAlert searchers={outside} onOpen={(id) => onOpenSearcher?.(id)} />
     </div>
   );
 }

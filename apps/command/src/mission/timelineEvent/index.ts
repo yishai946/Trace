@@ -1,7 +1,8 @@
 import { detailChangesText, type TimelineEventType } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
+import { describePresence } from './presence';
 
-export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'contact' | 'mission' | 'pause';
+export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'boundary' | 'contact' | 'mission' | 'pause';
 
 /** Filter chips in wireframe order (Cd14). A chip shows only when it has events. */
 export const TIMELINE_CATEGORIES: { id: TimelineCategory; label: string }[] = [
@@ -9,6 +10,7 @@ export const TIMELINE_CATEGORIES: { id: TimelineCategory; label: string }[] = [
   { id: 'reports', label: 'דיווחים ותצפיות' },
   { id: 'sos', label: 'SOS' },
   { id: 'coverage', label: 'Coverage' },
+  { id: 'boundary', label: 'יציאה מהפוליגון' },
   { id: 'contact', label: 'אובדן קשר' },
   { id: 'mission', label: 'שינויי מסע' },
   { id: 'pause', label: 'השהיה וחידוש' },
@@ -20,6 +22,8 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'sos.activated': 'sos',
   'sos.closed': 'sos',
   'coverage.threshold_reached': 'coverage',
+  'searcher.left_polygon': 'boundary',
+  'searcher.returned_to_polygon': 'boundary',
   'contact.lost': 'contact',
   'contact.restored': 'contact',
   'mission.created': 'mission',
@@ -40,6 +44,8 @@ export interface EventView {
   badge: string;
   /** SOS: solid danger badge and a tinted row. */
   danger: boolean;
+  /** A warning (UC-S04): a warning badge and a tinted row, a step below the SOS. */
+  warning: boolean;
   segments: Segment[];
   /** Where "מעבר אל" leads; null when the screen does not exist yet. */
   destination: 'map' | null;
@@ -72,6 +78,7 @@ export function spansDays(events: TimelineEvent[]): boolean {
 const plain = (badge: string, text: string, destination: EventView['destination'] = null): EventView => ({
   badge,
   danger: false,
+  warning: false,
   segments: [text],
   destination,
 });
@@ -136,6 +143,7 @@ const sosClosedSegments = (event: EventOf<'sos.closed'>, label: string, senderOf
 const segmented = (badge: string, segments: Segment[], danger = false): EventView => ({
   badge,
   danger,
+  warning: false,
   segments,
   destination: null,
 });
@@ -151,6 +159,35 @@ function describePolygon(
       return plain('פוליגון', boundaryText(label, event.details.searchersOutside), 'map');
     case 'polygon.deleted':
       return plain('פוליגון', `${label} נמחק מהמפה`);
+  }
+}
+
+/** The events about a searcher's contact and presence, and about polygons. */
+function describeRest(
+  event: Extract<
+    TimelineEvent,
+    {
+      type:
+        | 'contact.lost'
+        | 'contact.restored'
+        | 'searcher.left_polygon'
+        | 'searcher.returned_to_polygon'
+        | 'polygon.created'
+        | 'polygon.boundary_changed'
+        | 'polygon.deleted';
+    }
+  >,
+  label: string,
+): EventView {
+  switch (event.type) {
+    case 'contact.lost':
+    case 'contact.restored':
+      return segmented('קשר', contactSegments(event, label));
+    case 'searcher.left_polygon':
+    case 'searcher.returned_to_polygon':
+      return describePresence(event);
+    default:
+      return describePolygon(event, label);
   }
 }
 
@@ -189,14 +226,11 @@ export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): Eve
       return segmented('דיווח', reportSegments(event, label));
     case 'coverage.threshold_reached':
       return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
-    case 'contact.lost':
-    case 'contact.restored':
-      return segmented('קשר', contactSegments(event, label));
     case 'sos.activated':
     case 'sos.closed':
       return describeSos(event, label, senderOf);
     default:
-      return describePolygon(event, label);
+      return describeRest(event, label);
   }
 }
 
