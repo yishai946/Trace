@@ -14,7 +14,7 @@ import { asGeoJson } from '../../db/geometry';
 import { participations, trackPoints } from '../../db/schema';
 import { notFound, participationEnded } from '../../errors';
 import { findParticipant } from '../participants/participants.read';
-import { publishCoverage, refreshCoverageOfPoints } from '../polygons/polygons.coverage';
+import { publishCoverage, refreshCoverageOfPoints, type CoverageUpdate } from '../polygons/polygons.coverage';
 import type { ServiceDeps } from '../serviceDeps';
 
 /**
@@ -30,8 +30,8 @@ interface RecordTrackResult extends TrackPointsResult {
   storedPoints: TrackPoint[];
   /** A reported GPS loss ended with this batch: the commander's view of the searcher changed. */
   gpsBack: boolean;
-  /** Polygons whose Coverage this batch changed (UC-S02). */
-  coverageChanged: string[];
+  /** Polygons whose Coverage this batch changed, and the threshold alerts it recorded (UC-S02). */
+  coverage: CoverageUpdate;
   /** The participation's last position after this batch, when the batch moved it forward. */
   moved: { position: LngLat; positionAt: string } | null;
 }
@@ -70,7 +70,7 @@ export async function recordTrackPoints(
       .onConflictDoNothing({ target: [trackPoints.participationId, trackPoints.recordedAt] })
       .returning({ recordedAt: trackPoints.recordedAt });
 
-    const coverageChanged = await refreshCoverageOfPoints(tx, {
+    const coverage = await refreshCoverageOfPoints(tx, {
       participationId: participation.id,
       recordedAt: inserted.map((row) => row.recordedAt),
     });
@@ -101,7 +101,7 @@ export async function recordTrackPoints(
         storedPoints,
         moved: null,
         gpsBack: false,
-        coverageChanged,
+        coverage,
       };
     }
     const newest = current.reduce((a, b) => (Date.parse(b.recordedAt) > Date.parse(a.recordedAt) ? b : a));
@@ -125,7 +125,7 @@ export async function recordTrackPoints(
 
     return {
       gpsBack: !!gpsBack,
-      coverageChanged,
+      coverage,
       participantId: participation.id,
       stored: inserted.length,
       duplicates: body.points.length - inserted.length,
@@ -150,7 +150,7 @@ export async function recordTrackPoints(
       points: result.storedPoints,
     });
   }
-  await publishCoverage({ db, realtime }, missionId, result.coverageChanged);
+  await publishCoverage({ db, realtime }, missionId, result.coverage);
   if (result.gpsBack) {
     const participant = await findParticipant({ db, realtime }, missionId, result.participantId);
     if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });

@@ -111,7 +111,7 @@ export async function updatePolygon(
   const { db, realtime } = deps;
   if (input.geometry) await assertValid(db, input.geometry);
   const connected = input.geometry ? await realtime.connectedSearcherIds(missionId) : new Set<string>();
-  const { polygon, event, outside } = await db.transaction(async (tx) => {
+  const { polygon, event, outside, alerts } = await db.transaction(async (tx) => {
     await lockActiveMission(tx, missionId);
     const existing = await findPolygon(tx, missionId, polygonId);
 
@@ -153,7 +153,7 @@ export async function updatePolygon(
       })
       .where(eq(polygons.id, polygonId));
     // A new boundary changes what part of the searched routes lies inside it (UC-S02).
-    if (input.geometry) await refreshCoverage(tx, polygonId);
+    const coverage = input.geometry ? await refreshCoverage(tx, polygonId) : null;
     // A rename alone is not a significant event (decision 54); only a new boundary is recorded.
     const event = input.geometry
       ? await recordEvent(tx, {
@@ -164,10 +164,16 @@ export async function updatePolygon(
           details: { searchersOutside: outside.length },
         })
       : null;
-    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), event, outside };
+    return {
+      polygon: toPolygon(await findPolygon(tx, missionId, polygonId)),
+      event,
+      outside,
+      alerts: coverage?.events ?? [],
+    };
   });
   realtime.publish({ type: 'polygon.saved', missionId, polygon });
   if (event) realtime.publish({ type: 'timeline.recorded', missionId, event });
+  for (const alert of alerts) realtime.publish({ type: 'timeline.recorded', missionId, event: alert });
   await alertSearchersOutside(deps, { missionId, polygonName: polygon.name, outside, actor });
   return polygon;
 }
