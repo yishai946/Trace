@@ -10,7 +10,7 @@ const MESSAGES: Partial<Record<ErrorCode | 'NETWORK_ERROR', string>> = {
   MISSION_ENDED: 'המסע הסתיים.',
   PARTICIPATION_ENDED: 'הפעילות שלך במסע הסתיימה.',
   NOT_ASSIGNED: 'המנהל עדיין לא שיבץ אותך לפוליגון.',
-  TASK_NOT_READY: 'משימת החיפוש כבר התחילה. רעננו את המסך.',
+  TASK_NOT_READY: 'אי אפשר להתחיל חיפוש במצב הנוכחי. רעננו את המסך.',
 };
 
 /** A Hebrew message for a refused or failed Start Search (UC-F06). */

@@ -73,7 +73,7 @@ describe('useStartSearch (UC-F06)', () => {
     ['MISSION_NOT_ACTIVE', 'המסע מושהה. אפשר להתחיל חיפוש רק כשהוא פעיל.'],
     ['MISSION_ENDED', 'המסע הסתיים.'],
     ['NOT_ASSIGNED', 'המנהל עדיין לא שיבץ אותך לפוליגון.'],
-    ['TASK_NOT_READY', 'משימת החיפוש כבר התחילה. רעננו את המסך.'],
+    ['TASK_NOT_READY', 'אי אפשר להתחיל חיפוש במצב הנוכחי. רעננו את המסך.'],
   ])('explains %s', async (code, text) => {
     vi.stubGlobal(
       'fetch',
