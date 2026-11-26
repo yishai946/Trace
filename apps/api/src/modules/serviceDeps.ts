@@ -3,6 +3,7 @@ import type { Db } from '../db';
 import type { Realtime } from '../realtime';
 import type { PhotoStorage } from '../storage';
 import type { GpsLossConfig } from './gpsLoss';
+import type { LostContactConfig } from './lostContact';
 import type { PushNotifier } from './notifications/notifications.service';
 
 /** What a write service needs to publish after its transaction commits: realtime events, push, photo storage and the logger. */
@@ -19,4 +20,6 @@ export interface ServiceDeps {
   outOfPolygonToleranceMeters?: number;
   /** Escalating a GPS loss to the commander (UC-S04, decision 42). Off when the time is not configured. */
   gpsLoss?: GpsLossConfig;
+  /** Alerting the commander when a searcher sends no update (UC-S04, decision 44). Off when the time is not configured. */
+  lostContact?: LostContactConfig;
 }

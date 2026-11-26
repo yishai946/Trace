@@ -1,0 +1,1 @@
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'contact.no_updates' BEFORE 'sos.activated';

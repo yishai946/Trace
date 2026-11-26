@@ -100,6 +100,12 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('participant', 'אלון שגיא', 7),
     details: { since: AT },
   },
+  'contact.no_updates': {
+    type: 'contact.no_updates',
+    actor: system,
+    subject: subject('participant', 'אלון שגיא', 7),
+    details: { lastUpdateAt: AT },
+  },
   'sos.activated': {
     type: 'sos.activated',
     actor: searcher,

@@ -94,6 +94,12 @@ function batterySegments(event: EventOf<'battery.low'>, label: string): Segment[
   return ['הסוללה של ', ...who, ` נמוכה, ${event.details.level}%`];
 }
 
+function noUpdatesSegments(event: EventOf<'contact.no_updates'>, label: string): Segment[] {
+  const { callsign } = event.subject;
+  const who = callsign === null ? [label] : [{ callsign }, ` ${label}`];
+  return ['אין עדכונים מ-', ...who, ` מאז ${formatEventTime(event.details.lastUpdateAt, false)}`];
+}
+
 function gpsLostSegments(event: EventOf<'gps.lost_escalated'>, label: string): Segment[] {
   const { callsign } = event.subject;
   const who = callsign === null ? [label] : [{ callsign }, ` ${label}`];
@@ -167,7 +173,8 @@ const describeRest = (
     | EventOf<'polygon.created'>
     | EventOf<'polygon.boundary_changed'>
     | EventOf<'polygon.deleted'>
-    | EventOf<'gps.lost_escalated'>,
+    | EventOf<'gps.lost_escalated'>
+    | EventOf<'contact.no_updates'>,
   label: string,
 ): EventView => {
   switch (event.type) {
@@ -176,6 +183,8 @@ const describeRest = (
       return describePresence(event);
     case 'gps.lost_escalated':
       return segmented('GPS', gpsLostSegments(event, label));
+    case 'contact.no_updates':
+      return segmented('קשר', noUpdatesSegments(event, label));
     default:
       return describePolygon(event, label);
   }

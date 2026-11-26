@@ -169,6 +169,13 @@
       "when": 1795677370568,
       "tag": "0023_gps_lost_escalation_event",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795680943527,
+      "tag": "0024_lost_contact_alert_event",
+      "breakpoints": true
     }
   ]
 }

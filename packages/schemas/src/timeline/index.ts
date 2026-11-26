@@ -127,6 +127,15 @@ export const TimelineEvent = z
       type: z.literal('gps.lost_escalated'),
       details: z.object({ since: z.iso.datetime({ offset: true }) }),
     }),
+    /**
+     * Subject: the participant. Actor: the system. The searcher's phone has sent no update (GPS point or battery
+     * report) for the configured time (UC-S04, decision 44). `lastUpdateAt`: the last update the server received.
+     */
+    z.object({
+      ...base,
+      type: z.literal('contact.no_updates'),
+      details: z.object({ lastUpdateAt: z.iso.datetime({ offset: true }) }),
+    }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
     z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
     /** Subject: the SOS (label = polygon name or null). Actor: the commander, or the searcher who sent it. */

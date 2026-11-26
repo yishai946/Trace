@@ -348,6 +348,15 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     subject: subjectOf('participant', 'אלון שגיא', searcher07.participantId, 7),
     details: { since: '2026-10-03T13:50:00.000Z' },
   },
+  'contact.no_updates': {
+    id: '00000000-0000-4000-8000-000000000322',
+    missionId: mission.id,
+    occurredAt: '2026-10-03T13:58:00.000Z',
+    type: 'contact.no_updates',
+    actor: { kind: 'system' },
+    subject: subjectOf('participant', 'אלון שגיא', searcher07.participantId, 7),
+    details: { lastUpdateAt: '2026-10-03T13:50:00.000Z' },
+  },
   'sos.activated': {
     id: '00000000-0000-4000-8000-00000000030d',
     missionId: mission.id,
