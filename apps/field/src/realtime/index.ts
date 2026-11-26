@@ -16,6 +16,7 @@ import { upsertMessage } from '../messages/messageList';
 import { useSession } from '../state/session';
 import { requestOfflineRefresh } from '../offline/refreshPackage';
 import { clearOfflinePackages } from '../offline/store';
+import { syncOutbox } from '../tracking';
 
 /** The events that change what the offline package holds: the mission (details, LKP, rally point, photo) and the polygons. */
 const PACKAGE_EVENTS: ReadonlySet<MissionEvent['type']> = new Set([
@@ -109,26 +110,34 @@ export function useMissionLive(): void {
       clearTimeout(retry);
       retry = setTimeout(action, RETRY_MS);
     };
+    // The updates the commander made while the phone was away; events sent meanwhile are not replayed.
+    const download = () => {
+      if (closed) return;
+      void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
+      // Edits made while the phone was offline are not replayed: bring the saved package up to date (UC-F03).
+      refreshPackage();
+      // An SOS sent or closed while away is not replayed either.
+      void queryClient.invalidateQueries({ queryKey: missionKeys.sos(missionId) });
+      // A message sent while away is not replayed either (decision 77).
+      void queryClient.invalidateQueries({ queryKey: missionKeys.messages(missionId) });
+      // An assignment made while away is not replayed either. The answer is dropped if the screen closed, the
+      // mission changed or a live event came first (it is newer). A failure waits for the next reconnect.
+      const seen = participationEvents;
+      fetchOwnParticipation(missionId, token).then(
+        (own) => {
+          const current = !closed && seen === participationEvents && useSession.getState().missionId === missionId;
+          if (current) useSession.getState().updateParticipation(own);
+        },
+        () => undefined,
+      );
+    };
     const join = () =>
       socket.emit('mission:join', { missionId }, (result) => {
         if (result.ok) {
-          void queryClient.invalidateQueries({ queryKey: missionKeys.mission(missionId) });
-          // Edits made while the phone was offline are not replayed: bring the saved package up to date (UC-F03).
-          refreshPackage();
-          // An SOS sent or closed while away is not replayed either.
-          void queryClient.invalidateQueries({ queryKey: missionKeys.sos(missionId) });
-          // A message sent while away is not replayed either (decision 77).
-          void queryClient.invalidateQueries({ queryKey: missionKeys.messages(missionId) });
-          // An assignment made while away is not replayed either. The answer is dropped if the screen closed, the
-          // mission changed or a live event came first (it is newer). A failure waits for the next reconnect.
-          const seen = participationEvents;
-          fetchOwnParticipation(missionId, token).then(
-            (own) => {
-              const current = !closed && seen === participationEvents && useSession.getState().missionId === missionId;
-              if (current) useSession.getState().updateParticipation(own);
-            },
-            () => undefined,
-          );
+          // What was saved offline goes up first, then the updates come down (UC-S03). a failed upload does not hold the download back.
+          void syncOutbox()
+            .catch(() => undefined)
+            .then(download);
         } else if (result.code === 'NOT_FOUND') {
           // The searcher is no longer in this mission: the map then offers to join one.
           useSession.getState().setMissionId(null);

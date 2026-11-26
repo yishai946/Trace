@@ -8,6 +8,7 @@ import { applyEvent } from '../realtime';
 import { useSession } from '../state/session';
 import { TestProviders } from '../test/providers';
 
+vi.mock('../tracking', () => ({ syncOutbox: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('expo-router', () => ({
   useRouter: () => ({ back: vi.fn(), replace: vi.fn(), canGoBack: () => true }),
   Redirect: ({ href }: { href: string }) => <p>{`redirect ${href}`}</p>,

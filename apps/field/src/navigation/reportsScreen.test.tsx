@@ -13,6 +13,7 @@ import { useSession } from '../state/session';
 import { TestProviders } from '../test/providers';
 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
+vi.mock('../tracking', () => ({ syncOutbox: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('expo-router', () => ({ useRouter: () => router }));
 vi.mock('expo-location', () => ({
   Accuracy: { High: 4 },
