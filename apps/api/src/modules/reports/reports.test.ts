@@ -195,7 +195,8 @@ describe('field reports (UC-F09)', () => {
       expect(stored).toHaveLength(1);
       // The image is in the bucket, not in the row.
       expect(stored[0]?.data).toBeNull();
-      expect((await rt.ctx.photos.get(reportPhotoKey(ID)))?.data.length).toBe(JPEG.length + 3);
+      const key = reportPhotoKey(ID, stored[0]?.updatedAt ?? new Date(0));
+      expect((await rt.ctx.photos.get(key))?.data.length).toBe(JPEG.length + 3);
     });
 
     it('hides the report from other searchers, refuses the commander and unknown ids', async () => {

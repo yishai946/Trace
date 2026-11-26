@@ -132,7 +132,10 @@ export async function getReportPhoto(
     .leftJoin(reportPhotos, eq(reportPhotos.reportId, reports.id))
     .where(and(eq(reports.id, reportId), eq(reports.missionId, missionId), visible));
   if (!row?.contentType || !row.updatedAt) throw notFound('Photo');
-  const photo = await readPhoto(photos, reportPhotoKey(reportId), { contentType: row.contentType, data: row.data });
+  const photo = await readPhoto(photos, reportPhotoKey(reportId, row.updatedAt), {
+    contentType: row.contentType,
+    data: row.data,
+  });
   if (!photo) throw notFound('Photo');
   return { ...photo, updatedAt: row.updatedAt };
 }

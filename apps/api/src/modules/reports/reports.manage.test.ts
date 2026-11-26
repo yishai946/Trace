@@ -178,12 +178,15 @@ describe('field reports (UC-F09)', () => {
 
     it('lets the commander delete the report with its photo and publishes it', async () => {
       await putPhoto(JPEG);
+      const [photo] = await rt.ctx.db.select().from(reportPhotos);
+      const key = reportPhotoKey(ID, photo?.updatedAt ?? new Date(0));
+      expect(await rt.ctx.photos.get(key)).not.toBeNull();
       const events = await capture(async () => {
         expect((await del()).statusCode).toBe(204);
       });
       expect(await rows()).toHaveLength(0);
       expect(await rt.ctx.db.select().from(reportPhotos)).toHaveLength(0);
-      expect(await rt.ctx.photos.get(reportPhotoKey(ID))).toBeNull();
+      expect(await rt.ctx.photos.get(key)).toBeNull();
       expect((await list()).json()).toEqual([]);
       expect(reportEvents(events)).toEqual([{ type: 'report.deleted', missionId: rt.mission.id, reportId: ID }]);
     });

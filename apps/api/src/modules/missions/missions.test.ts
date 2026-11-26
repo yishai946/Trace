@@ -195,8 +195,11 @@ describe('missing person photo', () => {
     expect(photo.headers['content-type']).toBe('image/png');
     expect(photo.rawPayload.equals(PNG)).toBe(true);
     // The image is in the bucket, not in the row.
-    expect((await ctx.photos.get(missionPhotoKey(missionId)))?.data.equals(PNG)).toBe(true);
-    expect((await ctx.db.select().from(missionPhotos))[0]?.data).toBeNull();
+    const [row] = await ctx.db.select().from(missionPhotos);
+    expect(row?.data).toBeNull();
+    expect((await ctx.photos.get(missionPhotoKey(missionId, row?.updatedAt ?? new Date(0))))?.data.equals(PNG)).toBe(
+      true,
+    );
   });
 
   it('answers 500 and keeps the old photo when the bucket fails', async () => {
@@ -208,6 +211,19 @@ describe('missing person photo', () => {
     expect(ApiError.parse(res.json()).error.code).toBe('INTERNAL_ERROR');
     const photo = await inject({ method: 'GET', url: `/api/missions/${missionId}/photo` });
     expect(photo.headers['content-type']).toBe('image/png');
+  });
+
+  it('still serves the old photo when saving fails after the new one reached the bucket', async () => {
+    await upload(PNG, 'image/png');
+    const put = ctx.photos.put.bind(ctx.photos);
+    const failing = vi.spyOn(ctx.photos, 'put').mockImplementationOnce(async (key, photo) => {
+      await put(key, photo);
+      throw new Error('the transaction fails after the upload');
+    });
+    expect((await upload(JPEG, 'image/jpeg')).statusCode).toBe(500);
+    failing.mockRestore();
+    const photo = await inject({ method: 'GET', url: `/api/missions/${missionId}/photo` });
+    expect(photo.rawPayload.equals(PNG)).toBe(true);
   });
 
   it('replaces the photo with a new version', async () => {

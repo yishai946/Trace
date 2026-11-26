@@ -126,7 +126,7 @@ export async function getMissionPhoto(
     .select({ contentType: missionPhotos.contentType, data: missionPhotos.data, updatedAt: missionPhotos.updatedAt })
     .from(missionPhotos)
     .where(eq(missionPhotos.missionId, missionId));
-  const photo = row && (await readPhoto(photos, missionPhotoKey(missionId), row));
+  const photo = row && (await readPhoto(photos, missionPhotoKey(missionId, row.updatedAt), row));
   if (!row || !photo) throw notFound('Photo');
   return { ...photo, updatedAt: row.updatedAt };
 }

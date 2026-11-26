@@ -18,24 +18,28 @@ describe('report photos saved before the bucket', () => {
     expect(before.rawPayload.equals(JPEG)).toBe(true);
 
     expect(await movePhotos(rt.ctx.db, rt.ctx.photos)).toBe(1);
-    expect((await rt.ctx.db.select().from(reportPhotos))[0]?.data).toBeNull();
-    expect(await rt.ctx.photos.get(reportPhotoKey(ID))).toEqual({ contentType: 'image/jpeg', data: JPEG });
+    const [moved] = await rt.ctx.db.select().from(reportPhotos);
+    expect(moved?.data).toBeNull();
+    expect(await rt.ctx.photos.get(reportPhotoKey(ID, moved?.updatedAt ?? new Date(0)))).toEqual({
+      contentType: 'image/jpeg',
+      data: JPEG,
+    });
     expect((await rt.getPhoto()).rawPayload.equals(JPEG)).toBe(true);
     expect(await movePhotos(rt.ctx.db, rt.ctx.photos)).toBe(0);
   });
 
-  it('replaces an object left over from a failed upload with the photo in the row', async () => {
+  it('replaces an object left over under the same key with the photo in the row', async () => {
     await rt.send();
-    await rt.ctx.db.insert(reportPhotos).values({ reportId: ID, contentType: 'image/jpeg', data: JPEG });
-    await rt.ctx.photos.put(reportPhotoKey(ID), { contentType: 'image/png', data: PNG });
+    const updatedAt = new Date('2026-10-03T10:00:00Z');
+    await rt.ctx.db.insert(reportPhotos).values({ reportId: ID, contentType: 'image/jpeg', data: JPEG, updatedAt });
+    await rt.ctx.photos.put(reportPhotoKey(ID, updatedAt), { contentType: 'image/png', data: PNG });
     await movePhotos(rt.ctx.db, rt.ctx.photos);
-    expect(await rt.ctx.photos.get(reportPhotoKey(ID))).toEqual({ contentType: 'image/jpeg', data: JPEG });
+    expect(await rt.ctx.photos.get(reportPhotoKey(ID, updatedAt))).toEqual({ contentType: 'image/jpeg', data: JPEG });
     expect((await rt.getPhoto()).rawPayload.equals(JPEG)).toBe(true);
   });
 
   it('answers 404 for a photo with neither bytes in its row nor an object in the bucket', async () => {
     await rt.send();
-    await rt.ctx.photos.remove(reportPhotoKey(ID)); // the memory storage outlives resetDb, and the report id is fixed
     await rt.ctx.db.insert(reportPhotos).values({ reportId: ID, contentType: 'image/jpeg' });
     expect((await rt.getPhoto()).statusCode).toBe(404);
   });
@@ -62,7 +66,11 @@ describe('mission photos saved before the bucket', () => {
     expect((await commander({ method: 'GET', url })).rawPayload.equals(PNG)).toBe(true);
 
     expect(await movePhotos(ctx.db, ctx.photos)).toBe(1);
-    expect(await ctx.photos.get(missionPhotoKey(missionId))).toEqual({ contentType: 'image/png', data: PNG });
+    const [moved] = await ctx.db.select().from(missionPhotos);
+    expect(await ctx.photos.get(missionPhotoKey(missionId, moved?.updatedAt ?? new Date(0)))).toEqual({
+      contentType: 'image/png',
+      data: PNG,
+    });
     expect((await commander({ method: 'GET', url })).rawPayload.equals(PNG)).toBe(true);
   });
 });

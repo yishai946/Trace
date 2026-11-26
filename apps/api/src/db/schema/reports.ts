@@ -34,7 +34,7 @@ export const reports = pgTable(
 );
 
 /**
- * A report's photo, at most one. In the bucket (`reports/<id>/photo`) like `mission_photos`; `data` is only for a photo
+ * A report's photo, at most one. In the bucket (`reportPhotoKey`) like `mission_photos`; `data` is only for a photo
  * saved before the move.
  */
 export const reportPhotos = pgTable('report_photos', {

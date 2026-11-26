@@ -23,7 +23,7 @@ export const missions = pgTable('missions', {
 });
 
 /**
- * The missing person's photo (UC-C02), at most one per mission. The image is in the bucket (`missions/<id>/photo`); the
+ * The missing person's photo (UC-C02), at most one per mission. The image is in the bucket (`missionPhotoKey`); the
  * row keeps its type and version. `data` holds the bytes only for a photo saved before the move to the bucket, until
  * `photos:move` copies it.
  */

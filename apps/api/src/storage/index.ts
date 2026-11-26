@@ -1,5 +1,6 @@
 import { S3Client } from '@aws-sdk/client-s3';
 import type { Env } from '../env';
+import { logAndReport, type ErrorLogger } from '../monitoring';
 import { createBucketStorage } from './bucket';
 import { createMemoryStorage } from './memory';
 
@@ -18,8 +19,28 @@ export interface PhotoStorage {
   remove(key: string): Promise<void>;
 }
 
-export const missionPhotoKey = (missionId: string) => `missions/${missionId}/photo`;
-export const reportPhotoKey = (reportId: string) => `reports/${reportId}/photo`;
+/**
+ * Every version of a photo has its own key (`version` is the row's `updatedAt`), so an upload never overwrites the
+ * object the row points at: if its transaction fails, the old photo is still what is served.
+ */
+export const missionPhotoKey = (missionId: string, version: Date) => `missions/${missionId}/photo-${version.getTime()}`;
+export const reportPhotoKey = (reportId: string, version: Date) => `reports/${reportId}/photo-${version.getTime()}`;
+
+/** The version of a new upload: now, and always later than the one it replaces, so the two keys differ. */
+export const nextPhotoVersion = (previous: Date | undefined) =>
+  new Date(Math.max(Date.now(), (previous?.getTime() ?? 0) + 1));
+
+/**
+ * Deletes an object no row points at any more. The change is committed already, so a failure leaves an unused object
+ * behind and is logged and reported, not an error for the user.
+ */
+export async function discardPhoto(photos: PhotoStorage, log: ErrorLogger, key: string): Promise<void> {
+  await photos
+    .remove(key)
+    .catch((error: unknown) =>
+      logAndReport(log, error, { source: 'storage.discard', message: 'Old photo not deleted', fields: { key } }),
+    );
+}
 
 /**
  * A photo kept in its table row before photos moved to the bucket still has its bytes there until `photos:move` copies
