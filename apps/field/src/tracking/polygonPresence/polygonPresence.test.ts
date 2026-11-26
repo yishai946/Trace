@@ -118,4 +118,14 @@ describe('noteLocalPresence', () => {
     await noteLocalPresence([outside]);
     expect(useSession.getState().outsidePolygon).toBe(false);
   });
+
+  it('drops a judgement that finished after the searcher paused or moved polygon', async () => {
+    const { loadStep } = await import('../../offline/store');
+    vi.mocked(loadStep).mockImplementationOnce(async () => {
+      useSession.setState({ participation: { ...assigned, taskStatus: 'paused' }, outsidePolygon: false });
+      return saved.polygons as never;
+    });
+    await noteLocalPresence([outside]);
+    expect(useSession.getState().outsidePolygon).toBe(false);
+  });
 });

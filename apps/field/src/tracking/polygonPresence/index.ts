@@ -55,6 +55,11 @@ export async function noteLocalPresence(fixes: Fix[]): Promise<void> {
   }
   const polygons = await loadStep(missionId, 'polygons', MissionPolygonList);
   const polygon = polygons?.find((p) => p.id === polygonId);
+  // The searcher may have paused or moved while the polygon was read: that update already cleared the flag.
+  const now = useSession.getState().participation;
+  if (useSession.getState().missionId !== missionId || now?.polygonId !== polygonId || now.taskStatus !== 'searching') {
+    return;
+  }
   setOutsidePolygon(
     polygon ? judgeFixes({ fixes, polygon: polygon.geometry, toleranceMeters, wasOutside: outsidePolygon }) : false,
   );
