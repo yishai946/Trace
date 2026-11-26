@@ -3,7 +3,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 
 /**
- * The build environment (EAS environment variables, or the shell of a local build). The upload reads
+ * The build environment (the APK workflow, or the shell of a local build). The upload reads
  * `SENTRY_AUTH_TOKEN`, `SENTRY_ORG` and `SENTRY_PROJECT`.
  */
 export type SentryUploadEnv = Readonly<Record<string, string | undefined>>;
