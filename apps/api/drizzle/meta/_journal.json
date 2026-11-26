@@ -176,6 +176,13 @@
       "when": 1795680943527,
       "tag": "0024_lost_contact_alert_event",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795694843172,
+      "tag": "0025_drop_photo_data",
+      "breakpoints": true
     }
   ]
 }

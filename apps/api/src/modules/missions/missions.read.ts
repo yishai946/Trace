@@ -6,7 +6,7 @@ import type { Db } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { lkpPoints, missionPhotos, missions, participations, users } from '../../db/schema';
 import { notFound } from '../../errors';
-import { missionPhotoKey, readPhoto } from '../../storage';
+import { missionPhotoKey } from '../../storage';
 import { isoOrNull } from '../isoOrNull';
 import type { ServiceDeps } from '../serviceDeps';
 
@@ -123,10 +123,10 @@ export async function getMissionPhoto(
   missionId: string,
 ): Promise<MissionPhoto> {
   const [row] = await db
-    .select({ contentType: missionPhotos.contentType, data: missionPhotos.data, updatedAt: missionPhotos.updatedAt })
+    .select({ updatedAt: missionPhotos.updatedAt })
     .from(missionPhotos)
     .where(eq(missionPhotos.missionId, missionId));
-  const photo = row && (await readPhoto(photos, missionPhotoKey(missionId, row.updatedAt), row));
+  const photo = row && (await photos.get(missionPhotoKey(missionId, row.updatedAt)));
   if (!row || !photo) throw notFound('Photo');
   return { ...photo, updatedAt: row.updatedAt };
 }

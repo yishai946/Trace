@@ -42,18 +42,6 @@ export async function discardPhoto(photos: PhotoStorage, log: ErrorLogger, key: 
     );
 }
 
-/**
- * A photo kept in its table row before photos moved to the bucket still has its bytes there until `photos:move` copies
- * it. It is served from the row meanwhile, so no photo is missing during the move. `null` when there is none.
- */
-export async function readPhoto(
-  photos: PhotoStorage,
-  key: string,
-  row: { contentType: string; data: Buffer | null },
-): Promise<StoredPhoto | null> {
-  return row.data ? { contentType: row.contentType, data: row.data } : photos.get(key);
-}
-
 /** The Railway Bucket when its variables are set; otherwise memory, which `loadEnv` allows outside production only. */
 export function createPhotoStorage(env: Env): PhotoStorage {
   const { BUCKET_ENDPOINT, BUCKET_NAME, BUCKET_ACCESS_KEY_ID, BUCKET_SECRET_ACCESS_KEY } = env;

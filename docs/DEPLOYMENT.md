@@ -18,7 +18,6 @@ Root Directory ריק בשני שירותי הריפו: זה monorepo של pnpm,
 - Healthcheck: `/api/health`
 - משתנים: `NODE_ENV=production`, `DATABASE_URL` (הפניה ל-`postgis`), `AUTH_SECRET` (אקראי, 32 תווים ומעלה), `API_URL` (הכתובת הציבורית של ה-API), `WEB_ORIGIN` (הכתובת הציבורית של Command: CORS ו-Better Auth).
 - תמונות (נעדר ודיווחים): ב-Railway Bucket פרטי, והן מוגשות רק דרך ה-API. יוצרים Bucket בפרויקט ומגדירים בשירות `Trace` ארבעה משתנים כהפניות למשתני ה-Bucket: `BUCKET_ENDPOINT` (כתובת ה-S3, למשל `https://t3.storageapi.dev`), `BUCKET_NAME`, `BUCKET_ACCESS_KEY_ID`, `BUCKET_SECRET_ACCESS_KEY` (`BUCKET_REGION` ברירת מחדל `auto`). בפרודקשן הם חובה: בלעדיהם השרת לא עולה. Cloudflare R2 או כל S3 אחר עובדים עם אותם משתנים.
-- אחרי הפריסה הראשונה עם ה-Bucket מריצים פעם אחת, מול בסיס הנתונים וה-Bucket של Railway: `pnpm photos:move` (אפשר להריץ שוב). הוא מעתיק לתוך ה-Bucket תמונות שנשמרו קודם ב-Postgres ומנקה את העמודה `data`. עד אז הן מוגשות מהטבלה, כך שאין חלון בלי תמונות. מחיקת העמודה `data` תהיה מיגרציה נפרדת, אחרי שההעברה רצה.
 
 ## `command`
 
