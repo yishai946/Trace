@@ -70,8 +70,8 @@ export const useSession = create<SessionState>()((set, get) => ({
   restored: false,
   restore: async () => {
     const [stored, saved] = await Promise.all([loadToken(), loadSavedMission()]);
-    // A mission without a sign-in is nobody's: the next person on the phone must not inherit it.
-    if (!stored && !get().token) void clearSavedMission();
+    // No token is not a sign-out: the device may have failed to read it. Only signing out or leaving the mission
+    // forgets the saved mission, and it is restored only together with a token.
     set((s) => {
       const token = s.token ?? stored;
       const restoring = token && saved && s.missionId === null ? saved : null;

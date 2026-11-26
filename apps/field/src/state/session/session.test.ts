@@ -186,11 +186,11 @@ describe('useSession', () => {
       expect(useSession.getState()).toMatchObject({ missionId: 'm1', tracking: false });
     });
 
-    it('does not restore a mission without a saved sign-in, and forgets it', async () => {
+    it('does not restore a mission without a token, but keeps it in case the token could only not be read this time', async () => {
       await saveMission('m1', validId);
       await useSession.getState().restore();
       expect(useSession.getState()).toMatchObject({ token: null, missionId: null, participation: null });
-      expect(await loadSavedMission()).toBeNull();
+      expect(await loadSavedMission()).toMatchObject({ missionId: 'm1' });
     });
 
     it('keeps the mission a join made meanwhile over the saved one', async () => {
