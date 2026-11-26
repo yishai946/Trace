@@ -19,6 +19,11 @@ const alon: OutsideSearcher = {
 };
 
 describe('OutsidePolygonAlert', () => {
+  it('has a compact form for the phone', () => {
+    render(<OutsidePolygonAlert compact searchers={[dana]} onOpen={vi.fn()} />);
+    expect(screen.getByRole('alert', { name: 'אזהרה: מחפש מחוץ לפוליגון' })).toHaveAttribute('data-compact', 'true');
+  });
+
   it('shows nothing while everyone is inside', () => {
     const { container } = render(<OutsidePolygonAlert searchers={[]} onOpen={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();

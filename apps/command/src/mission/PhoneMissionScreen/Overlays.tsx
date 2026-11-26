@@ -2,6 +2,8 @@ import type { Mission, Report, Sos } from '@trace/schemas';
 import type { ReactNode } from 'react';
 import { CriticalReportAlert } from '../CriticalReportAlert';
 import { JoinCodePanel } from '../JoinCodePanel';
+import { OutsidePolygonAlert } from '../OutsidePolygonAlert';
+import type { OutsideSearcher } from '../outsideSearchers';
 import { SosAlert } from '../SosAlert';
 import styles from './PhoneMissionScreen.module.css';
 
@@ -24,9 +26,12 @@ interface OverlaysProps {
   search: ReactNode;
   onOpenReport: (id: string) => void;
   onOpenSos: () => void;
+  /** Searchers outside their polygon now (UC-S04), outside the longest first. */
+  outside: OutsideSearcher[];
+  onOpenSearcher: (participantId: string) => void;
 }
 
-/** What stacks under the top bar when there is something to say: the critical alert, a notice, the join code, the search. */
+/** What stacks under the top bar when there is something to say: the critical alert, the out-of-polygon warning, a notice, the join code, the search. */
 export function Overlays({
   mission,
   critical,
@@ -40,13 +45,16 @@ export function Overlays({
   search,
   onOpenReport,
   onOpenSos,
+  outside,
+  onOpenSearcher,
 }: OverlaysProps) {
   const sosActive = (sos ?? []).some((s) => s.status === 'active');
-  if (!critical && !sosActive && !sosFailed && !notice && !joinOpen && !search) return null;
+  if (outside.length === 0 && !critical && !sosActive && !sosFailed && !notice && !joinOpen && !search) return null;
   return (
     <div className={styles.below}>
       <SosAlert compact sos={sos} failed={sosFailed} onRetry={onRetrySos} onOpen={onOpenSos} />
       {critical && <CriticalReportAlert compact reports={reports ?? []} onOpen={onOpenReport} />}
+      <OutsidePolygonAlert compact searchers={outside} onOpen={onOpenSearcher} />
       {notice && (
         <p className={styles.notice} role="alert">
           {notice}

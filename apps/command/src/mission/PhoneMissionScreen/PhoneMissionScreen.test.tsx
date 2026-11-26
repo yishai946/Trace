@@ -163,6 +163,28 @@ describe('PhoneMissionScreen', () => {
     expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument();
   });
 
+  it('PM11: warns compact about a searcher outside the polygon, opens them, and not on the Reports screen', () => {
+    const [first] = participants as [(typeof participants)[number]];
+    const outside = [
+      {
+        participantId: first.id,
+        callsign: first.callsign,
+        name: first.name,
+        polygonName: polygonA.name,
+        meters: 80,
+        since: '2026-10-03T13:55:00.000Z',
+      },
+    ];
+    const onOpenSearcher = vi.fn();
+    renderScreen({ outside, onOpenSearcher });
+    const alert = screen.getByRole('alert', { name: 'אזהרה: מחפש מחוץ לפוליגון' });
+    expect(within(alert).getByText(/80 מ׳ מהגבול/)).toBeInTheDocument();
+    fireEvent.click(within(alert).getByRole('button', { name: 'פתח' }));
+    expect(onOpenSearcher).toHaveBeenCalledWith(first.id);
+    fireEvent.click(screen.getByRole('link', { name: 'דיווחים, 2 חדשים' }));
+    expect(screen.queryByRole('alert', { name: 'אזהרה: מחפש מחוץ לפוליגון' })).toBeNull();
+  });
+
   it('PM4: a row in the sheet opens its report', () => {
     const { onOpenReport } = renderScreen();
     fireEvent.click(screen.getByRole('tab', { name: 'דיווחים 2' }));

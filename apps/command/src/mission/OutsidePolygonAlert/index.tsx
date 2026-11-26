@@ -8,6 +8,8 @@ export interface OutsidePolygonAlertProps {
   /** Who is outside their polygon now, the one outside the longest first. */
   searchers: OutsideSearcher[];
   onOpen: (participantId: string) => void;
+  /** The phone: one line under the top bar. */
+  compact?: boolean;
 }
 
 /**
@@ -15,11 +17,16 @@ export interface OutsidePolygonAlertProps {
  * outside and gone once they are back. A warning, a step below SOS and the critical report: marked by the word and the
  * warning line, never by color alone. Several searchers are counted like the SOS banner.
  */
-export function OutsidePolygonAlert({ searchers, onOpen }: OutsidePolygonAlertProps) {
+export function OutsidePolygonAlert({ searchers, onOpen, compact }: OutsidePolygonAlertProps) {
   const searcher = searchers[0];
   if (!searcher) return null;
   return (
-    <section className={styles.alert} role="alert" aria-label="אזהרה: מחפש מחוץ לפוליגון">
+    <section
+      className={styles.alert}
+      data-compact={compact || undefined}
+      role="alert"
+      aria-label="אזהרה: מחפש מחוץ לפוליגון"
+    >
       <span className={styles.badge}>{searchers.length > 1 ? `אזהרה · ${searchers.length}` : 'אזהרה'}</span>
       <div className={styles.text}>
         <CallsignChip callsign={searcher.callsign} /> <b>{searcher.name}</b> מחוץ ל{searcher.polygonName},{' '}

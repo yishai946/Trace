@@ -115,7 +115,8 @@
   color: var(--danger);
 }
 
-.unit[data-tone='offline'] .status {
+.unit[data-tone='offline'] .status,
+.unit[data-tone='outside'] .status {
   color: var(--warning);
 }
 
