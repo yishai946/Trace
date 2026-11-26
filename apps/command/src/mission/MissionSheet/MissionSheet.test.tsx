@@ -26,6 +26,24 @@ function renderSheet(props: Partial<Parameters<typeof MissionSheet>[0]> = {}) {
 }
 
 describe('MissionSheet', () => {
+  it('says in the searchers list who is outside their polygon and how far', () => {
+    const [first] = participants as [Participant];
+    renderSheet({
+      tab: 'searchers',
+      outside: [
+        {
+          participantId: first.id,
+          callsign: first.callsign,
+          name: first.name,
+          polygonName: polygonA.name,
+          meters: 80,
+          since: '2026-10-03T13:55:00.000Z',
+        },
+      ],
+    });
+    expect(screen.getByText('מחוץ לגבול, 80 מ׳')).toBeInTheDocument();
+  });
+
   it('shows the three tabs with their counts, on alerts, with a truthful empty state', () => {
     renderSheet();
     expect(screen.getByRole('tab', { name: 'התראות', selected: true })).toBeInTheDocument();
