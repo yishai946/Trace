@@ -44,6 +44,19 @@ describe('useStartSearch (UC-F06)', () => {
     expect(useSession.getState().tracking).toBe(true);
   });
 
+  it('drops the answer when the searcher moved to another mission meanwhile', async () => {
+    let answer: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>((resolve) => (answer = resolve))),
+    );
+    const { result } = renderHook(() => useStartSearch(), { wrapper });
+    act(() => result.current.start());
+    useSession.setState({ missionId: '00000000-0000-4000-8000-0000000000ff', participation: null });
+    await act(async () => answer(json({ ...assigned, taskStatus: 'searching' })));
+    expect(useSession.getState()).toMatchObject({ participation: null, tracking: false });
+  });
+
   it('sends one request for a double tap', async () => {
     const fetch = vi.fn(async () => json({ ...assigned, taskStatus: 'searching' }));
     vi.stubGlobal('fetch', fetch);

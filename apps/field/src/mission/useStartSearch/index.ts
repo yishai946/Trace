@@ -18,14 +18,15 @@ export function startSearchError(error: unknown): string {
   return (error instanceof ApiRequestError && MESSAGES[error.code]) || 'החיפוש לא התחיל. נסו שוב.';
 }
 
-function postStartSearch(): Promise<OwnParticipation> {
+async function postStartSearch(): Promise<{ missionId: string | null; participation: OwnParticipation }> {
   const { token, missionId } = useSession.getState();
-  return apiRequest(`/missions/${missionId}/participation/search/start`, {
+  const participation = await apiRequest(`/missions/${missionId}/participation/search/start`, {
     baseUrl: apiBaseUrl,
     token,
     method: 'POST',
     schema: OwnParticipation,
   });
+  return { missionId, participation };
 }
 
 /**
@@ -36,7 +37,10 @@ function postStartSearch(): Promise<OwnParticipation> {
 export function useStartSearch() {
   const mutation = useMutation({
     mutationFn: postStartSearch,
-    onSuccess: (participation) => useSession.getState().updateParticipation(participation),
+    // The answer belongs to the mission it was asked in: after a move to another mission it must not reach that session.
+    onSuccess: ({ missionId, participation }) => {
+      if (useSession.getState().missionId === missionId) useSession.getState().updateParticipation(participation);
+    },
   });
   const inFlight = useRef(false);
   const { mutate } = mutation;
