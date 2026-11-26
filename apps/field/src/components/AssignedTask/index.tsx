@@ -6,8 +6,7 @@ import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
-import { SearchPauseControls } from './SearchPauseControls';
-import { StartSearchControls } from './StartSearchControls';
+import { TaskActions } from './TaskActions';
 import { taskState } from './taskState';
 
 export interface AssignedTaskProps {
@@ -29,6 +28,12 @@ export interface AssignedTaskProps {
   pausing?: boolean;
   /** Why the last pause or resume failed, in Hebrew. */
   pauseError?: string | null;
+  /** "סיימתי חיפוש" (UC-F08). Without it the button stays disabled. */
+  onFinish?: () => void;
+  /** The finish is on its way to the server: no second tap. */
+  finishing?: boolean;
+  /** Why the last finish failed, in Hebrew. */
+  finishError?: string | null;
 }
 
 /**
@@ -47,6 +52,9 @@ export function AssignedTask({
   onResume,
   pausing = false,
   pauseError = null,
+  onFinish,
+  finishing = false,
+  finishError = null,
 }: AssignedTaskProps) {
   const { color } = useTheme().theme;
   const polygon = polygons.find((p) => p.id === participation.polygonId);
@@ -55,8 +63,6 @@ export function AssignedTask({
   const noticeName = polygons.find((p) => p.id === notice?.polygonId)?.name;
   const to = (polygonName: string | undefined) => (polygonName ? `לפוליגון ${polygonName}` : 'לפוליגון');
 
-  const paused = participation.taskStatus === 'paused';
-  const searching = participation.taskStatus === 'searching' || paused;
   const state = taskState(participation.taskStatus, name);
   return (
     <View style={styles.task} accessibilityLabel="המשימה שלי">
@@ -86,18 +92,12 @@ export function AssignedTask({
         </View>
         <Badge label={state.badge} tone={state.tone} />
       </View>
-      {searching ? (
-        // Finishing the search is UC-F08.
-        <SearchPauseControls
-          paused={paused}
-          onPause={onPause}
-          onResume={onResume}
-          pending={pausing}
-          error={pauseError}
-        />
-      ) : (
-        <StartSearchControls onStartSearch={onStartSearch} starting={starting} startError={startError} />
-      )}
+      <TaskActions
+        status={participation.taskStatus}
+        start={{ onStartSearch, starting, startError }}
+        pause={{ onPause, onResume, pending: pausing, error: pauseError }}
+        finish={{ onFinish, pending: finishing, error: finishError }}
+      />
     </View>
   );
 }

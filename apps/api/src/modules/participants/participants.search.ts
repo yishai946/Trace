@@ -1,7 +1,10 @@
 import {
+  searchFinishRefusal,
+  searchFinishTarget,
   searchPauseRefusal,
   searchPauseTarget,
   startSearchRefusal,
+  type SearchFinishRefusal,
   type SearchPauseAction,
   type SearchPauseRefusal,
   type StartSearchRefusal,
@@ -11,7 +14,7 @@ import { AppError, missionEnded, participationEnded } from '../../errors';
 import type { ServiceDeps } from '../serviceDeps';
 import { moveTask } from './participants.task';
 
-const REFUSALS: Record<StartSearchRefusal | SearchPauseRefusal, () => AppError> = {
+const REFUSALS: Record<StartSearchRefusal | SearchPauseRefusal | SearchFinishRefusal, () => AppError> = {
   mission_ended: () => missionEnded('The mission has ended'),
   mission_not_active: () => new AppError(409, 'MISSION_NOT_ACTIVE', 'The mission is paused'),
   participation_ended: () => participationEnded(),
@@ -19,6 +22,7 @@ const REFUSALS: Record<StartSearchRefusal | SearchPauseRefusal, () => AppError> 
   task_not_ready: () => new AppError(409, 'TASK_NOT_READY', 'The search task is not at Ready'),
   task_not_searching: () => new AppError(409, 'TASK_NOT_SEARCHING', 'The search task is not searching'),
   task_not_paused: () => new AppError(409, 'TASK_NOT_PAUSED', 'The search task is not paused'),
+  task_not_active: () => new AppError(409, 'TASK_NOT_ACTIVE', 'The search task is neither searching nor paused'),
 };
 
 type SearcherInput = { missionId: string; searcherId: string };
@@ -53,6 +57,22 @@ export function pauseOrResumeSearch(
     target: searchPauseTarget(action),
     refuse: (state) => {
       const refusal = searchPauseRefusal(action, state);
+      return refusal && REFUSALS[refusal]();
+    },
+  });
+}
+
+/**
+ * "סיימתי חיפוש" (UC-F08): Searching or Paused becomes Finished. The searcher stays assigned to the polygon (decision
+ * 100), the activity does not end (decision 9) and the polygon is not marked Completed (decision 10); the route and
+ * the Coverage already collected stay. The commander decides what comes next.
+ */
+export function finishSearch(deps: ServiceDeps, input: SearcherInput): Promise<OwnParticipation> {
+  return moveTask(deps, {
+    ...input,
+    target: searchFinishTarget,
+    refuse: (state) => {
+      const refusal = searchFinishRefusal(state);
       return refusal && REFUSALS[refusal]();
     },
   });

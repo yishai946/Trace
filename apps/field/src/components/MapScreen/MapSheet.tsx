@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import type { ComponentProps } from 'react';
 import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
+import { useSearchFinish } from '../../mission/useSearchFinish';
 import { useSearchPause } from '../../mission/useSearchPause';
 import { useStartSearch } from '../../mission/useStartSearch';
 import { useSession } from '../../state/session';
@@ -33,6 +34,7 @@ export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
   const dismissNotice = useSession((s) => s.dismissAssignmentNotice);
   const startSearch = useStartSearch();
   const searchPause = useSearchPause();
+  const searchFinish = useSearchFinish();
   return (
     <View
       testID="map-sheet"
@@ -55,6 +57,9 @@ export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
           onResume={searchPause.resume}
           pausing={searchPause.pending}
           pauseError={searchPause.error}
+          onFinish={searchFinish.finish}
+          finishing={searchFinish.pending}
+          finishError={searchFinish.error}
         />
       ) : null}
       <PendingReports missionId={missionId} />

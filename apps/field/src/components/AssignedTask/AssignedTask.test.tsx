@@ -167,6 +167,33 @@ describe('AssignedTask', () => {
     expect(screen.getByRole('button', { name: 'המשך חיפוש' })).toBeEnabled();
   });
 
+  it('offers "סיימתי חיפוש" while searching and while paused', () => {
+    const onFinish = vi.fn();
+    const { rerender } = renderTask({ participation: { ...participation, taskStatus: 'searching' }, onFinish });
+    expect(screen.getByRole('button', { name: 'סיימתי חיפוש…' })).toBeInTheDocument();
+    rerender(
+      <AssignedTask
+        participation={{ ...participation, taskStatus: 'paused' }}
+        polygons={polygons}
+        notice={null}
+        onDismissNotice={() => {}}
+        onFinish={onFinish}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'סיימתי חיפוש…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'סיים חיפוש' }));
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a finished search as still assigned, with nothing to press', () => {
+    renderTask({ participation: { ...participation, taskStatus: 'finished' } });
+    expect(screen.getByText('סיימת חיפוש, ואדי צפוני')).toBeInTheDocument();
+    expect(screen.getByText(/המנהל יחליט מה הלאה/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'התחל חיפוש' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'השהה' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'סיימתי חיפוש…' })).not.toBeInTheDocument();
+  });
+
   it('blocks Start Search and names the missing permissions and how to grant them', async () => {
     device.read.mockResolvedValue(granted({ backgroundLocation: 'ask', push: 'ask' }));
     setSaved(['mission', 'photo', 'polygons', 'map']);

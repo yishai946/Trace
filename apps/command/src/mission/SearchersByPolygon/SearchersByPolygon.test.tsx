@@ -35,6 +35,13 @@ describe('SearchersByPolygon', () => {
     expect(within(panel).getByText('2')).toBeTruthy();
   });
 
+  it('shows a searcher who finished the search under the same polygon (UC-F08)', () => {
+    renderPanel({ participants: [{ ...assigned, taskStatus: 'finished' }] });
+    const group = within(screen.getByRole('region', { name: 'מחפשים' })).getAllByRole('list')[0] as HTMLElement;
+    expect(within(group).getByText(assigned.name)).toBeTruthy();
+    expect(within(group).getByText(/סיים חיפוש/)).toBeTruthy();
+  });
+
   it('shows the polygon coverage when it is known', () => {
     renderPanel({ polygons: [{ ...polygonA, coverage: 82 }] });
     expect(screen.getByText('82%')).toBeTruthy();

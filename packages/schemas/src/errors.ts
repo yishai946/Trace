@@ -18,6 +18,8 @@ export const ERROR_CODES = [
   'TASK_NOT_SEARCHING',
   /** Resume needs a task at Paused (UC-F07). */
   'TASK_NOT_PAUSED',
+  /** Finish Search needs a task at Searching or Paused (UC-F08). */
+  'TASK_NOT_ACTIVE',
   'INVALID_GEOMETRY',
   'POLYGON_HAS_ACTIVE_SEARCHERS',
   'SEARCHERS_OUTSIDE_POLYGON',

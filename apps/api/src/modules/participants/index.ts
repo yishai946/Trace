@@ -18,7 +18,7 @@ import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf, searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { getOwnParticipation, listParticipants, previewJoin } from './participants.read';
-import { pauseOrResumeSearch, startSearch } from './participants.search';
+import { searchRoutes } from './participants.searchRoutes';
 import { assignParticipant, endParticipation, joinMission, setBattery, setGpsStatus } from './participants.service';
 
 export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
@@ -103,61 +103,7 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
     },
   );
 
-  app.post(
-    '/missions/:missionId/participation/search/start',
-    {
-      schema: {
-        tags: ['participants'],
-        summary: 'Start the search: the assigned task goes from Ready to Searching (UC-F06)',
-        description:
-          'Searchers in the mission only. The commander sees the change at once. Sending it again while searching ' +
-          'changes nothing. 409 NOT_ASSIGNED without a polygon, TASK_NOT_READY when the task is paused or ' +
-          'finished, MISSION_NOT_ACTIVE while the mission is paused, MISSION_ENDED, PARTICIPATION_ENDED. The ' +
-          'phone checks the offline package and the permissions itself (decisions 73, 85).',
-        params: MissionParams,
-        response: { 200: OwnParticipation, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
-      },
-      preHandler: [searchersOnly, missionAccess(db, 'member')],
-    },
-    (request) => startSearch(deps, { missionId: request.params.missionId, searcherId: searcherOf(request).searcherId }),
-  );
-
-  for (const action of ['pause', 'resume'] as const) {
-    app.post(
-      `/missions/:missionId/participation/search/${action}`,
-      {
-        schema: {
-          tags: ['participants'],
-          summary:
-            action === 'pause'
-              ? 'Pause the search: Searching becomes Paused (UC-F07)'
-              : 'Resume the search: Paused becomes Searching (UC-F07)',
-          description:
-            'Searchers in the mission only. Safety tracking goes on; points taken while paused do not count toward ' +
-            'Coverage (decision 71). The commander sees the change at once. Sending it again changes nothing. ' +
-            `409 ${action === 'pause' ? 'TASK_NOT_SEARCHING' : 'TASK_NOT_PAUSED'} for a task in another status, ` +
-            'MISSION_NOT_ACTIVE while the mission is paused (a mission Pause outranks a personal one), NOT_ASSIGNED, ' +
-            'MISSION_ENDED, PARTICIPATION_ENDED.',
-          params: MissionParams,
-          response: {
-            200: OwnParticipation,
-            400: ApiError,
-            401: ApiError,
-            403: ApiError,
-            404: ApiError,
-            409: ApiError,
-          },
-        },
-        preHandler: [searchersOnly, missionAccess(db, 'member')],
-      },
-      (request) =>
-        pauseOrResumeSearch(deps, {
-          missionId: request.params.missionId,
-          searcherId: searcherOf(request).searcherId,
-          action,
-        }),
-    );
-  }
+  await app.register(searchRoutes, deps);
 
   app.put(
     '/missions/:missionId/participants/:participantId/assignment',
