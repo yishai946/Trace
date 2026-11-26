@@ -96,6 +96,8 @@ export const polygons = pgTable(
     name: text().notNull(),
     status: polygonStatus().notNull().default('unassigned'),
     geometry: polygonColumn().notNull(),
+    /** Coverage Estimate in whole percent (UC-S02); null until the first Searching point is counted. */
+    coverage: integer(),
     ...timestamps,
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },
