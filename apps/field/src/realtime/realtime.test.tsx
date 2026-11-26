@@ -11,7 +11,9 @@ import { makeSos } from '../sos/fixtures';
 import { clearOfflinePackages } from '../offline/store';
 import { requestOfflineRefresh } from '../offline/refreshPackage';
 import { useSession } from '../state/session';
+import { syncOutbox } from '../tracking';
 
+vi.mock('../tracking', () => ({ syncOutbox: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('../offline/store', () => ({ clearOfflinePackages: vi.fn().mockResolvedValue(undefined) }));
 vi.mock('../offline/refreshPackage', () => ({ requestOfflineRefresh: vi.fn().mockResolvedValue(undefined) }));
 
@@ -102,6 +104,7 @@ describe('useMissionLive', () => {
     vi.unstubAllGlobals();
   });
   beforeEach(() => {
+    vi.clearAllMocks();
     sockets.length = 0;
     useSession.setState({ ...useSession.getInitialState(), token: 't1', restored: true, missionId });
   });
@@ -125,6 +128,29 @@ describe('useMissionLive', () => {
     await join(socket as FakeSocket);
     expect(queryClient.getQueryState(missionKeys.mission(missionId))?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(missionKeys.polygons(missionId))?.isInvalidated).toBe(true);
+  });
+
+  it('uploads what waited offline before it downloads the updates (UC-S03)', async () => {
+    let uploaded!: () => void;
+    vi.mocked(syncOutbox).mockReturnValueOnce(new Promise<void>((resolve) => (uploaded = resolve)));
+    const { socket, queryClient } = setup();
+    await join(socket as FakeSocket);
+    expect(syncOutbox).toHaveBeenCalled();
+    expect(queryClient.getQueryState(missionKeys.mission(missionId))?.isInvalidated).toBe(false);
+    expect(requestOfflineRefresh).not.toHaveBeenCalled();
+    await act(async () => uploaded());
+    expect(queryClient.getQueryState(missionKeys.mission(missionId))?.isInvalidated).toBe(true);
+    expect(requestOfflineRefresh).toHaveBeenCalledWith(expect.objectContaining({ missionId, token: 't1' }));
+  });
+
+  it('does not download after the searcher left while the upload ran', async () => {
+    let uploaded!: () => void;
+    vi.mocked(syncOutbox).mockReturnValueOnce(new Promise<void>((resolve) => (uploaded = resolve)));
+    const { socket, unmount } = setup();
+    await join(socket as FakeSocket);
+    unmount();
+    await act(async () => uploaded());
+    expect(requestOfflineRefresh).not.toHaveBeenCalled();
   });
 
   it('refreshes the saved offline package after every join, for edits made while offline', async () => {
