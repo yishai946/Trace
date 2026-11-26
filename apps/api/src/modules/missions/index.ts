@@ -17,6 +17,7 @@ import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import type { ServiceDeps } from '../serviceDeps';
 import { getMission, getMissionPhoto, listMissions } from './missions.read';
 import { updateMissionDetails } from './missions.details';
+import { pauseMission, resumeMission } from './missions.pause';
 import { createMission, setMissionPhoto, updateRallyPoint } from './missions.service';
 
 export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
@@ -110,6 +111,38 @@ export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
         details: request.body,
       }),
   );
+
+  for (const [action, run, summary, description] of [
+    [
+      'pause',
+      pauseMission,
+      'Pause the search of the mission (UC-C15)',
+      'Searching tasks pause, safety tracking goes on, no one new can join, and the searchers get a message to return ' +
+        'to the Rally Point. An already paused mission is returned as it is.',
+    ],
+    [
+      'resume',
+      resumeMission,
+      'Resume a paused mission (UC-C15)',
+      'Assignments stay and every paused task is back at Ready: each searcher starts the search again. The searchers ' +
+        'get a message. An already active mission is returned as it is.',
+    ],
+  ] as const) {
+    app.post(
+      `/missions/:missionId/${action}`,
+      {
+        schema: {
+          tags: ['missions'],
+          summary,
+          description: `${description} 409 MISSION_ENDED once the mission ended.`,
+          params: MissionParams,
+          response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+        },
+        preHandler: missionAccess(db, 'commander'),
+      },
+      (request) => run(deps, { missionId: request.params.missionId, commander: actorOf(request) }),
+    );
+  }
 
   app.put(
     '/missions/:missionId/photo',
