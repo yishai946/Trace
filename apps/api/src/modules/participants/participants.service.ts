@@ -201,7 +201,15 @@ export async function setGpsStatus(
   if (input.available === (participation.since === null)) return;
   const since = input.available ? null : new Date();
   await db.update(participations).set({ gpsUnavailableSince: since }).where(eq(participations.id, participation.id));
-  if (since) await scheduleGpsLossEscalation(deps, { participationId: participation.id, since: since.toISOString() });
+  if (since) {
+    try {
+      await scheduleGpsLossEscalation(deps, { participationId: participation.id, since: since.toISOString() });
+    } catch (err) {
+      // A loss that was never queued would never escalate: undo it, so the searcher's next report starts it again.
+      await db.update(participations).set({ gpsUnavailableSince: null }).where(eq(participations.id, participation.id));
+      throw err;
+    }
+  }
   const participant = await findParticipant({ db, realtime }, input.missionId, participation.id);
   if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
 }

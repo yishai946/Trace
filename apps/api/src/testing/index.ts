@@ -52,6 +52,8 @@ export async function createTestApp(envOverrides: Record<string, string> = {}) {
   const sentOtps: { phoneNumber: string; code: string }[] = [];
   const pushSender = createFakePushSender();
   const photos = createMemoryStorage();
+  /** Set `down` to make queueing a GPS-loss check fail. */
+  const gpsLossQueue = { down: false };
   const gpsLossJobs: Array<{ job: GpsLossJob; afterSeconds: number }> = [];
   const { app, auth, realtime, push, deps } = await buildApp({
     env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL, ...envOverrides }),
@@ -59,7 +61,12 @@ export async function createTestApp(envOverrides: Record<string, string> = {}) {
     realtimeRevalidateMs: 100,
     pushSender: pushSender.sender,
     photoStorage: photos,
-    gpsLossScheduler: { schedule: async (job, afterSeconds) => void gpsLossJobs.push({ job, afterSeconds }) },
+    gpsLossScheduler: {
+      schedule: async (job, afterSeconds) => {
+        if (gpsLossQueue.down) throw new Error('queue down');
+        gpsLossJobs.push({ job, afterSeconds });
+      },
+    },
     sendOtp: async ({ phoneNumber, code }) => {
       sentCodes.set(phoneNumber, code);
       sentOtps.push({ phoneNumber, code });
@@ -74,6 +81,7 @@ export async function createTestApp(envOverrides: Record<string, string> = {}) {
     deps,
     /** The GPS-loss checks the app queued, instead of pg-boss. */
     gpsLossJobs,
+    gpsLossQueue,
     pushSender,
     /** The photo storage the app writes to: memory, so a test can look at what was saved. */
     photos,

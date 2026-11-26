@@ -21,14 +21,9 @@ export interface GpsLossConfig {
   scheduler: GpsLossScheduler;
 }
 
-/** Queues the escalation check for a GPS loss that just started. Best effort: a failure is logged, never thrown. */
+/** Queues the escalation check for a GPS loss that just started. Throws when the queue refuses, so the caller can undo. */
 export async function scheduleGpsLossEscalation(deps: ServiceDeps, job: GpsLossJob): Promise<void> {
-  if (!deps.gpsLoss) return;
-  try {
-    await deps.gpsLoss.scheduler.schedule(job, deps.gpsLoss.afterSeconds);
-  } catch (err) {
-    deps.log.error({ err, participationId: job.participationId }, 'scheduling the GPS loss escalation failed');
-  }
+  await deps.gpsLoss?.scheduler.schedule(job, deps.gpsLoss.afterSeconds);
 }
 
 /**

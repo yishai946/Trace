@@ -28,6 +28,7 @@ describe('GPS loss escalation (UC-S04, decision 42)', () => {
   beforeEach(async () => {
     await resetDb(ctx.db);
     ctx.gpsLossJobs.length = 0;
+    ctx.gpsLossQueue.down = false;
     commander = injectAs(ctx, await signInCommander(ctx));
     const created = await commander({
       method: 'POST',
@@ -58,6 +59,19 @@ describe('GPS loss escalation (UC-S04, decision 42)', () => {
     await setGps(false);
     expect(ctx.gpsLossJobs).toHaveLength(1);
     expect(ctx.gpsLossJobs[0]).toMatchObject({ job: { participationId }, afterSeconds: AFTER_SECONDS });
+  });
+
+  it('undoes the loss when the queue refuses the check, so the next report queues it again', async () => {
+    ctx.gpsLossQueue.down = true;
+    expect((await setGps(false)).statusCode).toBe(500);
+    const since = async () =>
+      (await ctx.db.select().from(participations).where(eq(participations.id, participationId)))[0]
+        ?.gpsUnavailableSince;
+    expect(await since()).toBeNull();
+    ctx.gpsLossQueue.down = false;
+    expect((await setGps(false)).statusCode).toBe(204);
+    expect(ctx.gpsLossJobs).toHaveLength(1);
+    expect(await since()).not.toBeNull();
   });
 
   it('escalates once to the commander when the GPS is still lost after the injected time', async () => {
