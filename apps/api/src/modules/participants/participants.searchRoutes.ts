@@ -3,6 +3,7 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
+import { finishActivity } from './participants.finishActivity';
 import { finishSearch, pauseOrResumeSearch, startSearch } from './participants.search';
 
 /** The searcher's own search task: Start Search, Pause, Resume and Finish (UC-F06 to UC-F08). */
@@ -83,5 +84,27 @@ export const searchRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps
     },
     (request) =>
       finishSearch(deps, { missionId: request.params.missionId, searcherId: searcherOf(request).searcherId }),
+  );
+
+  app.post(
+    '/missions/:missionId/participation/finish-activity',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: 'Finish Activity: the searcher leaves the field, Activity Ended (UC-F15)',
+        description:
+          'Searchers in the mission only. Warns nothing and never blocks: how far the searcher is from the Rally ' +
+          "Point is the phone's warning (decision 30). The open assignment and the task end, the route and Coverage " +
+          'collected stay, and GPS points are refused afterwards (409 PARTICIPATION_ENDED). Allowed whatever the ' +
+          "mission's status, since safety tracking runs until now (decision 65). The commander sees the change at " +
+          'once. Sending it again changes nothing. The searcher may join the active mission again as Available ' +
+          '(decision 70).',
+        params: MissionParams,
+        response: { 200: OwnParticipation, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },
+      },
+      preHandler: [searchersOnly, missionAccess(db, 'member')],
+    },
+    (request) =>
+      finishActivity(deps, { missionId: request.params.missionId, searcherId: searcherOf(request).searcherId }),
   );
 };

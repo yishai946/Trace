@@ -1,5 +1,6 @@
 export * from './callsign';
 export * from './connectivity';
+export * from './finishActivity';
 export * from './coverageAlerts';
 export * from './outOfPolygon';
 export * from './joinCode';

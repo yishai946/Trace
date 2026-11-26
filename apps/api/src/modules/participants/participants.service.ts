@@ -161,14 +161,14 @@ export async function endParticipation(
   { db, realtime }: ServiceDeps,
   input: { missionId: string; participantId: string },
 ): Promise<Participant> {
-  await db.transaction(async (tx) => {
+  const changed = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({ id: participations.id, status: participations.status })
       .from(participations)
       .where(and(eq(participations.id, input.participantId), eq(participations.missionId, input.missionId)))
       .for('update');
     if (!participation) throw notFound('Searcher');
-    if (participation.status === 'ended') return;
+    if (participation.status === 'ended') return false;
     await tx
       .update(assignments)
       .set({ endedAt: new Date() })
@@ -177,10 +177,11 @@ export async function endParticipation(
       .update(participations)
       .set({ status: 'ended', polygonId: null, taskStatus: null })
       .where(eq(participations.id, participation.id));
+    return true;
   });
   const participant = await findParticipant({ db, realtime }, input.missionId, input.participantId);
   if (!participant) throw notFound('Searcher');
-  realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
+  if (changed) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
   return participant;
 }
 
