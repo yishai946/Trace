@@ -2,7 +2,8 @@
 export const NOT_UP_TO_DATE = 'מוצג מידע שנשמר במכשיר. ייתכן שהוא לא מעודכן.';
 
 /**
- * The warning on the map when nothing more urgent shows: a "הנעדר אותר" report that waits on the phone comes first
+ * The warning on the map when nothing more urgent shows: leaving the polygon comes first, a safety matter that stays
+ * while it lasts and clears on return (UC-S04); then a "הנעדר אותר" report that waits on the phone comes first
  * (the commander has not heard the person was found, UC-F09), then a lost GPS (decision 42), then saved mission
  * information shown without a connection (UC-F04).
  */
@@ -10,11 +11,16 @@ export function mapWarning({
   gpsLost,
   locatedWaiting,
   notUpToDate = false,
+  outsidePolygon = false,
 }: {
   gpsLost: boolean;
   locatedWaiting: boolean;
   notUpToDate?: boolean;
+  outsidePolygon?: boolean;
 }): { text: string; action: null } | null {
+  if (outsidePolygon) {
+    return { text: 'יצאתם מגבול הפוליגון שלכם. חזרו לתוך האזור או פנו למנהל.', action: null };
+  }
   if (locatedWaiting) {
     return { text: 'דיווח "הנעדר אותר" עדיין לא הגיע למנהל. הוא יישלח אוטומטית כשהחיבור יחזור.', action: null };
   }

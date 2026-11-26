@@ -14,6 +14,7 @@ import { sightingSender } from '../sightings/sender';
 import { reportBattery } from './batteryReport';
 import { noteGps } from './gpsStatus';
 import { reportPhotoSender, reportSender } from '../reports/senders';
+import { noteLocalPresence } from './polygonPresence';
 import { LOCATION_TASK, recordFixes, trackPointSender } from './locationTask';
 import type { Fix } from './trackPoints';
 
@@ -44,6 +45,8 @@ export async function receiveFixes({ data, error }: { data?: { locations: Fix[] 
   if (!data) return;
   // A failed save is not worth crashing the task: the next fix is saved on its own.
   await recordFixes(data.locations).catch(() => undefined);
+  // Judged on the phone from the saved polygon, so the warning does not wait for a connection (UC-S04).
+  await noteLocalPresence(data.locations).catch(() => undefined);
   await syncOutbox();
 }
 
