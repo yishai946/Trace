@@ -6,6 +6,7 @@ import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
+import { SearchFinishControls } from './SearchFinishControls';
 import { SearchPauseControls } from './SearchPauseControls';
 import { StartSearchControls } from './StartSearchControls';
 import { taskState } from './taskState';
@@ -29,6 +30,12 @@ export interface AssignedTaskProps {
   pausing?: boolean;
   /** Why the last pause or resume failed, in Hebrew. */
   pauseError?: string | null;
+  /** "סיימתי חיפוש" (UC-F08). Without it the button stays disabled. */
+  onFinish?: () => void;
+  /** The finish is on its way to the server: no second tap. */
+  finishing?: boolean;
+  /** Why the last finish failed, in Hebrew. */
+  finishError?: string | null;
 }
 
 /**
@@ -47,6 +54,9 @@ export function AssignedTask({
   onResume,
   pausing = false,
   pauseError = null,
+  onFinish,
+  finishing = false,
+  finishError = null,
 }: AssignedTaskProps) {
   const { color } = useTheme().theme;
   const polygon = polygons.find((p) => p.id === participation.polygonId);
@@ -56,6 +66,7 @@ export function AssignedTask({
   const to = (polygonName: string | undefined) => (polygonName ? `לפוליגון ${polygonName}` : 'לפוליגון');
 
   const paused = participation.taskStatus === 'paused';
+  const finished = participation.taskStatus === 'finished';
   const searching = participation.taskStatus === 'searching' || paused;
   const state = taskState(participation.taskStatus, name);
   return (
@@ -87,14 +98,21 @@ export function AssignedTask({
         <Badge label={state.badge} tone={state.tone} />
       </View>
       {searching ? (
-        // Finishing the search is UC-F08.
-        <SearchPauseControls
-          paused={paused}
-          onPause={onPause}
-          onResume={onResume}
-          pending={pausing}
-          error={pauseError}
-        />
+        <>
+          <SearchPauseControls
+            paused={paused}
+            onPause={onPause}
+            onResume={onResume}
+            pending={pausing}
+            error={pauseError}
+          />
+          <SearchFinishControls onFinish={onFinish} pending={finishing} error={finishError} />
+        </>
+      ) : finished ? (
+        // The commander decides what comes next (UC-F08, decision 100): nothing to press here.
+        <Text accessibilityLiveRegion="polite" style={[typography.caption, { color: color.inkMuted }]}>
+          סיימת את החיפוש. אתה עדיין משובץ לפוליגון, והמנהל יחליט מה הלאה. מעקב הבטיחות ממשיך.
+        </Text>
       ) : (
         <StartSearchControls onStartSearch={onStartSearch} starting={starting} startError={startError} />
       )}

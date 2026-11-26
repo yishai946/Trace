@@ -64,6 +64,7 @@ const icons = {
   sighting: <Path d="M12 3l9 9-9 9-9-9z" />,
   send: <Path d="m3 11 18-8-8 18-2-8z" />,
   pause: <Path d="M8 5v14M16 5v14" />,
+  stop: <Path d="M6 6h12v12H6z" />,
   play: <Path d="M7 5l12 7-12 7z" />,
   phone: <Path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
 } as const;
