@@ -19,6 +19,9 @@ interface SessionState {
   /** Whether the phone has GPS while tracking (decision 42); null before it was checked. */
   gpsAvailable: boolean | null;
   setGpsAvailable: (available: boolean | null) => void;
+  /** Whether the phone's own GPS puts a Searching searcher outside their polygon, offline included (UC-S04). */
+  outsidePolygon: boolean;
+  setOutsidePolygon: (outside: boolean) => void;
   /** Set when the commander assigned or moved the searcher while the app was open (UC-F05); cleared once seen. */
   assignmentNotice: AssignmentNotice | null;
   /** The code of a join link opened before the join screen could show it, e.g. while signed out (UC-F02). */
@@ -60,6 +63,7 @@ export const useSession = create<SessionState>()((set) => ({
   participation: null,
   tracking: false,
   gpsAvailable: null,
+  outsidePolygon: false,
   assignmentNotice: null,
   pendingJoinCode: null,
   restored: false,
@@ -77,14 +81,23 @@ export const useSession = create<SessionState>()((set) => ({
     await clearOutbox().catch(() => undefined);
     // The missing person's details saved for Offline belong to this searcher's mission only.
     await clearOfflinePackages().catch(() => undefined);
-    set({ token: null, missionId: null, participation: null, tracking: false, assignmentNotice: null });
+    set({
+      token: null,
+      missionId: null,
+      participation: null,
+      tracking: false,
+      outsidePolygon: false,
+      assignmentNotice: null,
+    });
   },
-  setMissionId: (missionId) => set({ missionId, participation: null, tracking: false, assignmentNotice: null }),
+  setMissionId: (missionId) =>
+    set({ missionId, participation: null, tracking: false, outsidePolygon: false, assignmentNotice: null }),
   enterMission: (missionId, participation) =>
     set({
       missionId,
       participation,
       tracking: isTracking(participation),
+      outsidePolygon: false,
       assignmentNotice: null,
       pendingJoinCode: null,
     }),
@@ -100,8 +113,12 @@ export const useSession = create<SessionState>()((set) => ({
           ? { kind: before?.status === 'assigned' ? 'moved' : 'assigned', polygonId: participation.polygonId }
           : s.assignmentNotice;
       const tracking = isTracking(participation) || (s.tracking && participation.status !== 'ended');
-      return { participation, tracking, assignmentNotice: notice };
+      // A warning belongs to the polygon and the Searching state it was judged in.
+      const outsidePolygon =
+        s.outsidePolygon && participation.taskStatus === 'searching' && participation.polygonId === before?.polygonId;
+      return { participation, tracking, outsidePolygon, assignmentNotice: notice };
     }),
   dismissAssignmentNotice: () => set({ assignmentNotice: null }),
   setGpsAvailable: (gpsAvailable) => set({ gpsAvailable }),
+  setOutsidePolygon: (outsidePolygon) => set({ outsidePolygon }),
 }));

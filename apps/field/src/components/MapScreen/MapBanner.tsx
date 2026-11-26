@@ -29,6 +29,7 @@ export function MapBanner({ polygons, locatedWaiting }: MapBannerProps) {
   const signedIn = useSession((s) => !!s.token);
   const missionId = useSession((s) => s.missionId);
   const gpsLost = useSession((s) => s.gpsAvailable === false);
+  const outsidePolygon = useSession((s) => s.outsidePolygon);
   const kind = mapStatus({
     apiConfigured: !!apiBaseUrl,
     signedIn,
@@ -55,7 +56,7 @@ export function MapBanner({ polygons, locatedWaiting }: MapBannerProps) {
   };
   const status = kind ? actions[kind] : null;
   // The warnings show when nothing more urgent does.
-  const banner = status ?? mapWarning({ gpsLost, locatedWaiting, notUpToDate: polygons.notUpToDate });
+  const banner = status ?? mapWarning({ gpsLost, locatedWaiting, notUpToDate: polygons.notUpToDate, outsidePolygon });
   if (!banner) return null;
   return (
     <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
@@ -65,7 +66,7 @@ export function MapBanner({ polygons, locatedWaiting }: MapBannerProps) {
           styles.banner,
           {
             backgroundColor: color.surface,
-            // A lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
+            // Leaving the polygon (UC-S04), a lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
             borderColor: status ? color.border : color.warning,
             boxShadow: theme.shadow.shadowPanel,
           },

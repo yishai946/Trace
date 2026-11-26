@@ -24,4 +24,10 @@ describe('mapWarning', () => {
     expect(mapWarning({ gpsLost: false, locatedWaiting: false, notUpToDate: true })?.text).toContain('נשמר במכשיר');
     expect(mapWarning({ gpsLost: true, locatedWaiting: false, notUpToDate: true })?.text).toContain('ה-GPS לא זמין');
   });
+
+  it('warns that the searcher left the polygon, before every other warning (UC-S04)', () => {
+    const warning = mapWarning({ gpsLost: true, locatedWaiting: true, notUpToDate: true, outsidePolygon: true });
+    expect(warning?.text).toContain('יצאתם מגבול הפוליגון');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, outsidePolygon: false })).toBeNull();
+  });
 });

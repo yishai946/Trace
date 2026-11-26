@@ -115,6 +115,25 @@ describe('useSession', () => {
     expect(useSession.getState()).toMatchObject({ tracking: false, assignmentNotice: { kind: 'ended' } });
   });
 
+  it('clears the out-of-polygon warning when the searcher stops Searching or moves to another polygon (UC-S04)', () => {
+    const searching = {
+      id: 'p1',
+      callsign: 7,
+      status: 'assigned' as const,
+      polygonId: 'a',
+      taskStatus: 'searching' as const,
+    };
+    useSession.getState().enterMission('m1', searching);
+    useSession.getState().setOutsidePolygon(true);
+    useSession.getState().updateParticipation(searching);
+    expect(useSession.getState().outsidePolygon).toBe(true);
+    useSession.getState().updateParticipation({ ...searching, taskStatus: 'paused' });
+    expect(useSession.getState().outsidePolygon).toBe(false);
+    useSession.getState().setOutsidePolygon(true);
+    useSession.getState().updateParticipation({ ...searching, polygonId: 'b' });
+    expect(useSession.getState().outsidePolygon).toBe(false);
+  });
+
   it('tracks a paused searcher who joins again, since the search already started', () => {
     useSession
       .getState()
