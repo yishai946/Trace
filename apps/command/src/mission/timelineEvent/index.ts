@@ -44,7 +44,7 @@ export interface EventView {
   badge: string;
   /** SOS: solid danger badge and a tinted row. */
   danger: boolean;
-  /** A warning (UC-S04): a warning badge and a tinted row, a step below the SOS. */
+  /** A warning (UC-S04): an outlined warning badge (no row tint: there is no warning tint token), a step below the SOS. */
   warning: boolean;
   segments: Segment[];
   /** Where "מעבר אל" leads; null when the screen does not exist yet. */
