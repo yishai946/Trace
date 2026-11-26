@@ -141,6 +141,13 @@
       "when": 1795558364366,
       "tag": "0019_photos_in_bucket",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1795666673633,
+      "tag": "0020_polygon_coverage",
+      "breakpoints": true
     }
   ]
 }

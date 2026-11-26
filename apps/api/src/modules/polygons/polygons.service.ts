@@ -1,7 +1,6 @@
 import { canChangePolygons, nextPolygonName } from '@trace/domain';
 import { isValidPolygon } from '@trace/geo';
 import {
-  PolygonGeometry,
   type CreatePolygonBody,
   type MissionPolygon,
   type SearcherOfflineDetails,
@@ -11,48 +10,18 @@ import {
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Db, Tx } from '../../db';
-import { asGeoJson } from '../../db/geometry';
 import { polygons } from '../../db/schema';
 import type { Actor } from '../../auth/auth.plugin';
 import { AppError, notFound } from '../../errors';
 import { lockMission } from '../lockMission';
 import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
+import { refreshCoverage } from './polygons.coverage';
 import { alertSearchersOutside, searchersOutside } from './polygons.outside';
+import { selectPolygons, toPolygon, type PolygonRow } from './polygons.read';
 
 export type CreatePolygonInput = z.output<typeof CreatePolygonBody>;
 export type UpdatePolygonInput = z.output<typeof UpdatePolygonBody>;
-
-// Raw SQL with explicit aliases: inside a subquery, Drizzle's unqualified column names would bind to the inner table.
-const activeSearchers = sql<number>`(
-  select count(*)::int from participations p where p.polygon_id = polygons.id and p.status = 'assigned'
-)`;
-
-const polygonColumns = {
-  id: polygons.id,
-  missionId: polygons.missionId,
-  name: polygons.name,
-  status: polygons.status,
-  geometry: asGeoJson(polygons.geometry),
-  activeSearchers,
-  createdAt: polygons.createdAt,
-  updatedAt: polygons.updatedAt,
-};
-
-// Callers always filter on `deleted_at is null`: deleted polygons exist only for history.
-const selectPolygons = (db: Db | Tx) => db.select(polygonColumns).from(polygons).$dynamic();
-type PolygonRow = Awaited<ReturnType<typeof selectPolygons>>[number];
-
-function toPolygon(row: PolygonRow): MissionPolygon {
-  return {
-    ...row,
-    geometry: PolygonGeometry.parse(JSON.parse(row.geometry)),
-    // Coverage is computed from search routes (UC-S02), which arrive with GPS tracking.
-    coverage: null,
-    createdAt: row.createdAt.toISOString(),
-    updatedAt: row.updatedAt.toISOString(),
-  };
-}
 
 /** Locks the mission row so concurrent polygon changes in one mission run one after another. */
 const lockActiveMission = (tx: Tx, missionId: string) =>
@@ -183,6 +152,8 @@ export async function updatePolygon(
         ...(input.name !== undefined ? { name: input.name } : {}),
       })
       .where(eq(polygons.id, polygonId));
+    // A new boundary changes what part of the searched routes lies inside it (UC-S02).
+    if (input.geometry) await refreshCoverage(tx, polygonId);
     // A rename alone is not a significant event (decision 54); only a new boundary is recorded.
     const event = input.geometry
       ? await recordEvent(tx, {

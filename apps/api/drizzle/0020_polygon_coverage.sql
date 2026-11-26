@@ -1,0 +1,1 @@
+ALTER TABLE "polygons" ADD COLUMN "coverage" integer;
