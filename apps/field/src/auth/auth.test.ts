@@ -83,6 +83,40 @@ describe('useStartRoute', () => {
     await waitFor(() => expect(result.current).toBe(routes.join));
     expect(useSession.getState().token).toBe('t1');
   });
+
+  describe('a searcher who was in a mission when the app closed (UC-F16)', () => {
+    const inMission = {
+      id: '6f1c5b3e-8d0a-4e57-9a43-0b0f5a1a2c11',
+      callsign: 7,
+      status: 'available' as const,
+      polygonId: null,
+      taskStatus: null,
+    };
+
+    it('returns to the mission instead of the join screen', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json(200, profile)));
+      useSession.setState({ restored: true, token: 't1', missionId: 'm1', participation: inMission });
+      const { result } = renderHook(() => useStartRoute(), { wrapper });
+      await waitFor(() => expect(result.current).toBe(routes.map));
+    });
+
+    it('returns to the mission without a connection', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network request failed')));
+      useSession.setState({ restored: true, token: 't1', missionId: 'm1', participation: inMission });
+      const { result } = renderHook(() => useStartRoute(), { wrapper });
+      await waitFor(() => expect(result.current).toBe(routes.map));
+    });
+
+    it('opens sign-in when the saved session is no longer valid, whatever the mission', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(json(401, { error: { code: 'UNAUTHENTICATED', message: 'x' } })),
+      );
+      useSession.setState({ restored: true, token: 't1', missionId: 'm1', participation: inMission });
+      const { result } = renderHook(() => useStartRoute(), { wrapper });
+      await waitFor(() => expect(result.current).toBe(routes.login));
+    });
+  });
 });
 
 describe('sign-in requests', () => {

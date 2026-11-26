@@ -4,6 +4,8 @@ import { receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker 
 import { resetBatteryReport } from './batteryReport';
 import { enqueue, pending } from '../outbox';
 import { useSession } from '../state/session';
+import { saveMission } from '../state/savedMission';
+import { secureStoreItems } from '../test/secureStore';
 
 const platform = vi.hoisted(() => ({ OS: 'ios' }));
 const appState = vi.hoisted(() => ({ listeners: new Set<(state: string) => void>(), removed: vi.fn() }));
@@ -248,6 +250,27 @@ describe('useOutboxSync', () => {
     renderHook(() => useOutboxSync());
     await vi.waitFor(async () => expect(await pending()).toEqual([]));
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('after a restart sends what waited, keeps tracking, and invents no points for the time the app was closed (UC-F16)', async () => {
+    await leaveOnePoint();
+    // The app closes: the memory is gone, the token, the saved mission and the outbox stay on the device.
+    secureStoreItems.set('trace.session-token', 't1');
+    await saveMission(session.missionId, session.participation);
+    useSession.setState(useSession.getInitialState());
+    await useSession.getState().restore();
+    expect(useSession.getState()).toMatchObject({ missionId: session.missionId, tracking: true });
+
+    const fetch = vi.fn(async (_url: string, _init?: RequestInit) => ok());
+    vi.stubGlobal('fetch', fetch);
+    renderHook(() => useOutboxSync());
+    await vi.waitFor(async () => expect(await pending()).toEqual([]));
+    await receiveFixes({ data: { locations: [{ ...fix, timestamp: fix.timestamp + 30 * 60_000 }] }, error: null });
+
+    const sent = fetch.mock.calls.flatMap(
+      ([, init]) => (JSON.parse(String(init?.body)) as { points: unknown[] }).points,
+    );
+    expect(sent).toHaveLength(2);
   });
 
   it('sends a queued sighting when the connection returns', async () => {
