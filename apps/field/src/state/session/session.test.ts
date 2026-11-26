@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { useSession } from '.';
 import { enqueue, pendingCount } from '../../outbox';
 import { setItemAsync, secureStoreItems } from '../../test/secureStore';
+import { loadSavedMission, saveMission } from '../savedMission';
 
 describe('useSession', () => {
   beforeEach(() => useSession.setState(useSession.getInitialState()));
@@ -147,5 +148,72 @@ describe('useSession', () => {
     useSession.getState().enterMission('m1', participation);
 
     expect(useSession.getState()).toMatchObject({ missionId: 'm1', participation, pendingJoinCode: null });
+  });
+  describe('restoring the mission after a restart (UC-F16)', () => {
+    const searching = {
+      id: 'p1',
+      callsign: 7,
+      status: 'assigned' as const,
+      polygonId: 'a',
+      taskStatus: 'searching' as const,
+    };
+    const validId = { ...searching, id: '6f1c5b3e-8d0a-4e57-9a43-0b0f5a1a2c11', polygonId: null, taskStatus: null };
+
+    it('saves the mission when the searcher joins and when the server changes the participation', async () => {
+      const participation = { ...validId, status: 'available' as const };
+      useSession.getState().enterMission('m1', participation);
+      useSession.getState().updateParticipation({ ...participation, status: 'assigned', polygonId: validId.id });
+      expect(await loadSavedMission()).toMatchObject({ missionId: 'm1', participation: { status: 'assigned' } });
+    });
+
+    it('restores the mission, the participation and tracking of a searcher who was searching', async () => {
+      const participation = {
+        ...validId,
+        status: 'assigned' as const,
+        polygonId: validId.id,
+        taskStatus: 'searching' as const,
+      };
+      await saveMission('m1', participation);
+      secureStoreItems.set('trace.session-token', 't1');
+      await useSession.getState().restore();
+      expect(useSession.getState()).toMatchObject({ token: 't1', missionId: 'm1', participation, tracking: true });
+    });
+
+    it('does not track a restored searcher who has not started the search', async () => {
+      await saveMission('m1', { ...validId, status: 'available' });
+      secureStoreItems.set('trace.session-token', 't1');
+      await useSession.getState().restore();
+      expect(useSession.getState()).toMatchObject({ missionId: 'm1', tracking: false });
+    });
+
+    it('does not restore a mission without a token, but keeps it in case the token could only not be read this time', async () => {
+      await saveMission('m1', validId);
+      await useSession.getState().restore();
+      expect(useSession.getState()).toMatchObject({ token: null, missionId: null, participation: null });
+      expect(await loadSavedMission()).toMatchObject({ missionId: 'm1' });
+    });
+
+    it('keeps the mission a join made meanwhile over the saved one', async () => {
+      await saveMission('m1', validId);
+      secureStoreItems.set('trace.session-token', 't1');
+      const restoring = useSession.getState().restore();
+      useSession.getState().enterMission('m2', validId);
+      await restoring;
+      expect(useSession.getState().missionId).toBe('m2');
+    });
+
+    it('forgets the saved mission when the searcher leaves it or signs out', async () => {
+      useSession.getState().enterMission('m1', validId);
+      useSession.getState().setMissionId(null);
+      expect(await loadSavedMission()).toBeNull();
+      useSession.getState().enterMission('m1', validId);
+      await useSession.getState().signOut();
+      expect(await loadSavedMission()).toBeNull();
+    });
+
+    it('does not suppose a participation for a mission without one', () => {
+      useSession.getState().setMissionId('m3');
+      expect(useSession.getState()).toMatchObject({ missionId: 'm3', participation: null });
+    });
   });
 });

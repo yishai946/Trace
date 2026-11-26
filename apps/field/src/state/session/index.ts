@@ -2,6 +2,7 @@ import type { OwnParticipation } from '@trace/schemas';
 import { create } from 'zustand';
 import { clearOutbox } from '../../outbox';
 import { clearOfflinePackages } from '../../offline/store';
+import { clearSavedMission, loadSavedMission, saveMission } from '../savedMission';
 import { deleteToken, loadToken, saveToken } from './tokenStore';
 
 interface SessionState {
@@ -28,7 +29,7 @@ interface SessionState {
   pendingJoinCode: string | null;
   /** True once the token saved on the device was read at launch; the start screen waits for it. */
   restored: boolean;
-  /** Reads the token saved on the device. A token set meanwhile by signing in wins. */
+  /** Reads the token and the mission saved on the device (UC-F16). A token or a mission set meanwhile wins. */
   restore: () => Promise<void>;
   /** Keeps the token in memory and saves it on the device. */
   signIn: (token: string) => Promise<void>;
@@ -57,7 +58,7 @@ function isTracking(participation: OwnParticipation): boolean {
  * Who the searcher is and which mission they are in. Signing in saves the token on the device (UC-F01), so
  * reopening the app does not ask to sign in again.
  */
-export const useSession = create<SessionState>()((set) => ({
+export const useSession = create<SessionState>()((set, get) => ({
   token: null,
   missionId: null,
   participation: null,
@@ -68,8 +69,16 @@ export const useSession = create<SessionState>()((set) => ({
   pendingJoinCode: null,
   restored: false,
   restore: async () => {
-    const stored = await loadToken();
-    set((s) => ({ token: s.token ?? stored, restored: true }));
+    const [stored, saved] = await Promise.all([loadToken(), loadSavedMission()]);
+    // No token is not a sign-out: the device may have failed to read it. Only signing out or leaving the mission
+    // forgets the saved mission, and it is restored only together with a token.
+    set((s) => {
+      const token = s.token ?? stored;
+      const restoring = token && saved && s.missionId === null ? saved : null;
+      if (!restoring) return { token, restored: true };
+      const { missionId, participation } = restoring;
+      return { token, restored: true, missionId, participation, tracking: isTracking(participation) };
+    });
   },
   signIn: async (token) => {
     await saveToken(token);
@@ -81,6 +90,7 @@ export const useSession = create<SessionState>()((set) => ({
     await clearOutbox().catch(() => undefined);
     // The missing person's details saved for Offline belong to this searcher's mission only.
     await clearOfflinePackages().catch(() => undefined);
+    await clearSavedMission();
     set({
       token: null,
       missionId: null,
@@ -90,9 +100,13 @@ export const useSession = create<SessionState>()((set) => ({
       assignmentNotice: null,
     });
   },
-  setMissionId: (missionId) =>
-    set({ missionId, participation: null, tracking: false, outsidePolygon: false, assignmentNotice: null }),
-  enterMission: (missionId, participation) =>
+  setMissionId: (missionId) => {
+    // The participation is unknown now, so what was saved for the earlier mission no longer applies.
+    void clearSavedMission();
+    set({ missionId, participation: null, tracking: false, outsidePolygon: false, assignmentNotice: null });
+  },
+  enterMission: (missionId, participation) => {
+    void saveMission(missionId, participation);
     set({
       missionId,
       participation,
@@ -100,9 +114,12 @@ export const useSession = create<SessionState>()((set) => ({
       outsidePolygon: false,
       assignmentNotice: null,
       pendingJoinCode: null,
-    }),
+    });
+  },
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
-  updateParticipation: (participation) =>
+  updateParticipation: (participation) => {
+    const { missionId } = get();
+    if (missionId) void saveMission(missionId, participation);
     set((s) => {
       const before = s.participation;
       const changed = participation.status === 'assigned' && participation.polygonId !== before?.polygonId;
@@ -117,7 +134,8 @@ export const useSession = create<SessionState>()((set) => ({
       const outsidePolygon =
         s.outsidePolygon && participation.taskStatus === 'searching' && participation.polygonId === before?.polygonId;
       return { participation, tracking, outsidePolygon, assignmentNotice: notice };
-    }),
+    });
+  },
   dismissAssignmentNotice: () => set({ assignmentNotice: null }),
   setGpsAvailable: (gpsAvailable) => set({ gpsAvailable }),
   setOutsidePolygon: (outsidePolygon) => set({ outsidePolygon }),
