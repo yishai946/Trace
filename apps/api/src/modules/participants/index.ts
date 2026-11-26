@@ -88,7 +88,9 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
         description:
           'Searchers in the mission only. `level` is a whole percent and `measuredAt` when the phone read it: the ' +
           'newest reading wins, so an older one arriving late changes nothing. The commander sees the change at once. ' +
-          '409 PARTICIPATION_ENDED after Finish Activity. The low-battery threshold is TBD (decision 45).',
+          'A reading that falls below the low-battery level (20%, POC value; decision 45) records a `battery.low` ' +
+          'Timeline event and pushes the searcher once, until the level rises back. ' +
+          '409 PARTICIPATION_ENDED after Finish Activity.',
         params: MissionParams,
         body: BatteryBody,
         response: { 204: z.null(), 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },

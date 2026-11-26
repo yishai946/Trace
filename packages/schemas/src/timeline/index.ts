@@ -94,6 +94,15 @@ export const TimelineEvent = z
     z.object({ ...base, type: z.literal('contact.lost'), details: empty }),
     /** Subject: the participant. Actor: the system. A searcher recorded as Offline is online again (UC-C10). */
     z.object({ ...base, type: z.literal('contact.restored'), details: empty }),
+    /**
+     * Subject: the participant. Actor: the system. The searcher's phone fell below the low-battery threshold (UC-S04,
+     * decision 45); `level` is the reading that crossed it, in percent.
+     */
+    z.object({
+      ...base,
+      type: z.literal('battery.low'),
+      details: z.object({ level: z.number().int().min(0).max(100) }),
+    }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
     z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
     /** Subject: the SOS (label = polygon name or null). Actor: the commander, or the searcher who sent it. */

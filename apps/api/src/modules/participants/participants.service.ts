@@ -1,10 +1,12 @@
-import { acceptsTrackPoints, canJoinMission, isMissionEnded, nextCallsign } from '@trace/domain';
-import type { Mission, OwnParticipation, Participant } from '@trace/schemas';
+import { acceptsTrackPoints, canJoinMission, crossedIntoLowBattery, isMissionEnded, nextCallsign } from '@trace/domain';
+import type { Mission, OwnParticipation, Participant, TimelineEvent } from '@trace/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
-import { assignments, missions, participations, polygons } from '../../db/schema';
+import { assignments, missions, participations, polygons, searchers } from '../../db/schema';
 import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
 import { getMission } from '../missions/missions.read';
 import { listPolygons } from '../polygons/polygons.service';
+import { recordEvent } from '../timeline/timeline.service';
+import { lowBatteryPush } from './participants.lowBattery';
 import type { ServiceDeps } from '../serviceDeps';
 import { CLOCK_SKEW_MS } from '../tracking/tracking.service';
 import { findParticipant, ownColumns } from './participants.read';
@@ -206,24 +208,28 @@ export async function setGpsStatus(
 /**
  * Records the phone's battery (UC-C10, decision 13). The newest reading wins, whatever order uploads arrive in; one
  * dated past the clock-skew tolerance is ignored, like a track point. The mission hears of it only when the stored
- * reading changed. 409 once the searcher's activity ended.
+ * reading changed. A reading that falls below the low-battery threshold also records an alert on the Timeline for the
+ * commander and pushes the searcher (UC-S04, decision 45). 409 once the searcher's activity ended.
  */
 export async function setBattery(
-  { db, realtime }: ServiceDeps,
+  { db, realtime, push }: ServiceDeps,
   input: { missionId: string; searcherId: string; level: number; measuredAt: string },
 ): Promise<void> {
   const measuredAt = new Date(input.measuredAt);
-  const participationId = await db.transaction(async (tx) => {
+  const saved = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({
         id: participations.id,
         status: participations.status,
+        callsign: participations.callsign,
+        name: searchers.name,
         level: participations.batteryLevel,
         measuredAt: participations.batteryMeasuredAt,
       })
       .from(participations)
+      .innerJoin(searchers, eq(searchers.id, participations.searcherId))
       .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)))
-      .for('update');
+      .for('update', { of: participations });
     if (!participation) throw notFound('Mission');
     if (!acceptsTrackPoints(participation.status)) {
       throw participationEnded();
@@ -234,9 +240,32 @@ export async function setBattery(
       .update(participations)
       .set({ batteryLevel: input.level, batteryMeasuredAt: measuredAt })
       .where(eq(participations.id, participation.id));
-    return participation.id;
+    let alert: TimelineEvent | null = null;
+    if (crossedIntoLowBattery(participation.level, input.level)) {
+      alert = await recordEvent(tx, {
+        missionId: input.missionId,
+        actor: 'system',
+        type: 'battery.low',
+        subject: {
+          kind: 'participant',
+          id: participation.id,
+          label: participation.name,
+          callsign: participation.callsign,
+        },
+        details: { level: input.level },
+      });
+    }
+    return { participationId: participation.id, alert };
   });
-  if (!participationId) return;
-  const participant = await findParticipant({ db, realtime }, input.missionId, participationId);
+  if (!saved) return;
+  const participant = await findParticipant({ db, realtime }, input.missionId, saved.participationId);
   if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
+  if (saved.alert) {
+    realtime.publish({ type: 'timeline.recorded', missionId: input.missionId, event: saved.alert });
+    void push.notifySearchers({
+      missionId: input.missionId,
+      searcherIds: [input.searcherId],
+      message: lowBatteryPush(),
+    });
+  }
 }

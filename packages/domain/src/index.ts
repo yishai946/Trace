@@ -3,6 +3,7 @@ export * from './connectivity';
 export * from './coverageAlerts';
 export * from './joinCode';
 export * from './localTime';
+export * from './lowBattery';
 export * from './message';
 export * from './missionDetails';
 export * from './mission';
