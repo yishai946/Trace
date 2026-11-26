@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import type { Connection } from '../../components/ConnectionStatus';
 import type { MapFocus } from '../../map/MissionMap';
 import { PlaceSearch } from '../../map/PlaceSearch';
+import { outsideSearchers } from '../../mission/outsideSearchers';
 import { PhoneMissionScreen } from '../../mission/PhoneMissionScreen';
 import { phoneScreenOf } from '../../mission/phoneScreen';
 import { PhoneMessagesPage } from '../../pages/PhoneMessagesPage';
@@ -71,6 +72,8 @@ export function PhoneMission({
       sosFailed={data.sos.isError}
       onRetrySos={() => void data.sos.refetch()}
       onOpenSos={nav.openSos}
+      outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
+      onOpenSearcher={nav.setSelectedSearcherId}
       sosScreen={
         <SosPage
           phone

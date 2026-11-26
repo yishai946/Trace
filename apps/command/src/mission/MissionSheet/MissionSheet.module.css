@@ -149,3 +149,8 @@
   padding-block: var(--space-6);
   color: var(--ink-secondary);
 }
+
+.warn {
+  color: var(--warning);
+  font-weight: 600;
+}
