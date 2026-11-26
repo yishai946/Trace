@@ -4,7 +4,12 @@ import type { ParticipationStatus, TaskStatus } from '../participation';
 export type SearchPauseAction = 'pause' | 'resume';
 
 export type SearchPauseRefusal =
-  'mission_ended' | 'mission_not_active' | 'participation_ended' | 'not_assigned' | 'task_not_searching' | 'task_not_paused';
+  | 'mission_ended'
+  | 'mission_not_active'
+  | 'participation_ended'
+  | 'not_assigned'
+  | 'task_not_searching'
+  | 'task_not_paused';
 
 export interface SearchPauseState {
   missionStatus: MissionStatus;

@@ -169,7 +169,10 @@ describe('Pause and Resume the search (UC-F07)', () => {
 
   it('keeps taking route points while paused, kept as safety points so they stay out of Coverage (decision 71)', async () => {
     await send('pause');
-    const upload = await injectAs(ctx, user)({
+    const upload = await injectAs(
+      ctx,
+      user,
+    )({
       method: 'POST',
       url: `/api/missions/${mission.id}/track-points`,
       payload: {

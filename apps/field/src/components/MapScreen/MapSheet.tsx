@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import type { ComponentProps } from 'react';
 import { openScreen } from '../../navigation/navigate';
 import { routes } from '../../navigation/routes';
+import { useSearchPause } from '../../mission/useSearchPause';
 import { useStartSearch } from '../../mission/useStartSearch';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
@@ -31,6 +32,7 @@ export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
   const notice = useSession((s) => s.assignmentNotice);
   const dismissNotice = useSession((s) => s.dismissAssignmentNotice);
   const startSearch = useStartSearch();
+  const searchPause = useSearchPause();
   return (
     <View
       testID="map-sheet"
@@ -49,6 +51,10 @@ export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
           onStartSearch={startSearch.start}
           starting={startSearch.starting}
           startError={startSearch.error}
+          onPause={searchPause.pause}
+          onResume={searchPause.resume}
+          pausing={searchPause.pending}
+          pauseError={searchPause.error}
         />
       ) : null}
       <PendingReports missionId={missionId} />

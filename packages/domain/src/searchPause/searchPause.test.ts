@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { searchPauseRefusal, searchPauseTarget, type SearchPauseState } from '.';
 
-const searching: SearchPauseState = { missionStatus: 'active', participationStatus: 'assigned', taskStatus: 'searching' };
+const searching: SearchPauseState = {
+  missionStatus: 'active',
+  participationStatus: 'assigned',
+  taskStatus: 'searching',
+};
 const paused: SearchPauseState = { ...searching, taskStatus: 'paused' };
 
 describe('searchPauseTarget', () => {
