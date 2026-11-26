@@ -14,6 +14,10 @@ export const ERROR_CODES = [
   'NOT_ASSIGNED',
   /** Start Search needs a task at Ready: it is already searching, paused or finished (UC-F06). */
   'TASK_NOT_READY',
+  /** Pause needs a task at Searching (UC-F07). */
+  'TASK_NOT_SEARCHING',
+  /** Resume needs a task at Paused (UC-F07). */
+  'TASK_NOT_PAUSED',
   'INVALID_GEOMETRY',
   'POLYGON_HAS_ACTIVE_SEARCHERS',
   'SEARCHERS_OUTSIDE_POLYGON',

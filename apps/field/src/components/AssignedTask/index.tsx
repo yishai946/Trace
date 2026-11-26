@@ -6,7 +6,9 @@ import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
+import { SearchPauseControls } from './SearchPauseControls';
 import { StartSearchControls } from './StartSearchControls';
+import { taskState } from './taskState';
 
 export interface AssignedTaskProps {
   participation: OwnParticipation;
@@ -20,6 +22,13 @@ export interface AssignedTaskProps {
   starting?: boolean;
   /** Why the last start failed, in Hebrew; the searcher can press again. */
   startError?: string | null;
+  /** Personal Pause and Resume (UC-F07). Without them the buttons stay disabled. */
+  onPause?: () => void;
+  onResume?: () => void;
+  /** A pause or resume is on its way to the server: no second tap. */
+  pausing?: boolean;
+  /** Why the last pause or resume failed, in Hebrew. */
+  pauseError?: string | null;
 }
 
 /**
@@ -34,6 +43,10 @@ export function AssignedTask({
   onStartSearch,
   starting = false,
   startError = null,
+  onPause,
+  onResume,
+  pausing = false,
+  pauseError = null,
 }: AssignedTaskProps) {
   const { color } = useTheme().theme;
   const polygon = polygons.find((p) => p.id === participation.polygonId);
@@ -42,7 +55,9 @@ export function AssignedTask({
   const noticeName = polygons.find((p) => p.id === notice?.polygonId)?.name;
   const to = (polygonName: string | undefined) => (polygonName ? `לפוליגון ${polygonName}` : 'לפוליגון');
 
-  const searching = participation.taskStatus === 'searching';
+  const paused = participation.taskStatus === 'paused';
+  const searching = participation.taskStatus === 'searching' || paused;
+  const state = taskState(participation.taskStatus, name);
   return (
     <View style={styles.task} accessibilityLabel="המשימה שלי">
       {notice ? (
@@ -62,20 +77,24 @@ export function AssignedTask({
       <View style={styles.row}>
         <CallsignChip callsign={participation.callsign} />
         <View style={styles.grow}>
-          <Text style={[typography.title, { color: color.ink }]}>
-            {searching ? (name ? `בחיפוש, ${name}` : 'בחיפוש') : `שובצת ${to(name)}`}
-          </Text>
+          <Text style={[typography.title, { color: color.ink }]}>{state.title}</Text>
           {polygon ? (
             <Text style={[typography.meta, { color: color.inkMuted }]}>
               {polygon.activeSearchers === 1 ? 'מחפש אחד בפוליגון' : `${polygon.activeSearchers} מחפשים בפוליגון`}
             </Text>
           ) : null}
         </View>
-        <Badge label={searching ? 'בחיפוש' : 'משובץ'} tone={searching ? 'ok' : 'accent'} />
+        <Badge label={state.badge} tone={state.tone} />
       </View>
       {searching ? (
-        // Pause and finish are UC-F07 and UC-F08.
-        <Text style={[typography.caption, { color: color.inkMuted }]}>המסלול שלך נרשם והמנהל רואה אותך על המפה</Text>
+        // Finishing the search is UC-F08.
+        <SearchPauseControls
+          paused={paused}
+          onPause={onPause}
+          onResume={onResume}
+          pending={pausing}
+          error={pauseError}
+        />
       ) : (
         <StartSearchControls onStartSearch={onStartSearch} starting={starting} startError={startError} />
       )}

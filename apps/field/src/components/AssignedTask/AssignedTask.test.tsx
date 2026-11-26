@@ -129,6 +129,44 @@ describe('AssignedTask', () => {
     expect(screen.queryByRole('button', { name: 'התחל חיפוש' })).not.toBeInTheDocument();
   });
 
+  it('pauses a searching task with one tap and not twice while it is on its way', () => {
+    const onPause = vi.fn();
+    const { rerender } = renderTask({ participation: { ...participation, taskStatus: 'searching' }, onPause });
+    fireEvent.click(screen.getByRole('button', { name: 'השהה' }));
+    expect(onPause).toHaveBeenCalledTimes(1);
+    rerender(
+      <AssignedTask
+        participation={{ ...participation, taskStatus: 'searching' }}
+        polygons={polygons}
+        notice={null}
+        onDismissNotice={() => {}}
+        onPause={onPause}
+        pausing
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'השהה' })).toBeDisabled();
+  });
+
+  it('shows a paused search with Resume and says safety tracking goes on', () => {
+    const onResume = vi.fn();
+    renderTask({ participation: { ...participation, taskStatus: 'paused' }, onResume });
+    expect(screen.getByText('מושהה, ואדי צפוני')).toBeInTheDocument();
+    expect(screen.getByText(/מעקב הבטיחות ממשיך/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'התחל חיפוש' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'המשך חיפוש' }));
+    expect(onResume).toHaveBeenCalled();
+  });
+
+  it('shows why a pause or resume failed', () => {
+    renderTask({
+      participation: { ...participation, taskStatus: 'paused' },
+      onResume: () => {},
+      pauseError: 'המסע מושהה. אפשר להמשיך חיפוש רק כשהמסע פעיל.',
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent('המסע מושהה');
+    expect(screen.getByRole('button', { name: 'המשך חיפוש' })).toBeEnabled();
+  });
+
   it('blocks Start Search and names the missing permissions and how to grant them', async () => {
     device.read.mockResolvedValue(granted({ backgroundLocation: 'ask', push: 'ask' }));
     setSaved(['mission', 'photo', 'polygons', 'map']);
