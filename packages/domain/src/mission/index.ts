@@ -30,3 +30,13 @@ export function canChangeRallyPoint(status: MissionStatus): boolean {
 export function canEditMissionDetails(status: MissionStatus): boolean {
   return !isMissionEnded(status);
 }
+
+/** The commander pauses the search while the mission is active (UC-C15). */
+export function canPauseMission(status: MissionStatus): boolean {
+  return status === 'active';
+}
+
+/** The commander resumes a mission that is paused (UC-C15). */
+export function canResumeMission(status: MissionStatus): boolean {
+  return status === 'paused';
+}
