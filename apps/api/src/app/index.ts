@@ -34,6 +34,7 @@ import { startConnectivityMonitor } from '../modules/timeline/timeline.connectiv
 import { trackingRoutes } from '../modules/tracking';
 import type { ServiceDeps } from '../modules/serviceDeps';
 import { createRealtime } from '../realtime';
+import { createPhotoStorage, type PhotoStorage } from '../storage';
 import { VERSION } from '../version';
 
 interface AppOptions {
@@ -49,6 +50,8 @@ interface AppOptions {
   logStream?: LogStream;
   /** How often to record searchers going Offline or coming back (UC-C10). Off when omitted, so tests run the check themselves. */
   connectivityCheckMs?: number;
+  /** Where photos are kept. Defaults to the Railway Bucket from the environment, or memory when it is not set. */
+  photoStorage?: PhotoStorage;
 }
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
@@ -60,6 +63,7 @@ export async function buildApp({
   pushSender,
   logStream,
   connectivityCheckMs,
+  photoStorage,
 }: AppOptions) {
   const app = Fastify({
     ...serverLogOptions(env, logStream),
@@ -94,7 +98,7 @@ export async function buildApp({
     log: app.log,
   });
 
-  const deps: ServiceDeps = { db, realtime, push, log: app.log };
+  const deps: ServiceDeps = { db, realtime, push, photos: photoStorage ?? createPhotoStorage(env), log: app.log };
   if (connectivityCheckMs) {
     const stop = startConnectivityMonitor(deps, connectivityCheckMs);
     app.addHook('onClose', async () => stop());

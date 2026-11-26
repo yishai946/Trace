@@ -45,7 +45,7 @@ export function reportError(error: unknown, { requestId, source }: ErrorContext)
 }
 
 /** The part of a pino logger that `logAndReport` writes to. */
-interface ErrorLogger {
+export interface ErrorLogger {
   error(fields: Record<string, unknown>, message: string): void;
 }
 

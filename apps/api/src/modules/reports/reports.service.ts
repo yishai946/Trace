@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Tx } from '../../db';
 import { missions, participations, reportPhotos, reports } from '../../db/schema';
+import { discardPhoto, nextPhotoVersion, reportPhotoKey } from '../../storage';
 import { AppError, forbidden, notFound, missionEnded, participationEnded, unsupportedPhoto } from '../../errors';
 import { logAndReport } from '../../monitoring';
 import type { ServiceDeps } from '../serviceDeps';
@@ -135,9 +136,9 @@ export async function setReportPhoto(
     data,
   }: { missionId: string; reportId: string; userId: string; searcherId: string; data: Buffer },
 ): Promise<Report> {
-  const { db } = deps;
+  const { db, photos } = deps;
   const contentType = detectPhotoType(data);
-  const report = await db.transaction(async (tx) => {
+  const { report, replaced } = await db.transaction(async (tx) => {
     // Locked like createReport does, so the check and the save are ordered with Finish Activity.
     const [participation] = await tx
       .select({ status: participations.status })
@@ -148,19 +149,27 @@ export async function setReportPhoto(
       .select({ missionId: reports.missionId, reportedBy: reports.reportedBy, missionStatus: missions.status })
       .from(reports)
       .innerJoin(missions, eq(missions.id, reports.missionId))
-      .where(eq(reports.id, reportId));
+      .where(eq(reports.id, reportId))
+      .for('update', { of: reports });
     if (!row || row.missionId !== missionId || row.reportedBy !== userId) throw notFound('Report');
     if (!canSubmitReport(row.missionStatus)) {
       throw missionEnded('The photo of a report in an ended mission cannot be changed');
     }
     if (participation && !acceptsReports(participation.status)) throw participationEnded();
     if (!contentType) throw unsupportedPhoto();
+    const [previous] = await tx
+      .select({ updatedAt: reportPhotos.updatedAt })
+      .from(reportPhotos)
+      .where(eq(reportPhotos.reportId, reportId));
+    const updatedAt = nextPhotoVersion(previous?.updatedAt);
+    await photos.put(reportPhotoKey(reportId, updatedAt), { contentType, data });
     await tx
       .insert(reportPhotos)
-      .values({ reportId, contentType, data })
-      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data, updatedAt: new Date() } });
-    return findReport(tx, reportId);
+      .values({ reportId, contentType, updatedAt })
+      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data: null, updatedAt } });
+    return { report: await findReport(tx, reportId), replaced: previous?.updatedAt };
   });
+  if (replaced) await discardPhoto(photos, deps.log, reportPhotoKey(reportId, replaced));
   await publishSaved(deps, missionId, report);
   return report;
 }
@@ -240,15 +249,20 @@ export async function updateReport(
  * report is gone.
  */
 export async function deleteReport(
-  { db, realtime }: ServiceDeps,
+  { db, realtime, photos, log }: ServiceDeps,
   { missionId, reportId }: { missionId: string; reportId: string },
 ): Promise<void> {
-  const searcherIds = await db.transaction(async (tx) => {
+  const { searcherIds, photoVersion } = await db.transaction(async (tx) => {
     const row = await lockReport(tx, missionId, reportId);
     if (!canChangeReport(row.missionStatus)) throw reportsLocked();
     const searcherIds = await reportRecipients(tx, { reportId });
+    const [photo] = await tx
+      .select({ updatedAt: reportPhotos.updatedAt })
+      .from(reportPhotos)
+      .where(eq(reportPhotos.reportId, reportId));
     await tx.delete(reports).where(eq(reports.id, reportId));
-    return searcherIds;
+    return { searcherIds, photoVersion: photo?.updatedAt };
   });
+  if (photoVersion) await discardPhoto(photos, log, reportPhotoKey(reportId, photoVersion));
   realtime.publish({ type: 'report.deleted', missionId, reportId }, { searcherIds });
 }

@@ -44,17 +44,40 @@ const EnvInput = z.object({
   LOKI_URL: optional(z.url()),
   LOKI_USER: optional(z.string().min(1)),
   LOKI_TOKEN: optional(z.string().min(1)),
+  /**
+   * The Railway Bucket that holds photos (Railway's variable references fill these in). All four or none; none keeps
+   * photos in memory, which is lost on restart, so production requires them.
+   */
+  BUCKET_ENDPOINT: optional(z.url()),
+  BUCKET_NAME: optional(z.string().min(1)),
+  BUCKET_ACCESS_KEY_ID: optional(z.string().min(1)),
+  BUCKET_SECRET_ACCESS_KEY: optional(z.string().min(1)),
+  /** Railway Buckets use `auto`. */
+  BUCKET_REGION: z.string().min(1).default('auto'),
 });
 
 const LOKI_VARIABLES = ['LOKI_URL', 'LOKI_USER', 'LOKI_TOKEN'] as const;
+const BUCKET_VARIABLES = [
+  'BUCKET_ENDPOINT',
+  'BUCKET_NAME',
+  'BUCKET_ACCESS_KEY_ID',
+  'BUCKET_SECRET_ACCESS_KEY',
+] as const;
+
+/** Reports a group of variables that are only partly set. */
+function requireAllOrNone(
+  env: z.infer<typeof EnvInput>,
+  names: readonly (keyof z.infer<typeof EnvInput>)[],
+  ctx: z.RefinementCtx,
+) {
+  const missing = names.filter((name) => !env[name]);
+  if (missing.length === 0 || missing.length === names.length) return;
+  ctx.addIssue({ code: 'custom', message: `Set all of ${names.join(', ')} or none; missing ${missing.join(', ')}` });
+}
 
 const Env = EnvInput.superRefine((env, ctx) => {
-  const missing = LOKI_VARIABLES.filter((name) => !env[name]);
-  if (missing.length === 0 || missing.length === LOKI_VARIABLES.length) return;
-  ctx.addIssue({
-    code: 'custom',
-    message: `Set all of ${LOKI_VARIABLES.join(', ')} or none; missing ${missing.join(', ')}`,
-  });
+  requireAllOrNone(env, LOKI_VARIABLES, ctx);
+  requireAllOrNone(env, BUCKET_VARIABLES, ctx);
 }).transform((env) => ({
   ...env,
   LOG_LEVEL: env.LOG_LEVEL ?? defaultLogLevel(env.NODE_ENV),
@@ -70,7 +93,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
     throw new Error(`Invalid environment variables:\n${z.prettifyError(result.error)}`);
   }
   if (result.data.NODE_ENV === 'production') {
-    for (const name of ['DATABASE_URL', 'API_URL', 'AUTH_SECRET']) {
+    for (const name of ['DATABASE_URL', 'API_URL', 'AUTH_SECRET', ...BUCKET_VARIABLES]) {
       if (!source[name]) throw new Error(`Invalid environment variables:\n${name} is required in production`);
     }
   }

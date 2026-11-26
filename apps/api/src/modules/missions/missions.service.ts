@@ -13,7 +13,8 @@ import { randomInt } from 'node:crypto';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
 import { lkpPoints, missionPhotos, missions } from '../../db/schema';
-import { notFound, missionEnded, unsupportedPhoto } from '../../errors';
+import { missionEnded, unsupportedPhoto } from '../../errors';
+import { discardPhoto, missionPhotoKey, nextPhotoVersion } from '../../storage';
 import { lockMission } from '../lockMission';
 import type { ServiceDeps } from '../serviceDeps';
 import { recordEvent } from '../timeline/timeline.service';
@@ -129,19 +130,31 @@ export async function updateRallyPoint(
  * An ended mission is read-only (UC-C03 edits only an active or paused mission).
  */
 export async function setMissionPhoto(
-  { db, realtime }: ServiceDeps,
+  { db, realtime, photos, log }: ServiceDeps,
   missionId: string,
   data: Buffer,
 ): Promise<Mission> {
-  const [current] = await db.select({ status: missions.status }).from(missions).where(eq(missions.id, missionId));
-  if (!current) throw notFound('Mission');
-  if (!canEditMissionDetails(current.status)) throw missionEnded('The photo of an ended mission cannot be changed');
   const contentType = detectPhotoType(data);
-  if (!contentType) throw unsupportedPhoto();
-  await db
-    .insert(missionPhotos)
-    .values({ missionId, contentType, data })
-    .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, data, updatedAt: new Date() } });
+  const replaced = await db.transaction(async (tx) => {
+    // Locked, so two uploads are ordered and each knows which version it replaces.
+    await lockMission(tx, missionId, {
+      allowed: canEditMissionDetails,
+      refusal: () => missionEnded('The photo of an ended mission cannot be changed'),
+    });
+    if (!contentType) throw unsupportedPhoto();
+    const [previous] = await tx
+      .select({ updatedAt: missionPhotos.updatedAt })
+      .from(missionPhotos)
+      .where(eq(missionPhotos.missionId, missionId));
+    const updatedAt = nextPhotoVersion(previous?.updatedAt);
+    await photos.put(missionPhotoKey(missionId, updatedAt), { contentType, data });
+    await tx
+      .insert(missionPhotos)
+      .values({ missionId, contentType, updatedAt })
+      .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, data: null, updatedAt } });
+    return previous?.updatedAt;
+  });
+  if (replaced) await discardPhoto(photos, log, missionPhotoKey(missionId, replaced));
   const mission = await getMission(db, missionId);
   realtime.publish({ type: 'mission.updated', missionId: mission.id, mission });
   return mission;

@@ -134,6 +134,13 @@
       "when": 1795472272051,
       "tag": "0018_contact_restored_event",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1795558364366,
+      "tag": "0019_photos_in_bucket",
+      "breakpoints": true
     }
   ]
 }

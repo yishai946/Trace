@@ -5,6 +5,8 @@ import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { participations, reportPhotos, reports, searchers, users } from '../../db/schema';
 import { notFound } from '../../errors';
+import { readPhoto, reportPhotoKey } from '../../storage';
+import type { ServiceDeps } from '../serviceDeps';
 
 const reportColumns = {
   id: reports.id,
@@ -116,7 +118,7 @@ export async function isReportVisible(
  * polygon (decision 80). Anyone else gets 404, as the photo upload does.
  */
 export async function getReportPhoto(
-  db: Db,
+  { db, photos }: Pick<ServiceDeps, 'db' | 'photos'>,
   { missionId, reportId, actor }: { missionId: string; reportId: string; actor: Actor },
 ): Promise<{ contentType: string; data: Buffer; updatedAt: Date }> {
   const visible = await visibilityFilter(db, missionId, actor);
@@ -129,8 +131,13 @@ export async function getReportPhoto(
     .from(reports)
     .leftJoin(reportPhotos, eq(reportPhotos.reportId, reports.id))
     .where(and(eq(reports.id, reportId), eq(reports.missionId, missionId), visible));
-  if (!row?.contentType || !row.data || !row.updatedAt) throw notFound('Photo');
-  return { contentType: row.contentType, data: row.data, updatedAt: row.updatedAt };
+  if (!row?.contentType || !row.updatedAt) throw notFound('Photo');
+  const photo = await readPhoto(photos, reportPhotoKey(reportId, row.updatedAt), {
+    contentType: row.contentType,
+    data: row.data,
+  });
+  if (!photo) throw notFound('Photo');
+  return { ...photo, updatedAt: row.updatedAt };
 }
 
 /**
