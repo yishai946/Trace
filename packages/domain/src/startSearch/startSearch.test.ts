@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REQUIRED_PERMISSIONS, missingPermissions, startSearchBlockers } from '.';
+import { REQUIRED_PERMISSIONS, missingPermissions, startSearchBlockers, startSearchRefusal } from '.';
 
 const allGranted = { location: true, backgroundLocation: true, push: true };
 const allSaved = { missionInfo: true, map: true };
@@ -47,5 +47,30 @@ describe('startSearchBlockers', () => {
       missingParts: ['missionInfo', 'map'],
       missingPermissions: ['location', 'backgroundLocation', 'push'],
     });
+  });
+});
+
+describe('startSearchRefusal (UC-F06)', () => {
+  const ok = { missionStatus: 'active', participationStatus: 'assigned', taskStatus: 'ready' } as const;
+
+  it('allows an assigned searcher at Ready in an active mission', () => {
+    expect(startSearchRefusal(ok)).toBeNull();
+  });
+
+  it('refuses in a paused or an ended mission', () => {
+    expect(startSearchRefusal({ ...ok, missionStatus: 'paused' })).toBe('mission_not_active');
+    expect(startSearchRefusal({ ...ok, missionStatus: 'ended_located' })).toBe('mission_ended');
+    expect(startSearchRefusal({ ...ok, missionStatus: 'ended_stopped' })).toBe('mission_ended');
+  });
+
+  it('refuses a searcher whose activity ended, or who has no assignment', () => {
+    expect(startSearchRefusal({ ...ok, participationStatus: 'ended', taskStatus: null })).toBe('participation_ended');
+    expect(startSearchRefusal({ ...ok, participationStatus: 'available', taskStatus: null })).toBe('not_assigned');
+  });
+
+  it('refuses a task that is not at Ready (resuming is UC-F07)', () => {
+    expect(startSearchRefusal({ ...ok, taskStatus: 'searching' })).toBe('task_not_ready');
+    expect(startSearchRefusal({ ...ok, taskStatus: 'paused' })).toBe('task_not_ready');
+    expect(startSearchRefusal({ ...ok, taskStatus: 'finished' })).toBe('task_not_ready');
   });
 });
