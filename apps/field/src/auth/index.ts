@@ -57,14 +57,15 @@ export function useSaveName() {
   });
 }
 
-export type StartRoute = typeof routes.login | typeof routes.join | typeof routes.name;
+export type StartRoute = typeof routes.login | typeof routes.join | typeof routes.map | typeof routes.name;
 
 /**
- * Where the app opens (UC-F01): sign-in, the name on first sign-in, or the app for a returning searcher. Null while
- * that is not known yet. A saved session survives a server that cannot be reached; only a refusal ends it.
+ * Where the app opens (UC-F01): sign-in, the name on first sign-in, the mission the searcher was in (UC-F16) or the
+ * join screen for a returning searcher with none. Null while that is not known yet. A saved session survives a
+ * server that cannot be reached; only a refusal ends it.
  */
 export function useStartRoute(): StartRoute | null {
-  const { token, restored, signOut } = useSession();
+  const { token, restored, signOut, missionId } = useSession();
   const profile = useSearcherProfile();
   const status = profile.error instanceof ApiRequestError ? profile.error.status : null;
   const unauthenticated = !!token && status === 401;
@@ -75,8 +76,10 @@ export function useStartRoute(): StartRoute | null {
 
   if (!restored) return null;
   if (!token || unauthenticated) return routes.login;
-  if (profile.isSuccess) return routes.join;
-  if (profile.isError) return status === 404 ? routes.name : routes.join;
+  // A searcher who was in a mission goes back to it, also without a connection (UC-F16, decision 68).
+  const home = missionId ? routes.map : routes.join;
+  if (profile.isSuccess) return home;
+  if (profile.isError) return status === 404 ? routes.name : home;
   return null;
 }
 

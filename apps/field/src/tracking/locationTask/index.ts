@@ -10,8 +10,8 @@ export const LOCATION_TASK = 'trace-location';
 /**
  * Saves a batch of fixes in the outbox (UC-S01), each marked `search` or `safety` by the searcher's task now; sending
  * is a separate step, so a fix is kept on the device whatever the network does. Without a mission or a session there
- * is nowhere to send: after a force-close the store is empty, and the tracker stops with the app
- * (`killServiceOnDestroy`). shortcut: restoring the mission after a restart is #40.
+ * is nowhere to send: after a force-close the tracker stops with the app (`killServiceOnDestroy`), and the next launch
+ * restores the mission from the device and starts it again (UC-F16). The time in between gets no points.
  */
 export async function recordFixes(fixes: Fix[]): Promise<void> {
   const { missionId, participation, token } = useSession.getState();
