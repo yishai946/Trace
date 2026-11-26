@@ -10,6 +10,10 @@ export const ERROR_CODES = [
   'MISSION_FULL',
   'PARTICIPATION_ENDED',
   'POLYGON_NOT_FOUND',
+  /** Start Search needs an assignment (UC-F06). */
+  'NOT_ASSIGNED',
+  /** Start Search needs a task at Ready: it is already searching, paused or finished (UC-F06). */
+  'TASK_NOT_READY',
   'INVALID_GEOMETRY',
   'POLYGON_HAS_ACTIVE_SEARCHERS',
   'SEARCHERS_OUTSIDE_POLYGON',

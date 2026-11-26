@@ -18,6 +18,7 @@ import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf, searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { getOwnParticipation, listParticipants, previewJoin } from './participants.read';
+import { startSearch } from './participants.search';
 import { assignParticipant, endParticipation, joinMission, setBattery, setGpsStatus } from './participants.service';
 
 export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
@@ -100,6 +101,25 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
       await setBattery(deps, { missionId, searcherId, ...request.body });
       return reply.status(204).send(null);
     },
+  );
+
+  app.post(
+    '/missions/:missionId/participation/search/start',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: 'Start the search: the assigned task goes from Ready to Searching (UC-F06)',
+        description:
+          'Searchers in the mission only. The commander sees the change at once. Sending it again while searching ' +
+          'changes nothing. 409 NOT_ASSIGNED without a polygon, TASK_NOT_READY when the task is paused or ' +
+          'finished, MISSION_NOT_ACTIVE while the mission is paused, MISSION_ENDED, PARTICIPATION_ENDED. The ' +
+          'phone checks the offline package and the permissions itself (decisions 73, 85).',
+        params: MissionParams,
+        response: { 200: OwnParticipation, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: [searchersOnly, missionAccess(db, 'member')],
+    },
+    (request) => startSearch(deps, { missionId: request.params.missionId, searcherId: searcherOf(request).searcherId }),
   );
 
   app.put(

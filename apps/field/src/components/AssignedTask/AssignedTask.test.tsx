@@ -108,6 +108,27 @@ describe('AssignedTask', () => {
     expect(onStartSearch).toHaveBeenCalled();
   });
 
+  it('shows why the start failed and keeps the button open to try again', async () => {
+    setSaved(['mission', 'photo', 'polygons', 'map']);
+    renderTask({ onStartSearch: () => {}, startError: 'אין חיבור לשרת. החיפוש לא התחיל, נסו שוב.' });
+    expect(await screen.findByRole('alert')).toHaveTextContent('אין חיבור לשרת. החיפוש לא התחיל, נסו שוב.');
+    expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeEnabled();
+  });
+
+  it('closes the button while the start is on its way', async () => {
+    setSaved(['mission', 'photo', 'polygons', 'map']);
+    renderTask({ onStartSearch: () => {}, starting: true });
+    expect(await screen.findByText(/מעקב המיקום והמסלול מתחילים/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeDisabled();
+  });
+
+  it('replaces Start Search with the searching state once the search started', () => {
+    renderTask({ participation: { ...participation, taskStatus: 'searching' } });
+    expect(screen.getByText('בחיפוש, ואדי צפוני')).toBeInTheDocument();
+    expect(screen.getByText('המסלול שלך נרשם והמנהל רואה אותך על המפה')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'התחל חיפוש' })).not.toBeInTheDocument();
+  });
+
   it('blocks Start Search and names the missing permissions and how to grant them', async () => {
     device.read.mockResolvedValue(granted({ backgroundLocation: 'ask', push: 'ask' }));
     setSaved(['mission', 'photo', 'polygons', 'map']);
