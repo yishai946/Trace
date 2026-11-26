@@ -1,5 +1,6 @@
 import type { MissionPolygon, Participant } from '@trace/schemas';
 import { ListState } from '../../components/ListState';
+import type { OutsideSearcher } from '../outsideSearchers';
 import { groupSearchers } from './groupSearchers';
 import { SearcherUnit } from './SearcherUnit';
 import styles from './SearchersByPolygon.module.css';
@@ -14,6 +15,8 @@ interface SearchersByPolygonProps {
   activeSosParticipantIds: string[];
   /** Opens a searcher's panel over the map (wireframe Cd09). */
   onOpen: (participantId: string) => void;
+  /** Searchers outside their polygon now (UC-S04). */
+  outside?: OutsideSearcher[];
 }
 
 /**
@@ -27,6 +30,7 @@ export function SearchersByPolygon({
   onRetry,
   activeSosParticipantIds,
   onOpen,
+  outside = [],
 }: SearchersByPolygonProps) {
   const groups = participants && groupSearchers(participants, polygons);
   const total = groups?.reduce((sum, g) => sum + g.searchers.length, 0);
@@ -56,7 +60,12 @@ export function SearchersByPolygon({
                 <ul className={styles.list}>
                   {searchers.map((p) => (
                     <li key={p.id}>
-                      <SearcherUnit searcher={p} sos={activeSosParticipantIds.includes(p.id)} onOpen={onOpen} />
+                      <SearcherUnit
+                        searcher={p}
+                        sos={activeSosParticipantIds.includes(p.id)}
+                        outside={outside.find((o) => o.participantId === p.id)}
+                        onOpen={onOpen}
+                      />
                     </li>
                   ))}
                 </ul>

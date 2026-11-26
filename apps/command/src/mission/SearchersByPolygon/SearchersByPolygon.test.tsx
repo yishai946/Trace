@@ -65,6 +65,23 @@ describe('SearchersByPolygon', () => {
     expect(screen.getByText(/SOS/)).toBeTruthy();
   });
 
+  it('says how far outside the polygon a searcher is (UC-S04, wireframe Cd04)', () => {
+    renderPanel({
+      outside: [
+        {
+          participantId: assigned.id,
+          callsign: assigned.callsign,
+          name: assigned.name,
+          polygonName: polygonA.name,
+          meters: 80,
+          since: '2026-10-03T13:55:00.000Z',
+        },
+      ],
+    });
+    expect(screen.getByText(/מחוץ לגבול, 80 מ׳/)).toBeTruthy();
+    expect(screen.queryByText(/בחיפוש/)).toBeNull();
+  });
+
   it('shows the battery and the last update', () => {
     renderPanel({
       participants: [

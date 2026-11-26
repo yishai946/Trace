@@ -1,15 +1,15 @@
-import { isCriticalReport, isMissionEnded } from '@trace/domain';
 import type { Mission, MissionPolygon, Participant, Report, Sos } from '@trace/schemas';
 import { useState, type ReactNode } from 'react';
 import { Overlays } from './Overlays';
 import { PhoneBar } from './PhoneBar';
+import { phoneAlerts } from './phoneAlerts';
 import styles from './PhoneMissionScreen.module.css';
 import type { Connection } from '../../components/ConnectionStatus';
 import { MissionSheet, type SheetTab } from '../MissionSheet';
+import type { OutsideSearcher } from '../outsideSearchers';
 import { SosStrip } from './SosStrip';
 import { MissionTabBar, type MissionTab } from '../MissionTabBar';
 import { PHONE_SCREENS, type PhoneScreen } from '../phoneScreen';
-import { statusCounts } from '../reportView';
 
 interface PhoneMissionScreenProps {
   mission: Mission;
@@ -44,6 +44,9 @@ interface PhoneMissionScreenProps {
   reports: Report[] | undefined;
   reportsFailed: boolean;
   onOpenReport: (id: string) => void;
+  /** Searchers outside their polygon now (UC-S04), outside the longest first. */
+  outside?: OutsideSearcher[];
+  onOpenSearcher?: (participantId: string) => void;
 }
 
 /**
@@ -78,6 +81,8 @@ export function PhoneMissionScreen({
   reports,
   reportsFailed,
   onOpenReport,
+  outside = [],
+  onOpenSearcher,
 }: PhoneMissionScreenProps) {
   const [tab, setTab] = useState<SheetTab>('alerts');
   const [expanded, setExpanded] = useState(true);
@@ -95,13 +100,7 @@ export function PhoneMissionScreen({
   };
   // The sheet's own reports tab lists them in the sheet, so it keeps "לוח" marked.
   const current: MissionTab = screen !== 'map' ? screen : tab === 'searchers' ? 'searchers' : 'board';
-  const newReports = reports ? statusCounts(reports).new : 0;
-  // An ended mission is read-only: the alert would lead to a report that cannot be handled.
-  const critical = !isMissionEnded(mission.status) && (reports ?? []).some(isCriticalReport);
-  // Safety continues until Finish Activity, so an active SOS shows in an ended mission too.
-  const activeSos = (sos ?? []).filter((s) => s.status === 'active').length;
-  const alerts = [activeSos > 0, sosFailed, critical].filter(Boolean).length;
-  const screens = { reports: reportsScreen, messages: messagesScreen, sos: sosScreen };
+  const { critical, activeSos, newReports, count: alerts } = phoneAlerts({ mission, reports, sos, sosFailed, outside });
 
   return (
     <div className={styles.phone}>
@@ -124,6 +123,7 @@ export function PhoneMissionScreen({
             reports={reports}
             reportsFailed={reportsFailed}
             onOpenReport={onOpenReport}
+            outside={outside}
           />
 
           <Overlays
@@ -139,6 +139,8 @@ export function PhoneMissionScreen({
             search={searchOpen ? renderSearch(() => setSearchOpen(false)) : null}
             onOpenReport={onOpenReport}
             onOpenSos={onOpenSos}
+            outside={outside}
+            onOpenSearcher={(id) => onOpenSearcher?.(id)}
           />
 
           <PhoneBar
@@ -168,7 +170,7 @@ export function PhoneMissionScreen({
             onRetry={onRetrySos}
             onOpen={() => onScreenChange('sos')}
           />
-          {screens[screen]}
+          {{ reports: reportsScreen, messages: messagesScreen, sos: sosScreen }[screen]}
         </>
       )}
 

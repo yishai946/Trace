@@ -93,9 +93,14 @@
   --map-overlay-top: calc(var(--pending-touch-target) + var(--space-4) * 3 + 2px);
 }
 
-/* The SOS alert and the critical report alert stacked. */
+/* Two alerts stacked: the SOS alert, the critical report alert or the out-of-polygon warning. */
 .stage[data-alerts='2'] {
   --map-overlay-top: calc((var(--pending-touch-target) + var(--space-4) * 3 + 2px) * 2);
+}
+
+/* All three stacked. */
+.stage[data-alerts='3'] {
+  --map-overlay-top: calc((var(--pending-touch-target) + var(--space-4) * 3 + 2px) * 3);
 }
 
 /* The SOS alert above the Reports and Messages screens: in the flow, so the screen takes the rest. */

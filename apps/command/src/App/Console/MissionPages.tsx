@@ -5,6 +5,7 @@ import { JoinCodePanel } from '../../mission/JoinCodePanel';
 import { MissionLayout } from '../../mission/MissionLayout';
 import { MessagesPage } from '../../pages/MessagesPage';
 import { ReportsPage } from '../../pages/ReportsPage';
+import { outsideSearchers } from '../../mission/outsideSearchers';
 import { SearchersByPolygon } from '../../mission/SearchersByPolygon';
 import { SearchersPage } from '../../pages/SearchersPage';
 import { SosPage } from '../../pages/SosPage';
@@ -66,6 +67,7 @@ export function MissionPages({
           onRetry={() => void data.participants.refetch()}
           activeSosParticipantIds={activeSosParticipantIds(data.sos.data)}
           onOpen={nav.openSearcher}
+          outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
         />
       }
       joinPanel={

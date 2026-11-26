@@ -3,6 +3,7 @@ import { Button, Tab, TabList, TabPanel, Tabs } from 'react-aria-components';
 import styles from './MissionSheet.module.css';
 import { CallsignChip } from '../../components/CallsignChip';
 import { choose } from '../../choose';
+import type { OutsideSearcher } from '../outsideSearchers';
 import { ReportRow } from '../ReportRow';
 import { statusCounts } from '../reportView';
 
@@ -23,6 +24,8 @@ export interface MissionSheetProps {
   reportsFailed: boolean;
   /** A tap on a report opens the Reports screen on it. */
   onOpenReport: (id: string) => void;
+  /** Searchers outside their polygon now (UC-S04): their row says how far. */
+  outside?: OutsideSearcher[];
 }
 
 /** Alerts have no phone screen yet (UC-C14, UC-C15): their tab shows no count and says so. */
@@ -42,6 +45,7 @@ export function MissionSheet({
   reports,
   reportsFailed,
   onOpenReport,
+  outside = [],
 }: MissionSheetProps) {
   const searchers = participants?.filter((p) => p.status !== 'ended').sort((a, b) => a.callsign - b.callsign);
 
@@ -54,11 +58,13 @@ export function MissionSheet({
         <ul className={styles.list}>
           {searchers.map((p) => {
             const polygon = p.status === 'assigned' ? polygons.find((x) => x.id === p.polygonId) : undefined;
+            const out = outside.find((o) => o.participantId === p.id);
             return (
               <li key={p.id} className={styles.row}>
                 <CallsignChip callsign={p.callsign} state={p.status === 'available' ? 'waiting' : 'normal'} />
                 <span className={styles.name}>{p.name}</span>
                 <span className={styles.status}>
+                  {out && <span className={styles.warn}>{`מחוץ לגבול, ${out.meters} מ׳`}</span>}
                   <span>{p.status === 'available' ? 'זמין' : 'משובץ'}</span>
                   {polygon && <span>{polygon.name}</span>}
                 </span>
