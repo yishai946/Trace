@@ -32,6 +32,11 @@ const EnvInput = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
+  /**
+   * Meters of GPS margin near a polygon border before a searcher counts as outside it (UC-S04, decision 14). TBD in
+   * the spec, so there is no default: unset means the exact boundary.
+   */
+  OUT_OF_POLYGON_TOLERANCE_METERS: optional(z.coerce.number().min(0)),
   /** Error tracking is off without a DSN. */
   SENTRY_DSN: optional(z.url()),
   /** Defaults to NODE_ENV. */

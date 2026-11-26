@@ -139,4 +139,17 @@ describe('TimelinePage', () => {
     expect(within(sos).getByText('07')).toBeTruthy();
     expect((rows()[1] as HTMLElement).getAttribute('data-danger')).toBeNull();
   });
+
+  it('marks a searcher leaving the polygon as a warning, and its return as nothing special', () => {
+    render(
+      <TimelinePage
+        {...props({ events: [eventSamples['searcher.left_polygon'], eventSamples['searcher.returned_to_polygon']] })}
+      />,
+    );
+
+    const [returned, left] = [rows()[0] as HTMLElement, rows()[1] as HTMLElement];
+    expect(within(left).getByText('גבול').getAttribute('data-warning')).toBe('true');
+    expect(left.getAttribute('data-danger')).toBeNull();
+    expect(within(returned).getByText('גבול').getAttribute('data-warning')).toBeNull();
+  });
 });

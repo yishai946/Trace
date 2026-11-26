@@ -1,0 +1,2 @@
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'searcher.left_polygon' BEFORE 'battery.low';--> statement-breakpoint
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'searcher.returned_to_polygon' BEFORE 'battery.low';

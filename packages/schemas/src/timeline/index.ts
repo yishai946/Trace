@@ -95,6 +95,21 @@ export const TimelineEvent = z
     /** Subject: the participant. Actor: the system. A searcher recorded as Offline is online again (UC-C10). */
     z.object({ ...base, type: z.literal('contact.restored'), details: empty }),
     /**
+     * Subject: the participant. Actor: the system. A searcher who is Searching moved outside the polygon they are
+     * assigned to (UC-S04, decision 14): once, until they are back. `meters`: how far outside, rounded.
+     */
+    z.object({
+      ...base,
+      type: z.literal('searcher.left_polygon'),
+      details: z.object({ polygonId: z.uuid(), polygonName: z.string(), meters: z.number().int().min(0) }),
+    }),
+    /** Subject: the participant. Actor: the system. The searcher recorded as outside is inside the polygon again. */
+    z.object({
+      ...base,
+      type: z.literal('searcher.returned_to_polygon'),
+      details: z.object({ polygonId: z.uuid(), polygonName: z.string() }),
+    }),
+    /**
      * Subject: the participant. Actor: the system. The searcher's phone fell below the low-battery threshold (UC-S04,
      * decision 45); `level` is the reading that crossed it, in percent.
      */

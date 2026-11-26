@@ -76,6 +76,18 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('participant', 'אלון שגיא', 7),
     details: {},
   },
+  'searcher.left_polygon': {
+    type: 'searcher.left_polygon',
+    actor: system,
+    subject: subject('participant', 'אלון שגיא', 7),
+    details: { polygonId: OTHER_ID, polygonName: 'ואדי', meters: 80 },
+  },
+  'searcher.returned_to_polygon': {
+    type: 'searcher.returned_to_polygon',
+    actor: system,
+    subject: subject('participant', 'אלון שגיא', 7),
+    details: { polygonId: OTHER_ID, polygonName: 'ואדי' },
+  },
   'battery.low': {
     type: 'battery.low',
     actor: system,
@@ -101,6 +113,14 @@ const event = (sample: unknown) => ({ id: ID, missionId: OTHER_ID, occurredAt: A
 describe('TimelineEvent', () => {
   it.each(TIMELINE_EVENT_TYPES)('parses a %s event', (type) => {
     expect(TimelineEvent.safeParse(event(samples[type])).success).toBe(true);
+  });
+
+  it('rejects a searcher.left_polygon event without the polygon or with a negative distance', () => {
+    const sample = samples['searcher.left_polygon'] as { details: object };
+    expect(TimelineEvent.safeParse(event({ ...sample, details: { meters: 80 } })).success).toBe(false);
+    expect(TimelineEvent.safeParse(event({ ...sample, details: { ...sample.details, meters: -1 } })).success).toBe(
+      false,
+    );
   });
 
   it('rejects an lkp.changed event without observedAt', () => {

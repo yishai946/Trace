@@ -14,6 +14,7 @@ import { asGeoJson } from '../../db/geometry';
 import { participations, trackPoints } from '../../db/schema';
 import { notFound, participationEnded } from '../../errors';
 import { findParticipant } from '../participants/participants.read';
+import { announcePresence, recordPolygonPresence, type PresenceAlert } from './tracking.outOfPolygon';
 import { publishCoverage, refreshCoverageOfPoints, type CoverageUpdate } from '../polygons/polygons.coverage';
 import type { ServiceDeps } from '../serviceDeps';
 
@@ -34,6 +35,40 @@ interface RecordTrackResult extends TrackPointsResult {
   coverage: CoverageUpdate;
   /** The participation's last position after this batch, when the batch moved it forward. */
   moved: { position: LngLat; positionAt: string } | null;
+  /** The polygon exit or return the newest position revealed (UC-S04). */
+  presence: PresenceAlert | null;
+}
+
+/** Tells the commander what the committed batch changed: the position, the new points, the Coverage and the alerts. */
+async function publishTrack(
+  deps: ServiceDeps,
+  { missionId, searcherId }: { missionId: string; searcherId: string },
+  result: RecordTrackResult,
+): Promise<void> {
+  const { db, realtime } = deps;
+  if (result.moved) {
+    realtime.publish({
+      type: 'participant.moved',
+      missionId,
+      participantId: result.participantId,
+      searcherId,
+      ...result.moved,
+    });
+  }
+  if (result.storedPoints.length > 0) {
+    realtime.publish({
+      type: 'participant.tracked',
+      missionId,
+      participantId: result.participantId,
+      points: result.storedPoints,
+    });
+  }
+  await publishCoverage({ db, realtime }, missionId, result.coverage);
+  if (result.presence) await announcePresence(deps, result.presence);
+  if (result.gpsBack) {
+    const participant = await findParticipant({ db, realtime }, missionId, result.participantId);
+    if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
+  }
 }
 
 /**
@@ -42,9 +77,10 @@ interface RecordTrackResult extends TrackPointsResult {
  * participation's last position, unless a newer one is already there or it is dated in the future. A searcher whose activity ended sends nothing.
  */
 export async function recordTrackPoints(
-  { db, realtime }: ServiceDeps,
+  deps: ServiceDeps,
   { missionId, searcherId, body }: { missionId: string; searcherId: string; body: z.output<typeof TrackPointsBody> },
 ): Promise<TrackPointsResult> {
+  const { db } = deps;
   const result: RecordTrackResult = await db.transaction(async (tx) => {
     const [participation] = await tx
       .select({ id: participations.id, status: participations.status })
@@ -102,6 +138,7 @@ export async function recordTrackPoints(
         moved: null,
         gpsBack: false,
         coverage,
+        presence: null,
       };
     }
     const newest = current.reduce((a, b) => (Date.parse(b.recordedAt) > Date.parse(a.recordedAt) ? b : a));
@@ -123,7 +160,16 @@ export async function recordTrackPoints(
       .where(and(eq(participations.id, participation.id), lt(participations.gpsUnavailableSince, newestAt)))
       .returning({ id: participations.id });
 
+    const presence = updated
+      ? await recordPolygonPresence(tx, {
+          participationId: participation.id,
+          position: newest.position,
+          at: newestAt,
+          toleranceMeters: deps.outOfPolygonToleranceMeters ?? 0,
+        })
+      : null;
     return {
+      presence,
       gpsBack: !!gpsBack,
       coverage,
       participantId: participation.id,
@@ -133,28 +179,7 @@ export async function recordTrackPoints(
       moved: updated ? { position: newest.position, positionAt: newestAt.toISOString() } : null,
     };
   });
-  if (result.moved) {
-    realtime.publish({
-      type: 'participant.moved',
-      missionId,
-      participantId: result.participantId,
-      searcherId,
-      ...result.moved,
-    });
-  }
-  if (result.storedPoints.length > 0) {
-    realtime.publish({
-      type: 'participant.tracked',
-      missionId,
-      participantId: result.participantId,
-      points: result.storedPoints,
-    });
-  }
-  await publishCoverage({ db, realtime }, missionId, result.coverage);
-  if (result.gpsBack) {
-    const participant = await findParticipant({ db, realtime }, missionId, result.participantId);
-    if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
-  }
+  await publishTrack(deps, { missionId, searcherId }, result);
   return { stored: result.stored, duplicates: result.duplicates };
 }
 

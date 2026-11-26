@@ -28,7 +28,7 @@ export function Console({ provider, user }: { provider: MapProvider; user: Sessi
   const missions = useMissions();
   const nav = useConsoleNav();
   const mission = missions.data?.find((m) => m.id === nav.openId);
-  const data = useMissionData(mission?.id, nav.view, nav.panel);
+  const data = useMissionData(mission?.id, nav.view);
   const live = useMissionLive(mission?.id);
   /** With a mission open, its map must also be live: actions on data that stopped updating are blocked too. */
   const operational = connected && (!mission || live === 'live');
