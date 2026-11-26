@@ -112,6 +112,13 @@ describe('end a mission: the missing person was located (UC-C16)', () => {
     expect((await current()).status).toBe('active');
   });
 
+  it('rejects a located time in the future and changes nothing', async () => {
+    const res = await end({ ...located, locatedAt: new Date(Date.now() + 60 * 60_000).toISOString() });
+    expect(res.statusCode).toBe(400);
+    expect(ApiError.parse(res.json()).error.code).toBe('VALIDATION_ERROR');
+    expect((await current()).status).toBe('active');
+  });
+
   it('ends the mission from Paused', async () => {
     await setStatus('paused');
     const res = await end();

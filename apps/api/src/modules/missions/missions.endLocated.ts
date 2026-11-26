@@ -4,7 +4,7 @@ import { and, eq, inArray, ne } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
 import { missions, participations } from '../../db/schema';
-import { missionEnded } from '../../errors';
+import { AppError, missionEnded } from '../../errors';
 import { lockMission } from '../lockMission';
 import { publishMessage, storeMessage } from '../messages/messages.service';
 import { findParticipant } from '../participants/participants.read';
@@ -14,6 +14,9 @@ import { getMission } from './missions.read';
 
 /** What the searchers read when the mission ends as located. */
 const LOCATED_MESSAGE = 'הנעדר אותר והמסע הסתיים. הפסיקו את החיפוש, וכשתסיימו לחזור מהשטח לחצו "סיימתי פעילות".';
+
+/** A phone clock may run a little ahead; a located time later than this from now is refused. */
+const CLOCK_SKEW_MS = 5 * 60_000;
 
 /** The open task statuses: the ones "the search ends" finishes. */
 const OPEN_TASKS = ['ready', 'searching', 'paused'] as const;
@@ -33,6 +36,9 @@ type EndInput = {
 export async function endMissionLocated(deps: ServiceDeps, input: EndInput): Promise<Mission> {
   const { db, realtime } = deps;
   const { missionId, commander, located } = input;
+  if (Date.parse(located.locatedAt) > Date.now() + CLOCK_SKEW_MS) {
+    throw new AppError(400, 'VALIDATION_ERROR', 'The located time cannot be in the future');
+  }
   const result = await db.transaction(async (tx) => {
     await lockMission(tx, missionId, {
       allowed: canEndMissionLocated,

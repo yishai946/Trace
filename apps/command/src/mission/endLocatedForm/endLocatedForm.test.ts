@@ -16,6 +16,13 @@ describe('validate', () => {
   });
 });
 
+describe('validate: time', () => {
+  it('refuses a time in the future', () => {
+    expect(validate(complete, new Date('2026-10-03T10:00'))).toEqual({ locatedAt: MESSAGES.future });
+    expect(validate(complete, new Date('2026-10-03T16:40'))).toEqual({});
+  });
+});
+
 describe('toBody', () => {
   it('sends the place as a point, the time as an instant and the trimmed note', () => {
     expect(toBody(complete)).toEqual({

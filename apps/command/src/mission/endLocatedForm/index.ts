@@ -15,6 +15,7 @@ export type EndLocatedErrors = Partial<Record<'position' | 'locatedAt', string>>
 export const MESSAGES = {
   position: 'בחרו את המקום שבו הנעדר אותר.',
   locatedAt: 'חסרים התאריך והשעה של האיתור.',
+  future: 'זמן האיתור לא יכול להיות בעתיד.',
 } as const;
 
 /** A form with the time of now, since the commander usually ends the mission just after the missing person is found. */
@@ -25,10 +26,11 @@ export const initialForm = (now = new Date()): EndLocatedForm => ({
 });
 
 /** The fields to fix before the mission can end. */
-export function validate(form: EndLocatedForm): EndLocatedErrors {
+export function validate(form: EndLocatedForm, now = new Date()): EndLocatedErrors {
   const errors: EndLocatedErrors = {};
   if (!form.position) errors.position = MESSAGES.position;
   if (!form.locatedAt) errors.locatedAt = MESSAGES.locatedAt;
+  else if (new Date(form.locatedAt).getTime() > now.getTime() + 5 * 60_000) errors.locatedAt = MESSAGES.future;
   return errors;
 }
 
