@@ -339,6 +339,15 @@ export const eventSamples: Record<TimelineEventType, TimelineEvent> = {
     subject: subjectOf('participant', 'אלון שגיא', searcher07.participantId, 7),
     details: { level: 19 },
   },
+  'gps.lost_escalated': {
+    id: '00000000-0000-4000-8000-000000000321',
+    missionId: mission.id,
+    occurredAt: '2026-10-03T13:55:00.000Z',
+    type: 'gps.lost_escalated',
+    actor: { kind: 'system' },
+    subject: subjectOf('participant', 'אלון שגיא', searcher07.participantId, 7),
+    details: { since: '2026-10-03T13:50:00.000Z' },
+  },
   'sos.activated': {
     id: '00000000-0000-4000-8000-00000000030d',
     missionId: mission.id,

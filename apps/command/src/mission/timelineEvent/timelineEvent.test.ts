@@ -80,6 +80,7 @@ describe('describeEvent', () => {
     expect(text(eventSamples['coverage.threshold_reached'])).toBe('ואדי צפוני הגיע ל-80% Coverage');
     expect(text(eventSamples['contact.lost'])).toBe('אבד קשר עם [7] אלון שגיא');
     expect(text(eventSamples['contact.restored'])).toBe('הקשר עם [7] אלון שגיא חזר');
+    expect(text(eventSamples['gps.lost_escalated'])).toBe('אין GPS אצל [7] אלון שגיא מ-16:50');
     expect(text(eventSamples['battery.low'])).toBe('הסוללה של [7] אלון שגיא נמוכה, 19%');
   });
 

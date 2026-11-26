@@ -118,6 +118,15 @@ export const TimelineEvent = z
       type: z.literal('battery.low'),
       details: z.object({ level: z.number().int().min(0).max(100) }),
     }),
+    /**
+     * Subject: the participant. Actor: the system. The searcher's phone has had no GPS for the configured time (UC-S04,
+     * decision 42): the escalation to the commander. `since`: when the GPS was lost.
+     */
+    z.object({
+      ...base,
+      type: z.literal('gps.lost_escalated'),
+      details: z.object({ since: z.iso.datetime({ offset: true }) }),
+    }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
     z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
     /** Subject: the SOS (label = polygon name or null). Actor: the commander, or the searcher who sent it. */

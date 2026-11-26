@@ -26,6 +26,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'searcher.returned_to_polygon': 'boundary',
   'contact.lost': 'contact',
   'contact.restored': 'contact',
+  'gps.lost_escalated': 'contact',
   'battery.low': 'battery',
   'mission.created': 'mission',
   'mission.ended': 'mission',

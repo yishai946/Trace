@@ -94,6 +94,12 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('participant', 'אלון שגיא', 7),
     details: { level: 19 },
   },
+  'gps.lost_escalated': {
+    type: 'gps.lost_escalated',
+    actor: system,
+    subject: subject('participant', 'אלון שגיא', 7),
+    details: { since: AT },
+  },
   'sos.activated': {
     type: 'sos.activated',
     actor: searcher,

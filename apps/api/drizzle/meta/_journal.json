@@ -162,6 +162,13 @@
       "when": 1795675988064,
       "tag": "0022_out_of_polygon_events",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795677370568,
+      "tag": "0023_gps_lost_escalation_event",
+      "breakpoints": true
     }
   ]
 }

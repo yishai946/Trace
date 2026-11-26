@@ -37,6 +37,11 @@ const EnvInput = z.object({
    * the spec, so there is no default: unset means the exact boundary.
    */
   OUT_OF_POLYGON_TOLERANCE_METERS: optional(z.coerce.number().min(0)),
+  /**
+   * Seconds without GPS before the loss is escalated to the commander (UC-S04, decision 42). TBD in the spec, so there
+   * is no default: unset means no escalation.
+   */
+  GPS_LOST_ESCALATION_SECONDS: optional(z.coerce.number().int().positive()),
   /** Error tracking is off without a DSN. */
   SENTRY_DSN: optional(z.url()),
   /** Defaults to NODE_ENV. */

@@ -5,6 +5,7 @@ import type { InjectOptions } from 'fastify';
 import { buildApp } from '../app';
 import { createCommander } from '../auth';
 import { createDb, type Db } from '../db';
+import type { GpsLossJob } from '../modules/gpsLoss';
 import type { PushMessage, PushSender } from '../modules/notifications/pushSender';
 import { loadEnv } from '../env';
 import { createMemoryStorage } from '../storage/memory';
@@ -51,12 +52,14 @@ export async function createTestApp(envOverrides: Record<string, string> = {}) {
   const sentOtps: { phoneNumber: string; code: string }[] = [];
   const pushSender = createFakePushSender();
   const photos = createMemoryStorage();
-  const { app, auth, realtime, push } = await buildApp({
+  const gpsLossJobs: Array<{ job: GpsLossJob; afterSeconds: number }> = [];
+  const { app, auth, realtime, push, deps } = await buildApp({
     env: loadEnv({ NODE_ENV: 'test', LOG_LEVEL: 'silent', DATABASE_URL: TEST_DATABASE_URL, ...envOverrides }),
     db: database.db,
     realtimeRevalidateMs: 100,
     pushSender: pushSender.sender,
     photoStorage: photos,
+    gpsLossScheduler: { schedule: async (job, afterSeconds) => void gpsLossJobs.push({ job, afterSeconds }) },
     sendOtp: async ({ phoneNumber, code }) => {
       sentCodes.set(phoneNumber, code);
       sentOtps.push({ phoneNumber, code });
@@ -67,6 +70,10 @@ export async function createTestApp(envOverrides: Record<string, string> = {}) {
     auth,
     realtime,
     push,
+    /** The services' dependencies, to call a service directly. */
+    deps,
+    /** The GPS-loss checks the app queued, instead of pg-boss. */
+    gpsLossJobs,
     pushSender,
     /** The photo storage the app writes to: memory, so a test can look at what was saved. */
     photos,

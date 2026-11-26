@@ -6,6 +6,7 @@ import { AppError, notFound, missionEnded, participationEnded } from '../../erro
 import { getMission } from '../missions/missions.read';
 import { listPolygons } from '../polygons/polygons.service';
 import { recordEvent } from '../timeline/timeline.service';
+import { scheduleGpsLossEscalation } from '../gpsLoss';
 import { lowBatteryPush } from './participants.lowBattery';
 import type { ServiceDeps } from '../serviceDeps';
 import { CLOCK_SKEW_MS } from '../tracking/tracking.service';
@@ -188,19 +189,19 @@ export async function endParticipation(
  * the commander sees for how long; getting it back clears it. The mission hears of it only when the state changed.
  */
 export async function setGpsStatus(
-  { db, realtime }: ServiceDeps,
+  deps: ServiceDeps,
   input: { missionId: string; searcherId: string; available: boolean },
 ): Promise<void> {
+  const { db, realtime } = deps;
   const [participation] = await db
     .select({ id: participations.id, since: participations.gpsUnavailableSince })
     .from(participations)
     .where(and(eq(participations.missionId, input.missionId), eq(participations.searcherId, input.searcherId)));
   if (!participation) throw notFound('Mission');
   if (input.available === (participation.since === null)) return;
-  await db
-    .update(participations)
-    .set({ gpsUnavailableSince: input.available ? null : new Date() })
-    .where(eq(participations.id, participation.id));
+  const since = input.available ? null : new Date();
+  await db.update(participations).set({ gpsUnavailableSince: since }).where(eq(participations.id, participation.id));
+  if (since) await scheduleGpsLossEscalation(deps, { participationId: participation.id, since: since.toISOString() });
   const participant = await findParticipant({ db, realtime }, input.missionId, participation.id);
   if (participant) realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
 }

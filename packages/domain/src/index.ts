@@ -4,6 +4,7 @@ export * from './coverageAlerts';
 export * from './outOfPolygon';
 export * from './joinCode';
 export * from './localTime';
+export * from './gpsLoss';
 export * from './lowBattery';
 export * from './message';
 export * from './missionDetails';

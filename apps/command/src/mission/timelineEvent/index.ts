@@ -94,6 +94,12 @@ function batterySegments(event: EventOf<'battery.low'>, label: string): Segment[
   return ['הסוללה של ', ...who, ` נמוכה, ${event.details.level}%`];
 }
 
+function gpsLostSegments(event: EventOf<'gps.lost_escalated'>, label: string): Segment[] {
+  const { callsign } = event.subject;
+  const who = callsign === null ? [label] : [{ callsign }, ` ${label}`];
+  return ['אין GPS אצל ', ...who, ` מ-${formatEventTime(event.details.since, false)}`];
+}
+
 const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] => [
   ...bySearcher(event, 'הפעיל SOS'),
   ...(event.subject.label === null ? [] : [`, ${label}`]),
@@ -160,12 +166,20 @@ const describeRest = (
     | EventOf<'searcher.returned_to_polygon'>
     | EventOf<'polygon.created'>
     | EventOf<'polygon.boundary_changed'>
-    | EventOf<'polygon.deleted'>,
+    | EventOf<'polygon.deleted'>
+    | EventOf<'gps.lost_escalated'>,
   label: string,
-): EventView =>
-  event.type === 'searcher.left_polygon' || event.type === 'searcher.returned_to_polygon'
-    ? describePresence(event)
-    : describePolygon(event, label);
+): EventView => {
+  switch (event.type) {
+    case 'searcher.left_polygon':
+    case 'searcher.returned_to_polygon':
+      return describePresence(event);
+    case 'gps.lost_escalated':
+      return segmented('GPS', gpsLostSegments(event, label));
+    default:
+      return describePolygon(event, label);
+  }
+};
 
 const PAUSE_TEXT = { 'mission.paused': 'המסע הושהה', 'mission.resumed': 'המסע חודש' } as const;
 

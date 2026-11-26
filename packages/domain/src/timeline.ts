@@ -20,6 +20,7 @@ export const TIMELINE_EVENT_TYPES = [
   'searcher.left_polygon',
   'searcher.returned_to_polygon',
   'battery.low',
+  'gps.lost_escalated',
   'sos.activated',
   'sos.closed',
   'mission.details_changed',

@@ -22,6 +22,7 @@ import { notificationRoutes } from '../modules/notifications';
 import { createPushNotifier } from '../modules/notifications/notifications.service';
 import type { PushSender } from '../modules/notifications/pushSender';
 import { missionRoutes } from '../modules/missions';
+import type { GpsLossScheduler } from '../modules/gpsLoss';
 import { participantRoutes } from '../modules/participants';
 import { polygonRoutes } from '../modules/polygons';
 import { messageRoutes } from '../modules/messages';
@@ -52,6 +53,8 @@ interface AppOptions {
   connectivityCheckMs?: number;
   /** Where photos are kept. Defaults to the Railway Bucket from the environment, or memory when it is not set. */
   photoStorage?: PhotoStorage;
+  /** Queues the delayed GPS-loss escalation (UC-S04). Without one, or without the configured time, nothing escalates. */
+  gpsLossScheduler?: GpsLossScheduler;
 }
 
 /** Builds the app without listening, so tests can call it with `app.inject`. */
@@ -64,6 +67,7 @@ export async function buildApp({
   logStream,
   connectivityCheckMs,
   photoStorage,
+  gpsLossScheduler,
 }: AppOptions) {
   const app = Fastify({
     ...serverLogOptions(env, logStream),
@@ -105,6 +109,10 @@ export async function buildApp({
     photos: photoStorage ?? createPhotoStorage(env),
     log: app.log,
     outOfPolygonToleranceMeters: env.OUT_OF_POLYGON_TOLERANCE_METERS,
+    gpsLoss:
+      env.GPS_LOST_ESCALATION_SECONDS && gpsLossScheduler
+        ? { afterSeconds: env.GPS_LOST_ESCALATION_SECONDS, scheduler: gpsLossScheduler }
+        : undefined,
   };
   if (connectivityCheckMs) {
     const stop = startConnectivityMonitor(deps, connectivityCheckMs);
@@ -147,5 +155,5 @@ export async function buildApp({
     { prefix: '/api' },
   );
 
-  return { app, auth, realtime, push };
+  return { app, auth, realtime, push, deps };
 }
