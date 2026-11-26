@@ -6,9 +6,7 @@ import { useTheme } from '../../theme';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { CallsignChip } from '../CallsignChip';
-import { SearchFinishControls } from './SearchFinishControls';
-import { SearchPauseControls } from './SearchPauseControls';
-import { StartSearchControls } from './StartSearchControls';
+import { TaskActions } from './TaskActions';
 import { taskState } from './taskState';
 
 export interface AssignedTaskProps {
@@ -65,9 +63,6 @@ export function AssignedTask({
   const noticeName = polygons.find((p) => p.id === notice?.polygonId)?.name;
   const to = (polygonName: string | undefined) => (polygonName ? `לפוליגון ${polygonName}` : 'לפוליגון');
 
-  const paused = participation.taskStatus === 'paused';
-  const finished = participation.taskStatus === 'finished';
-  const searching = participation.taskStatus === 'searching' || paused;
   const state = taskState(participation.taskStatus, name);
   return (
     <View style={styles.task} accessibilityLabel="המשימה שלי">
@@ -97,25 +92,12 @@ export function AssignedTask({
         </View>
         <Badge label={state.badge} tone={state.tone} />
       </View>
-      {searching ? (
-        <>
-          <SearchPauseControls
-            paused={paused}
-            onPause={onPause}
-            onResume={onResume}
-            pending={pausing}
-            error={pauseError}
-          />
-          <SearchFinishControls onFinish={onFinish} pending={finishing} error={finishError} />
-        </>
-      ) : finished ? (
-        // The commander decides what comes next (UC-F08, decision 100): nothing to press here.
-        <Text accessibilityLiveRegion="polite" style={[typography.caption, { color: color.inkMuted }]}>
-          סיימת את החיפוש. אתה עדיין משובץ לפוליגון, והמנהל יחליט מה הלאה. מעקב הבטיחות ממשיך.
-        </Text>
-      ) : (
-        <StartSearchControls onStartSearch={onStartSearch} starting={starting} startError={startError} />
-      )}
+      <TaskActions
+        status={participation.taskStatus}
+        start={{ onStartSearch, starting, startError }}
+        pause={{ onPause, onResume, pending: pausing, error: pauseError }}
+        finish={{ onFinish, pending: finishing, error: finishError }}
+      />
     </View>
   );
 }
