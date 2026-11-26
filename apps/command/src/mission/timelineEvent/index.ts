@@ -1,7 +1,7 @@
 import { detailChangesText, type TimelineEventType } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 
-export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'contact' | 'mission' | 'pause';
+export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'contact' | 'battery' | 'mission' | 'pause';
 
 /** Filter chips in wireframe order (Cd14). A chip shows only when it has events. */
 export const TIMELINE_CATEGORIES: { id: TimelineCategory; label: string }[] = [
@@ -10,6 +10,7 @@ export const TIMELINE_CATEGORIES: { id: TimelineCategory; label: string }[] = [
   { id: 'sos', label: 'SOS' },
   { id: 'coverage', label: 'Coverage' },
   { id: 'contact', label: 'אובדן קשר' },
+  { id: 'battery', label: 'סוללה חלשה' },
   { id: 'mission', label: 'שינויי מסע' },
   { id: 'pause', label: 'השהיה וחידוש' },
 ];
@@ -22,6 +23,7 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'coverage.threshold_reached': 'coverage',
   'contact.lost': 'contact',
   'contact.restored': 'contact',
+  'battery.low': 'battery',
   'mission.created': 'mission',
   'mission.ended': 'mission',
   'mission.details_changed': 'mission',
@@ -114,6 +116,12 @@ function contactSegments(event: EventOf<'contact.lost'> | EventOf<'contact.resto
   return event.type === 'contact.lost' ? ['אבד קשר עם ', ...who] : ['הקשר עם ', ...who, ' חזר'];
 }
 
+function batterySegments(event: EventOf<'battery.low'>, label: string): Segment[] {
+  const { callsign } = event.subject;
+  const who = callsign === null ? [label] : [{ callsign }, ` ${label}`];
+  return ['הסוללה של ', ...who, ` נמוכה, ${event.details.level}%`];
+}
+
 const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] => [
   ...bySearcher(event, 'הפעיל SOS'),
   ...(event.subject.label === null ? [] : [`, ${label}`]),
@@ -154,6 +162,24 @@ function describePolygon(
   }
 }
 
+function describeAlert(
+  event:
+    | EventOf<'coverage.threshold_reached'>
+    | EventOf<'contact.lost'>
+    | EventOf<'contact.restored'>
+    | EventOf<'battery.low'>,
+  label: string,
+): EventView {
+  switch (event.type) {
+    case 'coverage.threshold_reached':
+      return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
+    case 'battery.low':
+      return segmented('סוללה', batterySegments(event, label));
+    default:
+      return segmented('קשר', contactSegments(event, label));
+  }
+}
+
 const PAUSE_TEXT = { 'mission.paused': 'המסע הושהה', 'mission.resumed': 'המסע חודש' } as const;
 
 const describeSos = (
@@ -165,33 +191,55 @@ const describeSos = (
     ? segmented('SOS', sosSegments(event, label), true)
     : segmented('SOS', sosClosedSegments(event, label, senderOf));
 
-/**
- * How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. `senderOf` names
- * the sender of a closed SOS, which the event does not carry.
- */
-export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): EventView {
-  const label = event.subject.label ?? '';
+function describeLifecycle(
+  event:
+    | EventOf<'mission.created'>
+    | EventOf<'mission.paused'>
+    | EventOf<'mission.resumed'>
+    | EventOf<'mission.ended'>
+    | EventOf<'mission.details_changed'>
+    | EventOf<'lkp.changed'>,
+  label: string,
+): EventView {
   switch (event.type) {
     case 'mission.created':
       return plain('מסע', `המסע נוצר, ${label}`);
-    case 'mission.paused':
-    case 'mission.resumed':
-      return plain('השהיה', PAUSE_TEXT[event.type]);
     case 'mission.ended':
       return plain('מסע', endedText(event));
     case 'mission.details_changed':
       return plain('פרטי מסע', detailChangesText(event.details.fields));
     case 'lkp.changed':
       return plain('LKP', lkpText(event), 'map');
+    default:
+      return plain('השהיה', PAUSE_TEXT[event.type]);
+  }
+}
+
+const labelOf = (event: TimelineEvent): string => event.subject.label ?? '';
+
+/**
+ * How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. `senderOf` names
+ * the sender of a closed SOS, which the event does not carry.
+ */
+export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): EventView {
+  const label = labelOf(event);
+  switch (event.type) {
+    case 'mission.created':
+    case 'mission.paused':
+    case 'mission.resumed':
+    case 'mission.ended':
+    case 'mission.details_changed':
+    case 'lkp.changed':
+      return describeLifecycle(event, label);
     case 'search.started':
       return segmented('חיפוש', bySearcher(event, `התחיל חיפוש ב${label}`));
     case 'report.submitted':
       return segmented('דיווח', reportSegments(event, label));
     case 'coverage.threshold_reached':
-      return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
     case 'contact.lost':
     case 'contact.restored':
-      return segmented('קשר', contactSegments(event, label));
+    case 'battery.low':
+      return describeAlert(event, label);
     case 'sos.activated':
     case 'sos.closed':
       return describeSos(event, label, senderOf);

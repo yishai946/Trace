@@ -17,6 +17,7 @@ export const TIMELINE_EVENT_TYPES = [
   'coverage.threshold_reached',
   'contact.lost',
   'contact.restored',
+  'battery.low',
   'sos.activated',
   'sos.closed',
   'mission.details_changed',
