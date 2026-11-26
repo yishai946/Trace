@@ -21,7 +21,7 @@ export interface TaskMoveInput {
 
 /**
  * Moves the searcher's search task to `target` (Start Search, Pause, Resume) and tells the commander. The participation
- * row is locked, so a double tap and a move to another polygon cannot interleave. Sending the same move again after
+ * row is locked (and the mission row shared), so a double tap and a move to another polygon cannot interleave. Sending the same move again after
  * the answer was lost changes nothing and announces nothing.
  */
 export async function moveTask(
@@ -29,6 +29,9 @@ export async function moveTask(
   { missionId, searcherId, target, refuse }: TaskMoveInput,
 ): Promise<OwnParticipation> {
   const result = await db.transaction(async (tx) => {
+    // A shared lock on the mission row first (the order a mission Pause or ending takes too), so a move waits for one
+    // that is committing and then reads the new mission status, instead of starting a search in a paused mission.
+    await tx.select({ id: missions.id }).from(missions).where(eq(missions.id, missionId)).for('share');
     const [participation] = await tx
       .select({ ...ownColumns, missionStatus: missions.status })
       .from(participations)

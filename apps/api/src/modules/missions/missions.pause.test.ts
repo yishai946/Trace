@@ -182,4 +182,30 @@ describe('pause and resume a mission (UC-C15)', () => {
     const anonymous = await ctx.app.inject({ method: 'POST', url: `/api/missions/${missionId}/pause` });
     expect(anonymous.statusCode).toBe(401);
   });
+
+  it('serializes Start Search with a pause: a start that races it is refused, not left searching', async () => {
+    await ctx.db.update(participations).set({ taskStatus: 'ready' }).where(eq(participations.id, participationId));
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let started: Promise<{ statusCode: number; json: () => unknown }> | undefined;
+    const pausing = ctx.db.transaction(async (tx) => {
+      await tx.select({ id: missions.id }).from(missions).where(eq(missions.id, missionId)).for('update');
+      started = injectAs(
+        ctx,
+        searcher,
+      )({ method: 'POST', url: `/api/missions/${missionId}/participation/search/start` });
+      let settled = false;
+      void started.then(() => (settled = true));
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(settled).toBe(false);
+      await tx.update(missions).set({ status: 'paused' }).where(eq(missions.id, missionId));
+      release();
+    });
+    await held;
+    await pausing;
+    const res = await started;
+    expect(res?.statusCode).toBe(409);
+    expect(ApiError.parse(res?.json()).error.code).toBe('MISSION_NOT_ACTIVE');
+    expect((await taskOf())?.taskStatus).toBe('ready');
+  });
 });
