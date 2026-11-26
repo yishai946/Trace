@@ -18,7 +18,7 @@ import { missionAccess, searchersOnly } from '../../auth/auth.access';
 import { actorOf, searcherOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
 import { getOwnParticipation, listParticipants, previewJoin } from './participants.read';
-import { pauseOrResumeSearch, startSearch } from './participants.search';
+import { finishSearch, pauseOrResumeSearch, startSearch } from './participants.search';
 import { assignParticipant, endParticipation, joinMission, setBattery, setGpsStatus } from './participants.service';
 
 export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
@@ -158,6 +158,27 @@ export const participantRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app,
         }),
     );
   }
+
+  app.post(
+    '/missions/:missionId/participation/search/finish',
+    {
+      schema: {
+        tags: ['participants'],
+        summary: 'Finish the search: Searching or Paused becomes Finished (UC-F08)',
+        description:
+          'Searchers in the mission only. The searcher stays assigned to the polygon (decision 100); this is not ' +
+          'Activity Ended (decision 9) and the polygon does not become Completed (decision 10). The route and ' +
+          'Coverage collected stay. The commander sees the change at once. Sending it again changes nothing. ' +
+          '409 TASK_NOT_ACTIVE for a task still at Ready, MISSION_NOT_ACTIVE while the mission is paused, ' +
+          'NOT_ASSIGNED, MISSION_ENDED, PARTICIPATION_ENDED.',
+        params: MissionParams,
+        response: { 200: OwnParticipation, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: [searchersOnly, missionAccess(db, 'member')],
+    },
+    (request) =>
+      finishSearch(deps, { missionId: request.params.missionId, searcherId: searcherOf(request).searcherId }),
+  );
 
   app.put(
     '/missions/:missionId/participants/:participantId/assignment',

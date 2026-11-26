@@ -13,6 +13,7 @@ export * from './polygon';
 export * from './report';
 export * from './role';
 export * from './sos';
+export * from './searchFinish';
 export * from './searchPause';
 export * from './startSearch';
 export * from './sighting';
