@@ -129,6 +129,7 @@
 
 - **חתימה:** הבנייה נחתמת במפתח קבוע, כדי שטביעת האצבע (SHA-256) לא תשתנה בין בניות (היא נחוצה ל-`assetlinks.json`, #141). ה-workflow מדפיס אותה בסוף ובסיכום הריצה.
 - **הכנה חד-פעמית (הבעלים):** יוצרים keystore (`keytool -genkeypair -v -keystore trace-field.jks -alias trace-field -keyalg RSA -keysize 2048 -validity 10000`) ושומרים ב-Secrets של הריפו: `ANDROID_KEYSTORE_BASE64` (`base64 -w0 trace-field.jks`), `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. אם אחד חסר ה-workflow נכשל מיד עם הודעה ברורה. את ה-keystore יש לשמור בגיבוי: בלעדיו אי אפשר לעדכן אפליקציה מותקנת.
+- **משתני הבנייה:** ב-Variables של הריפו: `EXPO_PUBLIC_API_URL` (כתובת ה-API הפרוס), `EXPO_PUBLIC_MAPTILER_API_KEY`, ולניטור `EXPO_PUBLIC_SENTRY_DSN` ו-`SENTRY_ORG`; ב-Secrets: `SENTRY_AUTH_TOKEN` ([`MONITORING.md`](MONITORING.md)). בלי כתובת ה-API או מפתח המפה הבנייה עוברת, אבל האפליקציה לא מתחברת לשרת או לא מציגה מפה.
 - **התקנה:** מורידים את ה-artifact `TraceField-<configuration>-apk` מדף הריצה, פותחים את ה-zip ומעבירים את `TraceField.apk` למכשיר. באנדרואיד מאשרים "התקנה ממקורות לא ידועים" לאפליקציה שפותחת את הקובץ (הגדרות, אבטחה).
 
 ## פיתוח מקומי

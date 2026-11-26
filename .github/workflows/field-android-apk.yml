@@ -54,10 +54,21 @@ jobs:
         env:
           # Public https address of Command (repository variable): Android App Links for join links (#141).
           JOIN_LINK_BASE: ${{ vars.JOIN_LINK_BASE }}
+          # Turn the Sentry source map upload on (docs/MONITORING.md). Without the token the build uploads nothing.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
         run: npx expo prebuild --platform android --no-install
 
       - name: Build
         working-directory: apps/field/android
+        env:
+          # Inlined into the JS bundle, so none of these is a secret.
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_MAPTILER_API_KEY: ${{ vars.EXPO_PUBLIC_MAPTILER_API_KEY }}
+          EXPO_PUBLIC_SENTRY_DSN: ${{ vars.EXPO_PUBLIC_SENTRY_DSN }}
+          # Source map and debug symbol upload.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
         run: ./gradlew assemble${{ inputs.configuration }}
 
       - name: Sign with the fixed keystore
