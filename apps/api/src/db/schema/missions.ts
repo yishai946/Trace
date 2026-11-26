@@ -1,6 +1,6 @@
 import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { pointColumn, polygonColumn } from '../geometry';
-import { bytea, timestamps } from './columns';
+import { timestamps } from './columns';
 import { lkpDecision, missionStatus, polygonStatus, sightingSource } from './enums';
 import { users } from './auth';
 
@@ -24,15 +24,13 @@ export const missions = pgTable('missions', {
 
 /**
  * The missing person's photo (UC-C02), at most one per mission. The image is in the bucket (`missionPhotoKey`); the
- * row keeps its type and version. `data` holds the bytes only for a photo saved before the move to the bucket, until
- * `photos:move` copies it.
+ * row keeps its type and version.
  */
 export const missionPhotos = pgTable('mission_photos', {
   missionId: uuid('mission_id')
     .primaryKey()
     .references(() => missions.id, { onDelete: 'cascade' }),
   contentType: text('content_type').notNull(),
-  data: bytea(),
   ...timestamps,
 });
 

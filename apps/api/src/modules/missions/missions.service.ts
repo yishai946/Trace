@@ -151,7 +151,7 @@ export async function setMissionPhoto(
     await tx
       .insert(missionPhotos)
       .values({ missionId, contentType, updatedAt })
-      .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, data: null, updatedAt } });
+      .onConflictDoUpdate({ target: missionPhotos.missionId, set: { contentType, updatedAt } });
     return previous?.updatedAt;
   });
   if (replaced) await discardPhoto(photos, log, missionPhotoKey(missionId, replaced));

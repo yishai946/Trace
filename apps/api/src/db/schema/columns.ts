@@ -1,4 +1,4 @@
-import { customType, timestamp } from 'drizzle-orm/pg-core';
+import { timestamp } from 'drizzle-orm/pg-core';
 
 export const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -7,5 +7,3 @@ export const timestamps = {
     .defaultNow()
     .$onUpdate(() => new Date()),
 };
-
-export const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });

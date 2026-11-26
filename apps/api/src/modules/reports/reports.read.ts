@@ -5,7 +5,7 @@ import type { Db, Tx } from '../../db';
 import { asGeoJson } from '../../db/geometry';
 import { participations, reportPhotos, reports, searchers, users } from '../../db/schema';
 import { notFound } from '../../errors';
-import { readPhoto, reportPhotoKey } from '../../storage';
+import { reportPhotoKey } from '../../storage';
 import type { ServiceDeps } from '../serviceDeps';
 
 const reportColumns = {
@@ -123,19 +123,12 @@ export async function getReportPhoto(
 ): Promise<{ contentType: string; data: Buffer; updatedAt: Date }> {
   const visible = await visibilityFilter(db, missionId, actor);
   const [row] = await db
-    .select({
-      contentType: reportPhotos.contentType,
-      data: reportPhotos.data,
-      updatedAt: reportPhotos.updatedAt,
-    })
+    .select({ updatedAt: reportPhotos.updatedAt })
     .from(reports)
     .leftJoin(reportPhotos, eq(reportPhotos.reportId, reports.id))
     .where(and(eq(reports.id, reportId), eq(reports.missionId, missionId), visible));
-  if (!row?.contentType || !row.updatedAt) throw notFound('Photo');
-  const photo = await readPhoto(photos, reportPhotoKey(reportId, row.updatedAt), {
-    contentType: row.contentType,
-    data: row.data,
-  });
+  if (!row?.updatedAt) throw notFound('Photo');
+  const photo = await photos.get(reportPhotoKey(reportId, row.updatedAt));
   if (!photo) throw notFound('Photo');
   return { ...photo, updatedAt: row.updatedAt };
 }

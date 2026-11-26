@@ -166,7 +166,7 @@ export async function setReportPhoto(
     await tx
       .insert(reportPhotos)
       .values({ reportId, contentType, updatedAt })
-      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, data: null, updatedAt } });
+      .onConflictDoUpdate({ target: reportPhotos.reportId, set: { contentType, updatedAt } });
     return { report: await findReport(tx, reportId), replaced: previous?.updatedAt };
   });
   if (replaced) await discardPhoto(photos, deps.log, reportPhotoKey(reportId, replaced));

@@ -194,9 +194,7 @@ describe('missing person photo', () => {
     expect(photo.statusCode).toBe(200);
     expect(photo.headers['content-type']).toBe('image/png');
     expect(photo.rawPayload.equals(PNG)).toBe(true);
-    // The image is in the bucket, not in the row.
     const [row] = await ctx.db.select().from(missionPhotos);
-    expect(row?.data).toBeNull();
     expect((await ctx.photos.get(missionPhotoKey(missionId, row?.updatedAt ?? new Date(0))))?.data.equals(PNG)).toBe(
       true,
     );

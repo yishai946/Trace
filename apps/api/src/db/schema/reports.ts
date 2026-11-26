@@ -1,6 +1,6 @@
 import { doublePrecision, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { pointColumn } from '../geometry';
-import { bytea, timestamps } from './columns';
+import { timestamps } from './columns';
 import { reportStatus, reportType } from './enums';
 import { users } from './auth';
 import { missions, polygons } from './missions';
@@ -33,15 +33,11 @@ export const reports = pgTable(
   (t) => [index('reports_mission_idx').on(t.missionId, t.createdAt), index('reports_polygon_idx').on(t.polygonId)],
 );
 
-/**
- * A report's photo, at most one. In the bucket (`reportPhotoKey`) like `mission_photos`; `data` is only for a photo
- * saved before the move.
- */
+/** A report's photo, at most one. In the bucket (`reportPhotoKey`) like `mission_photos`. */
 export const reportPhotos = pgTable('report_photos', {
   reportId: uuid('report_id')
     .primaryKey()
     .references(() => reports.id, { onDelete: 'cascade' }),
   contentType: text('content_type').notNull(),
-  data: bytea(),
   ...timestamps,
 });

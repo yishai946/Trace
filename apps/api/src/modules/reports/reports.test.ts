@@ -193,8 +193,6 @@ describe('field reports (UC-F09)', () => {
       expect(again.statusCode).toBe(200);
       const stored = await photoRows();
       expect(stored).toHaveLength(1);
-      // The image is in the bucket, not in the row.
-      expect(stored[0]?.data).toBeNull();
       const key = reportPhotoKey(ID, stored[0]?.updatedAt ?? new Date(0));
       expect((await rt.ctx.photos.get(key))?.data.length).toBe(JPEG.length + 3);
     });
@@ -229,6 +227,12 @@ describe('field reports (UC-F09)', () => {
       );
       await addParticipant(rt.ctx.db, { missionId: other.id, callsign: 1, searcherId: rt.user.searcherId });
       expect((await putPhoto(JPEG, 'image/jpeg', rt.user, ID, other.id)).statusCode).toBe(404);
+    });
+
+    it('answers 404 when the bucket no longer has the object', async () => {
+      await rt.send();
+      await rt.ctx.db.insert(reportPhotos).values({ reportId: ID, contentType: 'image/jpeg' });
+      expect((await rt.getPhoto()).statusCode).toBe(404);
     });
 
     it('refuses other content types, non-images and photos over the limit', async () => {
