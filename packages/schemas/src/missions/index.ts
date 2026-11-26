@@ -81,6 +81,27 @@ export const UpdateMissionDetailsBody = z.object({
   notifySearchers: z.boolean().default(false),
 });
 
+/**
+ * UC-C16: the commander ends the mission because the missing person was found. Where and when they were found are
+ * required (decision 97); the note is optional.
+ */
+export const EndMissionLocatedBody = z.object({
+  position: PointGeometry,
+  locatedAt: IsoDateTime,
+  note: optionalText(2000),
+});
+
+/** How a mission that ended as "located" ended (UC-C16): where and when the missing person was found. */
+export const MissionLocated = z
+  .object({
+    position: PointGeometry,
+    locatedAt: IsoDateTime,
+    note: z.string().nullable(),
+    /** When the commander ended the mission. */
+    endedAt: IsoDateTime,
+  })
+  .meta({ id: 'MissionLocated' });
+
 /** Who runs the mission, for the searchers to call (UC-F14). The phone is empty until the commander has one. */
 export const MissionCommander = z
   .object({ name: z.string(), phoneNumber: z.string().nullable() })
@@ -97,6 +118,8 @@ export const Mission = z
     rallyPoint: PointGeometry,
     /** The current LKP; earlier ones are kept as history. */
     lkp: Lkp.nullable(),
+    /** Set once the mission ended as located (`ended_located`); null otherwise. */
+    located: MissionLocated.nullable(),
     createdAt: IsoDateTime,
     updatedAt: IsoDateTime,
   })
@@ -111,6 +134,8 @@ export type MissingPerson = z.infer<typeof MissingPerson>;
 export type CreateMissionBody = z.input<typeof CreateMissionBody>;
 export type Lkp = z.infer<typeof Lkp>;
 export type LkpPoint = z.infer<typeof LkpPoint>;
+export type EndMissionLocatedBody = z.input<typeof EndMissionLocatedBody>;
+export type MissionLocated = z.infer<typeof MissionLocated>;
 export type UpdateRallyPointBody = z.input<typeof UpdateRallyPointBody>;
 export type UpdateMissionDetailsBody = z.input<typeof UpdateMissionDetailsBody>;
 export type Mission = z.infer<typeof Mission>;

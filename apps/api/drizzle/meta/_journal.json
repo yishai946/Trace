@@ -183,6 +183,13 @@
       "when": 1795694843172,
       "tag": "0025_drop_photo_data",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795706172444,
+      "tag": "0026_mission_located",
+      "breakpoints": true
     }
   ]
 }

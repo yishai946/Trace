@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CreateMissionBody, UpdateMissionDetailsBody, UpdateRallyPointBody } from '.';
+import { CreateMissionBody, EndMissionLocatedBody, UpdateMissionDetailsBody, UpdateRallyPointBody } from '.';
 
 const rallyPoint = { type: 'Point', coordinates: [35.13, 31.78] } as const;
 const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };
@@ -96,5 +96,21 @@ describe('UpdateMissionDetailsBody', () => {
     expect(body({ age: -1 })).toBe(false);
     expect(body({ age: 1.5 })).toBe(false);
     expect(body({ disappearedAt: '2026-10-03T11:20:00' })).toBe(false);
+  });
+});
+
+describe('EndMissionLocatedBody', () => {
+  const body = { position: { type: 'Point', coordinates: [35.14, 31.77] }, locatedAt: '2026-10-03T16:40:00+03:00' };
+
+  it('requires where and when the missing person was found', () => {
+    expect(EndMissionLocatedBody.safeParse(body).success).toBe(true);
+    expect(EndMissionLocatedBody.safeParse({ locatedAt: body.locatedAt }).success).toBe(false);
+    expect(EndMissionLocatedBody.safeParse({ position: body.position }).success).toBe(false);
+  });
+
+  it('keeps the note optional and turns a blank one into null', () => {
+    expect(EndMissionLocatedBody.parse(body).note).toBeNull();
+    expect(EndMissionLocatedBody.parse({ ...body, note: '  ' }).note).toBeNull();
+    expect(EndMissionLocatedBody.parse({ ...body, note: ' נמצא בריא ' }).note).toBe('נמצא בריא');
   });
 });

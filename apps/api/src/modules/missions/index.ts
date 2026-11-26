@@ -2,6 +2,7 @@ import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
 import {
   ApiError,
   CreateMissionBody,
+  EndMissionLocatedBody,
   Mission,
   MissionList,
   MissionParams,
@@ -12,10 +13,11 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { commandersOnly, missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import { unsupportedPhoto } from '../../errors';
+import { forbidden, unsupportedPhoto } from '../../errors';
 import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import type { ServiceDeps } from '../serviceDeps';
 import { getMission, getMissionPhoto, listMissions } from './missions.read';
+import { endMissionLocated } from './missions.endLocated';
 import { updateMissionDetails } from './missions.details';
 import { createMission, setMissionPhoto, updateRallyPoint } from './missions.service';
 
@@ -109,6 +111,31 @@ export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
         actor: actorOf(request),
         details: request.body,
       }),
+  );
+
+  app.post(
+    '/missions/:missionId/end-located',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'End the mission: the missing person was located (UC-C16)',
+        description:
+          'Only the mission commander, after verifying (decision 18), while the mission is active or paused. Needs the ' +
+          'place and time the missing person was found; the note is optional (decision 97). The mission becomes ' +
+          'ended_located and read-only (decision 52), every open search task finishes and the searchers in the field ' +
+          'get a message and a push. Safety tracking goes on until each searcher ends their activity (decision 65). ' +
+          '409 MISSION_ENDED when the mission already ended.',
+        params: MissionParams,
+        body: EndMissionLocatedBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    (request) => {
+      const commander = actorOf(request);
+      if (commander.role !== 'commander') throw forbidden();
+      return endMissionLocated(deps, { missionId: request.params.missionId, commander, located: request.body });
+    },
   );
 
   app.put(

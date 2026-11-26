@@ -30,3 +30,8 @@ export function canChangeRallyPoint(status: MissionStatus): boolean {
 export function canEditMissionDetails(status: MissionStatus): boolean {
   return !isMissionEnded(status);
 }
+
+/** The commander ends a mission as "the missing person was located" while it runs, active or paused (UC-C16). */
+export function canEndMissionLocated(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}

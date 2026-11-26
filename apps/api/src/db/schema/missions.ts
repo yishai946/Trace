@@ -19,6 +19,12 @@ export const missions = pgTable('missions', {
   description: text(),
   additionalInfo: text('additional_info'),
   rallyPoint: pointColumn('rally_point').notNull(),
+  /** Where, when and (optionally) with what note the missing person was located; set with `ended_located` (UC-C16). */
+  locatedPosition: pointColumn('located_position'),
+  locatedAt: timestamp('located_at', { withTimezone: true }),
+  locatedNote: text('located_note'),
+  /** When the commander ended the mission. */
+  endedAt: timestamp('ended_at', { withTimezone: true }),
   ...timestamps,
 });
 
