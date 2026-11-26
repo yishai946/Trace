@@ -19,7 +19,7 @@ The decisions behind it: Sentry for errors in all three apps; Loki (not a log dr
 1. Create a Sentry account (the free Developer plan) and an organization.
 2. Create **three projects**, one per app, so quotas, alerts and releases stay separate: `trace-api` (platform Node.js), `trace-command` (React) and `trace-field` (React Native). Each project's **Client Keys (DSN)** page has its DSN.
 3. In each project, **Settings > Spike Protection**: keep it on. Under **Client Keys > Configure**, set a **rate limit** per key (for example 100 events per hour), so one crash loop cannot use the month's quota.
-4. Create an **auth token** for source maps (Settings > Developer Settings > Organization token). It is a secret: it goes in the Command build environment and EAS only, never in a `.env` file or the repository.
+4. Create an **auth token** for source maps (Settings > Developer Settings > Organization token). It is a secret: it goes in the Command build environment and the GitHub repository secrets only, never in a `.env` file or the repository.
 5. Create the alert rule below.
 
 ### Grafana Cloud (Loki)
