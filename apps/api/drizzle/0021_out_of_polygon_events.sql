@@ -1,2 +1,0 @@
-ALTER TYPE "public"."timeline_event_type" ADD VALUE 'searcher.left_polygon' BEFORE 'sos.activated';--> statement-breakpoint
-ALTER TYPE "public"."timeline_event_type" ADD VALUE 'searcher.returned_to_polygon' BEFORE 'sos.activated';

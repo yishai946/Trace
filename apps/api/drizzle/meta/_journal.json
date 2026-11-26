@@ -152,8 +152,15 @@
     {
       "idx": 21,
       "version": "7",
-      "when": 1795673187115,
-      "tag": "0021_out_of_polygon_events",
+      "when": 1795673832117,
+      "tag": "0021_low_battery_event",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795675988064,
+      "tag": "0022_out_of_polygon_events",
       "breakpoints": true
     }
   ]

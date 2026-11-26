@@ -88,6 +88,12 @@ const samples: Record<TimelineEventType, unknown> = {
     subject: subject('participant', 'אלון שגיא', 7),
     details: { polygonId: OTHER_ID, polygonName: 'ואדי' },
   },
+  'battery.low': {
+    type: 'battery.low',
+    actor: system,
+    subject: subject('participant', 'אלון שגיא', 7),
+    details: { level: 19 },
+  },
   'sos.activated': {
     type: 'sos.activated',
     actor: searcher,

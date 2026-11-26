@@ -19,6 +19,7 @@ export const TIMELINE_EVENT_TYPES = [
   'contact.restored',
   'searcher.left_polygon',
   'searcher.returned_to_polygon',
+  'battery.low',
   'sos.activated',
   'sos.closed',
   'mission.details_changed',

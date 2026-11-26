@@ -109,6 +109,15 @@ export const TimelineEvent = z
       type: z.literal('searcher.returned_to_polygon'),
       details: z.object({ polygonId: z.uuid(), polygonName: z.string() }),
     }),
+    /**
+     * Subject: the participant. Actor: the system. The searcher's phone fell below the low-battery threshold (UC-S04,
+     * decision 45); `level` is the reading that crossed it, in percent.
+     */
+    z.object({
+      ...base,
+      type: z.literal('battery.low'),
+      details: z.object({ level: z.number().int().min(0).max(100) }),
+    }),
     /** Subject: the SOS (label = polygon name or null). Actor: a searcher. */
     z.object({ ...base, type: z.literal('sos.activated'), details: z.object({ message: z.string().nullable() }) }),
     /** Subject: the SOS (label = polygon name or null). Actor: the commander, or the searcher who sent it. */

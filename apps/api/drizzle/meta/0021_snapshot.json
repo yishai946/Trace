@@ -1,5 +1,5 @@
 {
-  "id": "d5a801bb-de20-4d7b-a1ed-e34cebbc2e3a",
+  "id": "5eea38b4-a463-4d3d-9fe9-2baa7c43ca0a",
   "prevId": "0ed7f749-49b7-4725-942c-7ebb896f6f7d",
   "version": "7",
   "dialect": "postgresql",
@@ -2301,8 +2301,7 @@
         "coverage.threshold_reached",
         "contact.lost",
         "contact.restored",
-        "searcher.left_polygon",
-        "searcher.returned_to_polygon",
+        "battery.low",
         "sos.activated",
         "sos.closed",
         "mission.details_changed"

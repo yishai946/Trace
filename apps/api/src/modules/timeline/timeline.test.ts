@@ -318,6 +318,13 @@ describe('timeline', () => {
           subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
           details: { polygonId: participantId, polygonName: 'ואדי' },
         },
+        'battery.low': {
+          missionId,
+          actor: 'system',
+          type: 'battery.low',
+          subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
+          details: { level: 19 },
+        },
         'sos.activated': {
           missionId,
           actor: bySearcher,

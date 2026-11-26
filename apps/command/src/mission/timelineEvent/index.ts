@@ -1,41 +1,8 @@
-import { detailChangesText, type TimelineEventType } from '@trace/domain';
+import { detailChangesText } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { describePresence } from './presence';
 
-export type TimelineCategory = 'search' | 'reports' | 'sos' | 'coverage' | 'boundary' | 'contact' | 'mission' | 'pause';
-
-/** Filter chips in wireframe order (Cd14). A chip shows only when it has events. */
-export const TIMELINE_CATEGORIES: { id: TimelineCategory; label: string }[] = [
-  { id: 'search', label: 'התחלה וסיום חיפוש' },
-  { id: 'reports', label: 'דיווחים ותצפיות' },
-  { id: 'sos', label: 'SOS' },
-  { id: 'coverage', label: 'Coverage' },
-  { id: 'boundary', label: 'יציאה מהפוליגון' },
-  { id: 'contact', label: 'אובדן קשר' },
-  { id: 'mission', label: 'שינויי מסע' },
-  { id: 'pause', label: 'השהיה וחידוש' },
-];
-
-export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
-  'search.started': 'search',
-  'report.submitted': 'reports',
-  'sos.activated': 'sos',
-  'sos.closed': 'sos',
-  'coverage.threshold_reached': 'coverage',
-  'searcher.left_polygon': 'boundary',
-  'searcher.returned_to_polygon': 'boundary',
-  'contact.lost': 'contact',
-  'contact.restored': 'contact',
-  'mission.created': 'mission',
-  'mission.ended': 'mission',
-  'mission.details_changed': 'mission',
-  'lkp.changed': 'mission',
-  'polygon.created': 'mission',
-  'polygon.boundary_changed': 'mission',
-  'polygon.deleted': 'mission',
-  'mission.paused': 'pause',
-  'mission.resumed': 'pause',
-};
+export { CATEGORY_OF, TIMELINE_CATEGORIES, type TimelineCategory } from './categories';
 
 /** A piece of an event's text: plain text, or a searcher's callsign shown as a chip. */
 export type Segment = string | { callsign: number };
@@ -121,6 +88,12 @@ function contactSegments(event: EventOf<'contact.lost'> | EventOf<'contact.resto
   return event.type === 'contact.lost' ? ['אבד קשר עם ', ...who] : ['הקשר עם ', ...who, ' חזר'];
 }
 
+function batterySegments(event: EventOf<'battery.low'>, label: string): Segment[] {
+  const { callsign } = event.subject;
+  const who = callsign === null ? [label] : [{ callsign }, ` ${label}`];
+  return ['הסוללה של ', ...who, ` נמוכה, ${event.details.level}%`];
+}
+
 const sosSegments = (event: EventOf<'sos.activated'>, label: string): Segment[] => [
   ...bySearcher(event, 'הפעיל SOS'),
   ...(event.subject.label === null ? [] : [`, ${label}`]),
@@ -162,34 +135,37 @@ function describePolygon(
   }
 }
 
-/** The events about a searcher's contact and presence, and about polygons. */
-function describeRest(
-  event: Extract<
-    TimelineEvent,
-    {
-      type:
-        | 'contact.lost'
-        | 'contact.restored'
-        | 'searcher.left_polygon'
-        | 'searcher.returned_to_polygon'
-        | 'polygon.created'
-        | 'polygon.boundary_changed'
-        | 'polygon.deleted';
-    }
-  >,
+function describeAlert(
+  event:
+    | EventOf<'coverage.threshold_reached'>
+    | EventOf<'contact.lost'>
+    | EventOf<'contact.restored'>
+    | EventOf<'battery.low'>,
   label: string,
 ): EventView {
   switch (event.type) {
-    case 'contact.lost':
-    case 'contact.restored':
-      return segmented('קשר', contactSegments(event, label));
-    case 'searcher.left_polygon':
-    case 'searcher.returned_to_polygon':
-      return describePresence(event);
+    case 'coverage.threshold_reached':
+      return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
+    case 'battery.low':
+      return segmented('סוללה', batterySegments(event, label));
     default:
-      return describePolygon(event, label);
+      return segmented('קשר', contactSegments(event, label));
   }
 }
+
+/** A searcher leaving or re-entering their polygon (UC-S04), and the polygon events. */
+const describeRest = (
+  event:
+    | EventOf<'searcher.left_polygon'>
+    | EventOf<'searcher.returned_to_polygon'>
+    | EventOf<'polygon.created'>
+    | EventOf<'polygon.boundary_changed'>
+    | EventOf<'polygon.deleted'>,
+  label: string,
+): EventView =>
+  event.type === 'searcher.left_polygon' || event.type === 'searcher.returned_to_polygon'
+    ? describePresence(event)
+    : describePolygon(event, label);
 
 const PAUSE_TEXT = { 'mission.paused': 'המסע הושהה', 'mission.resumed': 'המסע חודש' } as const;
 
@@ -202,30 +178,55 @@ const describeSos = (
     ? segmented('SOS', sosSegments(event, label), true)
     : segmented('SOS', sosClosedSegments(event, label, senderOf));
 
-/**
- * How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. `senderOf` names
- * the sender of a closed SOS, which the event does not carry.
- */
-export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): EventView {
-  const label = event.subject.label ?? '';
+function describeLifecycle(
+  event:
+    | EventOf<'mission.created'>
+    | EventOf<'mission.paused'>
+    | EventOf<'mission.resumed'>
+    | EventOf<'mission.ended'>
+    | EventOf<'mission.details_changed'>
+    | EventOf<'lkp.changed'>,
+  label: string,
+): EventView {
   switch (event.type) {
     case 'mission.created':
       return plain('מסע', `המסע נוצר, ${label}`);
-    case 'mission.paused':
-    case 'mission.resumed':
-      return plain('השהיה', PAUSE_TEXT[event.type]);
     case 'mission.ended':
       return plain('מסע', endedText(event));
     case 'mission.details_changed':
       return plain('פרטי מסע', detailChangesText(event.details.fields));
     case 'lkp.changed':
       return plain('LKP', lkpText(event), 'map');
+    default:
+      return plain('השהיה', PAUSE_TEXT[event.type]);
+  }
+}
+
+const labelOf = (event: TimelineEvent): string => event.subject.label ?? '';
+
+/**
+ * How an event reads in the Timeline (wireframe Cd14): a badge, its text, and where "מעבר אל" leads. `senderOf` names
+ * the sender of a closed SOS, which the event does not carry.
+ */
+export function describeEvent(event: TimelineEvent, senderOf?: SosSenderOf): EventView {
+  const label = labelOf(event);
+  switch (event.type) {
+    case 'mission.created':
+    case 'mission.paused':
+    case 'mission.resumed':
+    case 'mission.ended':
+    case 'mission.details_changed':
+    case 'lkp.changed':
+      return describeLifecycle(event, label);
     case 'search.started':
       return segmented('חיפוש', bySearcher(event, `התחיל חיפוש ב${label}`));
     case 'report.submitted':
       return segmented('דיווח', reportSegments(event, label));
     case 'coverage.threshold_reached':
-      return plain('Coverage', `${label} הגיע ל-${event.details.threshold}% Coverage`);
+    case 'contact.lost':
+    case 'contact.restored':
+    case 'battery.low':
+      return describeAlert(event, label);
     case 'sos.activated':
     case 'sos.closed':
       return describeSos(event, label, senderOf);
