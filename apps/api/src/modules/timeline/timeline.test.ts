@@ -304,6 +304,20 @@ describe('timeline', () => {
           subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
           details: {},
         },
+        'searcher.left_polygon': {
+          missionId,
+          actor: 'system',
+          type: 'searcher.left_polygon',
+          subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
+          details: { polygonId: participantId, polygonName: 'ואדי', meters: 80 },
+        },
+        'searcher.returned_to_polygon': {
+          missionId,
+          actor: 'system',
+          type: 'searcher.returned_to_polygon',
+          subject: { ...subject('participant', 'מחפש 7'), callsign: 7 },
+          details: { polygonId: participantId, polygonName: 'ואדי' },
+        },
         'sos.activated': {
           missionId,
           actor: bySearcher,

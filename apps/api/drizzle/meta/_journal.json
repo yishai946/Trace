@@ -148,6 +148,13 @@
       "when": 1795666673633,
       "tag": "0020_polygon_coverage",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795673187115,
+      "tag": "0021_out_of_polygon_events",
+      "breakpoints": true
     }
   ]
 }

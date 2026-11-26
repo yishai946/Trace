@@ -98,7 +98,14 @@ export async function buildApp({
     log: app.log,
   });
 
-  const deps: ServiceDeps = { db, realtime, push, photos: photoStorage ?? createPhotoStorage(env), log: app.log };
+  const deps: ServiceDeps = {
+    db,
+    realtime,
+    push,
+    photos: photoStorage ?? createPhotoStorage(env),
+    log: app.log,
+    outOfPolygonToleranceMeters: env.OUT_OF_POLYGON_TOLERANCE_METERS,
+  };
   if (connectivityCheckMs) {
     const stop = startConnectivityMonitor(deps, connectivityCheckMs);
     app.addHook('onClose', async () => stop());

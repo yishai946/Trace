@@ -1,6 +1,7 @@
 export * from './callsign';
 export * from './connectivity';
 export * from './coverageAlerts';
+export * from './outOfPolygon';
 export * from './joinCode';
 export * from './localTime';
 export * from './message';

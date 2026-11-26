@@ -69,3 +69,15 @@ describe('proxy environment', () => {
     expect(() => loadEnv({ TRUST_PROXY: 'yes' })).toThrow(/TRUST_PROXY/);
   });
 });
+
+describe('out-of-polygon tolerance environment', () => {
+  it('has no default: unset or blank stays unset', () => {
+    expect(loadEnv({}).OUT_OF_POLYGON_TOLERANCE_METERS).toBeUndefined();
+    expect(loadEnv({ OUT_OF_POLYGON_TOLERANCE_METERS: '' }).OUT_OF_POLYGON_TOLERANCE_METERS).toBeUndefined();
+  });
+
+  it('reads a number of meters and refuses a negative one', () => {
+    expect(loadEnv({ OUT_OF_POLYGON_TOLERANCE_METERS: '12.5' }).OUT_OF_POLYGON_TOLERANCE_METERS).toBe(12.5);
+    expect(() => loadEnv({ OUT_OF_POLYGON_TOLERANCE_METERS: '-1' })).toThrow(/OUT_OF_POLYGON_TOLERANCE_METERS/);
+  });
+});
