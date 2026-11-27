@@ -1,5 +1,4 @@
-import { STOP_REASON_LABELS } from '../stopReason';
-import { detailChangesText } from '@trace/domain';
+import { detailChangesText, STOP_REASON_LABELS } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { describePresence } from './presence';
 

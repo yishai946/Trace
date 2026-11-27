@@ -1,10 +1,9 @@
-import { MISSION_STOP_REASONS } from '@trace/domain';
+import { MISSION_STOP_REASONS, STOP_REASON_LABELS } from '@trace/domain';
 import type { MissionStopReason, StopMissionBody } from '@trace/schemas';
 import { useState } from 'react';
 import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
-import { STOP_REASON_LABELS } from '../stopReason';
 import { ConfirmEnd } from './ConfirmEnd';
 import styles from './MissionControlPanel.module.css';
 

@@ -55,6 +55,16 @@ export const MISSION_STOP_REASONS = [
 ] as const;
 export type MissionStopReason = (typeof MISSION_STOP_REASONS)[number];
 
+/** The Hebrew name of each reason the search can be stopped for (UC-C17, decision 96). */
+export const STOP_REASON_LABELS: Record<MissionStopReason, string> = {
+  search_exhausted: 'מוצו מאמצי החיפוש',
+  weather: 'מזג אוויר ותנאי שטח',
+  safety: 'סיבות בטיחות',
+  resources: 'חוסר במשאבים ובמחפשים',
+  handed_over: 'הועבר לגורם מקצועי',
+  other: 'אחר',
+};
+
 /** The commander pauses the search while the mission is active (UC-C15). */
 export function canPauseMission(status: MissionStatus): boolean {
   return status === 'active';
