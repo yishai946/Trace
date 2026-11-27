@@ -46,8 +46,8 @@ describe('coverageRows', () => {
       { id: 'ג', name: 'ג', percent: 100, label: '100%', status: 'completed' },
     ]);
   });
-  it('shows 0% for a searched polygon with no coverage yet', () => {
-    expect(coverageRows([polygon('א', 'active', null)])[0]?.label).toBe('0%');
+  it('does not invent a number for a polygon whose coverage was never computed', () => {
+    expect(coverageRows([polygon('א', 'completed', null)])[0]).toMatchObject({ percent: null, label: 'טרם חושב' });
   });
 });
 

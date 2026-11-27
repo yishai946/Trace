@@ -21,17 +21,18 @@ export function missionDuration(mission: Mission): string | null {
 export interface CoverageRow {
   id: string;
   name: string;
-  /** The rounded coverage; null for a polygon nobody was assigned to. */
+  /** The rounded coverage; null when none was computed. */
   percent: number | null;
   label: string;
   status: MissionPolygon['status'];
 }
 
-/** The final coverage of each polygon (wireframe Cd15): the percent, or "לא שובץ" when it never had searchers. */
+/** The final coverage of each polygon (wireframe Cd15): the percent, "לא שובץ" when it never had searchers, or "טרם חושב". */
 export function coverageRows(polygons: MissionPolygon[]): CoverageRow[] {
   return polygons.map(({ id, name, status, coverage }) => {
-    const percent = status === 'unassigned' ? null : Math.round(coverage ?? 0);
-    return { id, name, percent, label: percent === null ? 'לא שובץ' : `${percent}%`, status };
+    const percent = status === 'unassigned' || coverage === null ? null : Math.round(coverage);
+    const label = status === 'unassigned' ? 'לא שובץ' : percent === null ? 'טרם חושב' : `${percent}%`;
+    return { id, name, percent, label, status };
   });
 }
 

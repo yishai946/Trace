@@ -15,6 +15,15 @@ export function Outcome({ mission }: { mission: Mission }) {
       {stopped && <p className={styles.note}>{STOP_REASON_LABELS[stopped.reason]}</p>}
       {(located?.note ?? stopped?.note) && <p className={styles.note}>{located?.note ?? stopped?.note}</p>}
       <dl className={styles.facts}>
+        {mission.missingPerson.name && (
+          <>
+            <dt>נעדר</dt>
+            <dd>
+              {mission.missingPerson.name}
+              {mission.missingPerson.age !== null && `, ${mission.missingPerson.age}`}
+            </dd>
+          </>
+        )}
         {located && (
           <>
             <dt>זמן איתור</dt>
