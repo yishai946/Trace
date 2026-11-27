@@ -5,6 +5,8 @@ import {
   canChangeRallyPoint,
   canEditMissionDetails,
   canEndMissionLocated,
+  canPauseMission,
+  canResumeMission,
   isMissionEnded,
 } from '.';
 
@@ -48,5 +50,14 @@ describe('mission rules', () => {
     expect(canEndMissionLocated('paused')).toBe(true);
     expect(canEndMissionLocated('ended_located')).toBe(false);
     expect(canEndMissionLocated('ended_stopped')).toBe(false);
+  });
+
+  it('pauses only an active mission and resumes only a paused one', () => {
+    expect(canPauseMission('active')).toBe(true);
+    expect(canPauseMission('paused')).toBe(false);
+    expect(canPauseMission('ended_located')).toBe(false);
+    expect(canResumeMission('paused')).toBe(true);
+    expect(canResumeMission('active')).toBe(false);
+    expect(canResumeMission('ended_stopped')).toBe(false);
   });
 });
