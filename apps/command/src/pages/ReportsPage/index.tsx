@@ -34,6 +34,8 @@ export interface ReportsPageProps {
   themeId: ThemeId;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** Opens the mission control to verify and end the mission (UC-C16). Missing: it cannot be ended now. */
+  onOpenControl?: () => void;
   /** Undefined while changes are blocked: no connection, or an ended mission. */
   onHandle?: (id: string) => void;
   onUpdate?: (id: string, body: UpdateReportBody) => void;
@@ -60,6 +62,7 @@ export function ReportsPage({
   themeId,
   selectedId,
   onSelect,
+  onOpenControl,
   onHandle,
   onUpdate,
   onDelete,
@@ -89,7 +92,7 @@ export function ReportsPage({
 
   return (
     <div className={styles.page}>
-      <CriticalReportAlert reports={all} onOpen={select} />
+      <CriticalReportAlert reports={all} onOpen={select} onFinish={onOpenControl} />
       <div className={styles.row}>
         <ReportList
           reports={reports}
@@ -147,6 +150,7 @@ export function ReportsPage({
             busy={busy}
             error={error}
             ended={ended}
+            onOpenControl={onOpenControl}
             onClose={() => setClosed(true)}
           />
         ) : (

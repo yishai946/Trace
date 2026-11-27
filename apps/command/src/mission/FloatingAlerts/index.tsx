@@ -14,6 +14,8 @@ export interface FloatingAlertsProps {
   sosFailed?: boolean;
   onRetrySos?: () => void;
   onOpenReport: (reportId: string) => void;
+  /** Opens the mission control to end the mission as located (UC-C16); missing when it cannot be ended. */
+  onFinish?: () => void;
   /** Searchers outside their polygon now (UC-S04), outside the longest first. */
   outside?: OutsideSearcher[];
   onOpenSearcher?: (participantId: string) => void;
@@ -32,6 +34,7 @@ export function FloatingAlerts({
   outside = [],
   onOpenSearcher,
   onOpenReport,
+  onFinish,
   onOpenSos,
 }: FloatingAlertsProps) {
   const quiet = !sosFailed && !sos.some((s) => s.status === 'active') && !reports.some(isCriticalReport);
@@ -39,7 +42,7 @@ export function FloatingAlerts({
   return (
     <div className={styles.stack}>
       <SosAlert sos={sos} failed={sosFailed} onRetry={onRetrySos} onOpen={onOpenSos} />
-      <CriticalReportAlert reports={reports} onOpen={onOpenReport} />
+      <CriticalReportAlert reports={reports} onOpen={onOpenReport} onFinish={onFinish} />
       <OutsidePolygonAlert searchers={outside} onOpen={(id) => onOpenSearcher?.(id)} />
     </div>
   );

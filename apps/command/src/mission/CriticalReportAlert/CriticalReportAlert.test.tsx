@@ -64,4 +64,13 @@ describe('CriticalReportAlert', () => {
     fireEvent.click(within(alert).getByRole('button', { name: 'פתח' }));
     expect(onOpen).toHaveBeenCalledWith(reportLocated.id);
   });
+
+  it('offers "אמת וסיים מסע…" only when the commander can end the mission (UC-C16)', () => {
+    const onFinish = vi.fn();
+    const { rerender } = render(<CriticalReportAlert reports={[reportLocated]} onOpen={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'אמת וסיים מסע…' })).toBeNull();
+    rerender(<CriticalReportAlert reports={[reportLocated]} onOpen={vi.fn()} onFinish={onFinish} />);
+    fireEvent.click(screen.getByRole('button', { name: 'אמת וסיים מסע…' }));
+    expect(onFinish).toHaveBeenCalledTimes(1);
+  });
 });

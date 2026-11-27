@@ -59,6 +59,11 @@ export function useConsoleNav() {
       setSelectedSearcherId(id);
       setView('map');
     },
+    /** Opens the mission control over the map, where the commander verifies and ends the mission (UC-C16). */
+    openControl: () => {
+      setView('map');
+      setPanel('control');
+    },
     openReport: (id: string) => {
       setSelectedReportId(id);
       setView('reports');

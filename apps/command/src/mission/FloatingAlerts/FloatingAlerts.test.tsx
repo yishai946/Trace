@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FloatingAlerts } from '.';
 import type { OutsideSearcher } from '../outsideSearchers';
@@ -44,5 +44,14 @@ describe('FloatingAlerts', () => {
     render(<FloatingAlerts reports={[reportLocated]} sos={[sosActive]} outside={outside} {...open} />);
     const alerts = screen.getAllByRole('alert').map((a) => a.getAttribute('aria-label'));
     expect(alerts).toEqual(['התראת SOS', 'התראה קריטית', 'אזהרה: מחפש מחוץ לפוליגון']);
+  });
+
+  it('passes "אמת וסיים מסע…" to the critical report only when the mission can be ended (UC-C16)', () => {
+    const onFinish = vi.fn();
+    const { rerender } = render(<FloatingAlerts reports={[reportLocated]} sos={[]} {...open} />);
+    expect(screen.queryByRole('button', { name: 'אמת וסיים מסע…' })).toBeNull();
+    rerender(<FloatingAlerts reports={[reportLocated]} sos={[]} onFinish={onFinish} {...open} />);
+    fireEvent.click(screen.getByRole('button', { name: 'אמת וסיים מסע…' }));
+    expect(onFinish).toHaveBeenCalledTimes(1);
   });
 });
