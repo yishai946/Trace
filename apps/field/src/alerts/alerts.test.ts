@@ -15,14 +15,13 @@ describe('useAlerts', () => {
     expect(useAlerts.getState().alerts[0]?.text).toBe('again');
   });
 
-  it('dismisses one alert, and clears those of a mission but not the low battery', () => {
+  it('dismisses one alert, and clears those of a mission', () => {
     const { raise, dismiss, clearMission } = useAlerts.getState();
     raise(alert('a'));
     raise(alert('b'));
-    raise({ ...alert('bat'), kind: 'low-battery' });
     dismiss('a');
-    expect(useAlerts.getState().alerts.map((a) => a.id)).toEqual(['bat', 'b']);
+    expect(useAlerts.getState().alerts.map((a) => a.id)).toEqual(['b']);
     clearMission();
-    expect(useAlerts.getState().alerts.map((a) => a.id)).toEqual(['bat']);
+    expect(useAlerts.getState().alerts.map((a) => a.id)).toEqual([]);
   });
 });

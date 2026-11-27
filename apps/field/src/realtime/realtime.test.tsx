@@ -557,12 +557,11 @@ describe('useMissionLive: alerts inside the app', () => {
     expect(kinds()).toEqual(['details']);
   });
 
-  it("drops a mission's alerts when it is left, but keeps the phone's low battery", () => {
+  it("drops a mission's alerts when it is left", () => {
     const { socket, unmount } = setup();
-    useAlerts.getState().raise({ id: 'low-battery', kind: 'low-battery', title: 't', text: 't', href: null });
     act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: other }));
     unmount();
-    expect(kinds()).toEqual(['low-battery']);
+    expect(kinds()).toEqual([]);
   });
 
   it('keeps the alerts when only the session token changes', () => {

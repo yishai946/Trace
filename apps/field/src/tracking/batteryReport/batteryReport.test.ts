@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BATTERY_REPORT_MS, reportBattery, resetBatteryReport } from '.';
-import { useAlerts } from '../../alerts';
 import { useSession } from '../../state/session';
 
 vi.mock('expo-battery', () => ({ getBatteryLevelAsync: vi.fn(async () => 0.5) }));
@@ -16,7 +15,6 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-05-01T10:00:00.000Z'));
   resetBatteryReport();
-  useAlerts.setState(useAlerts.getInitialState());
   useSession.setState({ ...useSession.getInitialState(), token: 't1', missionId, participation });
 });
 afterEach(() => {
@@ -33,12 +31,6 @@ describe('reportBattery', () => {
     expect(fetch.mock.calls[0]?.[0]).toBe(BATTERY);
     expect(fetch.mock.calls[0]?.[1].method).toBe('PUT');
     expect(bodies(fetch)).toEqual([{ level: 76, measuredAt: '2026-05-01T10:00:00.000Z' }]);
-  });
-
-  it('raises the in-app low-battery alert on the phone, even when the server cannot be reached', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network request failed')));
-    await reportBattery(async () => 0.15);
-    expect(useAlerts.getState().alerts.map((a) => a.kind)).toEqual(['low-battery']);
   });
 
   it('skips an unknown level (-1)', async () => {
@@ -97,5 +89,13 @@ describe('reportBattery', () => {
     useSession.setState(state);
     await reportBattery(async () => 0.5);
     expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('reportBattery without a connection', () => {
+  it('keeps the level for the warning on the phone', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    await reportBattery(async () => 0.15);
+    expect(useSession.getState().batteryLevel).toBe(15);
   });
 });

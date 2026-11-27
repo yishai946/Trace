@@ -43,7 +43,7 @@ describe('AlertBanners', () => {
   });
 
   it('offers no open button when the alert has no screen, and dismisses it', () => {
-    useAlerts.getState().raise({ id: 'b', kind: 'low-battery', title: 'סוללה חלשה', text: 'x', href: null });
+    useAlerts.getState().raise({ id: 'b', kind: 'details', title: 'פרטי הנעדר עודכנו', text: 'x', href: null });
     show();
     expect(screen.queryByRole('button', { name: 'פתח' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'סגור' }));

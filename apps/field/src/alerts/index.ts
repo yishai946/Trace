@@ -5,7 +5,7 @@ import type { routes } from '../navigation/routes';
 export interface FieldAlert {
   /** One alert per id: raising the same id again replaces it, e.g. the SOS of one sender or the battery. */
   id: string;
-  kind: 'low-battery' | 'sos' | 'details';
+  kind: 'sos' | 'details';
   title: string;
   text: string;
   /** The screen the alert opens, or null when there is nothing more to see. */
@@ -16,18 +16,18 @@ interface AlertsState {
   alerts: FieldAlert[];
   raise: (alert: FieldAlert) => void;
   dismiss: (id: string) => void;
-  /** Drops what was announced about a mission; the phone's low battery is not about a mission and stays. */
+  /** Drops what was announced about a mission. */
   clearMission: () => void;
 }
 
 /**
- * The alerts shown over the mission screens while the app is open: low battery, an SOS sent to the searcher and a
- * change of the missing person's details (UC-S04, UC-C14, UC-C03). Kept in memory only: an alert is about now, and
+ * The alerts shown over the mission screens while the app is open: an SOS sent to the searcher and a
+ * change of the missing person's details (UC-C14, UC-C03; the low battery warns on the map, UC-S04). Kept in memory only: an alert is about now, and
  * whatever it announces is also on its own screen. Not persisted.
  */
 export const useAlerts = create<AlertsState>()((set) => ({
   alerts: [],
   raise: (alert) => set((s) => ({ alerts: [alert, ...s.alerts.filter((a) => a.id !== alert.id)] })),
   dismiss: (id) => set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) })),
-  clearMission: () => set((s) => ({ alerts: s.alerts.filter((a) => a.kind === 'low-battery') })),
+  clearMission: () => set({ alerts: [] }),
 }));
