@@ -1,4 +1,4 @@
-import { MISSION_DETAIL_FIELDS, TIMELINE_EVENT_TYPES } from '@trace/domain';
+import { MISSION_DETAIL_FIELDS, MISSION_STOP_REASONS, TIMELINE_EVENT_TYPES } from '@trace/domain';
 import { z } from 'zod';
 import { IsoDateTime } from '../datetime';
 
@@ -50,7 +50,11 @@ export const TimelineEvent = z
     z.object({
       ...base,
       type: z.literal('mission.ended'),
-      details: z.object({ outcome: z.enum(['located', 'stopped']) }),
+      details: z.object({
+        outcome: z.enum(['located', 'stopped']),
+        /** Why the search was stopped (UC-C17); absent for `located`. */
+        reason: z.enum(MISSION_STOP_REASONS).optional(),
+      }),
     }),
     /**
      * Subject: the mission (label = its name after the change). Actor: the commander. Only when the commander chose to

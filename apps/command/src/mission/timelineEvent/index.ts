@@ -1,3 +1,4 @@
+import { STOP_REASON_LABELS } from '../stopReason';
 import { detailChangesText } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { describePresence } from './presence';
@@ -69,8 +70,10 @@ const bySearcher = (event: TimelineEvent, text: string): Segment[] => {
   return [...who, `${who.length ? ' ' : ''}${text}`];
 };
 
-const endedText = (event: EventOf<'mission.ended'>) =>
-  event.details.outcome === 'located' ? 'המסע הסתיים, הנעדר אותר' : 'המסע הסתיים, החיפוש הופסק';
+function endedText({ details }: EventOf<'mission.ended'>): string {
+  if (details.outcome === 'located') return 'המסע הסתיים, הנעדר אותר';
+  return `המסע הסתיים, החיפוש הופסק${details.reason ? `: ${STOP_REASON_LABELS[details.reason]}` : ''}`;
+}
 
 function lkpText({ details: { observedAt, previousObservedAt } }: EventOf<'lkp.changed'>): string {
   if (previousObservedAt === null) return 'LKP נקבע ראשונית';

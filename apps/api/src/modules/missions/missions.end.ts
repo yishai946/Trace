@@ -1,4 +1,4 @@
-import type { MissionStatus } from '@trace/domain';
+import type { MissionStatus, MissionStopReason } from '@trace/domain';
 import type { Mission } from '@trace/schemas';
 import { and, eq, inArray, ne } from 'drizzle-orm';
 import type { Actor } from '../../auth/auth.plugin';
@@ -20,6 +20,8 @@ type EndSpec = {
   /** The new status and the columns that say how the mission ended. */
   set: Partial<typeof missions.$inferInsert> & { status: Extract<MissionStatus, 'ended_located' | 'ended_stopped'> };
   outcome: 'located' | 'stopped';
+  /** For the Timeline, when the search was stopped. */
+  reason?: MissionStopReason;
   /** What the searchers still in the field read. */
   message: string;
   allowed: (status: MissionStatus) => boolean;
@@ -33,7 +35,7 @@ type EndSpec = {
  */
 export async function endMission(deps: ServiceDeps, spec: EndSpec): Promise<Mission> {
   const { db, realtime } = deps;
-  const { missionId, commander, set, outcome, message, allowed } = spec;
+  const { missionId, commander, set, outcome, reason, message, allowed } = spec;
   const result = await db.transaction(async (tx) => {
     await lockMission(tx, missionId, { allowed, refusal: () => missionEnded('The mission has already ended') });
     const endedAt = new Date();
@@ -52,7 +54,7 @@ export async function endMission(deps: ServiceDeps, spec: EndSpec): Promise<Miss
       actor: commander,
       type: 'mission.ended',
       subject: { kind: 'mission', id: missionId, label: row?.name ?? null },
-      details: { outcome },
+      details: reason ? { outcome, reason } : { outcome },
       occurredAt: endedAt,
     });
     const inField = await tx

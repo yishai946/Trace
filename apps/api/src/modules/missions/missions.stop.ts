@@ -23,6 +23,7 @@ export function stopMission(deps: ServiceDeps, { missionId, commander, stop }: S
     missionId,
     commander,
     outcome: 'stopped',
+    reason: stop.reason,
     message: STOPPED_MESSAGE,
     allowed: canStopMission,
     set: { status: 'ended_stopped', stopReason: stop.reason, stopNote: stop.note },

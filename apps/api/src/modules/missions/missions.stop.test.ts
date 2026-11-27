@@ -180,7 +180,7 @@ describe('end a mission: the search was stopped (UC-C17)', () => {
     );
     expect(timeline.at(-1)).toMatchObject({
       type: 'mission.ended',
-      details: { outcome: 'stopped' },
+      details: { outcome: 'stopped', reason: 'weather' },
       actor: { kind: 'commander' },
     });
     expect(published.some((event) => event.type === 'timeline.recorded')).toBe(true);
