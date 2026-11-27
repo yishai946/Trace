@@ -1,4 +1,5 @@
 import type { ThemeId } from '@trace/design';
+import { canEndMissionLocated } from '@trace/domain';
 import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
 import type { ReactNode } from 'react';
@@ -32,7 +33,7 @@ interface PhoneMissionProps {
   onPlaceFound: (focus: MapFocus) => void;
 }
 
-/** The open mission on a phone (wireframe Cm04): the map stage, or the Reports, Messages or SOS screen in its place. */
+/** The open mission on a phone (wireframe Cm04): the map stage with the mission control over it (Cm13), or the Reports, Messages or SOS screen in its place. */
 export function PhoneMission({
   mission,
   missions,
@@ -74,6 +75,11 @@ export function PhoneMission({
       onOpenSos={nav.openSos}
       outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
       onOpenSearcher={nav.setSelectedSearcherId}
+      control={{
+        open: nav.panel === 'control',
+        onOpenChange: (open) => (open ? nav.openControl() : nav.setPanelOpen('control', false)),
+        canEnd: canEndMissionLocated(mission.status),
+      }}
       sosScreen={
         <SosPage
           phone

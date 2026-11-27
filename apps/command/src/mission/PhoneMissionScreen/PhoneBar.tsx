@@ -15,6 +15,8 @@ interface PhoneBarProps {
   searchOpen: boolean;
   onToggleJoin: () => void;
   onToggleSearch: () => void;
+  /** The mission control button (wireframe Cm13); missing, no button. */
+  control?: { open: boolean; onToggle: () => void };
 }
 
 /** Icons from wireframe Cm04. */
@@ -28,7 +30,7 @@ const icon = {
   'aria-hidden': true,
 } as const;
 
-/** The compact top bar of the phone mission screen: the mission, the connection, the join code and the place search. */
+/** The compact top bar of the phone mission screen: the mission, the connection, the join code, the place search and the mission control. */
 export function PhoneBar({
   mission,
   missions,
@@ -39,6 +41,7 @@ export function PhoneBar({
   searchOpen,
   onToggleJoin,
   onToggleSearch,
+  control,
 }: PhoneBarProps) {
   return (
     <header className={styles.bar}>
@@ -66,6 +69,16 @@ export function PhoneBar({
             <path d="m20 20-4-4" />
           </svg>
         </Button>
+        {control && (
+          <Button variant="icon" aria-label="בקרת מסע" aria-expanded={control.open} onPress={control.onToggle}>
+            <svg {...icon}>
+              <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" />
+              <circle cx="16" cy="6" r="2" />
+              <circle cx="10" cy="12" r="2" />
+              <circle cx="18" cy="18" r="2" />
+            </svg>
+          </Button>
+        )}
       </div>
     </header>
   );

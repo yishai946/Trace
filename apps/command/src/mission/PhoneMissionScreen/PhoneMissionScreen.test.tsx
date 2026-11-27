@@ -296,4 +296,60 @@ describe('PhoneMissionScreen', () => {
       expect(screen.getByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeInTheDocument();
     });
   });
+
+  describe('mission control (Cm13)', () => {
+    const control = (over: { open?: boolean; canEnd?: boolean } = {}) => ({
+      open: false,
+      canEnd: true,
+      ...over,
+      onOpenChange: vi.fn(),
+    });
+
+    it('PM-C1: opens the mission control from the bar and closes the join code and the search', () => {
+      const ctl = control();
+      const { onJoinOpenChange } = renderScreen({ control: ctl });
+      fireEvent.click(screen.getByRole('button', { name: 'חיפוש מקום' }));
+      expect(screen.getByRole('button', { name: 'בחר מקום' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'בקרת מסע', expanded: false }));
+      expect(ctl.onOpenChange).toHaveBeenCalledWith(true);
+      expect(onJoinOpenChange).toHaveBeenCalledWith(false);
+      expect(screen.queryByRole('button', { name: 'בחר מקום' })).not.toBeInTheDocument();
+    });
+
+    it('PM-C2: closes the open mission control from the bar', () => {
+      const ctl = control({ open: true });
+      renderScreen({ control: ctl });
+      fireEvent.click(screen.getByRole('button', { name: 'בקרת מסע', expanded: true }));
+      expect(ctl.onOpenChange).toHaveBeenCalledWith(false);
+    });
+
+    it('PM-C3: opening the join code or the search closes the mission control', () => {
+      const ctl = control({ open: true });
+      renderScreen({ control: ctl });
+      fireEvent.click(screen.getByRole('button', { name: 'קוד הצטרפות K7-4Q2' }));
+      expect(ctl.onOpenChange).toHaveBeenLastCalledWith(false);
+      ctl.onOpenChange.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'חיפוש מקום' }));
+      expect(ctl.onOpenChange).toHaveBeenLastCalledWith(false);
+    });
+
+    it('PM-C4: the critical alert opens the mission control to verify and end the mission', () => {
+      const ctl = control();
+      renderScreen({ control: ctl });
+      const alert = screen.getByRole('alert', { name: 'התראה קריטית' });
+      fireEvent.click(within(alert).getByRole('button', { name: 'אמת וסיים מסע…' }));
+      expect(ctl.onOpenChange).toHaveBeenCalledWith(true);
+    });
+
+    it('PM-C5: no finish action on the alert when the mission cannot be ended now', () => {
+      renderScreen({ control: control({ canEnd: false }) });
+      const alert = screen.getByRole('alert', { name: 'התראה קריטית' });
+      expect(within(alert).queryByRole('button', { name: 'אמת וסיים מסע…' })).not.toBeInTheDocument();
+    });
+
+    it('PM-C6: no mission control button without the control', () => {
+      renderScreen();
+      expect(screen.queryByRole('button', { name: 'בקרת מסע' })).not.toBeInTheDocument();
+    });
+  });
 });

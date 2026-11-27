@@ -179,3 +179,25 @@
 .reason[data-focus-visible] {
   outline: 2px solid var(--focus);
 }
+
+/* Phone (Cm13): the panel docks full width over the map and scrolls inside; choices are touch targets of 44px or more. */
+@media (width <= 768px) {
+  .panel {
+    width: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .body {
+    overflow-y: auto;
+  }
+
+  .segOption,
+  .reason {
+    min-height: var(--pending-touch-target);
+  }
+
+  .confirm {
+    max-width: calc(100vw - var(--space-6) * 2);
+  }
+}
