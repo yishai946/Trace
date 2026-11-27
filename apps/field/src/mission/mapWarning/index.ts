@@ -1,5 +1,7 @@
 import { LOW_BATTERY_PERCENT } from '@trace/domain';
 
+const isLowBattery = (level: number | null | undefined) => typeof level === 'number' && level < LOW_BATTERY_PERCENT;
+
 /** Said wherever information saved on the phone shows because the server cannot be reached (UC-F04). */
 export const NOT_UP_TO_DATE = 'מוצג מידע שנשמר במכשיר. ייתכן שהוא לא מעודכן.';
 
@@ -14,7 +16,7 @@ export function mapWarning({
   gpsLost,
   locatedWaiting,
   notUpToDate = false,
-  batteryLevel = null,
+  batteryLevel,
   outsidePolygon = false,
   missionLocated = false,
   missionStopped = null,
@@ -57,7 +59,7 @@ export function mapWarning({
   if (gpsLost) {
     return { text: 'ה-GPS לא זמין: המסלול לא נרשם. הפעל את שירותי המיקום בטלפון.', action: null };
   }
-  if (batteryLevel !== null && batteryLevel < LOW_BATTERY_PERCENT) {
+  if (isLowBattery(batteryLevel)) {
     return { text: 'הסוללה נמוכה: חברו מטען או חזרו לנקודת הכינוס.', action: null };
   }
   if (notUpToDate) {
