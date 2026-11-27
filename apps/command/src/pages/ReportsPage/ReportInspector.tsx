@@ -19,6 +19,8 @@ export interface ReportInspectorProps {
   busy: boolean;
   error: string | null;
   ended: boolean;
+  /** Opens the mission control (UC-C16); missing when the mission cannot be ended. */
+  onOpenControl?: () => void;
   onClose: () => void;
 }
 
@@ -32,6 +34,7 @@ export function ReportInspector({
   busy,
   error,
   ended,
+  onOpenControl,
   onClose,
 }: ReportInspectorProps) {
   const {
@@ -120,6 +123,7 @@ export function ReportInspector({
             <div>
               <b>דיווח אותר אינו סוגר את המסע</b>
               <p className={styles.bannerText}>המסע מסתיים רק אחרי אימות של המנהל. תצפיות על הנעדר מנוהלות ב-LKP.</p>
+              {onOpenControl && <Button onPress={onOpenControl}>פתח בקרת מסע</Button>}
             </div>
           </div>
         </div>

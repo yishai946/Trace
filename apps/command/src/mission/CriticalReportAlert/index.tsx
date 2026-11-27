@@ -9,16 +9,18 @@ export interface CriticalReportAlertProps {
   /** Newest first, as the API returns them. */
   reports: Report[];
   onOpen: (reportId: string) => void;
+  /** Opens the mission control to verify and end the mission (UC-C16). Missing: the mission cannot be ended now. */
+  onFinish?: () => void;
   /** The phone: one line under the top bar, without the note that the mission stays open. */
   compact?: boolean;
 }
 
 /**
  * The critical alert of a "located" report (UC-C11, decision 18): shown while it is New, so it survives a reload, and
- * gone once the commander marks it Handled. It never ends the mission. Several alerts are counted like the SOS banner.
+ * gone once the commander marks it Handled. It never ends the mission itself; the commander verifies and ends it from the mission control. Several alerts are counted like the SOS banner.
  * The phone shows it compact under the top bar.
  */
-export function CriticalReportAlert({ reports, onOpen, compact }: CriticalReportAlertProps) {
+export function CriticalReportAlert({ reports, onOpen, onFinish, compact }: CriticalReportAlertProps) {
   const critical = reports.filter(isCriticalReport);
   const report = critical[0];
   if (!report) return null;
@@ -36,6 +38,11 @@ export function CriticalReportAlert({ reports, onOpen, compact }: CriticalReport
         {!compact && <span className={styles.meta}>הדיווח אינו סוגר את המסע. רק המנהל מסיים אחרי אימות.</span>}
       </div>
       <Button onPress={() => onOpen(report.id)}>פתח</Button>
+      {onFinish && (
+        <Button variant="primary" onPress={onFinish}>
+          אמת וסיים מסע…
+        </Button>
+      )}
     </section>
   );
 }

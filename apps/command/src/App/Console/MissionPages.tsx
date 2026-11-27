@@ -1,3 +1,4 @@
+import { canEndMissionLocated } from '@trace/domain';
 import type { ThemeId } from '@trace/design';
 import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
@@ -99,6 +100,7 @@ export function MissionPages({
           themeId={themeId}
           selectedId={nav.selectedReportId}
           onSelect={nav.setSelectedReportId}
+          onOpenControl={canEndMissionLocated(mission.status) ? nav.openControl : undefined}
           {...reportActions}
         />
       )}
