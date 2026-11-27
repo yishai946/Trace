@@ -4,7 +4,7 @@ import { useSession } from '../../state/session';
 
 /**
  * How long the same level is not sent again.
- * shortcut: a technical interval, not a spec value; the low-battery threshold and its alert are TBD (UC-S04 #87).
+ * shortcut: a technical interval, not a spec value; not the low-battery threshold (UC-S04).
  */
 export const BATTERY_REPORT_MS = 5 * 60_000;
 
@@ -27,6 +27,8 @@ export async function reportBattery(readLevel: () => Promise<number> = getBatter
     const fraction = await readLevel();
     if (!(fraction >= 0)) return;
     const level = Math.round(fraction * 100);
+    // Kept before sending, so the searcher is warned without a connection too (UC-S04).
+    useSession.getState().setBatteryLevel(level);
     const now = Date.now();
     if (
       reported?.participantId === participation.id &&

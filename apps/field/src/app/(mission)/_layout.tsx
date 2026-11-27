@@ -1,6 +1,7 @@
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AlertBanners } from '../../components/AlertBanners';
 import { TabButton } from '../../components/TabButton';
 import { useMessagesInbox } from '../../messages/useMessagesInbox';
 import { useOfflineDownload } from '../../offline/useOfflineDownload';
@@ -26,6 +27,7 @@ export default function MissionLayout() {
   return (
     <Tabs style={styles.fill}>
       <TabSlot />
+      <AlertBanners />
       <TabList
         role="navigation"
         aria-label="ניווט ראשי"

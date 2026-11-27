@@ -24,6 +24,9 @@ interface SessionState {
   /** Whether the phone's own GPS puts a Searching searcher outside their polygon, offline included (UC-S04). */
   outsidePolygon: boolean;
   setOutsidePolygon: (outside: boolean) => void;
+  /** The phone's last read battery level in percent; null before the first reading (UC-S04). */
+  batteryLevel: number | null;
+  setBatteryLevel: (level: number) => void;
   /** Set when the commander assigned or moved the searcher while the app was open (UC-F05); cleared once seen. */
   assignmentNotice: AssignmentNotice | null;
   /** The code of a join link opened before the join screen could show it, e.g. while signed out (UC-F02). */
@@ -66,6 +69,7 @@ export const useSession = create<SessionState>()((set, get) => ({
   tracking: false,
   gpsAvailable: null,
   outsidePolygon: false,
+  batteryLevel: null,
   assignmentNotice: null,
   pendingJoinCode: null,
   restored: false,
@@ -101,6 +105,7 @@ export const useSession = create<SessionState>()((set, get) => ({
       participation: null,
       tracking: false,
       outsidePolygon: false,
+      batteryLevel: null,
       assignmentNotice: null,
     });
   },
@@ -108,7 +113,14 @@ export const useSession = create<SessionState>()((set, get) => ({
     // The participation is unknown now, so what was saved for the earlier mission no longer applies.
     void clearSavedMission();
     resetTaskIntervals();
-    set({ missionId, participation: null, tracking: false, outsidePolygon: false, assignmentNotice: null });
+    set({
+      missionId,
+      participation: null,
+      tracking: false,
+      outsidePolygon: false,
+      batteryLevel: null,
+      assignmentNotice: null,
+    });
   },
   enterMission: (missionId, participation) => {
     void saveMission(missionId, participation);
@@ -119,6 +131,7 @@ export const useSession = create<SessionState>()((set, get) => ({
       participation,
       tracking: isTracking(participation),
       outsidePolygon: false,
+      batteryLevel: null,
       assignmentNotice: null,
       pendingJoinCode: null,
     });
@@ -147,4 +160,5 @@ export const useSession = create<SessionState>()((set, get) => ({
   dismissAssignmentNotice: () => set({ assignmentNotice: null }),
   setGpsAvailable: (gpsAvailable) => set({ gpsAvailable }),
   setOutsidePolygon: (outsidePolygon) => set({ outsidePolygon }),
+  setBatteryLevel: (batteryLevel) => set({ batteryLevel }),
 }));
