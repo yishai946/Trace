@@ -18,14 +18,7 @@ export interface SearchPauseControlsProps {
  * Personal Pause and Resume (UC-F07, Fm06 and Fm07). While searching: "השהה". While paused: a primary "המשך חיפוש" and
  * a note that safety tracking goes on but the movement does not count toward Coverage (decision 71).
  */
-export function SearchPauseControls({
-  paused,
-  onPause,
-  onResume,
-  pending,
-  error,
-  missionPaused = false,
-}: SearchPauseControlsProps) {
+export function SearchPauseControls({ paused, onPause, onResume, pending, error }: SearchPauseControlsProps) {
   const { color } = useTheme().theme;
   const action = paused ? onResume : onPause;
   return (
