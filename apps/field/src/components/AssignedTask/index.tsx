@@ -97,8 +97,9 @@ export function AssignedTask({
       </View>
       <TaskActions
         status={participation.taskStatus}
+        missionPaused={missionPaused}
         start={{ onStartSearch, starting, startError }}
-        pause={{ onPause, onResume, pending: pausing, error: pauseError, missionPaused }}
+        pause={{ onPause, onResume, pending: pausing, error: pauseError }}
         finish={{ onFinish, pending: finishing, error: finishError }}
       />
     </View>

@@ -12,8 +12,6 @@ export interface SearchPauseControlsProps {
   pending: boolean;
   /** Why the last pause or resume failed, in Hebrew; the searcher can press again. */
   error: string | null;
-  /** The commander paused the mission: no personal Resume until they resume it (UC-C15). */
-  missionPaused?: boolean;
 }
 
 /**
@@ -30,14 +28,6 @@ export function SearchPauseControls({
 }: SearchPauseControlsProps) {
   const { color } = useTheme().theme;
   const action = paused ? onResume : onPause;
-  if (paused && missionPaused) {
-    // A mission Pause outranks a personal one: the server answers 409 MISSION_NOT_ACTIVE to a Resume.
-    return (
-      <Text accessibilityLiveRegion="polite" style={[typography.caption, { color: color.inkMuted }]}>
-        המנהל השהה את החיפוש. חזרו ל־Rally Point והמתינו להודעת חידוש. מעקב הבטיחות ממשיך.
-      </Text>
-    );
-  }
   return (
     <View style={styles.controls}>
       <Text accessibilityLiveRegion="polite" style={[typography.caption, { color: color.inkMuted }]}>
