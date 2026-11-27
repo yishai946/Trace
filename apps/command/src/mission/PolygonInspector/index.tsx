@@ -4,6 +4,9 @@ import { Input, Label, TextField } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
 import styles from './PolygonInspector.module.css';
+import { StatusActions } from './StatusActions';
+
+const hasOpenTask = (p: Participant) => p.taskStatus !== null && p.taskStatus !== 'finished';
 
 export const POLYGON_STATUS_LABEL: Record<PolygonStatus, string> = {
   unassigned: 'לא משובץ',
@@ -23,6 +26,8 @@ interface PolygonInspectorProps {
   onRename: (name: string) => void;
   onEditBoundary: () => void;
   onDelete: () => void;
+  /** Completed or back to Active; `confirmed` once the commander accepted the active-searchers warning. */
+  onSetStatus: (status: 'active' | 'completed', confirmed: boolean) => void;
 }
 
 /** Trace Console Inspector for a selected polygon (Cd07): name, coverage, assigned searchers and actions. */
@@ -36,6 +41,7 @@ export function PolygonInspector({
   onRename,
   onEditBoundary,
   onDelete,
+  onSetStatus,
 }: PolygonInspectorProps) {
   const [name, setName] = useState(polygon.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -106,6 +112,13 @@ export function PolygonInspector({
 
       {canEdit && (
         <div className={`${styles.section} ${styles.actions}`}>
+          <StatusActions
+            status={polygon.status}
+            polygonName={polygon.name}
+            activeSearchers={assigned.filter(hasOpenTask).length}
+            busy={busy}
+            onSetStatus={onSetStatus}
+          />
           {confirmingDelete ? (
             <div role="group" aria-label="אישור מחיקה" className={styles.confirm}>
               <p className={styles.hint}>למחוק את "{polygon.name}"? היסטוריית Routes ודיווחים נשמרת.</p>

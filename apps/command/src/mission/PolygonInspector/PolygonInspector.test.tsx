@@ -3,7 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { PolygonInspector } from '.';
 import { participants, polygonA, polygonB } from '../fixtures';
 
-const handlers = () => ({ onClose: vi.fn(), onRename: vi.fn(), onEditBoundary: vi.fn(), onDelete: vi.fn() });
+const handlers = () => ({
+  onClose: vi.fn(),
+  onRename: vi.fn(),
+  onEditBoundary: vi.fn(),
+  onDelete: vi.fn(),
+  onSetStatus: vi.fn(),
+});
 
 describe('PolygonInspector', () => {
   it('shows the polygon, its status and assigned callsigns', () => {
@@ -70,5 +76,52 @@ describe('PolygonInspector', () => {
       <PolygonInspector polygon={polygonB} assigned={[]} canEdit busy={false} error="אין חיבור" {...handlers()} />,
     );
     expect(screen.getByRole('alert').textContent).toBe('אין חיבור');
+  });
+
+  describe('status (UC-C07)', () => {
+    it('completes a polygon without active searchers at once', () => {
+      const h = handlers();
+      render(<PolygonInspector polygon={polygonB} assigned={[]} canEdit busy={false} error={null} {...h} />);
+      fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
+      expect(h.onSetStatus).toHaveBeenCalledWith('completed', false);
+    });
+
+    it('warns and asks for confirmation when searchers are active', () => {
+      const h = handlers();
+      const searcher = { ...participants[0]!, taskStatus: 'searching' as const };
+      render(<PolygonInspector polygon={polygonA} assigned={[searcher]} canEdit busy={false} error={null} {...h} />);
+      fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
+      expect(h.onSetStatus).not.toHaveBeenCalled();
+      expect(screen.getByText(/1 מחפשים פעילים/)).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'בטל' }));
+      expect(screen.getByRole('button', { name: 'סמן כהושלם' })).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
+      fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם ושלח הודעה' }));
+      expect(h.onSetStatus).toHaveBeenCalledWith('completed', true);
+    });
+
+    it('does not warn for a searcher whose task already finished', () => {
+      const h = handlers();
+      const done = { ...participants[0]!, taskStatus: 'finished' as const };
+      render(<PolygonInspector polygon={polygonA} assigned={[done]} canEdit busy={false} error={null} {...h} />);
+      fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
+      expect(h.onSetStatus).toHaveBeenCalledWith('completed', false);
+    });
+
+    it('returns a Completed polygon to Active', () => {
+      const h = handlers();
+      const completed = { ...polygonB, status: 'completed' as const };
+      render(<PolygonInspector polygon={completed} assigned={[]} canEdit busy={false} error={null} {...h} />);
+      expect(screen.getByText('הושלם, 0 מחפשים')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'החזר לפעיל' }));
+      expect(h.onSetStatus).toHaveBeenCalledWith('active', false);
+    });
+
+    it('offers no status change when the mission is not active', () => {
+      render(
+        <PolygonInspector polygon={polygonB} assigned={[]} canEdit={false} busy={false} error={null} {...handlers()} />,
+      );
+      expect(screen.queryByRole('button', { name: 'סמן כהושלם' })).toBeNull();
+    });
   });
 });
