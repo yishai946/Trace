@@ -17,3 +17,19 @@ export function nextPolygonName(names: Iterable<string>): string {
   }
   return `פוליגון ${highest + 1}`;
 }
+
+/** The statuses a commander sets by hand: Completed at any Coverage, and back to Active (decisions 56, 57, 90). */
+export type SettablePolygonStatus = Extract<PolygonStatus, 'active' | 'completed'>;
+
+/**
+ * What a manual status change does. `unchanged`: the polygon is already there (asking twice is harmless). `refused`:
+ * Active is only a way back from Completed; Unassigned becomes Active when a searcher is assigned. Otherwise `allowed`.
+ */
+export function polygonStatusChange(
+  current: PolygonStatus,
+  target: SettablePolygonStatus,
+): 'unchanged' | 'allowed' | 'refused' {
+  if (current === target) return 'unchanged';
+  if (target === 'active' && current !== 'completed') return 'refused';
+  return 'allowed';
+}

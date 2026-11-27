@@ -50,6 +50,13 @@ export const UpdatePolygonBody = z
     message: 'Nothing to update: send geometry or name',
   });
 
+/** Marks a polygon Completed, or returns a Completed one to Active (UC-C07). */
+export const SetPolygonStatusBody = z.object({
+  status: z.enum(['active', 'completed']),
+  /** Completes a polygon that has active searchers, after the commander saw the warning (decision 56). */
+  confirmActiveSearchers: z.boolean().default(false),
+});
+
 export const PolygonParams = z.object({ missionId: z.uuid(), polygonId: z.uuid() });
 
 /** `details` of a SEARCHERS_OUTSIDE_POLYGON error. */
@@ -73,9 +80,18 @@ export const SearcherOfflineDetails = z
   })
   .meta({ id: 'SearcherOfflineDetails' });
 
+/** `details` of a POLYGON_SEARCHERS_ACTIVE error: the searchers whose tasks Completed would end. */
+export const ActiveSearchersDetails = z
+  .object({
+    searchers: z.array(z.object({ participantId: z.uuid(), callsign: z.number().int(), name: z.string() })),
+  })
+  .meta({ id: 'ActiveSearchersDetails' });
+
 export type PolygonStatus = z.infer<typeof PolygonStatus>;
 export type MissionPolygon = z.infer<typeof MissionPolygon>;
 export type CreatePolygonBody = z.input<typeof CreatePolygonBody>;
 export type UpdatePolygonBody = z.input<typeof UpdatePolygonBody>;
 export type SearcherOfflineDetails = z.infer<typeof SearcherOfflineDetails>;
 export type SearchersOutsideDetails = z.infer<typeof SearchersOutsideDetails>;
+export type SetPolygonStatusBody = z.input<typeof SetPolygonStatusBody>;
+export type ActiveSearchersDetails = z.infer<typeof ActiveSearchersDetails>;
