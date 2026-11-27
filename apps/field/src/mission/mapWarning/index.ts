@@ -4,9 +4,9 @@ export const NOT_UP_TO_DATE = 'מוצג מידע שנשמר במכשיר. יית
 /**
  * The warning on the map when nothing more urgent shows: leaving the polygon comes first, a safety matter that stays
  * while it lasts and clears on return (UC-S04); then the end of the mission as located (UC-C16), which the
- * searcher must not miss; then the mission paused by the commander (UC-C15); then a "הנעדר אותר" report that waits on the phone comes first
- * (the commander has not heard the person was found, UC-F09), then a lost GPS (decision 42), then saved mission
- * information shown without a connection (UC-F04).
+ * searcher must not miss; then the mission paused by the commander (UC-C15); then a "הנעדר אותר" report that waits
+ * on the phone (the commander has not heard the person was found, UC-F09), then a lost GPS (decision 42), then saved
+ * mission information shown without a connection (UC-F04).
  */
 export function mapWarning({
   gpsLost,
