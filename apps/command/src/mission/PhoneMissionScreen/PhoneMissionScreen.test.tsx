@@ -175,8 +175,19 @@ describe('PhoneMissionScreen', () => {
         since: '2026-10-03T13:55:00.000Z',
       },
     ];
+    const warnings = [
+      {
+        key: 'outside',
+        title: 'מחפש מחוץ לפוליגון',
+        participantId: first.id,
+        callsign: first.callsign,
+        name: first.name,
+        message: 'מחוץ לאזור, 80 מ׳ מהגבול',
+        since: null,
+      },
+    ];
     const onOpenSearcher = vi.fn();
-    renderScreen({ outside, onOpenSearcher });
+    renderScreen({ outside, warnings, onOpenSearcher });
     const alert = screen.getByRole('alert', { name: 'אזהרה: מחפש מחוץ לפוליגון' });
     expect(within(alert).getByText(/80 מ׳ מהגבול/)).toBeInTheDocument();
     fireEvent.click(within(alert).getByRole('button', { name: 'פתח' }));

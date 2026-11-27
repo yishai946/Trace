@@ -1,11 +1,11 @@
-import { canEndMissionLocated } from '@trace/domain';
+import { canEndMissionLocated, isMissionEnded } from '@trace/domain';
 import type { ThemeId } from '@trace/design';
 import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
 import styles from '../App.module.css';
 import type { MapFocus } from '../../map/MissionMap';
 import { FloatingAlerts } from '../../mission/FloatingAlerts';
-import { outsideSearchers } from '../../mission/outsideSearchers';
+import { safetyWarnings } from '../../mission/safetyWarnings';
 import { MissionWorkspace } from '../MissionWorkspace';
 import type { ConsoleNav } from './useConsoleNav';
 import type { MissionData } from './useMissionData';
@@ -60,7 +60,12 @@ export function MapSlot({
             sos={data.sos.data ?? []}
             sosFailed={data.sos.isError}
             onRetrySos={() => void data.sos.refetch()}
-            outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
+            warnings={safetyWarnings({
+              events: data.timeline.data ?? [],
+              participants: data.participants.data ?? [],
+              polygons: data.polygons.data ?? [],
+              missionEnded: isMissionEnded(mission.status),
+            })}
             onOpenSearcher={nav.setSelectedSearcherId}
             onOpenReport={nav.openReport}
             onFinish={canEndMissionLocated(mission.status) ? nav.openControl : undefined}

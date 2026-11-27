@@ -13,14 +13,18 @@ interface SearcherUnitProps {
   onOpen: (participantId: string) => void;
 }
 
-/** What the commander reads first: an active SOS, no connection, else the searcher's state. */
-const stateText = (p: Participant, sos: boolean, outside?: OutsideSearcher) =>
-  sos ? 'SOS' : p.offline ? 'לא מקוון' : outside ? `מחוץ לגבול, ${outside.meters} מ׳` : statusLabel(p);
+/** What the commander reads first: an active SOS, no connection, no GPS (decision 42), else the searcher's state. */
+function stateText(p: Participant, sos: boolean, outside?: OutsideSearcher) {
+  if (sos) return 'SOS';
+  if (p.offline) return 'לא מקוון';
+  if (p.gpsUnavailableSince) return 'אין GPS';
+  return outside ? `מחוץ לגבול, ${outside.meters} מ׳` : statusLabel(p);
+}
 
 /** One searcher in the Cd04 panel (Trace Console `tc-unit`): callsign, name, state with the last update, battery. */
 export function SearcherUnit({ searcher: p, sos, outside, onOpen }: SearcherUnitProps) {
   const updatedAt = p.lastUpdateAt ?? p.positionAt;
-  const tone = sos ? 'sos' : p.offline ? 'offline' : outside ? 'outside' : undefined;
+  const tone = sos ? 'sos' : p.offline ? 'offline' : p.gpsUnavailableSince || outside ? 'outside' : undefined;
   return (
     <button type="button" className={styles.unit} data-tone={tone} onClick={() => onOpen(p.id)}>
       <CallsignChip
