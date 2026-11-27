@@ -6,7 +6,17 @@ import { useSession } from '../../state/session';
 
 export type SearchTransition = 'start' | 'pause' | 'resume' | 'finish';
 
+/**
+ * Pause and Finish take effect on the server somewhere between sending and the answer, so the phone counts the wait
+ * as already paused or finished; Start and Resume count it as not yet started, so fixes taken in the wait never count
+ * as search (decision 71).
+ */
+function changedAt(transition: SearchTransition, sentAt: number): number {
+  return transition === 'pause' || transition === 'finish' ? sentAt : Date.now();
+}
+
 async function postTransition(transition: SearchTransition) {
+  const sentAt = Date.now();
   const { token, missionId } = useSession.getState();
   const participation = await apiRequest(`/missions/${missionId}/participation/search/${transition}`, {
     baseUrl: apiBaseUrl,
@@ -14,7 +24,7 @@ async function postTransition(transition: SearchTransition) {
     method: 'POST',
     schema: OwnParticipation,
   });
-  return { missionId, participation };
+  return { missionId, participation, changedAt: changedAt(transition, sentAt) };
 }
 
 /**
@@ -26,8 +36,9 @@ export function useSearchTransition() {
   const mutation = useMutation({
     mutationFn: postTransition,
     // The answer belongs to the mission it was asked in: after a move to another mission it must not reach that session.
-    onSuccess: ({ missionId, participation }) => {
-      if (useSession.getState().missionId === missionId) useSession.getState().updateParticipation(participation);
+    onSuccess: ({ missionId, participation, changedAt }) => {
+      if (useSession.getState().missionId === missionId)
+        useSession.getState().updateParticipation(participation, changedAt);
     },
   });
   const inFlight = useRef(false);

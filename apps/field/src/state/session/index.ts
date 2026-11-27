@@ -2,6 +2,7 @@ import type { OwnParticipation } from '@trace/schemas';
 import { create } from 'zustand';
 import { clearOutbox } from '../../outbox';
 import { clearOfflinePackages } from '../../offline/store';
+import { recordTaskStatus, resetTaskIntervals } from '../../tracking/taskIntervals';
 import { clearSavedMission, loadSavedMission, saveMission } from '../savedMission';
 import { deleteToken, loadToken, saveToken } from './tokenStore';
 
@@ -40,7 +41,7 @@ interface SessionState {
   enterMission: (missionId: string, participation: OwnParticipation) => void;
   setPendingJoinCode: (code: string | null) => void;
   /** The participation as the server sent it now; notes an assignment or a move. */
-  updateParticipation: (participation: OwnParticipation) => void;
+  updateParticipation: (participation: OwnParticipation, changedAt?: number) => void;
   dismissAssignmentNotice: () => void;
 }
 
@@ -77,6 +78,8 @@ export const useSession = create<SessionState>()((set, get) => ({
       const restoring = token && saved && s.missionId === null ? saved : null;
       if (!restoring) return { token, restored: true };
       const { missionId, participation } = restoring;
+      resetTaskIntervals();
+      recordTaskStatus(participation.taskStatus);
       return { token, restored: true, missionId, participation, tracking: isTracking(participation) };
     });
   },
@@ -91,6 +94,7 @@ export const useSession = create<SessionState>()((set, get) => ({
     // The missing person's details saved for Offline belong to this searcher's mission only.
     await clearOfflinePackages().catch(() => undefined);
     await clearSavedMission();
+    resetTaskIntervals();
     set({
       token: null,
       missionId: null,
@@ -103,10 +107,13 @@ export const useSession = create<SessionState>()((set, get) => ({
   setMissionId: (missionId) => {
     // The participation is unknown now, so what was saved for the earlier mission no longer applies.
     void clearSavedMission();
+    resetTaskIntervals();
     set({ missionId, participation: null, tracking: false, outsidePolygon: false, assignmentNotice: null });
   },
   enterMission: (missionId, participation) => {
     void saveMission(missionId, participation);
+    resetTaskIntervals();
+    recordTaskStatus(participation.taskStatus);
     set({
       missionId,
       participation,
@@ -117,9 +124,10 @@ export const useSession = create<SessionState>()((set, get) => ({
     });
   },
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
-  updateParticipation: (participation) => {
+  updateParticipation: (participation, changedAt) => {
     const { missionId } = get();
     if (missionId) void saveMission(missionId, participation);
+    recordTaskStatus(participation.taskStatus, changedAt);
     set((s) => {
       const before = s.participation;
       const changed = participation.status === 'assigned' && participation.polygonId !== before?.polygonId;
