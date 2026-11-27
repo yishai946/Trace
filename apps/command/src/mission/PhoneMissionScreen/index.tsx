@@ -1,17 +1,18 @@
 import type { Mission, MissionPolygon, Participant, Report, Sos } from '@trace/schemas';
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Overlays } from './Overlays';
 import { PhoneBar } from './PhoneBar';
 import { phoneAlerts } from './phoneAlerts';
 import styles from './PhoneMissionScreen.module.css';
 import type { Connection } from '../../components/ConnectionStatus';
-import { MissionSheet, type SheetTab } from '../MissionSheet';
+import { MissionSheet } from '../MissionSheet';
 import type { OutsideSearcher } from '../outsideSearchers';
 import type { SafetyWarning } from '../safetyWarnings';
 import { SosStrip } from './SosStrip';
 import { useBarToggles, type PhoneControl } from './useBarToggles';
-import { MissionTabBar, type MissionTab } from '../MissionTabBar';
-import { PHONE_SCREENS, type PhoneScreen } from '../phoneScreen';
+import { useSheetTabs } from './useSheetTabs';
+import { MissionTabBar } from '../MissionTabBar';
+import type { PhoneScreen } from '../phoneScreen';
 
 interface PhoneMissionScreenProps {
   mission: Mission;
@@ -92,22 +93,8 @@ export function PhoneMissionScreen({
   warnings = [],
   control,
 }: PhoneMissionScreenProps) {
-  const [tab, setTab] = useState<SheetTab>('alerts');
-  const [expanded, setExpanded] = useState(true);
+  const { tab, setTab, expanded, setExpanded, navigate, current } = useSheetTabs(screen, onScreenChange);
   const bar = useBarToggles(joinOpen, onJoinOpenChange, control);
-
-  const navigate = (next: MissionTab) => {
-    const target = PHONE_SCREENS.find((s) => s === next);
-    if (target) {
-      onScreenChange(target);
-      return;
-    }
-    setTab(next === 'searchers' ? 'searchers' : 'alerts');
-    setExpanded(true);
-    onScreenChange('map');
-  };
-  // The sheet's own reports tab lists them in the sheet, so it keeps "לוח" marked.
-  const current: MissionTab = screen !== 'map' ? screen : tab === 'searchers' ? 'searchers' : 'board';
   const {
     critical,
     activeSos,
