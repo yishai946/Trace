@@ -1,4 +1,4 @@
-import { MISSION_STATUSES } from '@trace/domain';
+import { MISSION_STATUSES, MISSION_STOP_REASONS } from '@trace/domain';
 import { z } from 'zod';
 import { IsoDateTime } from '../datetime';
 import { PointGeometry } from '../geo';
@@ -102,6 +102,24 @@ export const MissionLocated = z
   })
   .meta({ id: 'MissionLocated' });
 
+export const MissionStopReason = z.enum(MISSION_STOP_REASONS).meta({ id: 'MissionStopReason' });
+
+/** UC-C17: the commander ends the mission without locating the missing person. A reason from the list is required (decision 96). */
+export const StopMissionBody = z.object({
+  reason: MissionStopReason,
+  note: optionalText(2000),
+});
+
+/** How a mission that ended as "search stopped" ended (UC-C17): the reason, the note and when. */
+export const MissionStopped = z
+  .object({
+    reason: MissionStopReason,
+    note: z.string().nullable(),
+    /** When the commander ended the mission. */
+    endedAt: IsoDateTime,
+  })
+  .meta({ id: 'MissionStopped' });
+
 /** Who runs the mission, for the searchers to call (UC-F14). The phone is empty until the commander has one. */
 export const MissionCommander = z
   .object({ name: z.string(), phoneNumber: z.string().nullable() })
@@ -120,6 +138,8 @@ export const Mission = z
     lkp: Lkp.nullable(),
     /** Set once the mission ended as located (`ended_located`); null otherwise. */
     located: MissionLocated.nullable(),
+    /** Set once the search was stopped (`ended_stopped`); null otherwise. */
+    stopped: MissionStopped.nullable(),
     createdAt: IsoDateTime,
     updatedAt: IsoDateTime,
   })
@@ -135,6 +155,9 @@ export type CreateMissionBody = z.input<typeof CreateMissionBody>;
 export type Lkp = z.infer<typeof Lkp>;
 export type LkpPoint = z.infer<typeof LkpPoint>;
 export type EndMissionLocatedBody = z.input<typeof EndMissionLocatedBody>;
+export type StopMissionBody = z.input<typeof StopMissionBody>;
+export type MissionStopped = z.infer<typeof MissionStopped>;
+export type MissionStopReason = z.infer<typeof MissionStopReason>;
 export type MissionLocated = z.infer<typeof MissionLocated>;
 export type UpdateRallyPointBody = z.input<typeof UpdateRallyPointBody>;
 export type UpdateMissionDetailsBody = z.input<typeof UpdateMissionDetailsBody>;

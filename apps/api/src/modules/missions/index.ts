@@ -3,6 +3,7 @@ import {
   ApiError,
   CreateMissionBody,
   EndMissionLocatedBody,
+  StopMissionBody,
   Mission,
   MissionList,
   MissionParams,
@@ -18,6 +19,7 @@ import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import type { ServiceDeps } from '../serviceDeps';
 import { getMission, getMissionPhoto, listMissions } from './missions.read';
 import { endMissionLocated } from './missions.endLocated';
+import { stopMission } from './missions.stop';
 import { updateMissionDetails } from './missions.details';
 import { pauseMission, resumeMission } from './missions.pause';
 import { createMission, setMissionPhoto, updateRallyPoint } from './missions.service';
@@ -136,6 +138,30 @@ export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
       const commander = actorOf(request);
       if (commander.role !== 'commander') throw forbidden();
       return endMissionLocated(deps, { missionId: request.params.missionId, commander, located: request.body });
+    },
+  );
+
+  app.post(
+    '/missions/:missionId/stop',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'End the mission: stop the search without locating the missing person (UC-C17)',
+        description:
+          'Only the mission commander, while the mission is active or paused. Needs a reason from the list; the note ' +
+          'is optional (decision 96). The mission becomes ended_stopped and read-only (decision 52), every open ' +
+          'search task finishes and the searchers in the field get a message and a push. Safety tracking goes on ' +
+          'until each searcher ends their activity (decision 65). 409 MISSION_ENDED when the mission already ended.',
+        params: MissionParams,
+        body: StopMissionBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    (request) => {
+      const commander = actorOf(request);
+      if (commander.role !== 'commander') throw forbidden();
+      return stopMission(deps, { missionId: request.params.missionId, commander, stop: request.body });
     },
   );
 

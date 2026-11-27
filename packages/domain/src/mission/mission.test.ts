@@ -5,6 +5,8 @@ import {
   canChangeRallyPoint,
   canEditMissionDetails,
   canEndMissionLocated,
+  canStopMission,
+  MISSION_STOP_REASONS,
   canPauseMission,
   canResumeMission,
   isMissionEnded,
@@ -50,6 +52,18 @@ describe('mission rules', () => {
     expect(canEndMissionLocated('paused')).toBe(true);
     expect(canEndMissionLocated('ended_located')).toBe(false);
     expect(canEndMissionLocated('ended_stopped')).toBe(false);
+  });
+
+  it('stops the search of a mission that runs, active or paused', () => {
+    expect(canStopMission('active')).toBe(true);
+    expect(canStopMission('paused')).toBe(true);
+    expect(canStopMission('ended_located')).toBe(false);
+    expect(canStopMission('ended_stopped')).toBe(false);
+  });
+
+  it('has a closed list of stop reasons ending with "other"', () => {
+    expect(MISSION_STOP_REASONS.length).toBeGreaterThan(1);
+    expect(MISSION_STOP_REASONS.at(-1)).toBe('other');
   });
 
   it('pauses only an active mission and resumes only a paused one', () => {
