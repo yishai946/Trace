@@ -6,6 +6,7 @@ import { phoneAlerts } from './phoneAlerts';
 import styles from './PhoneMissionScreen.module.css';
 import type { Connection } from '../../components/ConnectionStatus';
 import { MissionSheet } from '../MissionSheet';
+import { useOpenWarnings } from '../SafetyAlert/useOpenWarnings';
 import type { OutsideSearcher } from '../outsideSearchers';
 import type { SafetyWarning } from '../safetyWarnings';
 import { SosStrip } from './SosStrip';
@@ -94,13 +95,14 @@ export function PhoneMissionScreen({
   control,
 }: PhoneMissionScreenProps) {
   const { tab, setTab, expanded, setExpanded, navigate, current } = useSheetTabs(screen, onScreenChange);
+  const openWarnings = useOpenWarnings(warnings);
   const bar = useBarToggles(joinOpen, onJoinOpenChange, control);
   const {
     critical,
     activeSos,
     newReports,
     count: alerts,
-  } = phoneAlerts({ mission, reports, sos, sosFailed, warnings });
+  } = phoneAlerts({ mission, reports, sos, sosFailed, warnings: openWarnings });
 
   return (
     <div className={styles.phone}>

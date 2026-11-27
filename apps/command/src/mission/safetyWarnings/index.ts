@@ -21,6 +21,8 @@ interface Sources {
   events: TimelineEvent[];
   participants: Participant[];
   polygons: MissionPolygon[];
+  /** An ended mission has no Coverage left to act on; safety warnings still show until Finish Activity. */
+  missionEnded?: boolean;
 }
 
 type SearcherState = Pick<SafetyWarning, 'title' | 'message' | 'since'> & { kind: string };
@@ -80,7 +82,8 @@ function batteryWarnings({ participants }: Sources): SafetyWarning[] {
 }
 
 /** A polygon that reached 80% or 90% (decision 55) and was not completed yet; the highest threshold reached. */
-function coverageWarnings({ polygons }: Sources): SafetyWarning[] {
+function coverageWarnings({ polygons, missionEnded }: Sources): SafetyWarning[] {
+  if (missionEnded) return [];
   return polygons.flatMap((polygon) => {
     const { coverage } = polygon;
     if (polygon.status === 'completed' || coverage === null) return [];

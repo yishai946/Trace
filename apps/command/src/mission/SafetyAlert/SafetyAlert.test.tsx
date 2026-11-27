@@ -43,17 +43,22 @@ describe('SafetyAlert', () => {
     expect(within(alert).getByText('16:55')).toBeTruthy();
   });
 
-  it('counts the warnings, shows the first and opens its searcher', () => {
+  it('counts the warnings, opens the shown searcher and moves to the next', () => {
     const onOpen = vi.fn();
     render(<SafetyAlert warnings={[dana, coverage]} onOpen={onOpen} />);
     expect(screen.getByText('אזהרה · 2')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'פתח' }));
     expect(onOpen).toHaveBeenCalledWith(dana.participantId);
+    fireEvent.click(screen.getByRole('button', { name: 'הבא' }));
+    expect(screen.getByRole('alert', { name: 'אזהרה: כיסוי פוליגון' })).toBeTruthy();
   });
 
   it('lets the commander close a Coverage warning', () => {
-    render(<SafetyAlert warnings={[coverage]} onOpen={vi.fn()} />);
+    const { unmount } = render(<SafetyAlert warnings={[coverage]} onOpen={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'סגור' }));
+    expect(screen.queryByRole('alert')).toBeNull();
+    unmount();
+    render(<SafetyAlert warnings={[coverage]} onOpen={vi.fn()} />);
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });

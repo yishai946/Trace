@@ -1,4 +1,4 @@
-import { canEndMissionLocated } from '@trace/domain';
+import { canEndMissionLocated, isMissionEnded } from '@trace/domain';
 import type { ThemeId } from '@trace/design';
 import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
@@ -64,6 +64,7 @@ export function MapSlot({
               events: data.timeline.data ?? [],
               participants: data.participants.data ?? [],
               polygons: data.polygons.data ?? [],
+              missionEnded: isMissionEnded(mission.status),
             })}
             onOpenSearcher={nav.setSelectedSearcherId}
             onOpenReport={nav.openReport}

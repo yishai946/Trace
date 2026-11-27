@@ -48,5 +48,6 @@ describe('safetyWarnings', () => {
     expect(warn(polygon).map((w) => w.message)).toEqual(['הכיסוי עבר 90%']);
     expect(warn({ ...polygon, coverage: 79 })).toEqual([]);
     expect(warn({ ...polygon, status: 'completed' })).toEqual([]);
+    expect(safetyWarnings({ events: [], participants: [], polygons: [polygon], missionEnded: true })).toEqual([]);
   });
 });

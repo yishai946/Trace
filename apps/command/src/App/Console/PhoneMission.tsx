@@ -1,5 +1,5 @@
 import type { ThemeId } from '@trace/design';
-import { canEndMissionLocated } from '@trace/domain';
+import { canEndMissionLocated, isMissionEnded } from '@trace/domain';
 import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
 import type { ReactNode } from 'react';
@@ -80,6 +80,7 @@ export function PhoneMission({
         events: data.timeline.data ?? [],
         participants: data.participants.data ?? [],
         polygons,
+        missionEnded: isMissionEnded(mission.status),
       })}
       control={{
         open: nav.panel === 'control',
