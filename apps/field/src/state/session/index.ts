@@ -105,6 +105,7 @@ export const useSession = create<SessionState>()((set, get) => ({
       participation: null,
       tracking: false,
       outsidePolygon: false,
+      batteryLevel: null,
       assignmentNotice: null,
     });
   },
@@ -112,7 +113,14 @@ export const useSession = create<SessionState>()((set, get) => ({
     // The participation is unknown now, so what was saved for the earlier mission no longer applies.
     void clearSavedMission();
     resetTaskIntervals();
-    set({ missionId, participation: null, tracking: false, outsidePolygon: false, assignmentNotice: null });
+    set({
+      missionId,
+      participation: null,
+      tracking: false,
+      outsidePolygon: false,
+      batteryLevel: null,
+      assignmentNotice: null,
+    });
   },
   enterMission: (missionId, participation) => {
     void saveMission(missionId, participation);
@@ -123,6 +131,7 @@ export const useSession = create<SessionState>()((set, get) => ({
       participation,
       tracking: isTracking(participation),
       outsidePolygon: false,
+      batteryLevel: null,
       assignmentNotice: null,
       pendingJoinCode: null,
     });

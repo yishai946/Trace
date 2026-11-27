@@ -1,5 +1,4 @@
 import { radius, spacing, typography } from '@trace/design';
-import { LOW_BATTERY_PERCENT } from '@trace/domain';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -38,7 +37,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
   const gpsLost = useSession((s) => s.gpsAvailable === false);
   const outsidePolygon = useSession((s) => s.outsidePolygon);
   // Only while tracking: after the activity ends the last reading says nothing.
-  const lowBattery = useSession((s) => s.tracking && s.batteryLevel !== null && s.batteryLevel < LOW_BATTERY_PERCENT);
+  const batteryLevel = useSession((s) => (s.tracking ? s.batteryLevel : null));
   const kind = mapStatus({
     apiConfigured: !!apiBaseUrl,
     signedIn,
@@ -71,7 +70,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
       gpsLost,
       locatedWaiting,
       notUpToDate: polygons.notUpToDate,
-      lowBattery,
+      batteryLevel,
       outsidePolygon,
       missionLocated,
       missionStopped,

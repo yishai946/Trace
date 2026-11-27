@@ -1,3 +1,5 @@
+import { LOW_BATTERY_PERCENT } from '@trace/domain';
+
 /** Said wherever information saved on the phone shows because the server cannot be reached (UC-F04). */
 export const NOT_UP_TO_DATE = 'מוצג מידע שנשמר במכשיר. ייתכן שהוא לא מעודכן.';
 
@@ -12,7 +14,7 @@ export function mapWarning({
   gpsLost,
   locatedWaiting,
   notUpToDate = false,
-  lowBattery = false,
+  batteryLevel = null,
   outsidePolygon = false,
   missionLocated = false,
   missionStopped = null,
@@ -21,7 +23,8 @@ export function mapWarning({
   gpsLost: boolean;
   locatedWaiting: boolean;
   notUpToDate?: boolean;
-  lowBattery?: boolean;
+  /** The phone's battery in percent while tracking; null otherwise. */
+  batteryLevel?: number | null;
   outsidePolygon?: boolean;
   /** The commander ended the mission: the missing person was located (UC-C16). */
   missionLocated?: boolean;
@@ -54,7 +57,7 @@ export function mapWarning({
   if (gpsLost) {
     return { text: 'ה-GPS לא זמין: המסלול לא נרשם. הפעל את שירותי המיקום בטלפון.', action: null };
   }
-  if (lowBattery) {
+  if (batteryLevel !== null && batteryLevel < LOW_BATTERY_PERCENT) {
     return { text: 'הסוללה נמוכה: חברו מטען או חזרו לנקודת הכינוס.', action: null };
   }
   if (notUpToDate) {
