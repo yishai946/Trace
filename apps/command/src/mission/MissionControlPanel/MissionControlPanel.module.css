@@ -185,6 +185,14 @@
   outline: 2px solid var(--focus);
 }
 
+.pause {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
 /* Phone (Cm13): the panel docks full width over the map and scrolls inside; choices are touch targets of 44px or more. */
 @media (width <= 768px) {
   .panel {

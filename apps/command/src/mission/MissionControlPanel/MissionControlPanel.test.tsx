@@ -13,10 +13,12 @@ function setup(props: Partial<Parameters<typeof MissionControlPanel>[0]> = {}) {
     onPlaceFound: vi.fn(),
     onEnd: vi.fn(),
     onStop: vi.fn(),
+    onPause: vi.fn(),
+    onResume: vi.fn(),
     onEdit: vi.fn(),
     onClose: vi.fn(),
   };
-  render(
+  const view = render(
     <MissionControlPanel
       mission={mission}
       provider={{} as MapProvider}
@@ -29,7 +31,7 @@ function setup(props: Partial<Parameters<typeof MissionControlPanel>[0]> = {}) {
       {...props}
     />,
   );
-  return handlers;
+  return { ...handlers, unmount: view.unmount };
 }
 
 describe('MissionControlPanel: the missing person was located (UC-C16)', () => {
@@ -177,6 +179,51 @@ describe('MissionControlPanel: stop the search (UC-C17)', () => {
   });
 });
 
+describe('MissionControlPanel: pause and resume (UC-C15)', () => {
+  it('pauses an active mission after the commander confirms', () => {
+    const { onPause } = setup();
+    expect(screen.getByRole('group', { name: 'השהיית חיפוש' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'השהה חיפוש…' }));
+    expect(onPause).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'אישור השהיית החיפוש' })).toHaveTextContent('המעקב הבטיחותי נמשך');
+    fireEvent.click(screen.getByRole('button', { name: 'אשר והשהה' }));
+    expect(onPause).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not pause when the commander cancels', () => {
+    const { onPause } = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'השהה חיפוש…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'ביטול' }));
+    expect(onPause).not.toHaveBeenCalled();
+  });
+
+  it('shows a paused mission and resumes it, telling that searchers press Start Search again', () => {
+    const { onResume } = setup({ mission: { ...mission, status: 'paused' } });
+    expect(screen.getByText('מצב: מושהה')).toBeInTheDocument();
+    expect(screen.getByText(/כל מחפש ילחץ שוב/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'השהה חיפוש…' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'חדש חיפוש' }));
+    expect(onResume).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables pause and resume while busy or offline, and shows the error', () => {
+    setup({ offline: true, error: 'ההשהיה נכשלה' });
+    expect(screen.getByRole('button', { name: 'השהה חיפוש…' })).toBeDisabled();
+    expect(screen.getByRole('alert')).toHaveTextContent('ההשהיה נכשלה');
+  });
+
+  it('shows no pause card once the mission ended', () => {
+    setup({
+      mission: {
+        ...mission,
+        status: 'ended_stopped',
+        stopped: { reason: 'other', note: '', endedAt: '2026-11-06T12:00:00.000Z' } as never,
+      },
+    });
+    expect(screen.queryByRole('group', { name: 'השהיית חיפוש' })).not.toBeInTheDocument();
+  });
+});
+
 describe('MissionControlPanel: keyboard', () => {
   it('moves focus to its title when it opens, so the form is the next stop', () => {
     setup();
@@ -193,26 +240,9 @@ describe('MissionControlPanel: keyboard', () => {
     const opener = document.createElement('button');
     document.body.append(opener);
     opener.focus();
-    const view = render(
-      <MissionControlPanel
-        mission={mission}
-        provider={{} as MapProvider}
-        point={null}
-        mode="map"
-        busy={false}
-        error={null}
-        offline={false}
-        onModeChange={vi.fn()}
-        onPoint={vi.fn()}
-        onPlaceFound={vi.fn()}
-        onEnd={vi.fn()}
-        onStop={vi.fn()}
-        onEdit={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    );
+    const { unmount } = setup();
     expect(opener).not.toHaveFocus();
-    view.unmount();
+    unmount();
     expect(opener).toHaveFocus();
     opener.remove();
   });

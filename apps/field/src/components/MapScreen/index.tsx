@@ -21,6 +21,8 @@ export function MapScreen() {
   const notice = useSession((s) => s.assignmentNotice);
   const { mission, polygons, assigned, area, polygonReports, locatedWaiting } = useMapArea();
 
+  const missionPaused = mission.data?.status === 'paused';
+
   // Fm13: the participation ended (UC-C18); tracking already stopped with it.
   if (participation?.status === 'ended') {
     return (
@@ -55,6 +57,7 @@ export function MapScreen() {
           polygons={polygons}
           locatedWaiting={locatedWaiting}
           missionLocated={mission.data?.status === 'ended_located'}
+          missionPaused={missionPaused}
         />
         {assigned ? (
           <View style={styles.reportsButton} pointerEvents="box-none">
@@ -74,7 +77,12 @@ export function MapScreen() {
           </View>
         ) : null}
       </View>
-      <MapSheet assigned={assigned} polygons={polygons.data ?? []} hasMission={!!mission.data} />
+      <MapSheet
+        assigned={assigned}
+        polygons={polygons.data ?? []}
+        hasMission={!!mission.data}
+        missionPaused={missionPaused}
+      />
     </View>
   );
 }

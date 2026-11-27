@@ -9,6 +9,7 @@ import type { Place } from '../../map/geocoding';
 import type { PlaceMode } from '../../map/PlacePicker';
 import { timeLabel } from '../timeLabel';
 import { EndLocatedForm } from './EndLocatedForm';
+import { PauseCard } from './PauseCard';
 import { StopMissionForm } from './StopMissionForm';
 import { usePanelFocus } from './usePanelFocus';
 import styles from './MissionControlPanel.module.css';
@@ -32,6 +33,9 @@ interface MissionControlPanelProps {
   onEnd: (body: EndMissionLocatedBody) => void;
   /** Called with a reason once the commander confirmed stopping the search. */
   onStop: (body: StopMissionBody) => void;
+  /** Called once the commander confirmed pausing the search (UC-C15). */
+  onPause: () => void;
+  onResume: () => void;
   onEdit: () => void;
   onClose: () => void;
 }
@@ -46,7 +50,14 @@ const STATUS_LABELS = {
 type Way = 'located' | 'stopped';
 
 /** The mission control panel (wireframe Cd13): the mission's state and how it ends: "הנעדר אותר" or stopping the search. */
-export function MissionControlPanel({ mission, onClose, onStop, ...form }: MissionControlPanelProps) {
+export function MissionControlPanel({
+  mission,
+  onClose,
+  onStop,
+  onPause,
+  onResume,
+  ...form
+}: MissionControlPanelProps) {
   const { located, stopped } = mission;
   const [way, setWay] = useState<Way>('located');
   const { heading, onKeyDown } = usePanelFocus(onClose);
@@ -65,6 +76,13 @@ export function MissionControlPanel({ mission, onClose, onStop, ...form }: Missi
         </Button>
       </div>
       <div className={styles.body}>
+        <PauseCard
+          status={mission.status}
+          busy={form.busy}
+          offline={form.offline}
+          onPause={onPause}
+          onResume={onResume}
+        />
         {located ? (
           <dl className={styles.facts} aria-label="פרטי האיתור">
             <dt>זמן האיתור</dt>

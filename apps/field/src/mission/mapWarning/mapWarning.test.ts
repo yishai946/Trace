@@ -39,4 +39,12 @@ describe('mapWarning', () => {
     expect(mapWarning({ ...base, missionLocated: true, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
     expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionLocated: false })).toBeNull();
   });
+
+  it('tells the searchers to return to the Rally Point while the commander paused the mission (UC-C15)', () => {
+    const base = { gpsLost: true, locatedWaiting: true, notUpToDate: true };
+    expect(mapWarning({ ...base, missionPaused: true })?.text).toBe('החיפוש הושהה, חזרו ל־Rally Point.');
+    expect(mapWarning({ ...base, missionPaused: true, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
+    expect(mapWarning({ ...base, missionPaused: true, missionLocated: true })?.text).toContain('הנעדר אותר');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionPaused: false })).toBeNull();
+  });
 });
