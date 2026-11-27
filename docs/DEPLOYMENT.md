@@ -53,4 +53,4 @@ pnpm --filter @trace/api auth:create-commander --email you@example.com --name "�
 
 - כניסת מחפש ב-Field (SMS) לא עובדת בפרודקשן: ספק ה-SMS לא נבחר, והשרת נכשל בשליחת קוד.
 - `trustProxy` עוד לא מוגדר (#136), ולכן כתובת ה-IP של הלקוח ב-API היא של ה-proxy.
-- Field לא נפרס כאן: APK ב-#262, Push ב-#126.
+- Field לא נפרס כאן: APK ב-#262. Push אמיתי לא מוגדר (החלטה, [`TECH_STACK.md`](TECH_STACK.md#push)).

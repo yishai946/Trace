@@ -6,6 +6,13 @@ describe('mapWarning', () => {
     expect(mapWarning({ gpsLost: false, locatedWaiting: false })).toBeNull();
   });
 
+  it('warns of a low battery, after a lost GPS (UC-S04)', () => {
+    const base = { locatedWaiting: false, batteryLevel: 19, notUpToDate: true };
+    expect(mapWarning({ ...base, gpsLost: false })?.text).toContain('הסוללה נמוכה');
+    expect(mapWarning({ ...base, gpsLost: true })?.text).toContain('ה-GPS לא זמין');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, batteryLevel: 20 })).toBeNull();
+  });
+
   it('warns that the GPS is lost (decision 42)', () => {
     expect(mapWarning({ gpsLost: true, locatedWaiting: false })?.text).toContain('ה-GPS לא זמין');
   });
