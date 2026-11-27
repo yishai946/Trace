@@ -19,7 +19,7 @@ export function MapScreen() {
   const { theme } = useTheme();
   const participation = useSession((s) => s.participation);
   const notice = useSession((s) => s.assignmentNotice);
-  const { mission, polygons, assigned, area, polygonReports, locatedWaiting } = useMapArea();
+  const { mission, missionStopped, polygons, assigned, area, polygonReports, locatedWaiting } = useMapArea();
 
   const missionPaused = mission.data?.status === 'paused';
 
@@ -57,6 +57,7 @@ export function MapScreen() {
           polygons={polygons}
           locatedWaiting={locatedWaiting}
           missionLocated={mission.data?.status === 'ended_located'}
+          missionStopped={missionStopped}
           missionPaused={missionPaused}
         />
         {assigned ? (
