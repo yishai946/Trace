@@ -3,6 +3,7 @@ export * from './commanders';
 export * from './errors';
 export * from './geo';
 export * from './health';
+export * from './history';
 export * from './messages';
 export * from './missions';
 export * from './notifications';

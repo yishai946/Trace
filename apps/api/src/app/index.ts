@@ -31,6 +31,7 @@ import { sightingRoutes } from '../modules/sightings';
 import { sosRoutes } from '../modules/sos';
 import { searcherRoutes } from '../modules/searchers';
 import { timelineRoutes } from '../modules/timeline';
+import { historyRoutes } from '../modules/history';
 import { startConnectivityMonitor } from '../modules/timeline/timeline.connectivity';
 import { trackingRoutes } from '../modules/tracking';
 import type { ServiceDeps } from '../modules/serviceDeps';
@@ -151,6 +152,7 @@ export async function buildApp({
         await signedIn.register(notificationRoutes, { db });
         await signedIn.register(commanderRoutes, { db });
         await signedIn.register(timelineRoutes, { db });
+        await signedIn.register(historyRoutes, { db });
       });
     },
     { prefix: '/api' },

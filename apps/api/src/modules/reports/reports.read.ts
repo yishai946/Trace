@@ -100,6 +100,14 @@ export async function listReports(
   return rows.map(toReport);
 }
 
+/** The reports one user sent in the mission, newest first: nothing of other searchers (UC-F17). */
+export async function listOwnReports(db: Db, { missionId, userId }: { missionId: string; userId: string }) {
+  const rows = await selectReports(db)
+    .where(and(eq(reports.missionId, missionId), eq(reports.reportedBy, userId)))
+    .orderBy(desc(reports.reportedAt), desc(reports.createdAt));
+  return rows.map(toReport);
+}
+
 /** Whether the actor may see this report of the mission (decision 80), the same rule as the list. */
 export async function isReportVisible(
   db: Db | Tx,
