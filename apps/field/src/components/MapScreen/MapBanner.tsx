@@ -1,4 +1,5 @@
 import { radius, spacing, typography } from '@trace/design';
+import { LOW_BATTERY_PERCENT } from '@trace/domain';
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -36,6 +37,8 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
   const missionId = useSession((s) => s.missionId);
   const gpsLost = useSession((s) => s.gpsAvailable === false);
   const outsidePolygon = useSession((s) => s.outsidePolygon);
+  // Only while tracking: after the activity ends the last reading says nothing.
+  const lowBattery = useSession((s) => s.tracking && s.batteryLevel !== null && s.batteryLevel < LOW_BATTERY_PERCENT);
   const kind = mapStatus({
     apiConfigured: !!apiBaseUrl,
     signedIn,
@@ -68,6 +71,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
       gpsLost,
       locatedWaiting,
       notUpToDate: polygons.notUpToDate,
+      lowBattery,
       outsidePolygon,
       missionLocated,
       missionStopped,
@@ -82,7 +86,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
           styles.banner,
           {
             backgroundColor: color.surface,
-            // Leaving the polygon (UC-S04), a lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
+            // Leaving the polygon (UC-S04), a lost GPS (decision 42), a low battery and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
             borderColor: status ? color.border : color.warning,
             boxShadow: theme.shadow.shadowPanel,
           },
