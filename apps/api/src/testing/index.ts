@@ -1,6 +1,5 @@
 import type { ParticipationStatus, TaskStatus } from '@trace/domain';
 import { SearcherProfile } from '@trace/schemas';
-import { sql } from 'drizzle-orm';
 import type { InjectOptions } from 'fastify';
 import { buildApp } from '../app';
 import { createCommander } from '../auth';
@@ -99,12 +98,7 @@ export async function createTestApp(envOverrides: Record<string, string> = {}) {
 
 export type TestContext = Awaited<ReturnType<typeof createTestApp>>;
 
-/** Empties every table between tests. */
-export async function resetDb(db: Db) {
-  await db.execute(
-    sql`truncate missions, lkp_points, sightings, messages, message_recipients, sos_alerts, sos_alert_recipients, timeline_events, track_points, assignments, polygons, searchers, participations, push_tokens, users, sessions, accounts, verifications, otp_requests restart identity cascade`,
-  );
-}
+export { resetDb } from './resetDb';
 
 /** A signed-in user and the headers that authenticate their requests. */
 export interface TestUser {
