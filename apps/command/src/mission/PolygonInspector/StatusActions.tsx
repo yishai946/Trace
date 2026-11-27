@@ -31,7 +31,8 @@ export function StatusActions({ status, polygonName, activeSearchers, busy, onSe
     return (
       <div role="group" aria-label="אישור סימון כהושלם" className={styles.confirm}>
         <p className={styles.hint}>
-          ב"{polygonName}" יש {activeSearchers} מחפשים פעילים. סימון כהושלם יסיים את משימות החיפוש שלהם וישלח להם הודעה.
+          ב"{polygonName}" {activeSearchers === 1 ? 'יש מחפש פעיל אחד' : `יש ${activeSearchers} מחפשים פעילים`}. סימון
+          כהושלם יסיים את משימות החיפוש שלהם וישלח להם הודעה.
         </p>
         <div className={styles.row}>
           <Button onPress={() => setConfirming(false)} isDisabled={busy}>

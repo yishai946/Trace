@@ -92,7 +92,7 @@ describe('PolygonInspector', () => {
       render(<PolygonInspector polygon={polygonA} assigned={[searcher]} canEdit busy={false} error={null} {...h} />);
       fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
       expect(h.onSetStatus).not.toHaveBeenCalled();
-      expect(screen.getByText(/1 מחפשים פעילים/)).toBeTruthy();
+      expect(screen.getByText(/יש מחפש פעיל אחד/)).toBeTruthy();
       fireEvent.click(screen.getByRole('button', { name: 'בטל' }));
       expect(screen.getByRole('button', { name: 'סמן כהושלם' })).toBeTruthy();
       fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
