@@ -33,7 +33,7 @@ vi.mock('../auth', () => ({
 const json = (body: unknown) => new Response(JSON.stringify(body));
 
 /** What `GET /sos` answers: a list, or `'fail'` for a server error. */
-function renderApp(sos: unknown[] | 'fail' = []) {
+function renderApp(sos: unknown[] | 'fail' = [], openMission = mission) {
   vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
     const url = String(input);
     if (url.endsWith('/health'))
@@ -44,7 +44,7 @@ function renderApp(sos: unknown[] | 'fail' = []) {
     if (url.endsWith('/messages')) return Promise.resolve(json([]));
     if (url.endsWith('/reports')) return Promise.resolve(json([]));
     if (url.endsWith('/sos')) return Promise.resolve(sos === 'fail' ? new Response('{}', { status: 500 }) : json(sos));
-    return Promise.resolve(json([mission]));
+    return Promise.resolve(json([openMission]));
   });
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -62,6 +62,34 @@ async function openDetails() {
   fireEvent.click(button);
   return button;
 }
+
+describe('App ended mission', () => {
+  beforeEach(() => {
+    window.matchMedia ??= ((query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    })) as never;
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('shows the read-only summary on the map of an ended mission, and none on a live one', async () => {
+    const endedAt = '2026-11-08T11:52:00Z';
+    const located = { position: mission.rallyPoint, locatedAt: endedAt, note: null, endedAt };
+    renderApp([], { ...mission, status: 'ended_located', located });
+    fireEvent.click(await screen.findByText(mission.name));
+    expect(await screen.findByRole('complementary', { name: 'סיכום מסע' })).toBeInTheDocument();
+    expect(screen.getByText('הנעדר אותר')).toBeInTheDocument();
+  });
+
+  it('shows no summary on a live mission', async () => {
+    renderApp();
+    fireEvent.click(await screen.findByText(mission.name));
+    await screen.findByRole('button', { name: 'פרטי מסע' });
+    expect(screen.queryByRole('complementary', { name: 'סיכום מסע' })).not.toBeInTheDocument();
+  });
+});
 
 describe('App mission details', () => {
   beforeEach(() => {

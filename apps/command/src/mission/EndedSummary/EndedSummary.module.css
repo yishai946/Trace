@@ -1,0 +1,140 @@
+/* Trace Console Inspector (.tc-panel, .tc-dl), the ended-mission summary of wireframe Cd15. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.head {
+  flex-shrink: 0;
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.sub {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-7);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.section:last-child {
+  border-bottom: 0;
+}
+
+.label {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.facts dd {
+  margin: 0;
+  font: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.result {
+  margin: 0;
+  font: var(--text-body-strong);
+}
+
+.note {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-body);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  font: var(--text-body);
+}
+
+.value {
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  grid-column: 1 / -1;
+  height: var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--track);
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background-color: var(--primary);
+}
+
+.event {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-5);
+  font: var(--text-body);
+}
+
+.time {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.safety {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.more {
+  align-self: flex-start;
+}
