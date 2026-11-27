@@ -2,8 +2,8 @@ import type { Mission, Report, Sos } from '@trace/schemas';
 import type { ReactNode } from 'react';
 import { CriticalReportAlert } from '../CriticalReportAlert';
 import { JoinCodePanel } from '../JoinCodePanel';
-import { OutsidePolygonAlert } from '../OutsidePolygonAlert';
-import type { OutsideSearcher } from '../outsideSearchers';
+import { SafetyAlert } from '../SafetyAlert';
+import type { SafetyWarning } from '../safetyWarnings';
 import { SosAlert } from '../SosAlert';
 import styles from './PhoneMissionScreen.module.css';
 
@@ -26,14 +26,14 @@ interface OverlaysProps {
   search: ReactNode;
   onOpenReport: (id: string) => void;
   onOpenSos: () => void;
-  /** Searchers outside their polygon now (UC-S04), outside the longest first. */
-  outside: OutsideSearcher[];
+  /** The safety and Coverage warnings that hold now (UC-S04), most urgent first. */
+  warnings: SafetyWarning[];
   onOpenSearcher: (participantId: string) => void;
   /** Opens the mission control to verify and end the mission (UC-C16); missing when it cannot be ended now. */
   onFinish?: () => void;
 }
 
-/** What stacks under the top bar when there is something to say: the critical alert, the out-of-polygon warning, a notice, the join code, the search. */
+/** What stacks under the top bar when there is something to say: the critical alert, the safety warning, a notice, the join code, the search. */
 export function Overlays({
   mission,
   critical,
@@ -47,17 +47,17 @@ export function Overlays({
   search,
   onOpenReport,
   onOpenSos,
-  outside,
+  warnings,
   onOpenSearcher,
   onFinish,
 }: OverlaysProps) {
   const sosActive = (sos ?? []).some((s) => s.status === 'active');
-  if (outside.length === 0 && !critical && !sosActive && !sosFailed && !notice && !joinOpen && !search) return null;
+  if (warnings.length === 0 && !critical && !sosActive && !sosFailed && !notice && !joinOpen && !search) return null;
   return (
     <div className={styles.below}>
       <SosAlert compact sos={sos} failed={sosFailed} onRetry={onRetrySos} onOpen={onOpenSos} />
       {critical && <CriticalReportAlert compact reports={reports ?? []} onOpen={onOpenReport} onFinish={onFinish} />}
-      <OutsidePolygonAlert compact searchers={outside} onOpen={onOpenSearcher} />
+      <SafetyAlert compact warnings={warnings} onOpen={onOpenSearcher} />
       {notice && (
         <p className={styles.notice} role="alert">
           {notice}

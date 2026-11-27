@@ -64,6 +64,7 @@ export function MissionSheet({
                 <CallsignChip callsign={p.callsign} state={p.status === 'available' ? 'waiting' : 'normal'} />
                 <span className={styles.name}>{p.name}</span>
                 <span className={styles.status}>
+                  {p.gpsUnavailableSince && <span className={styles.warn}>אין GPS</span>}
                   {out && <span className={styles.warn}>{`מחוץ לגבול, ${out.meters} מ׳`}</span>}
                   <span>{p.status === 'available' ? 'זמין' : 'משובץ'}</span>
                   {polygon && <span>{polygon.name}</span>}

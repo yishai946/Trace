@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FloatingAlerts } from '.';
-import type { OutsideSearcher } from '../outsideSearchers';
 import { reportFinding, reportLocated, sosActive, sosClosed } from '../fixtures';
 
 const open = { onOpenReport: vi.fn(), onOpenSos: vi.fn() };
@@ -30,18 +29,17 @@ describe('FloatingAlerts', () => {
     expect(screen.getByRole('alert', { name: 'מצב SOS לא ידוע' })).toBeTruthy();
   });
 
-  it('puts the out-of-polygon warning under the SOS and the critical report', () => {
-    const outside: OutsideSearcher[] = [
-      {
-        participantId: sosActive.id,
-        callsign: 4,
-        name: 'דנה',
-        polygonName: 'ואדי',
-        meters: 80,
-        since: sosActive.activatedAt,
-      },
-    ];
-    render(<FloatingAlerts reports={[reportLocated]} sos={[sosActive]} outside={outside} {...open} />);
+  it('puts the safety warning under the SOS and the critical report', () => {
+    const warning = {
+      key: 'outside:4',
+      title: 'מחפש מחוץ לפוליגון',
+      participantId: sosActive.id,
+      callsign: 4,
+      name: 'דנה',
+      message: 'מחוץ לואדי, 80 מ׳ מהגבול',
+      since: sosActive.activatedAt,
+    };
+    render(<FloatingAlerts reports={[reportLocated]} sos={[sosActive]} warnings={[warning]} {...open} />);
     const alerts = screen.getAllByRole('alert').map((a) => a.getAttribute('aria-label'));
     expect(alerts).toEqual(['התראת SOS', 'התראה קריטית', 'אזהרה: מחפש מחוץ לפוליגון']);
   });

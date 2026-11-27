@@ -8,6 +8,7 @@ import type { MapFocus } from '../../map/MissionMap';
 import { PlaceSearch } from '../../map/PlaceSearch';
 import { outsideSearchers } from '../../mission/outsideSearchers';
 import { PhoneMissionScreen } from '../../mission/PhoneMissionScreen';
+import { safetyWarnings } from '../../mission/safetyWarnings';
 import { phoneScreenOf } from '../../mission/phoneScreen';
 import { PhoneMessagesPage } from '../../pages/PhoneMessagesPage';
 import { PhoneReportsPage } from '../../pages/PhoneReportsPage';
@@ -75,6 +76,11 @@ export function PhoneMission({
       onOpenSos={nav.openSos}
       outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
       onOpenSearcher={nav.setSelectedSearcherId}
+      warnings={safetyWarnings({
+        events: data.timeline.data ?? [],
+        participants: data.participants.data ?? [],
+        polygons,
+      })}
       control={{
         open: nav.panel === 'control',
         onOpenChange: (open) => (open ? nav.openControl() : nav.setPanelOpen('control', false)),
