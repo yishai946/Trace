@@ -107,3 +107,15 @@ export function useStopMission(missionId: string) {
     },
   });
 }
+
+/** Pauses or resumes the mission (UC-C15). The saved mission replaces the cached one; searchers' tasks changed with it. */
+export function useMissionPause(missionId: string, action: 'pause' | 'resume') {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiRequest(`/missions/${missionId}/${action}`, { method: 'POST', schema: Mission }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
+      return queryClient.invalidateQueries();
+    },
+  });
+}

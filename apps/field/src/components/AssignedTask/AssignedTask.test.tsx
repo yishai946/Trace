@@ -167,6 +167,17 @@ describe('AssignedTask', () => {
     expect(screen.getByRole('button', { name: 'המשך חיפוש' })).toBeEnabled();
   });
 
+  it('hides the personal Resume while the commander paused the mission and says to wait (UC-C15)', () => {
+    renderTask({ participation: { ...participation, taskStatus: 'paused' }, onResume: vi.fn(), missionPaused: true });
+    expect(screen.queryByRole('button', { name: 'המשך חיפוש' })).not.toBeInTheDocument();
+    expect(screen.getByText(/המנהל השהה את החיפוש/)).toBeInTheDocument();
+  });
+
+  it('shows Start Search again once the commander resumed and the task is back at Ready (UC-C15)', () => {
+    renderTask({ participation, onStartSearch: vi.fn(), missionPaused: false });
+    expect(screen.getByRole('button', { name: 'התחל חיפוש' })).toBeInTheDocument();
+  });
+
   it('offers "סיימתי חיפוש" while searching and while paused', () => {
     const onFinish = vi.fn();
     const { rerender } = renderTask({ participation: { ...participation, taskStatus: 'searching' }, onFinish });
