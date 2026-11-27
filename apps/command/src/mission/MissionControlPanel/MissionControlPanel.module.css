@@ -116,3 +116,66 @@
   flex-wrap: wrap;
   gap: var(--space-4);
 }
+
+/* A choice in a form is a radio group with the segmented-tabs look, as in the message form. */
+.seg {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.segOption {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: var(--segment-h);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.segOption[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.segOption[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segOption[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reason {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-h-sm);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  outline: none;
+}
+
+.reason[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.reason[data-selected] {
+  background-color: var(--surface-raised);
+  font-weight: 600;
+}
+
+.reason[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}

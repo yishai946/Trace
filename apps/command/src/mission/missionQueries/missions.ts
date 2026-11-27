@@ -4,6 +4,7 @@ import {
   MissionList,
   type CreateMissionBody,
   type EndMissionLocatedBody,
+  type StopMissionBody,
   type UpdateMissionDetailsBody,
 } from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -89,6 +90,19 @@ export function useEndMissionLocated(missionId: string) {
     onSuccess: (mission) => {
       queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
       // The open tasks finished and the searchers got a message: refresh them with the mission.
+      return queryClient.invalidateQueries();
+    },
+  });
+}
+
+/** Ends the mission by stopping the search (UC-C17). The saved mission replaces the cached one. */
+export function useStopMission(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: StopMissionBody) =>
+      apiRequest(`/missions/${missionId}/stop`, { method: 'POST', body, schema: Mission }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
       return queryClient.invalidateQueries();
     },
   });

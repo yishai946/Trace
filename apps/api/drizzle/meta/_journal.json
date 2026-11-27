@@ -190,6 +190,13 @@
       "when": 1795706172444,
       "tag": "0026_mission_located",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795745776592,
+      "tag": "0027_mission_stopped",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CreateMissionBody, EndMissionLocatedBody, UpdateMissionDetailsBody, UpdateRallyPointBody } from '.';
+import {
+  CreateMissionBody,
+  EndMissionLocatedBody,
+  StopMissionBody,
+  UpdateMissionDetailsBody,
+  UpdateRallyPointBody,
+} from '.';
 
 const rallyPoint = { type: 'Point', coordinates: [35.13, 31.78] } as const;
 const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };
@@ -112,5 +118,19 @@ describe('EndMissionLocatedBody', () => {
     expect(EndMissionLocatedBody.parse(body).note).toBeNull();
     expect(EndMissionLocatedBody.parse({ ...body, note: '  ' }).note).toBeNull();
     expect(EndMissionLocatedBody.parse({ ...body, note: ' נמצא בריא ' }).note).toBe('נמצא בריא');
+  });
+});
+
+describe('StopMissionBody', () => {
+  it('requires a reason from the list', () => {
+    expect(StopMissionBody.safeParse({ reason: 'weather' }).success).toBe(true);
+    expect(StopMissionBody.safeParse({}).success).toBe(false);
+    expect(StopMissionBody.safeParse({ reason: 'because' }).success).toBe(false);
+  });
+
+  it('keeps the note optional and turns a blank one into null', () => {
+    expect(StopMissionBody.parse({ reason: 'other' }).note).toBeNull();
+    expect(StopMissionBody.parse({ reason: 'other', note: '  ' }).note).toBeNull();
+    expect(StopMissionBody.parse({ reason: 'other', note: ' החלטת מפקד ' }).note).toBe('החלטת מפקד');
   });
 });

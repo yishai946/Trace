@@ -1,12 +1,16 @@
 import { canEndMissionLocated } from '@trace/domain';
 import { formatLatLng, type LngLat } from '@trace/geo';
 import type { MapProvider } from '@trace/map';
-import type { EndMissionLocatedBody, Mission } from '@trace/schemas';
+import type { EndMissionLocatedBody, Mission, StopMissionBody } from '@trace/schemas';
+import { useState } from 'react';
+import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import type { Place } from '../../map/geocoding';
 import type { PlaceMode } from '../../map/PlacePicker';
+import { STOP_REASON_LABELS } from '../stopReason';
 import { timeLabel } from '../timeLabel';
 import { EndLocatedForm } from './EndLocatedForm';
+import { StopMissionForm } from './StopMissionForm';
 import styles from './MissionControlPanel.module.css';
 
 interface MissionControlPanelProps {
@@ -26,6 +30,8 @@ interface MissionControlPanelProps {
   offline: boolean;
   /** Called with a valid form once the commander confirmed. */
   onEnd: (body: EndMissionLocatedBody) => void;
+  /** Called with a reason once the commander confirmed stopping the search. */
+  onStop: (body: StopMissionBody) => void;
   onEdit: () => void;
   onClose: () => void;
 }
@@ -37,9 +43,12 @@ const STATUS_LABELS = {
   ended_stopped: 'הסתיים: הופסק',
 } as const;
 
-/** The mission control panel (wireframe Cd13): the mission's state and how it ends. Here: "הנעדר אותר" (UC-C16). */
-export function MissionControlPanel({ mission, onClose, ...form }: MissionControlPanelProps) {
-  const { located } = mission;
+type Way = 'located' | 'stopped';
+
+/** The mission control panel (wireframe Cd13): the mission's state and how it ends: "הנעדר אותר" or stopping the search. */
+export function MissionControlPanel({ mission, onClose, onStop, ...form }: MissionControlPanelProps) {
+  const { located, stopped } = mission;
+  const [way, setWay] = useState<Way>('located');
   return (
     <section className={styles.panel} aria-label="בקרת מסע">
       <div className={styles.head}>
@@ -65,8 +74,49 @@ export function MissionControlPanel({ mission, onClose, ...form }: MissionContro
               </>
             )}
           </dl>
+        ) : stopped ? (
+          <dl className={styles.facts} aria-label="פרטי ההפסקה">
+            <dt>סיבה</dt>
+            <dd>{STOP_REASON_LABELS[stopped.reason]}</dd>
+            <dt>זמן הסיום</dt>
+            <dd>{timeLabel(stopped.endedAt)}</dd>
+            {stopped.note && (
+              <>
+                <dt>הערה</dt>
+                <dd>{stopped.note}</dd>
+              </>
+            )}
+          </dl>
         ) : canEndMissionLocated(mission.status) ? (
-          <EndLocatedForm {...form} />
+          <>
+            <RadioGroup
+              aria-label="אופן סיום המסע"
+              orientation="horizontal"
+              value={way}
+              onChange={(next) => setWay(next === 'stopped' ? 'stopped' : 'located')}
+            >
+              <Label className={styles.label}>איך המסע מסתיים</Label>
+              <div className={styles.seg}>
+                <Radio value="located" className={styles.segOption}>
+                  הנעדר אותר
+                </Radio>
+                <Radio value="stopped" className={styles.segOption}>
+                  הפסק חיפוש
+                </Radio>
+              </div>
+            </RadioGroup>
+            {way === 'located' ? (
+              <EndLocatedForm {...form} />
+            ) : (
+              <StopMissionForm
+                busy={form.busy}
+                error={form.error}
+                offline={form.offline}
+                onStop={onStop}
+                onEdit={form.onEdit}
+              />
+            )}
+          </>
         ) : (
           <p className={styles.hint}>המסע הסתיים ונשמר לקריאה בלבד.</p>
         )}

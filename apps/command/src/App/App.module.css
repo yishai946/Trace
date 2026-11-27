@@ -103,6 +103,8 @@
 
 .rallyPanel {
   position: absolute;
+  /* Above the searchers dock that shares this corner, so a tall panel is never covered. */
+  z-index: 1;
   bottom: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-start: var(--space-6);
 }
