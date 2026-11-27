@@ -99,6 +99,9 @@ export function useMissionLive(): void {
   const token = useSession((s) => s.token);
   const missionId = useSession((s) => s.missionId);
 
+  // What was announced about a mission is not shown over another (a token refresh keeps it: nothing replays it).
+  useEffect(() => () => useAlerts.getState().clearMission(), [missionId]);
+
   useEffect(() => {
     if (!token || !missionId || !apiBaseUrl) return;
     const socket: MissionSocket = io(apiBaseUrl, {
@@ -171,8 +174,6 @@ export function useMissionLive(): void {
     });
     return () => {
       closed = true;
-      // What was announced about this mission is not shown over another.
-      useAlerts.getState().clear();
       controller.abort();
       clearTimeout(retry);
       socket.disconnect();

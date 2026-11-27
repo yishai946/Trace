@@ -16,7 +16,8 @@ interface AlertsState {
   alerts: FieldAlert[];
   raise: (alert: FieldAlert) => void;
   dismiss: (id: string) => void;
-  clear: () => void;
+  /** Drops what was announced about a mission; the phone's low battery is not about a mission and stays. */
+  clearMission: () => void;
 }
 
 /**
@@ -28,5 +29,5 @@ export const useAlerts = create<AlertsState>()((set) => ({
   alerts: [],
   raise: (alert) => set((s) => ({ alerts: [alert, ...s.alerts.filter((a) => a.id !== alert.id)] })),
   dismiss: (id) => set((s) => ({ alerts: s.alerts.filter((a) => a.id !== id) })),
-  clear: () => set({ alerts: [] }),
+  clearMission: () => set((s) => ({ alerts: s.alerts.filter((a) => a.kind === 'low-battery') })),
 }));
