@@ -10,9 +10,15 @@ describe('alertFromEvent', () => {
   it('raises an alert for an active SOS sent by another searcher', () => {
     const result = alertFromEvent({ type: 'sos.saved', missionId, sos: fromOther }, OWN_PARTICIPANT_ID);
     expect(result).toEqual({
-      raise: expect.objectContaining({ id: `sos-${fromOther.id}`, kind: 'sos', href: '/sos' }),
+      raise: expect.objectContaining({ id: `sos-${fromOther.id}`, kind: 'sos', href: null }),
     });
     expect(result && 'raise' in result && result.raise.text).toContain('יוסי לוי');
+  });
+
+  it('puts the SOS message in the alert text', () => {
+    const sos = { ...fromOther, message: 'נפלתי' };
+    const result = alertFromEvent({ type: 'sos.saved', missionId, sos }, OWN_PARTICIPANT_ID);
+    expect(result && 'raise' in result && result.raise.text).toContain('נפלתי');
   });
 
   it("ignores the searcher's own SOS", () => {
@@ -41,6 +47,12 @@ describe('alertFromEvent', () => {
         href: '/missing-person',
       },
     });
+  });
+
+  it('has no screen to open for a change of the mission name alone', () => {
+    const mission = { updatedAt: '2026-10-03T10:00:00.000Z' } as never;
+    const result = alertFromEvent({ type: 'mission.updated', missionId, mission, changedFields: ['name'] }, undefined);
+    expect(result && 'raise' in result && result.raise.href).toBeNull();
   });
 
   it('ignores a quiet mission update', () => {

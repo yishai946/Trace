@@ -18,8 +18,10 @@ export function alertFromEvent(event: MissionEvent, ownParticipantId: string | u
     if (sos.sender.participantId === ownParticipantId) return null;
     if (sos.status !== 'active') return { dismiss: id };
     const where = sos.polygon ? ` בפוליגון ${sos.polygon.name}` : '';
-    const text = `${sos.sender.name} (${sos.sender.callsign}) הפעיל SOS${where}.`;
-    return { raise: { id, kind: 'sos', title: 'SOS ממחפש אחר', text, href: routes.sos } };
+    const note = sos.message ? `: ${sos.message}` : '.';
+    const text = `${sos.sender.name} (${sos.sender.callsign}) הפעיל SOS${where}${note}`;
+    // The SOS screen shows the searcher's own SOS only, so the alert itself carries what the recipient needs.
+    return { raise: { id, kind: 'sos', title: 'SOS ממחפש אחר', text, href: null } };
   }
   if (event.type === 'mission.updated' && event.changedFields) {
     return {
@@ -28,7 +30,8 @@ export function alertFromEvent(event: MissionEvent, ownParticipantId: string | u
         kind: 'details',
         title: 'פרטי הנעדר עודכנו',
         text: detailChangesText(event.changedFields),
-        href: routes.missingPerson,
+        // The details screen does not show the mission name, so a change of the name alone has nowhere to open.
+        href: event.changedFields.length === 1 && event.changedFields[0] === 'name' ? null : routes.missingPerson,
       },
     };
   }
