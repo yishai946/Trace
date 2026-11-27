@@ -18,7 +18,7 @@ function setup(props: Partial<Parameters<typeof MissionControlPanel>[0]> = {}) {
     onEdit: vi.fn(),
     onClose: vi.fn(),
   };
-  render(
+  const view = render(
     <MissionControlPanel
       mission={mission}
       provider={{} as MapProvider}
@@ -31,7 +31,7 @@ function setup(props: Partial<Parameters<typeof MissionControlPanel>[0]> = {}) {
       {...props}
     />,
   );
-  return handlers;
+  return { ...handlers, unmount: view.unmount };
 }
 
 describe('MissionControlPanel: the missing person was located (UC-C16)', () => {
@@ -221,5 +221,29 @@ describe('MissionControlPanel: pause and resume (UC-C15)', () => {
       },
     });
     expect(screen.queryByRole('group', { name: 'השהיית חיפוש' })).not.toBeInTheDocument();
+  });
+});
+
+describe('MissionControlPanel: keyboard', () => {
+  it('moves focus to its title when it opens, so the form is the next stop', () => {
+    setup();
+    expect(screen.getByRole('heading', { name: 'בקרת מסע' })).toHaveFocus();
+  });
+
+  it('closes on Escape inside the panel', () => {
+    const { onClose } = setup();
+    fireEvent.keyDown(screen.getByRole('textbox', { name: /הערה/ }), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns focus to what opened it once it closes', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const { unmount } = setup();
+    expect(opener).not.toHaveFocus();
+    unmount();
+    expect(opener).toHaveFocus();
+    opener.remove();
   });
 });

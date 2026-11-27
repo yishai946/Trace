@@ -176,4 +176,12 @@
   .editBar {
     bottom: var(--space-6);
   }
+
+  /* The rally point and mission control panels (Cm13) dock over the bottom sheet, full width, and leave the top of the map free for placing a point. */
+  .rallyPanel {
+    bottom: var(--space-6);
+    inset-inline: var(--space-6);
+    display: flex;
+    max-height: 60%;
+  }
 }

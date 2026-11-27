@@ -11,6 +11,7 @@ import { timeLabel } from '../timeLabel';
 import { EndLocatedForm } from './EndLocatedForm';
 import { PauseCard } from './PauseCard';
 import { StopMissionForm } from './StopMissionForm';
+import { usePanelFocus } from './usePanelFocus';
 import styles from './MissionControlPanel.module.css';
 
 interface MissionControlPanelProps {
@@ -59,10 +60,14 @@ export function MissionControlPanel({
 }: MissionControlPanelProps) {
   const { located, stopped } = mission;
   const [way, setWay] = useState<Way>('located');
+  const { heading, onKeyDown } = usePanelFocus(onClose);
   return (
-    <section className={styles.panel} aria-label="בקרת מסע">
+    // The handler only catches Escape bubbling up from the panel's own controls.
+    <section className={styles.panel} aria-label="בקרת מסע" onKeyDown={onKeyDown}>
       <div className={styles.head}>
-        <h2 className={styles.title}>בקרת מסע</h2>
+        <h2 className={styles.title} ref={heading} tabIndex={-1}>
+          בקרת מסע
+        </h2>
         <span className={styles.badge}>מצב: {STATUS_LABELS[mission.status]}</span>
         <Button variant="icon" aria-label="סגור" onPress={onClose}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">

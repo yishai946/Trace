@@ -8,6 +8,7 @@ import type { Connection } from '../../components/ConnectionStatus';
 import { MissionSheet, type SheetTab } from '../MissionSheet';
 import type { OutsideSearcher } from '../outsideSearchers';
 import { SosStrip } from './SosStrip';
+import { useBarToggles, type PhoneControl } from './useBarToggles';
 import { MissionTabBar, type MissionTab } from '../MissionTabBar';
 import { PHONE_SCREENS, type PhoneScreen } from '../phoneScreen';
 
@@ -47,6 +48,8 @@ interface PhoneMissionScreenProps {
   /** Searchers outside their polygon now (UC-S04), outside the longest first. */
   outside?: OutsideSearcher[];
   onOpenSearcher?: (participantId: string) => void;
+  /** The mission control (wireframe Cm13), opened from the bar; it floats over the map and shares it with the join code and the search. */
+  control?: PhoneControl;
 }
 
 /**
@@ -83,10 +86,11 @@ export function PhoneMissionScreen({
   onOpenReport,
   outside = [],
   onOpenSearcher,
+  control,
 }: PhoneMissionScreenProps) {
   const [tab, setTab] = useState<SheetTab>('alerts');
   const [expanded, setExpanded] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const bar = useBarToggles(joinOpen, onJoinOpenChange, control);
 
   const navigate = (next: MissionTab) => {
     const target = PHONE_SCREENS.find((s) => s === next);
@@ -136,11 +140,12 @@ export function PhoneMissionScreen({
             notice={notice}
             joinOpen={joinOpen}
             onCloseJoin={() => onJoinOpenChange(false)}
-            search={searchOpen ? renderSearch(() => setSearchOpen(false)) : null}
+            search={bar.searchOpen ? renderSearch(bar.closeSearch) : null}
             onOpenReport={onOpenReport}
             onOpenSos={onOpenSos}
             outside={outside}
             onOpenSearcher={(id) => onOpenSearcher?.(id)}
+            onFinish={control?.canEnd ? () => control.onOpenChange(true) : undefined}
           />
 
           <PhoneBar
@@ -150,15 +155,10 @@ export function PhoneMissionScreen({
             onSelectMission={onSelectMission}
             onShowAll={onShowAll}
             joinOpen={joinOpen}
-            searchOpen={searchOpen}
-            onToggleJoin={() => {
-              setSearchOpen(false);
-              onJoinOpenChange(!joinOpen);
-            }}
-            onToggleSearch={() => {
-              if (!searchOpen) onJoinOpenChange(false);
-              setSearchOpen(!searchOpen);
-            }}
+            searchOpen={bar.searchOpen}
+            onToggleJoin={bar.toggleJoin}
+            onToggleSearch={bar.toggleSearch}
+            control={bar.control}
           />
         </div>
       ) : (
