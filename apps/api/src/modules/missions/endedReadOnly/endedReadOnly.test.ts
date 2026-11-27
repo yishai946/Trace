@@ -76,6 +76,7 @@ const REFUSED: Array<[string, string, object]> = [
   ],
 ];
 
+const ENDED = ['ended_located', 'ended_stopped'] as const;
 const toFastify = (path: string) => path.replaceAll(/\{(\w+)\}/g, ':$1');
 
 describe('an ended mission is read-only (decision 52)', () => {
@@ -99,14 +100,16 @@ describe('an ended mission is read-only (decision 52)', () => {
     expect([...known].filter((route) => !writes.includes(route))).toEqual([]);
   });
 
-  it.each(REFUSED)('refuses %s %s on an ended mission', async (method, suffix, payload) => {
+  const CASES = REFUSED.flatMap((route) => ENDED.map((status) => [status, ...route] as const));
+
+  it.each(CASES)('%s: refuses %s %s', async (status, method, suffix, payload) => {
     await resetDb(ctx.db);
     const inject = injectAs(ctx, await signInCommander(ctx));
     const { id } = Mission.parse(
       (await inject({ method: 'POST', url: '/api/missions', payload: { name: 'מסע', rallyPoint, lkp } })).json(),
     );
     await addParticipant(ctx.db, { missionId: id, callsign: 1 });
-    await ctx.db.update(missions).set({ status: 'ended_stopped' }).where(eq(missions.id, id));
+    await ctx.db.update(missions).set({ status }).where(eq(missions.id, id));
     const res = await inject({ method: method as 'PUT', url: `/api/missions/${id}${suffix}`, payload });
     expect(res.statusCode).toBe(409);
   });
