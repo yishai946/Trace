@@ -44,6 +44,7 @@ const sightingColumns = {
   observedAt: sightings.observedAt,
   description: sightings.description,
   source: sightings.source,
+  reporterId: sightings.reportedBy,
   reporterRole: users.role,
   reporterName: users.name,
   callsign: participations.callsign,
@@ -115,6 +116,19 @@ export async function listSightings(db: Db, missionId: string): Promise<Sighting
     .where(eq(sightings.missionId, missionId))
     .orderBy(asc(sightings.createdAt), asc(sightings.id));
   return rows.map((row) => toSighting(row, current));
+}
+
+/** The sightings one user added to the mission, oldest first, numbered as in the mission's list (UC-F17). */
+export async function listOwnSightings(
+  db: Db,
+  { missionId, userId }: { missionId: string; userId: string },
+): Promise<Sighting[]> {
+  const current = await currentLkp(db, missionId);
+  // Numbers come from a window over the whole mission, so select its rows and keep the user's.
+  const rows = await selectSightings(db)
+    .where(eq(sightings.missionId, missionId))
+    .orderBy(asc(sightings.createdAt), asc(sightings.id));
+  return rows.filter((row) => row.reporterId === userId).map((row) => toSighting(row, current));
 }
 
 async function findSighting(tx: Tx, missionId: string, sightingId: string): Promise<SightingRow> {

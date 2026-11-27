@@ -75,6 +75,9 @@ describe('describeEvent', () => {
     expect(text(eventSamples['mission.resumed'])).toBe('המסע חודש');
     expect(text(eventSamples['mission.ended'])).toBe('המסע הסתיים, הנעדר אותר');
     expect(text(withDetails(eventSamples['mission.ended'], { outcome: 'stopped' }))).toBe('המסע הסתיים, החיפוש הופסק');
+    expect(text(withDetails(eventSamples['mission.ended'], { outcome: 'stopped', reason: 'weather' }))).toBe(
+      'המסע הסתיים, החיפוש הופסק: מזג אוויר ותנאי שטח',
+    );
     expect(text(eventSamples['search.started'])).toBe('[7] אלון שגיא התחיל חיפוש בחורשת אורנים');
     expect(text(eventSamples['report.submitted'])).toBe('מפגע, מדרון חלק, מ-[7] אלון שגיא');
     expect(text(eventSamples['coverage.threshold_reached'])).toBe('ואדי צפוני הגיע ל-80% Coverage');

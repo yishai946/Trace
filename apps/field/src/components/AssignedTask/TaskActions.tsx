@@ -11,11 +11,20 @@ interface TaskActionsProps {
   start: StartSearchControlsProps;
   pause: Omit<SearchPauseControlsProps, 'paused'>;
   finish: SearchFinishControlsProps;
+  /** The commander paused the mission: the server refuses Start, Resume and Finish until they resume it (UC-C15). */
+  missionPaused?: boolean;
 }
 
 /** What the searcher can press for the task's status: Start Search, Pause or Resume and Finish, or nothing once finished. */
-export function TaskActions({ status, start, pause, finish }: TaskActionsProps) {
+export function TaskActions({ status, start, pause, finish, missionPaused = false }: TaskActionsProps) {
   const { color } = useTheme().theme;
+  if (missionPaused && status !== 'finished') {
+    return (
+      <Text accessibilityLiveRegion="polite" style={[typography.caption, { color: color.inkMuted }]}>
+        המנהל השהה את החיפוש. חזרו ל־Rally Point והמתינו להודעת חידוש. מעקב הבטיחות ממשיך.
+      </Text>
+    );
+  }
   if (status === 'searching' || status === 'paused') {
     return (
       <>

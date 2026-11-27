@@ -1,3 +1,4 @@
+import { canEndMissionLocated } from '@trace/domain';
 import type { ThemeId } from '@trace/design';
 import type { MapProvider } from '@trace/map';
 import type { Mission } from '@trace/schemas';
@@ -62,6 +63,7 @@ export function MapSlot({
             outside={outsideSearchers(data.timeline.data ?? [], data.participants.data ?? [])}
             onOpenSearcher={nav.setSelectedSearcherId}
             onOpenReport={nav.openReport}
+            onFinish={canEndMissionLocated(mission.status) ? nav.openControl : undefined}
             onOpenSos={nav.openSos}
           />
         )
@@ -76,6 +78,8 @@ export function MapSlot({
       online={operational}
       rallyOpen={nav.panel === 'rally'}
       onRallyClose={() => nav.setPanelOpen('rally', false)}
+      controlOpen={nav.panel === 'control'}
+      onControlClose={() => nav.setPanelOpen('control', false)}
       onPlaceFound={onPlaceFound}
     />
   );

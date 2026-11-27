@@ -30,4 +30,33 @@ describe('mapWarning', () => {
     expect(warning?.text).toContain('יצאתם מגבול הפוליגון');
     expect(mapWarning({ gpsLost: false, locatedWaiting: false, outsidePolygon: false })).toBeNull();
   });
+
+  it('says the mission ended because the missing person was located, after leaving the polygon (UC-C16)', () => {
+    const base = { gpsLost: true, locatedWaiting: true, notUpToDate: true };
+    expect(mapWarning({ ...base, missionLocated: true })?.text).toBe(
+      'הנעדר אותר והמסע הסתיים. הפסיקו את החיפוש וחזרו מהשטח. כשתסיימו, לחצו "סיימתי פעילות".',
+    );
+    expect(mapWarning({ ...base, missionLocated: true, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionLocated: false })).toBeNull();
+  });
+
+  it('tells the searchers to return to the Rally Point while the commander paused the mission (UC-C15)', () => {
+    const base = { gpsLost: true, locatedWaiting: true, notUpToDate: true };
+    expect(mapWarning({ ...base, missionPaused: true })?.text).toBe('החיפוש הושהה, חזרו ל־Rally Point.');
+    expect(mapWarning({ ...base, missionPaused: true, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
+    expect(mapWarning({ ...base, missionPaused: true, missionLocated: true })?.text).toContain('הנעדר אותר');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionPaused: false })).toBeNull();
+  });
+
+  it('says the mission was stopped with the reason, after located and before paused (UC-C17)', () => {
+    const base = { gpsLost: true, locatedWaiting: true, notUpToDate: true };
+    const stopped = { ...base, missionStopped: 'מזג אוויר' };
+    expect(mapWarning(stopped)?.text).toBe(
+      'החיפוש הופסק: מזג אוויר. הפסיקו את החיפוש וחזרו מהשטח. כשתסיימו, לחצו "סיימתי פעילות".',
+    );
+    expect(mapWarning({ ...stopped, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
+    expect(mapWarning({ ...stopped, missionLocated: true })?.text).toContain('הנעדר אותר');
+    expect(mapWarning({ ...stopped, missionPaused: true })?.text).toContain('החיפוש הופסק');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionStopped: null })).toBeNull();
+  });
 });

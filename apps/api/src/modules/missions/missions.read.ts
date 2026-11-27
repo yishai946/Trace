@@ -1,5 +1,5 @@
 import type { Mission } from '@trace/schemas';
-import { PointGeometry } from '@trace/schemas';
+import { MissionStopReason, PointGeometry } from '@trace/schemas';
 import { desc, eq, inArray } from 'drizzle-orm';
 import type { Actor } from '../../auth/auth.plugin';
 import type { Db } from '../../db';
@@ -23,6 +23,12 @@ const missionColumns = {
   description: missions.description,
   additionalInfo: missions.additionalInfo,
   rallyPoint: asGeoJson(missions.rallyPoint),
+  locatedPosition: asGeoJson(missions.locatedPosition),
+  locatedAt: missions.locatedAt,
+  locatedNote: missions.locatedNote,
+  endedAt: missions.endedAt,
+  stopReason: missions.stopReason,
+  stopNote: missions.stopNote,
   photoUpdatedAt: missionPhotos.updatedAt,
   createdAt: missions.createdAt,
   updatedAt: missions.updatedAt,
@@ -63,9 +69,29 @@ function toMission(row: MissionRow, lkp: LkpRow | undefined): Mission {
     lkp: lkp
       ? { position: PointGeometry.parse(JSON.parse(lkp.position)), observedAt: lkp.observedAt.toISOString() }
       : null,
+    located: toLocated(row),
+    stopped: toStopped(row),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+/** Where and when the missing person was located, for a mission that ended as located (UC-C16). */
+function toLocated(row: MissionRow): Mission['located'] {
+  if (!row.locatedPosition || !row.locatedAt || !row.endedAt) return null;
+  return {
+    position: PointGeometry.parse(JSON.parse(row.locatedPosition)),
+    locatedAt: row.locatedAt.toISOString(),
+    note: row.locatedNote,
+    endedAt: row.endedAt.toISOString(),
+  };
+}
+
+/** Why the search was stopped, for a mission that ended as stopped (UC-C17). */
+function toStopped(row: MissionRow): Mission['stopped'] {
+  const reason = MissionStopReason.safeParse(row.stopReason);
+  if (!reason.success || !row.endedAt) return null;
+  return { reason: reason.data, note: row.stopNote, endedAt: row.endedAt.toISOString() };
 }
 
 /** The current LKP of each mission: its newest point. */

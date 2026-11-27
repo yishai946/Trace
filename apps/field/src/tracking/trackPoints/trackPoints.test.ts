@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { toTrackPoints, type Fix } from '.';
+import { recordTaskStatus, resetTaskIntervals } from '../taskIntervals';
 
 const fix = (minute: number, accuracy: number | null = 6): Fix => ({
   coords: { latitude: 31.78, longitude: [35.13, 35.131, 35.132][minute] ?? 35.13, accuracy },
@@ -7,6 +8,8 @@ const fix = (minute: number, accuracy: number | null = 6): Fix => ({
 });
 
 describe('toTrackPoints', () => {
+  beforeEach(() => resetTaskIntervals());
+
   it('turns fixes into points in GeoJSON order, with their time and accuracy', () => {
     expect(toTrackPoints([fix(1), fix(2, null)], { taskStatus: 'searching' })).toEqual([
       { position: [35.131, 31.78], recordedAt: '2026-10-03T10:01:00.000Z', accuracy: 6, context: 'search' },
@@ -18,5 +21,13 @@ describe('toTrackPoints', () => {
     for (const taskStatus of ['paused', 'ready', 'finished', null] as const) {
       expect(toTrackPoints([fix(1)], { taskStatus })[0]?.context).toBe('safety');
     }
+  });
+
+  it('labels a fix by the task when it was recorded: a fix taken while paused but delivered after Resume is safety', () => {
+    recordTaskStatus('searching', Date.UTC(2026, 9, 3, 10, 0));
+    recordTaskStatus('paused', Date.UTC(2026, 9, 3, 10, 1, 30));
+    recordTaskStatus('searching', Date.UTC(2026, 9, 3, 10, 2, 30));
+    const contexts = toTrackPoints([fix(1), fix(2), fix(3)], { taskStatus: 'searching' }).map((p) => p.context);
+    expect(contexts).toEqual(['search', 'safety', 'search']);
   });
 });

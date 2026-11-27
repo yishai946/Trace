@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { Button } from '../components/Button';
-import { Placeholder } from '../components/Placeholder';
+import { MissionHistory } from '../components/MissionHistory';
 import { Screen } from '../components/Screen';
 import { openScreen } from '../navigation/navigate';
 import { routes } from '../navigation/routes';
@@ -18,7 +18,7 @@ export default function MyMissionsScreen() {
         </>
       }
     >
-      <Placeholder useCase="UC-F17" />
+      <MissionHistory />
     </Screen>
   );
 }

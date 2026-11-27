@@ -1,5 +1,12 @@
 import type { LngLat } from '@trace/geo';
-import { Mission, MissionList, type CreateMissionBody, type UpdateMissionDetailsBody } from '@trace/schemas';
+import {
+  Mission,
+  MissionList,
+  type CreateMissionBody,
+  type EndMissionLocatedBody,
+  type StopMissionBody,
+  type UpdateMissionDetailsBody,
+} from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api';
 import { replaceById } from '@trace/mission-cache';
@@ -70,6 +77,45 @@ export function useUpdateRallyPoint(missionId: string) {
     onSuccess: (mission) => {
       queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
       return queryClient.invalidateQueries({ queryKey: missionKeys.all });
+    },
+  });
+}
+
+/** Ends the mission because the missing person was located (UC-C16). The saved mission replaces the cached one. */
+export function useEndMissionLocated(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: EndMissionLocatedBody) =>
+      apiRequest(`/missions/${missionId}/end-located`, { method: 'POST', body, schema: Mission }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
+      // The open tasks finished and the searchers got a message: refresh them with the mission.
+      return queryClient.invalidateQueries();
+    },
+  });
+}
+
+/** Ends the mission by stopping the search (UC-C17). The saved mission replaces the cached one. */
+export function useStopMission(missionId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: StopMissionBody) =>
+      apiRequest(`/missions/${missionId}/stop`, { method: 'POST', body, schema: Mission }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
+      return queryClient.invalidateQueries();
+    },
+  });
+}
+
+/** Pauses or resumes the mission (UC-C15). The saved mission replaces the cached one; searchers' tasks changed with it. */
+export function useMissionPause(missionId: string, action: 'pause' | 'resume') {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => apiRequest(`/missions/${missionId}/${action}`, { method: 'POST', schema: Mission }),
+    onSuccess: (mission) => {
+      queryClient.setQueryData<Mission[]>(missionKeys.all, replaceById(mission));
+      return queryClient.invalidateQueries();
     },
   });
 }

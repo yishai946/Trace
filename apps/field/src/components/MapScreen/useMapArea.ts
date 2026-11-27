@@ -1,3 +1,4 @@
+import { STOP_REASON_LABELS } from '@trace/domain';
 import { toMissionArea } from '../../mission/missionArea';
 import { useMission, useMissionPolygons } from '../../mission/queries';
 import { filterItems, toMapReports, toReportItems } from '../../reports/reportItems';
@@ -28,8 +29,11 @@ export function useMapArea() {
     assigned?.polygonId,
     toMapReports(filterItems(reportItems, 'polygon', assigned?.polygonId ?? null)),
   );
+  // The stop reason the searcher is told when the commander ended the mission as stopped (UC-C17).
+  const stopped = mission.data?.status === 'ended_stopped' ? mission.data.stopped : null;
   return {
     mission,
+    missionStopped: stopped ? STOP_REASON_LABELS[stopped.reason] : null,
     polygons,
     assigned,
     area,

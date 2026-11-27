@@ -21,6 +21,8 @@ export interface AssignedTaskProps {
   starting?: boolean;
   /** Why the last start failed, in Hebrew; the searcher can press again. */
   startError?: string | null;
+  /** The commander paused the mission (UC-C15): the personal Resume is hidden until they resume it. */
+  missionPaused?: boolean;
   /** Personal Pause and Resume (UC-F07). Without them the buttons stay disabled. */
   onPause?: () => void;
   onResume?: () => void;
@@ -45,6 +47,7 @@ export function AssignedTask({
   polygons,
   notice,
   onDismissNotice,
+  missionPaused = false,
   onStartSearch,
   starting = false,
   startError = null,
@@ -94,6 +97,7 @@ export function AssignedTask({
       </View>
       <TaskActions
         status={participation.taskStatus}
+        missionPaused={missionPaused}
         start={{ onStartSearch, starting, startError }}
         pause={{ onPause, onResume, pending: pausing, error: pauseError }}
         finish={{ onFinish, pending: finishing, error: finishError }}

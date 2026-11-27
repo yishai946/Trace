@@ -30,6 +30,8 @@ export const mission: Mission = {
   },
   rallyPoint: { type: 'Point', coordinates: [35.1335, 31.7835] },
   lkp: { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T10:05:00.000Z' },
+  located: null,
+  stopped: null,
   createdAt: '2026-10-03T10:00:00.000Z',
   updatedAt: '2026-10-03T10:00:00.000Z',
 };

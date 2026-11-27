@@ -30,3 +30,47 @@ export function canChangeRallyPoint(status: MissionStatus): boolean {
 export function canEditMissionDetails(status: MissionStatus): boolean {
   return !isMissionEnded(status);
 }
+
+/** The commander ends a mission as "the missing person was located" while it runs, active or paused (UC-C16). */
+export function canEndMissionLocated(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
+
+/** The commander stops the search (ends without locating) while the mission runs, active or paused (UC-C17). */
+export function canStopMission(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
+
+/**
+ * Why a mission ends without locating the missing person (UC-C17, decision 96). The product owner has not given the
+ * list; this one is a recommendation. `other` is last: the note explains it.
+ */
+export const MISSION_STOP_REASONS = [
+  'search_exhausted',
+  'weather',
+  'safety',
+  'resources',
+  'handed_over',
+  'other',
+] as const;
+export type MissionStopReason = (typeof MISSION_STOP_REASONS)[number];
+
+/** The Hebrew name of each reason the search can be stopped for (UC-C17, decision 96). */
+export const STOP_REASON_LABELS: Record<MissionStopReason, string> = {
+  search_exhausted: 'מוצו מאמצי החיפוש',
+  weather: 'מזג אוויר ותנאי שטח',
+  safety: 'סיבות בטיחות',
+  resources: 'חוסר במשאבים ובמחפשים',
+  handed_over: 'הועבר לגורם מקצועי',
+  other: 'אחר',
+};
+
+/** The commander pauses the search while the mission is active (UC-C15). */
+export function canPauseMission(status: MissionStatus): boolean {
+  return status === 'active';
+}
+
+/** The commander resumes a mission that is paused (UC-C15). */
+export function canResumeMission(status: MissionStatus): boolean {
+  return status === 'paused';
+}

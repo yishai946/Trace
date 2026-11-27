@@ -19,7 +19,9 @@ export function MapScreen() {
   const { theme } = useTheme();
   const participation = useSession((s) => s.participation);
   const notice = useSession((s) => s.assignmentNotice);
-  const { mission, polygons, assigned, area, polygonReports, locatedWaiting } = useMapArea();
+  const { mission, missionStopped, polygons, assigned, area, polygonReports, locatedWaiting } = useMapArea();
+
+  const missionPaused = mission.data?.status === 'paused';
 
   // Fm13: the participation ended (UC-C18); tracking already stopped with it.
   if (participation?.status === 'ended') {
@@ -51,7 +53,13 @@ export function MapScreen() {
       {/* The map and what floats over it end where the sheet begins, so the sheet never covers them. */}
       <View style={styles.fill} testID="map-area">
         <MissionMap area={area} />
-        <MapBanner polygons={polygons} locatedWaiting={locatedWaiting} />
+        <MapBanner
+          polygons={polygons}
+          locatedWaiting={locatedWaiting}
+          missionLocated={mission.data?.status === 'ended_located'}
+          missionStopped={missionStopped}
+          missionPaused={missionPaused}
+        />
         {assigned ? (
           <View style={styles.reportsButton} pointerEvents="box-none">
             <View
@@ -70,7 +78,12 @@ export function MapScreen() {
           </View>
         ) : null}
       </View>
-      <MapSheet assigned={assigned} polygons={polygons.data ?? []} hasMission={!!mission.data} />
+      <MapSheet
+        assigned={assigned}
+        polygons={polygons.data ?? []}
+        hasMission={!!mission.data}
+        missionPaused={missionPaused}
+      />
     </View>
   );
 }

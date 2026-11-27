@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import type { NotificationResponse } from 'expo-notifications';
+import { Platform } from 'react-native';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotificationTaps } from '.';
 import { routes } from '../../navigation/routes';
@@ -33,13 +34,17 @@ const tap = (data: unknown) => act(() => expo.listeners.forEach((listener) => li
 const open = { dangerouslySingular: true };
 
 beforeEach(() => {
+  Platform.OS = 'android';
   push.mockReset();
   expo.listeners.length = 0;
   expo.last = null;
   expo.cleared = 0;
   useSession.setState({ token: 'tok', missionId: MISSION });
 });
-afterEach(() => useSession.setState({ token: null, missionId: null }));
+afterEach(() => {
+  Platform.OS = 'web';
+  useSession.setState({ token: null, missionId: null });
+});
 
 describe('useNotificationTaps', () => {
   it.each([
@@ -90,6 +95,15 @@ describe('useNotificationTaps', () => {
   it('ignores data it does not know', () => {
     renderHook(() => useNotificationTaps());
     tap({ screen: 'nowhere' });
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on web, where the notification module is missing', () => {
+    Platform.OS = 'web';
+    expo.last = response({ missionId: MISSION, screen: 'sos' });
+    renderHook(() => useNotificationTaps());
+    expect(expo.cleared).toBe(0);
+    expect(expo.listeners).toHaveLength(0);
     expect(push).not.toHaveBeenCalled();
   });
 });

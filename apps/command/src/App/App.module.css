@@ -103,6 +103,8 @@
 
 .rallyPanel {
   position: absolute;
+  /* Above the searchers dock that shares this corner, so a tall panel is never covered. */
+  z-index: 1;
   bottom: calc(var(--space-6) * 2 + var(--header-h));
   inset-inline-start: var(--space-6);
 }
@@ -173,5 +175,13 @@
 
   .editBar {
     bottom: var(--space-6);
+  }
+
+  /* The rally point and mission control panels (Cm13) dock over the bottom sheet, full width, and leave the top of the map free for placing a point. */
+  .rallyPanel {
+    bottom: var(--space-6);
+    inset-inline: var(--space-6);
+    display: flex;
+    max-height: 60%;
   }
 }

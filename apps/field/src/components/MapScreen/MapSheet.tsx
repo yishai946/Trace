@@ -22,10 +22,12 @@ interface MapSheetProps {
   polygons: Task['polygons'];
   /** Without a mission loaded, the missing person's details have nowhere to open. */
   hasMission: boolean;
+  /** The commander paused the mission: the personal Resume stays hidden (UC-C15). */
+  missionPaused: boolean;
 }
 
 /** The sheet under the map (Fm04 to Fm06): the assigned task, reports waiting to send, and the searcher's actions. */
-export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
+export function MapSheet({ assigned, polygons, hasMission, missionPaused }: MapSheetProps) {
   const router = useRouter();
   const { theme } = useTheme();
   const { color } = theme;
@@ -53,6 +55,7 @@ export function MapSheet({ assigned, polygons, hasMission }: MapSheetProps) {
           onStartSearch={startSearch.start}
           starting={startSearch.starting}
           startError={startSearch.error}
+          missionPaused={missionPaused}
           onPause={searchPause.pause}
           onResume={searchPause.resume}
           pausing={searchPause.pending}

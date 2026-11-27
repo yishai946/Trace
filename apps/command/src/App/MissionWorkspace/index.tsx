@@ -3,12 +3,14 @@ import { canChangeLkp, canChangePolygons } from '@trace/domain';
 import type { MapProvider } from '@trace/map';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import type { ReactNode } from 'react';
-import styles from '../App.module.css';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
-import { RallyPointPanel } from '../../mission/RallyPointPanel';
 import { usePolygonEdit } from './usePolygonEdit';
+import { RallyPointSlot } from './RallyPointSlot';
+import { MissionControlSlot } from './MissionControlSlot';
 import { SearcherSlot } from './SearcherSlot';
 import { useSlotSelection } from './useSlotSelection';
+import { useEndLocated } from './useEndLocated';
+import { useMapClick } from './useMapClick';
 import { useRallyPointEdit } from './useRallyPointEdit';
 import { useSearcherPanel } from './useSearcherPanel';
 import { useSightingPanel } from './useSightingPanel';
@@ -45,6 +47,9 @@ interface MissionWorkspaceProps {
   /** The rally point panel is open. */
   rallyOpen: boolean;
   onRallyClose: () => void;
+  /** The mission control panel is open (UC-C16). */
+  controlOpen: boolean;
+  onControlClose: () => void;
   /** The commander searched for a place for the rally point: the map moves there. */
   onPlaceFound: (focus: MapFocus) => void;
 }
@@ -71,11 +76,14 @@ export function MissionWorkspace({
   online,
   rallyOpen,
   onRallyClose,
+  controlOpen,
+  onControlClose,
   onPlaceFound,
 }: MissionWorkspaceProps) {
   const polygon = usePolygonEdit({ missionId: mission.id, polygons, participants });
   const sighting = useSightingPanel(mission.id);
   const rally = useRallyPointEdit(mission, online);
+  const control = useEndLocated(mission, online);
   const canEditPolygons = canChangePolygons(mission.status) && online;
   const canChangeSightings = canChangeLkp(mission.status) && online;
   const searcherPanel = useSearcherPanel({
@@ -94,7 +102,7 @@ export function MissionWorkspace({
     sos,
     selectedPolygonId: polygon.selectedId,
     editingPolygonId: polygon.editing?.polygonId ?? null,
-    draftPosition: sighting.draftPosition,
+    draftPosition: sighting.draftPosition ?? (controlOpen ? control.point : null),
     route: searcherPanel.searcher
       ? { participantId: searcherPanel.searcher.id, positions: searcherPanel.positions }
       : null,
@@ -106,8 +114,7 @@ export function MissionWorkspace({
     onOpenReport,
     onSelectSearcher,
   });
-  // A click on the map moves the rally point while its panel asks for one, else it places the new sighting.
-  const onMapClick = rallyOpen && rally.placesOnMap ? rally.change : sighting.adding ? sighting.place : undefined;
+  const onMapClick = useMapClick({ rally, control, sighting, rallyOpen, controlOpen });
   const canToggleSighting = (canChangeSightings || !!sighting.adding) && !polygon.editing;
 
   return (
@@ -131,21 +138,23 @@ export function MissionWorkspace({
       {alerts}
 
       {rallyOpen && (
-        <div className={styles.rallyPanel}>
-          <RallyPointPanel
-            provider={provider}
-            point={mission.rallyPoint.coordinates}
-            mode={rally.mode}
-            onModeChange={rally.setMode}
-            onChange={rally.change}
-            onPlaceFound={(place) => onPlaceFound({ center: place.center, bounds: place.bounds })}
-            busy={rally.busy}
-            error={rally.error}
-            saved={rally.saved}
-            blocked={rally.blocked}
-            onClose={onRallyClose}
-          />
-        </div>
+        <RallyPointSlot
+          mission={mission}
+          provider={provider}
+          rally={rally}
+          onPlaceFound={onPlaceFound}
+          onClose={onRallyClose}
+        />
+      )}
+
+      {controlOpen && (
+        <MissionControlSlot
+          mission={mission}
+          provider={provider}
+          control={control}
+          onPlaceFound={onPlaceFound}
+          onClose={onControlClose}
+        />
       )}
 
       <SearcherSlot

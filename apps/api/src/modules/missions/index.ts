@@ -2,6 +2,8 @@ import { MAX_PHOTO_BYTES, PHOTO_TYPES } from '@trace/domain';
 import {
   ApiError,
   CreateMissionBody,
+  EndMissionLocatedBody,
+  StopMissionBody,
   Mission,
   MissionList,
   MissionParams,
@@ -12,11 +14,14 @@ import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
 import { z } from 'zod';
 import { commandersOnly, missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
-import { unsupportedPhoto } from '../../errors';
+import { forbidden, unsupportedPhoto } from '../../errors';
 import { acceptPhotoBodies, photoUploadError } from '../photoUpload';
 import type { ServiceDeps } from '../serviceDeps';
 import { getMission, getMissionPhoto, listMissions } from './missions.read';
+import { endMissionLocated } from './missions.endLocated';
+import { stopMission } from './missions.stop';
 import { updateMissionDetails } from './missions.details';
+import { pauseMission, resumeMission } from './missions.pause';
 import { createMission, setMissionPhoto, updateRallyPoint } from './missions.service';
 
 export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
@@ -110,6 +115,87 @@ export const missionRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
         details: request.body,
       }),
   );
+
+  app.post(
+    '/missions/:missionId/end-located',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'End the mission: the missing person was located (UC-C16)',
+        description:
+          'Only the mission commander, after verifying (decision 18), while the mission is active or paused. Needs the ' +
+          'place and time the missing person was found; the note is optional (decision 97). The mission becomes ' +
+          'ended_located and read-only (decision 52), every open search task finishes and the searchers in the field ' +
+          'get a message and a push. Safety tracking goes on until each searcher ends their activity (decision 65). ' +
+          '409 MISSION_ENDED when the mission already ended.',
+        params: MissionParams,
+        body: EndMissionLocatedBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    (request) => {
+      const commander = actorOf(request);
+      if (commander.role !== 'commander') throw forbidden();
+      return endMissionLocated(deps, { missionId: request.params.missionId, commander, located: request.body });
+    },
+  );
+
+  app.post(
+    '/missions/:missionId/stop',
+    {
+      schema: {
+        tags: ['missions'],
+        summary: 'End the mission: stop the search without locating the missing person (UC-C17)',
+        description:
+          'Only the mission commander, while the mission is active or paused. Needs a reason from the list; the note ' +
+          'is optional (decision 96). The mission becomes ended_stopped and read-only (decision 52), every open ' +
+          'search task finishes and the searchers in the field get a message and a push. Safety tracking goes on ' +
+          'until each searcher ends their activity (decision 65). 409 MISSION_ENDED when the mission already ended.',
+        params: MissionParams,
+        body: StopMissionBody,
+        response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    (request) => {
+      const commander = actorOf(request);
+      if (commander.role !== 'commander') throw forbidden();
+      return stopMission(deps, { missionId: request.params.missionId, commander, stop: request.body });
+    },
+  );
+
+  for (const [action, run, summary, description] of [
+    [
+      'pause',
+      pauseMission,
+      'Pause the search of the mission (UC-C15)',
+      'Searching tasks pause, safety tracking goes on, no one new can join, and the searchers get a message to return ' +
+        'to the Rally Point. An already paused mission is returned as it is.',
+    ],
+    [
+      'resume',
+      resumeMission,
+      'Resume a paused mission (UC-C15)',
+      'Assignments stay and every paused task is back at Ready: each searcher starts the search again. The searchers ' +
+        'get a message. An already active mission is returned as it is.',
+    ],
+  ] as const) {
+    app.post(
+      `/missions/:missionId/${action}`,
+      {
+        schema: {
+          tags: ['missions'],
+          summary,
+          description: `${description} 409 MISSION_ENDED once the mission ended.`,
+          params: MissionParams,
+          response: { 200: Mission, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+        },
+        preHandler: missionAccess(db, 'commander'),
+      },
+      (request) => run(deps, { missionId: request.params.missionId, commander: actorOf(request) }),
+    );
+  }
 
   app.put(
     '/missions/:missionId/photo',

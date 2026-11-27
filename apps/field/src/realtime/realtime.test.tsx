@@ -1,5 +1,5 @@
 import type { JoinMissionAck, Mission, Report } from '@trace/schemas';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, QueryObserver } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -76,6 +76,8 @@ const mission: Mission = {
   },
   rallyPoint: { type: 'Point', coordinates: [35.13, 31.78] },
   lkp: null,
+  located: null,
+  stopped: null,
   createdAt: '2026-11-06T10:00:00.000Z',
   updatedAt: '2026-11-06T10:00:00.000Z',
 };
@@ -457,6 +459,23 @@ describe('useMissionLive: reports (UC-F11)', () => {
     queryClient.setQueryData(missionKeys.messages(missionId), []);
     await join(socket as FakeSocket);
     expect(queryClient.getQueryState(missionKeys.messages(missionId))?.isInvalidated).toBe(true);
+  });
+
+  it('shows a message sent while offline once the connection is back (UC-S03)', async () => {
+    const { socket, queryClient } = setup();
+    const sentWhileOffline = makeMessage();
+    let held = [] as ReturnType<typeof makeMessage>[];
+    // The open Messages screen watches the list; the server answers with what it kept for the searcher.
+    const observer = new QueryObserver(queryClient, {
+      queryKey: missionKeys.messages(missionId),
+      queryFn: async () => held,
+    });
+    const unsubscribe = observer.subscribe(() => undefined);
+    await vi.waitFor(() => expect(observer.getCurrentResult().data).toEqual([]));
+    held = [sentWhileOffline];
+    await join(socket as FakeSocket);
+    await vi.waitFor(() => expect(observer.getCurrentResult().data).toEqual([sentWhileOffline]));
+    unsubscribe();
   });
 
   it('refetches instead of writing when the list is not cached', async () => {

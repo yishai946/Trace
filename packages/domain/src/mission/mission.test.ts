@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { canChangeLkp, canChangePolygons, canChangeRallyPoint, canEditMissionDetails, isMissionEnded } from '.';
+import {
+  canChangeLkp,
+  canChangePolygons,
+  canChangeRallyPoint,
+  canEditMissionDetails,
+  canEndMissionLocated,
+  canStopMission,
+  MISSION_STOP_REASONS,
+  canPauseMission,
+  canResumeMission,
+  isMissionEnded,
+} from '.';
 
 describe('mission rules', () => {
   it('allows polygon changes only while the mission is active', () => {
@@ -34,5 +45,33 @@ describe('mission rules', () => {
     expect(isMissionEnded('ended_located')).toBe(true);
     expect(isMissionEnded('ended_stopped')).toBe(true);
     expect(isMissionEnded('paused')).toBe(false);
+  });
+
+  it('lets the commander end a running mission as located, active or paused (UC-C16)', () => {
+    expect(canEndMissionLocated('active')).toBe(true);
+    expect(canEndMissionLocated('paused')).toBe(true);
+    expect(canEndMissionLocated('ended_located')).toBe(false);
+    expect(canEndMissionLocated('ended_stopped')).toBe(false);
+  });
+
+  it('stops the search of a mission that runs, active or paused', () => {
+    expect(canStopMission('active')).toBe(true);
+    expect(canStopMission('paused')).toBe(true);
+    expect(canStopMission('ended_located')).toBe(false);
+    expect(canStopMission('ended_stopped')).toBe(false);
+  });
+
+  it('has a closed list of stop reasons ending with "other"', () => {
+    expect(MISSION_STOP_REASONS.length).toBeGreaterThan(1);
+    expect(MISSION_STOP_REASONS.at(-1)).toBe('other');
+  });
+
+  it('pauses only an active mission and resumes only a paused one', () => {
+    expect(canPauseMission('active')).toBe(true);
+    expect(canPauseMission('paused')).toBe(false);
+    expect(canPauseMission('ended_located')).toBe(false);
+    expect(canResumeMission('paused')).toBe(true);
+    expect(canResumeMission('active')).toBe(false);
+    expect(canResumeMission('ended_stopped')).toBe(false);
   });
 });

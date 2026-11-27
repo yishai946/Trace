@@ -17,12 +17,18 @@ interface MapBannerProps {
   polygons: { isError: boolean; isFetching: boolean; data: unknown; refetch: () => unknown; notUpToDate: boolean };
   /** A "הנעדר אותר" report is waiting to be sent. */
   locatedWaiting: boolean;
+  /** The commander ended the mission: the missing person was located (UC-C16). */
+  missionLocated: boolean;
+  /** The stop reason when the commander stopped the mission (UC-C17), otherwise null. */
+  missionStopped: string | null;
+  /** The commander paused the mission (UC-C15). */
+  missionPaused: boolean;
 }
 
 type Notice = { text: string; action: ReactNode };
 
 /** What stops the map from showing (no server, signed out, loading, failed), or else a warning over it. */
-export function MapBanner({ polygons, locatedWaiting }: MapBannerProps) {
+export function MapBanner({ polygons, locatedWaiting, missionLocated, missionStopped, missionPaused }: MapBannerProps) {
   const router = useRouter();
   const { theme } = useTheme();
   const { color } = theme;
@@ -56,7 +62,17 @@ export function MapBanner({ polygons, locatedWaiting }: MapBannerProps) {
   };
   const status = kind ? actions[kind] : null;
   // The warnings show when nothing more urgent does.
-  const banner = status ?? mapWarning({ gpsLost, locatedWaiting, notUpToDate: polygons.notUpToDate, outsidePolygon });
+  const banner =
+    status ??
+    mapWarning({
+      gpsLost,
+      locatedWaiting,
+      notUpToDate: polygons.notUpToDate,
+      outsidePolygon,
+      missionLocated,
+      missionStopped,
+      missionPaused,
+    });
   if (!banner) return null;
   return (
     <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">

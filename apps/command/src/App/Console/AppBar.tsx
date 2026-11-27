@@ -23,7 +23,11 @@ interface AppBarProps {
   detailsButton: RefObject<HTMLButtonElement | null>;
 }
 
-const PANEL_LABELS: Record<Exclude<ConsolePanel, 'join'>, string> = { rally: 'נקודת כינוס', details: 'פרטי מסע' };
+const PANEL_LABELS: Record<Exclude<ConsolePanel, 'join'>, string> = {
+  rally: 'נקודת כינוס',
+  details: 'פרטי מסע',
+  control: 'בקרת מסע',
+};
 
 /** The desktop top bar: the open mission and its panels, the place search, the connection and the profile. */
 export function AppBar({
@@ -58,7 +62,7 @@ export function AppBar({
           >
             קוד {mission.joinCode}
           </AriaButton>
-          {(['rally', 'details'] as const).map((panel) => (
+          {(['rally', 'details', 'control'] as const).map((panel) => (
             <AriaButton
               key={panel}
               ref={panel === 'details' ? detailsButton : undefined}

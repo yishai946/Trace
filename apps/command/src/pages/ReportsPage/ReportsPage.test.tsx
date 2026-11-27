@@ -206,6 +206,22 @@ describe('ReportsPage', () => {
     expect(within(inspector()).getByText('דיווח אותר אינו סוגר את המסע')).toBeTruthy();
   });
 
+  it('RP9b: the alert and the located report open the mission control while the mission is live (UC-C16)', () => {
+    const onOpenControl = vi.fn();
+    renderPage({ selectedId: reportLocated.id, onOpenControl });
+    fireEvent.click(
+      within(screen.getByRole('alert', { name: 'התראה קריטית' })).getByRole('button', { name: 'אמת וסיים מסע…' }),
+    );
+    fireEvent.click(within(inspector()).getByRole('button', { name: 'פתח בקרת מסע' }));
+    expect(onOpenControl).toHaveBeenCalledTimes(2);
+  });
+
+  it('RP9c: without a way to end the mission the control actions are not shown', () => {
+    renderPage({ selectedId: reportLocated.id });
+    expect(screen.queryByRole('button', { name: 'אמת וסיים מסע…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'פתח בקרת מסע' })).toBeNull();
+  });
+
   it('RP10: closes the Inspector, and a row opens it again', () => {
     renderPage({ selectedId: reportFinding.id });
     fireEvent.click(within(inspector()).getByRole('button', { name: 'סגור' }));

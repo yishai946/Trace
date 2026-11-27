@@ -254,6 +254,27 @@ describe('App on the phone: reports', () => {
     fireEvent.click(screen.getByRole('link', { name: /לוח/ }));
     await waitFor(() => expect(screen.queryByRole('alert', { name: 'התראה קריטית' })).not.toBeInTheDocument());
   });
+
+  it('AP6: the bar opens the mission control over the map and closes it again (Cm13)', async () => {
+    renderPhone();
+    fireEvent.click(await screen.findByText(mission.name));
+    fireEvent.click(await screen.findByRole('button', { name: 'בקרת מסע', expanded: false }));
+    const panel = await screen.findByRole('region', { name: 'בקרת מסע' });
+    expect(within(panel).getByRole('radio', { name: 'הנעדר אותר' })).toBeChecked();
+    expect(screen.getByRole('navigation', { name: 'ניווט ראשי' })).toBeInTheDocument();
+    fireEvent.click(within(panel).getByRole('button', { name: 'סגור' }));
+    expect(screen.queryByRole('region', { name: 'בקרת מסע' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'בקרת מסע', expanded: false })).toBeInTheDocument();
+  });
+
+  it('AP7: the critical alert opens the mission control to verify and end the mission', async () => {
+    renderPhone();
+    fireEvent.click(await screen.findByText(mission.name));
+    const alert = await screen.findByRole('alert', { name: 'התראה קריטית' });
+    fireEvent.click(within(alert).getByRole('button', { name: 'אמת וסיים מסע…' }));
+    expect(await screen.findByRole('region', { name: 'בקרת מסע' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'בקרת מסע', expanded: true })).toBeInTheDocument();
+  });
 });
 
 describe('App on the phone: messages', () => {

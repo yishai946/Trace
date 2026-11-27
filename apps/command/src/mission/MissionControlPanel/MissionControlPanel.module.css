@@ -1,0 +1,216 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: var(--panel-start-w);
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-block: var(--space-5);
+  padding-inline: var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font: var(--text-title);
+}
+
+.title:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.badge {
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.label {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+}
+
+.coords {
+  margin: 0;
+  color: var(--ink-secondary);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  text-align: start;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.facts dt {
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.facts dd {
+  margin: 0;
+  font: var(--text-body);
+}
+
+.hint,
+.notice {
+  margin: 0;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+}
+
+.error {
+  margin: 0;
+  padding-block: var(--space-4);
+  padding-inline: var(--space-5);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  color: var(--ink);
+  font: var(--text-meta);
+}
+
+.popover {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  box-shadow: var(--shadow-panel);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: var(--pending-alert-w);
+  padding: var(--space-6);
+  outline: none;
+}
+
+.confirmTitle {
+  margin: 0;
+  font: var(--text-title);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+/* A choice in a form is a radio group with the segmented-tabs look, as in the message form. */
+.seg {
+  display: flex;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background-color: var(--surface-sunken);
+}
+
+.segOption {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  height: var(--segment-h);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.segOption[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.segOption[data-selected] {
+  background-color: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.segOption[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.reason {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-h-sm);
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  outline: none;
+}
+
+.reason[data-hovered] {
+  background-color: var(--surface-hover);
+}
+
+.reason[data-selected] {
+  background-color: var(--surface-raised);
+  font-weight: 600;
+}
+
+.reason[data-focus-visible] {
+  outline: 2px solid var(--focus);
+}
+
+.pause {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* Phone (Cm13): the panel docks full width over the map and scrolls inside; choices are touch targets of 44px or more. */
+@media (width <= 768px) {
+  .panel {
+    width: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .body {
+    overflow-y: auto;
+  }
+
+  .segOption,
+  .reason {
+    min-height: var(--pending-touch-target);
+  }
+
+  .confirm {
+    max-width: calc(100vw - var(--space-6) * 2);
+  }
+}
