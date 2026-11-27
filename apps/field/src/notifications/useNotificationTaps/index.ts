@@ -6,6 +6,7 @@ import {
 } from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
+import { Platform } from 'react-native';
 import { openScreen } from '../../navigation/navigate';
 import { useSession } from '../../state/session';
 import { pushTarget, type PushTarget } from '../pushTarget';
@@ -15,13 +16,15 @@ const targetOf = (response: NotificationResponse) => pushTarget(response.notific
 /**
  * Opens the screen a tapped push notification names (`data.screen` of `data.missionId`), also when the tap started
  * the app. The mission screens read the mission the searcher joined, so a tap waits until that mission is open
- * (a launch joins it again, UC-F16) and is dropped when the searcher is in another one.
+ * (a launch joins it again, UC-F16) and is dropped when the searcher is in another one. Does nothing on web.
  */
 export function useNotificationTaps(): void {
   const router = useRouter();
   const pending = useRef<PushTarget | null>(null);
 
   useEffect(() => {
+    // The web build has no native notification module (getLastNotificationResponse is missing there).
+    if (Platform.OS === 'web') return;
     function open() {
       const target = pending.current;
       const { missionId } = useSession.getState();
