@@ -41,7 +41,7 @@ interface SessionState {
   enterMission: (missionId: string, participation: OwnParticipation) => void;
   setPendingJoinCode: (code: string | null) => void;
   /** The participation as the server sent it now; notes an assignment or a move. */
-  updateParticipation: (participation: OwnParticipation) => void;
+  updateParticipation: (participation: OwnParticipation, changedAt?: number) => void;
   dismissAssignmentNotice: () => void;
 }
 
@@ -124,10 +124,10 @@ export const useSession = create<SessionState>()((set, get) => ({
     });
   },
   setPendingJoinCode: (pendingJoinCode) => set({ pendingJoinCode }),
-  updateParticipation: (participation) => {
+  updateParticipation: (participation, changedAt) => {
     const { missionId } = get();
     if (missionId) void saveMission(missionId, participation);
-    recordTaskStatus(participation.taskStatus);
+    recordTaskStatus(participation.taskStatus, changedAt);
     set((s) => {
       const before = s.participation;
       const changed = participation.status === 'assigned' && participation.polygonId !== before?.polygonId;

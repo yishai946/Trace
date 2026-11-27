@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSearchPause } from '.';
 import { MISSION_ID } from '../../reports/fixtures';
 import { useSession } from '../../state/session';
+import { taskStatusAt } from '../../tracking/taskIntervals';
 
 const searching: OwnParticipation = {
   id: '00000000-0000-4000-8000-000000000002',
@@ -42,6 +43,24 @@ describe('useSearchPause (UC-F07)', () => {
       expect.objectContaining({ method: 'POST' }),
     );
     expect(useSession.getState().tracking).toBe(true);
+  });
+
+  it('counts the wait for the answer as paused, so fixes taken meanwhile are safety (decision 71)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(1000);
+      const fetch = vi.fn(async () => {
+        vi.setSystemTime(4000);
+        return json({ ...searching, taskStatus: 'paused' });
+      });
+      vi.stubGlobal('fetch', fetch);
+      const { result } = renderHook(() => useSearchPause(), { wrapper });
+      act(() => result.current.pause());
+      await waitFor(() => expect(useSession.getState().participation?.taskStatus).toBe('paused'));
+      expect(taskStatusAt(2500)).toBe('paused');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('resumes a paused task', async () => {
