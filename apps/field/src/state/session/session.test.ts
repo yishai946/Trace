@@ -1,9 +1,10 @@
 import { saveStep, savedSteps } from '../../offline/store';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSession } from '.';
 import { enqueue, pendingCount } from '../../outbox';
 import { setItemAsync, secureStoreItems } from '../../test/secureStore';
 import { loadSavedMission, saveMission } from '../savedMission';
+import { taskStatusAt } from '../../tracking/taskIntervals';
 
 describe('useSession', () => {
   beforeEach(() => useSession.setState(useSession.getInitialState()));
@@ -149,6 +150,27 @@ describe('useSession', () => {
 
     expect(useSession.getState()).toMatchObject({ missionId: 'm1', participation, pendingJoinCode: null });
   });
+
+  it('remembers when the task status changed, so a fix is labelled by its recording time', () => {
+    vi.useFakeTimers();
+    try {
+      const base = { id: 'p1', callsign: 7, status: 'assigned' as const, polygonId: 'a' };
+      vi.setSystemTime(1000);
+      useSession.getState().enterMission('m1', { ...base, taskStatus: 'searching' });
+      vi.setSystemTime(2000);
+      useSession.getState().updateParticipation({ ...base, taskStatus: 'paused' });
+      vi.setSystemTime(3000);
+      useSession.getState().updateParticipation({ ...base, taskStatus: 'searching' });
+      expect([taskStatusAt(1500), taskStatusAt(2500), taskStatusAt(3500)]).toEqual([
+        'searching',
+        'paused',
+        'searching',
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   describe('restoring the mission after a restart (UC-F16)', () => {
     const searching = {
       id: 'p1',
