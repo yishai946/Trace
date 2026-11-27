@@ -176,3 +176,44 @@ describe('MissionControlPanel: stop the search (UC-C17)', () => {
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
   });
 });
+
+describe('MissionControlPanel: keyboard', () => {
+  it('moves focus to its title when it opens, so the form is the next stop', () => {
+    setup();
+    expect(screen.getByRole('heading', { name: 'בקרת מסע' })).toHaveFocus();
+  });
+
+  it('closes on Escape inside the panel', () => {
+    const { onClose } = setup();
+    fireEvent.keyDown(screen.getByRole('textbox', { name: /הערה/ }), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns focus to what opened it once it closes', () => {
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
+    const view = render(
+      <MissionControlPanel
+        mission={mission}
+        provider={{} as MapProvider}
+        point={null}
+        mode="map"
+        busy={false}
+        error={null}
+        offline={false}
+        onModeChange={vi.fn()}
+        onPoint={vi.fn()}
+        onPlaceFound={vi.fn()}
+        onEnd={vi.fn()}
+        onStop={vi.fn()}
+        onEdit={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+    expect(opener).not.toHaveFocus();
+    view.unmount();
+    expect(opener).toHaveFocus();
+    opener.remove();
+  });
+});

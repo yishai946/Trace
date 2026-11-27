@@ -24,6 +24,11 @@
   font: var(--text-title);
 }
 
+.title:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 .badge {
   color: var(--ink-secondary);
   font: var(--text-meta);

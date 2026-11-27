@@ -61,3 +61,10 @@
   color: var(--ink);
   font: var(--text-meta);
 }
+
+/* Phone: the mode tabs are touch targets of 44px or more. */
+@media (width <= 768px) {
+  .segTab {
+    min-height: var(--pending-touch-target);
+  }
+}
