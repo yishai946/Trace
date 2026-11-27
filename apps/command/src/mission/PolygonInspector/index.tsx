@@ -4,6 +4,7 @@ import { Input, Label, TextField } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
 import styles from './PolygonInspector.module.css';
+import { PolygonMark } from './PolygonMark';
 import { StatusActions } from './StatusActions';
 
 const hasOpenTask = (p: Participant) => p.taskStatus !== null && p.taskStatus !== 'finished';
@@ -57,11 +58,7 @@ export function PolygonInspector({
   return (
     <section className={styles.panel} aria-label={polygon.name}>
       <div className={`${styles.section} ${styles.head}`}>
-        <span className={styles.mark} data-status={polygon.status} aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-            <path d="M5 6l7-3 8 5-2 10-11 2-3-8z" />
-          </svg>
-        </span>
+        <PolygonMark status={polygon.status} />
         <div className={styles.titles}>
           <div className={styles.name}>{polygon.name}</div>
           <div className={styles.sub}>
