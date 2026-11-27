@@ -36,6 +36,8 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
   const missionId = useSession((s) => s.missionId);
   const gpsLost = useSession((s) => s.gpsAvailable === false);
   const outsidePolygon = useSession((s) => s.outsidePolygon);
+  // Only while tracking: after the activity ends the last reading says nothing.
+  const batteryLevel = useSession((s) => (s.tracking ? s.batteryLevel : null));
   const kind = mapStatus({
     apiConfigured: !!apiBaseUrl,
     signedIn,
@@ -68,6 +70,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
       gpsLost,
       locatedWaiting,
       notUpToDate: polygons.notUpToDate,
+      batteryLevel,
       outsidePolygon,
       missionLocated,
       missionStopped,
@@ -82,7 +85,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionSto
           styles.banner,
           {
             backgroundColor: color.surface,
-            // Leaving the polygon (UC-S04), a lost GPS (decision 42) and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
+            // Leaving the polygon (UC-S04), a lost GPS (decision 42), a low battery and an unsent "הנעדר אותר" report are warnings; the other notices are neutral.
             borderColor: status ? color.border : color.warning,
             boxShadow: theme.shadow.shadowPanel,
           },

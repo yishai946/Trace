@@ -91,3 +91,11 @@ describe('reportBattery', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+describe('reportBattery without a connection', () => {
+  it('keeps the level for the warning on the phone', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')));
+    await reportBattery(async () => 0.15);
+    expect(useSession.getState().batteryLevel).toBe(15);
+  });
+});
