@@ -1,4 +1,4 @@
-import { canEndMissionLocated } from '@trace/domain';
+import { canEndMissionLocated, STOP_REASON_LABELS } from '@trace/domain';
 import { formatLatLng, type LngLat } from '@trace/geo';
 import type { MapProvider } from '@trace/map';
 import type { EndMissionLocatedBody, Mission, StopMissionBody } from '@trace/schemas';
@@ -7,7 +7,6 @@ import { Label, Radio, RadioGroup } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import type { Place } from '../../map/geocoding';
 import type { PlaceMode } from '../../map/PlacePicker';
-import { STOP_REASON_LABELS } from '../stopReason';
 import { timeLabel } from '../timeLabel';
 import { EndLocatedForm } from './EndLocatedForm';
 import { StopMissionForm } from './StopMissionForm';
