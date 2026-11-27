@@ -33,6 +33,8 @@ Run lint and typecheck before declaring any task done.
 
 ## Building with EAS
 
+Exception: this project's Android APK is built by the `Field Android APK` GitHub Actions workflow and the unsigned iOS IPA by `Field iOS unsigned IPA`, not by EAS Build (see [`../../docs/TECH_STACK.md`](../../docs/TECH_STACK.md)). Build variables for the APK are GitHub repository variables and secrets, not EAS environment variables. The guidance below applies only if the project moves to EAS.
+
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `npx eas-cli@latest <command>`; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
