@@ -347,3 +347,7 @@
 .bannerText {
   margin: 0;
 }
+
+.bannerAction {
+  margin-block-start: var(--space-3);
+}

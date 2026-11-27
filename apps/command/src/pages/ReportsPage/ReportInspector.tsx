@@ -123,7 +123,11 @@ export function ReportInspector({
             <div>
               <b>דיווח אותר אינו סוגר את המסע</b>
               <p className={styles.bannerText}>המסע מסתיים רק אחרי אימות של המנהל. תצפיות על הנעדר מנוהלות ב-LKP.</p>
-              {onOpenControl && <Button onPress={onOpenControl}>פתח בקרת מסע</Button>}
+              {onOpenControl && (
+                <div className={styles.bannerAction}>
+                  <Button onPress={onOpenControl}>פתח בקרת מסע</Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
