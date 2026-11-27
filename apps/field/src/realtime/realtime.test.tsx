@@ -10,6 +10,7 @@ import { makeMessage } from '../messages/fixtures';
 import { makeSos } from '../sos/fixtures';
 import { clearOfflinePackages } from '../offline/store';
 import { requestOfflineRefresh } from '../offline/refreshPackage';
+import { useAlerts } from '../alerts';
 import { useSession } from '../state/session';
 import { syncOutbox } from '../tracking';
 
@@ -512,5 +513,61 @@ describe('useMissionLive: reports (UC-F11)', () => {
     queryClient.setQueryData(missionKeys.reports(missionId), []);
     await join(socket as FakeSocket);
     expect(reportsState(queryClient)?.isInvalidated).toBe(true);
+  });
+});
+
+describe('useMissionLive: alerts inside the app', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sockets.length = 0;
+    useAlerts.setState(useAlerts.getInitialState());
+    useSession.setState({
+      ...useSession.getInitialState(),
+      token: 't1',
+      restored: true,
+      missionId,
+      participation: { id: '00000000-0000-4000-8000-000000000002' } as never,
+    });
+  });
+  const kinds = () => useAlerts.getState().alerts.map((alert) => alert.kind);
+  const other = makeSos({ sender: { ...makeSos().sender, participantId: '00000000-0000-4000-8000-000000000009' } });
+
+  it('alerts about an SOS another searcher sent, and withdraws it when it is closed', () => {
+    const { socket } = setup();
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: other }));
+    expect(kinds()).toEqual(['sos']);
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: { ...other, status: 'closed' } }));
+    expect(kinds()).toEqual([]);
+  });
+
+  it("does not alert about the searcher's own SOS", () => {
+    const { socket } = setup();
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: makeSos() }));
+    expect(kinds()).toEqual([]);
+  });
+
+  it('alerts about a significant change of the details only', () => {
+    const { socket } = setup();
+    const changed = { ...mission, updatedAt: '2026-11-06T11:00:00.000Z' };
+    act(() => socket?.fire('mission:event', { type: 'mission.updated', missionId, mission: changed }));
+    expect(kinds()).toEqual([]);
+    act(() =>
+      socket?.fire('mission:event', { type: 'mission.updated', missionId, mission: changed, changedFields: ['name'] }),
+    );
+    expect(kinds()).toEqual(['details']);
+  });
+
+  it("drops a mission's alerts when it is left", () => {
+    const { socket, unmount } = setup();
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: other }));
+    unmount();
+    expect(kinds()).toEqual([]);
+  });
+
+  it('keeps the alerts when only the session token changes', () => {
+    const { socket } = setup();
+    act(() => socket?.fire('mission:event', { type: 'sos.saved', missionId, sos: other }));
+    act(() => useSession.setState({ token: 't2' }));
+    expect(kinds()).toEqual(['sos']);
   });
 });
