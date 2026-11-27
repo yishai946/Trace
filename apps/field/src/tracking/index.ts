@@ -18,6 +18,9 @@ import { noteLocalPresence } from './polygonPresence';
 import { LOCATION_TASK, recordFixes, trackPointSender } from './locationTask';
 import type { Fix } from './trackPoints';
 
+const SAMPLE_INTERVAL_MS = 5_000;
+const SAMPLE_DISTANCE_METERS = 10;
+
 /**
  * Where GPS fixes come from (TECH_STACK.md). The app talks to this interface only, so a more reliable background
  * library can replace expo-location later without touching the rest.
@@ -101,14 +104,16 @@ export function useOutboxSync(): void {
 }
 
 /**
- * Background GPS through expo-location. Intervals are left to the phone: the sampling rate is TBD in the spec
- * (UC-S01). shortcut: `Accuracy.High` is a provisional choice; on Android it also sets the default intervals, so
- * revisit it with the sampling rate.
+ * Background GPS through expo-location, sampled every 5 s or 10 m (decision 101). Android takes the time interval; a
+ * distance filter there would also require movement. iOS has no time interval, so it samples by distance.
+ * shortcut: `Accuracy.High` is a provisional choice.
  */
 export const expoLocationTracker: LocationTracker = {
   start: () =>
     startLocationUpdatesAsync(LOCATION_TASK, {
       accuracy: Accuracy.High,
+      timeInterval: SAMPLE_INTERVAL_MS,
+      distanceInterval: Platform.OS === 'ios' ? SAMPLE_DISTANCE_METERS : 0,
       pausesUpdatesAutomatically: false,
       showsBackgroundLocationIndicator: true,
       foregroundService: {

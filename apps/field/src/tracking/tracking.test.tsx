@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker } from '.';
+import { startLocationUpdatesAsync } from 'expo-location';
+import { expoLocationTracker, receiveFixes, useLocationTracking, useOutboxSync, type LocationTracker } from '.';
 import { resetBatteryReport } from './batteryReport';
 import { enqueue, pending } from '../outbox';
 import { useSession } from '../state/session';
@@ -71,6 +72,21 @@ describe('useLocationTracking', () => {
     useSession.setState({ tracking: false });
     rerender();
     expect(tracker.stop).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('expoLocationTracker', () => {
+  it.each([
+    ['android', 0],
+    ['ios', 10],
+  ])('samples every 5 s or 10 m on %s (decision 101)', async (os, distanceInterval) => {
+    platform.OS = os;
+    await expoLocationTracker.start();
+    expect(startLocationUpdatesAsync).toHaveBeenLastCalledWith(
+      'trace-location',
+      expect.objectContaining({ timeInterval: 5000, distanceInterval }),
+    );
+    platform.OS = 'ios';
   });
 });
 
