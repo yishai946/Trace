@@ -17,7 +17,7 @@ import { lockMission } from '../lockMission';
 import type { ServiceDeps } from '../serviceDeps';
 import { loadMessages, toOwnMessage } from './messages.read';
 
-/** The push notification title per urgency. Sound and importance per urgency belong to push infrastructure (#126). */
+/** The push notification title per urgency. Sound and importance per urgency need real push, which is not set up (docs/TECH_STACK.md). */
 const PUSH_TITLES: Record<MessageUrgency, string> = {
   normal: 'הודעה מהמנהל',
   important: 'הודעה חשובה מהמנהל',
