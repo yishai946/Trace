@@ -19,6 +19,8 @@ interface MapBannerProps {
   locatedWaiting: boolean;
   /** The commander ended the mission: the missing person was located (UC-C16). */
   missionLocated: boolean;
+  /** The stop reason when the commander stopped the mission (UC-C17), otherwise null. */
+  missionStopped: string | null;
   /** The commander paused the mission (UC-C15). */
   missionPaused: boolean;
 }
@@ -26,7 +28,7 @@ interface MapBannerProps {
 type Notice = { text: string; action: ReactNode };
 
 /** What stops the map from showing (no server, signed out, loading, failed), or else a warning over it. */
-export function MapBanner({ polygons, locatedWaiting, missionLocated, missionPaused }: MapBannerProps) {
+export function MapBanner({ polygons, locatedWaiting, missionLocated, missionStopped, missionPaused }: MapBannerProps) {
   const router = useRouter();
   const { theme } = useTheme();
   const { color } = theme;
@@ -68,6 +70,7 @@ export function MapBanner({ polygons, locatedWaiting, missionLocated, missionPau
       notUpToDate: polygons.notUpToDate,
       outsidePolygon,
       missionLocated,
+      missionStopped,
       missionPaused,
     });
   if (!banner) return null;

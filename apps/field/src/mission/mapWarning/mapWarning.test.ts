@@ -47,4 +47,16 @@ describe('mapWarning', () => {
     expect(mapWarning({ ...base, missionPaused: true, missionLocated: true })?.text).toContain('הנעדר אותר');
     expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionPaused: false })).toBeNull();
   });
+
+  it('says the mission was stopped with the reason, after located and before paused (UC-C17)', () => {
+    const base = { gpsLost: true, locatedWaiting: true, notUpToDate: true };
+    const stopped = { ...base, missionStopped: 'מזג אוויר' };
+    expect(mapWarning(stopped)?.text).toBe(
+      'החיפוש הופסק: מזג אוויר. הפסיקו את החיפוש וחזרו מהשטח. כשתסיימו, לחצו "סיימתי פעילות".',
+    );
+    expect(mapWarning({ ...stopped, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
+    expect(mapWarning({ ...stopped, missionLocated: true })?.text).toContain('הנעדר אותר');
+    expect(mapWarning({ ...stopped, missionPaused: true })?.text).toContain('החיפוש הופסק');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionStopped: null })).toBeNull();
+  });
 });
