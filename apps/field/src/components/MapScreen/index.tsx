@@ -51,7 +51,11 @@ export function MapScreen() {
       {/* The map and what floats over it end where the sheet begins, so the sheet never covers them. */}
       <View style={styles.fill} testID="map-area">
         <MissionMap area={area} />
-        <MapBanner polygons={polygons} locatedWaiting={locatedWaiting} />
+        <MapBanner
+          polygons={polygons}
+          locatedWaiting={locatedWaiting}
+          missionLocated={mission.data?.status === 'ended_located'}
+        />
         {assigned ? (
           <View style={styles.reportsButton} pointerEvents="box-none">
             <View

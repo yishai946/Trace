@@ -2,10 +2,10 @@ import { useState } from 'react';
 import type { MissionView } from '../../mission/MissionNav';
 
 /**
- * The panels opened from the app bar: the join code (UC-C02), the rally point (UC-C05) and the mission details
- * (UC-C03). They share one corner, and the details cover the map, so only one is open at a time.
+ * The panels opened from the app bar: the join code (UC-C02), the rally point (UC-C05) the mission details
+ * (UC-C03) and the mission control (UC-C16). They share one corner, and the details cover the map, so only one is open at a time.
  */
-export type ConsolePanel = 'join' | 'rally' | 'details';
+export type ConsolePanel = 'join' | 'rally' | 'details' | 'control';
 
 /** Where the commander is in the console: which mission, which of its views, and which panel is open over it. */
 export function useConsoleNav() {

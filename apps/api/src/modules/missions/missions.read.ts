@@ -23,6 +23,10 @@ const missionColumns = {
   description: missions.description,
   additionalInfo: missions.additionalInfo,
   rallyPoint: asGeoJson(missions.rallyPoint),
+  locatedPosition: asGeoJson(missions.locatedPosition),
+  locatedAt: missions.locatedAt,
+  locatedNote: missions.locatedNote,
+  endedAt: missions.endedAt,
   photoUpdatedAt: missionPhotos.updatedAt,
   createdAt: missions.createdAt,
   updatedAt: missions.updatedAt,
@@ -63,8 +67,20 @@ function toMission(row: MissionRow, lkp: LkpRow | undefined): Mission {
     lkp: lkp
       ? { position: PointGeometry.parse(JSON.parse(lkp.position)), observedAt: lkp.observedAt.toISOString() }
       : null,
+    located: toLocated(row),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+/** Where and when the missing person was located, for a mission that ended as located (UC-C16). */
+function toLocated(row: MissionRow): Mission['located'] {
+  if (!row.locatedPosition || !row.locatedAt || !row.endedAt) return null;
+  return {
+    position: PointGeometry.parse(JSON.parse(row.locatedPosition)),
+    locatedAt: row.locatedAt.toISOString(),
+    note: row.locatedNote,
+    endedAt: row.endedAt.toISOString(),
   };
 }
 

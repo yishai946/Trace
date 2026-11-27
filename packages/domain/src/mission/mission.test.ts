@@ -4,6 +4,7 @@ import {
   canChangePolygons,
   canChangeRallyPoint,
   canEditMissionDetails,
+  canEndMissionLocated,
   canPauseMission,
   canResumeMission,
   isMissionEnded,
@@ -42,6 +43,13 @@ describe('mission rules', () => {
     expect(isMissionEnded('ended_located')).toBe(true);
     expect(isMissionEnded('ended_stopped')).toBe(true);
     expect(isMissionEnded('paused')).toBe(false);
+  });
+
+  it('lets the commander end a running mission as located, active or paused (UC-C16)', () => {
+    expect(canEndMissionLocated('active')).toBe(true);
+    expect(canEndMissionLocated('paused')).toBe(true);
+    expect(canEndMissionLocated('ended_located')).toBe(false);
+    expect(canEndMissionLocated('ended_stopped')).toBe(false);
   });
 
   it('pauses only an active mission and resumes only a paused one', () => {

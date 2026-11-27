@@ -11,6 +11,7 @@ import type { Message, OwnMessage, SendMessageBody } from '@trace/schemas';
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { messageRecipients, messages, participations, polygons } from '../../db/schema';
+import type { Tx } from '../../db';
 import { AppError, notFound, missionEnded, participationEnded } from '../../errors';
 import { lockMission } from '../lockMission';
 import type { ServiceDeps } from '../serviceDeps';
@@ -23,6 +24,83 @@ const PUSH_TITLES: Record<MessageUrgency, string> = {
   critical: 'הודעה קריטית מהמנהל',
 };
 
+/** The message and, per recipient, what that searcher's app receives. */
+export interface StoredMessage {
+  message: Message;
+  deliveries: { searcherId: string; message: OwnMessage }[];
+}
+
+/**
+ * Stores a message and its fixed recipients (decision 77), inside the caller's transaction. The caller decides who
+ * may send and to whom; it publishes the events and the push after the commit.
+ */
+export async function storeMessage(
+  tx: Tx,
+  input: {
+    missionId: string;
+    sentBy: string;
+    urgency: MessageUrgency;
+    body: string;
+    target: z.output<typeof SendMessageBody>['target'];
+    recipientIds: string[];
+  },
+): Promise<StoredMessage> {
+  const { missionId, target } = input;
+  const [inserted] = await tx
+    .insert(messages)
+    .values({
+      missionId,
+      sentBy: input.sentBy,
+      urgency: input.urgency,
+      body: input.body,
+      targetKind: target.kind,
+      targetPolygonIds: target.kind === 'polygons' ? target.polygonIds : null,
+      targetParticipantId: target.kind === 'searcher' ? target.participantId : null,
+      // Read inside the lock, so the order follows the commits (as sightings).
+      createdAt: sql`clock_timestamp()`,
+    })
+    .returning({ id: messages.id });
+  if (!inserted) throw new Error('Message insert returned no row');
+  await tx
+    .insert(messageRecipients)
+    .values(input.recipientIds.map((participationId) => ({ messageId: inserted.id, participationId })));
+
+  const [message] = await loadMessages(tx, missionId, [inserted.id]);
+  if (!message) throw new Error('Saved message not found');
+  const deliveries = message.recipients.map((recipient) => ({
+    searcherId: recipient.searcherId,
+    message: toOwnMessage(message, recipient),
+  }));
+  return { message, deliveries };
+}
+
+/** Tells the mission and the recipients about a stored message; the push is best effort and never fails the send. */
+export function publishMessage(
+  { realtime, push }: Pick<ServiceDeps, 'realtime' | 'push'>,
+  missionId: string,
+  { message, deliveries }: StoredMessage,
+): void {
+  realtime.publish({ type: 'message.sent', missionId, message });
+  for (const delivery of deliveries) {
+    realtime.publish({
+      type: 'message.received',
+      missionId,
+      searcherId: delivery.searcherId,
+      message: delivery.message,
+    });
+  }
+  // Best effort: push never fails or delays the send.
+  void push.notifySearchers({
+    missionId,
+    searcherIds: deliveries.map((delivery) => delivery.searcherId),
+    message: {
+      title: PUSH_TITLES[message.urgency],
+      body: message.body,
+      data: { missionId, screen: 'messages' },
+    },
+  });
+}
+
 /**
  * Sends a message (UC-C12). The recipients are fixed here: a searcher who joins later does not get it. Everything is
  * stored, so a searcher who is offline reads it when they are back (decision 77).
@@ -32,7 +110,7 @@ export async function sendMessage(
   input: { missionId: string; sentBy: string; message: z.output<typeof SendMessageBody> },
 ): Promise<Message> {
   const { missionId, sentBy, message: request } = input;
-  const { message, deliveries } = await db.transaction(async (tx) => {
+  const stored = await db.transaction(async (tx) => {
     await lockMission(tx, missionId, {
       allowed: canSendMessage,
       refusal: () => missionEnded('Messages cannot be sent in an ended mission'),
@@ -76,53 +154,17 @@ export async function sendMessage(
       throw new AppError(409, 'NO_RECIPIENTS', 'No active searcher matches this target');
     }
 
-    const [inserted] = await tx
-      .insert(messages)
-      .values({
-        missionId,
-        sentBy,
-        urgency: request.urgency,
-        body: request.body,
-        targetKind: target.kind,
-        targetPolygonIds: target.kind === 'polygons' ? target.polygonIds : null,
-        targetParticipantId: target.kind === 'searcher' ? target.participantId : null,
-        // Read inside the lock, so the order follows the commits (as sightings).
-        createdAt: sql`clock_timestamp()`,
-      })
-      .returning({ id: messages.id });
-    if (!inserted) throw new Error('Message insert returned no row');
-    await tx
-      .insert(messageRecipients)
-      .values(recipients.map((recipient) => ({ messageId: inserted.id, participationId: recipient.id })));
-
-    const [message] = await loadMessages(tx, missionId, [inserted.id]);
-    if (!message) throw new Error('Saved message not found');
-    const deliveries = message.recipients.map((recipient) => ({
-      searcherId: recipient.searcherId,
-      message: toOwnMessage(message, recipient),
-    }));
-    return { message, deliveries };
-  });
-  realtime.publish({ type: 'message.sent', missionId, message });
-  for (const delivery of deliveries) {
-    realtime.publish({
-      type: 'message.received',
+    return storeMessage(tx, {
       missionId,
-      searcherId: delivery.searcherId,
-      message: delivery.message,
+      sentBy,
+      urgency: request.urgency,
+      body: request.body,
+      target,
+      recipientIds: recipients.map((recipient) => recipient.id),
     });
-  }
-  // Best effort: push never fails or delays the send.
-  void push.notifySearchers({
-    missionId,
-    searcherIds: deliveries.map((delivery) => delivery.searcherId),
-    message: {
-      title: PUSH_TITLES[message.urgency],
-      body: message.body,
-      data: { missionId, screen: 'messages' },
-    },
   });
-  return message;
+  publishMessage({ realtime, push }, missionId, stored);
+  return stored.message;
 }
 
 /**

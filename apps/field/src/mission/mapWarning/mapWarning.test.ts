@@ -30,4 +30,13 @@ describe('mapWarning', () => {
     expect(warning?.text).toContain('יצאתם מגבול הפוליגון');
     expect(mapWarning({ gpsLost: false, locatedWaiting: false, outsidePolygon: false })).toBeNull();
   });
+
+  it('says the mission ended because the missing person was located, after leaving the polygon (UC-C16)', () => {
+    const base = { gpsLost: true, locatedWaiting: true, notUpToDate: true };
+    expect(mapWarning({ ...base, missionLocated: true })?.text).toBe(
+      'הנעדר אותר והמסע הסתיים. הפסיקו את החיפוש וחזרו מהשטח. כשתסיימו, לחצו "סיימתי פעילות".',
+    );
+    expect(mapWarning({ ...base, missionLocated: true, outsidePolygon: true })?.text).toContain('יצאתם מגבול');
+    expect(mapWarning({ gpsLost: false, locatedWaiting: false, missionLocated: false })).toBeNull();
+  });
 });

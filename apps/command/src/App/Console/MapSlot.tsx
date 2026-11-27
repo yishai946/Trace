@@ -76,6 +76,8 @@ export function MapSlot({
       online={operational}
       rallyOpen={nav.panel === 'rally'}
       onRallyClose={() => nav.setPanelOpen('rally', false)}
+      controlOpen={nav.panel === 'control'}
+      onControlClose={() => nav.setPanelOpen('control', false)}
       onPlaceFound={onPlaceFound}
     />
   );

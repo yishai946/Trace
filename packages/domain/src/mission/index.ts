@@ -31,6 +31,11 @@ export function canEditMissionDetails(status: MissionStatus): boolean {
   return !isMissionEnded(status);
 }
 
+/** The commander ends a mission as "the missing person was located" while it runs, active or paused (UC-C16). */
+export function canEndMissionLocated(status: MissionStatus): boolean {
+  return !isMissionEnded(status);
+}
+
 /** The commander pauses the search while the mission is active (UC-C15). */
 export function canPauseMission(status: MissionStatus): boolean {
   return status === 'active';
