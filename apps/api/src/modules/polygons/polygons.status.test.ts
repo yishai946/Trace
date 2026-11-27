@@ -183,4 +183,18 @@ describe('polygon status (UC-C07)', () => {
     const res = await ctx.app.inject({ method: 'PUT', url: url(a.id), payload: { status: 'completed' } });
     expect(res.statusCode).toBe(401);
   });
+
+  it('reactivates a Completed polygon when a searcher is assigned to it', async () => {
+    const a = await create();
+    await setStatus(a.id, { status: 'completed' });
+    const searcher = await addParticipant(ctx.db, { missionId, callsign: 4 });
+    const res = await inject({
+      method: 'PUT',
+      url: `/api/missions/${missionId}/participants/${searcher}/assignment`,
+      payload: { polygonId: a.id },
+    });
+    expect(res.statusCode).toBe(200);
+    const [row] = await ctx.db.select({ status: polygons.status }).from(polygons).where(eq(polygons.id, a.id));
+    expect(row?.status).toBe('active');
+  });
 });

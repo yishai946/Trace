@@ -138,7 +138,8 @@ export async function assignParticipant(
       .update(participations)
       .set({ status: 'assigned', polygonId: polygon.id, taskStatus: 'ready' })
       .where(eq(participations.id, participation.id));
-    if (polygon.status !== 'unassigned') return null;
+    // Assigning to a Completed polygon brings it back to Active (decision 57); an Active one stays as it is.
+    if (polygon.status === 'active') return null;
     await tx.update(polygons).set({ status: 'active' }).where(eq(polygons.id, polygon.id));
     return polygon.id;
   });
