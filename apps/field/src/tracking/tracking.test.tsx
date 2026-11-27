@@ -76,17 +76,12 @@ describe('useLocationTracking', () => {
 });
 
 describe('expoLocationTracker', () => {
-  it.each([
-    ['android', 0],
-    ['ios', 10],
-  ])('samples every 5 s or 10 m on %s (decision 101)', async (os, distanceInterval) => {
-    platform.OS = os;
+  it('samples every 5 s, also while standing still (decision 101)', async () => {
     await expoLocationTracker.start();
     expect(startLocationUpdatesAsync).toHaveBeenLastCalledWith(
       'trace-location',
-      expect.objectContaining({ timeInterval: 5000, distanceInterval }),
+      expect.objectContaining({ timeInterval: 5000, distanceInterval: 0 }),
     );
-    platform.OS = 'ios';
   });
 });
 
