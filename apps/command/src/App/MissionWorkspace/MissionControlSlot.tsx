@@ -29,6 +29,7 @@ export function MissionControlSlot({ mission, provider, control, onPlaceFound, o
         error={control.error}
         offline={control.offline}
         onEnd={control.end}
+        onStop={control.stop}
         onEdit={control.clearError}
         onClose={onClose}
       />

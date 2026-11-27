@@ -1,5 +1,5 @@
 import type { MapProvider } from '@trace/map';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { mission } from '../fixtures';
 import { MissionControlPanel } from '.';
@@ -12,6 +12,7 @@ function setup(props: Partial<Parameters<typeof MissionControlPanel>[0]> = {}) {
     onPoint: vi.fn(),
     onPlaceFound: vi.fn(),
     onEnd: vi.fn(),
+    onStop: vi.fn(),
     onEdit: vi.fn(),
     onClose: vi.fn(),
   };
@@ -111,5 +112,67 @@ describe('MissionControlPanel: the missing person was located (UC-C16)', () => {
     const { onClose } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'סגור' }));
     expect(onClose).toHaveBeenCalled();
+  });
+});
+
+describe('MissionControlPanel: stop the search (UC-C17)', () => {
+  const open = () => fireEvent.click(screen.getByRole('radio', { name: 'הפסק חיפוש' }));
+
+  it('switches between the two ways to end the mission', () => {
+    setup();
+    expect(screen.getByRole('radio', { name: 'הנעדר אותר' })).toBeChecked();
+    open();
+    expect(screen.getByRole('form', { name: 'הפסק חיפוש' })).toBeInTheDocument();
+    expect(screen.queryByRole('form', { name: 'הנעדר אותר' })).not.toBeInTheDocument();
+  });
+
+  it('offers the reasons from the list and a note', () => {
+    setup();
+    open();
+    const reasons = screen.getByRole('radiogroup', { name: 'סיבת ההפסקה' });
+    expect(within(reasons).getAllByRole('radio')).toHaveLength(6);
+    expect(within(reasons).getByRole('radio', { name: 'אחר' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: /הערה/ })).toBeInTheDocument();
+  });
+
+  it('refuses to stop without a reason, without asking for confirmation', () => {
+    const { onStop } = setup();
+    open();
+    fireEvent.click(screen.getByRole('button', { name: 'הפסק חיפוש…' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('בחרו את סיבת ההפסקה.');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(onStop).not.toHaveBeenCalled();
+  });
+
+  it('asks for confirmation, then stops with the reason and the trimmed note', () => {
+    const { onStop } = setup();
+    open();
+    fireEvent.click(screen.getByRole('radio', { name: 'מזג אוויר ותנאי שטח' }));
+    fireEvent.change(screen.getByRole('textbox', { name: /הערה/ }), { target: { value: ' ערפל ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'הפסק חיפוש…' }));
+    expect(screen.getByRole('dialog', { name: 'אישור סיום המסע' })).toHaveTextContent('להפסיק את החיפוש');
+    expect(onStop).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'אשר וסיים מסע' }));
+    expect(onStop).toHaveBeenCalledWith({ reason: 'weather', note: 'ערפל' });
+  });
+
+  it('blocks stopping without a connection', () => {
+    setup({ offline: true });
+    open();
+    expect(screen.getByRole('button', { name: 'הפסק חיפוש…' })).toBeDisabled();
+  });
+
+  it('shows the reason and the note, read-only, once the search was stopped', () => {
+    setup({
+      mission: {
+        ...mission,
+        status: 'ended_stopped',
+        stopped: { reason: 'safety', note: 'סכנת מפולת', endedAt: '2026-10-03T13:45:00.000Z' },
+      },
+    });
+    expect(screen.getByText('מצב: הסתיים: הופסק')).toBeInTheDocument();
+    expect(screen.getByText('סיבות בטיחות')).toBeInTheDocument();
+    expect(screen.getByText('סכנת מפולת')).toBeInTheDocument();
+    expect(screen.queryByRole('form')).not.toBeInTheDocument();
   });
 });

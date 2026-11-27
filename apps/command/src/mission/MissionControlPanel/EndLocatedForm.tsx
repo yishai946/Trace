@@ -108,7 +108,13 @@ export function EndLocatedForm({
         </p>
       )}
       {ready ? (
-        <ConfirmEnd busy={busy} offline={offline} onConfirm={() => onEnd(toBody(form))} />
+        <ConfirmEnd
+          label="הנעדר אותר…"
+          question="לסיים את המסע: הנעדר אותר?"
+          busy={busy}
+          offline={offline}
+          onConfirm={() => onEnd(toBody(form))}
+        />
       ) : (
         <Button variant="primary" type="submit" isDisabled={busy || offline}>
           הנעדר אותר…

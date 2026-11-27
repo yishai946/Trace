@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { CreateMissionBody, EndMissionLocatedBody, StopMissionBody, UpdateMissionDetailsBody, UpdateRallyPointBody } from '.';
+import {
+  CreateMissionBody,
+  EndMissionLocatedBody,
+  StopMissionBody,
+  UpdateMissionDetailsBody,
+  UpdateRallyPointBody,
+} from '.';
 
 const rallyPoint = { type: 'Point', coordinates: [35.13, 31.78] } as const;
 const lkp = { position: { type: 'Point', coordinates: [35.137, 31.769] }, observedAt: '2026-10-03T13:05:00+03:00' };

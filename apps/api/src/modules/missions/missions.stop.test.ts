@@ -158,7 +158,10 @@ describe('end a mission: the search was stopped (UC-C17)', () => {
   it('sends the searchers in the field a message and a push; ones who left get none', async () => {
     const gone = await signInSearcher(ctx);
     await addParticipant(ctx.db, { missionId, callsign: 8, searcherId: gone.searcherId, status: 'ended' });
-    await injectAs(ctx, searcher)({ method: 'PUT', url: '/api/push-token', payload: { token: 'ExponentPushToken[c17]' } });
+    await injectAs(
+      ctx,
+      searcher,
+    )({ method: 'PUT', url: '/api/push-token', payload: { token: 'ExponentPushToken[c17]' } });
     ctx.pushSender.sent.length = 0;
     await end();
     const messages = `/api/missions/${missionId}/participation/messages`;
