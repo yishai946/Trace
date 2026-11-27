@@ -9,7 +9,7 @@ import { MissionPolygon } from './polygons';
 import { Report } from './reports';
 import { Sighting } from './sightings';
 import { Sos } from './sos';
-import { TimelineEvent } from './timeline';
+import { MissionDetailField, TimelineEvent } from './timeline';
 import { TrackPoint } from './tracking';
 
 /**
@@ -49,7 +49,16 @@ const RallyChanged = z.object({
  * The commander edited the mission or missing-person details, or replaced the photo (UC-C03). Every member of the
  * mission gets the whole mission; a searcher who is offline gets it from `GET /missions/:id` when they reconnect.
  */
-const MissionUpdated = z.object({ type: z.literal('mission.updated'), missionId: z.uuid(), mission: Mission });
+const MissionUpdated = z.object({
+  type: z.literal('mission.updated'),
+  missionId: z.uuid(),
+  mission: Mission,
+  /**
+   * Only when the commander marked the edit significant (decision 34): the fields that changed, possibly none. Field
+   * shows an alert inside the app for it, since a push alone may not arrive. Absent for a quiet edit or any other change.
+   */
+  changedFields: z.array(MissionDetailField).optional(),
+});
 
 /** A searcher reported a position. Only the mission's commander gets it: searchers do not see positions (decision 32). */
 const ParticipantMoved = z.object({

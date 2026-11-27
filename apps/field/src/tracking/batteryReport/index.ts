@@ -1,4 +1,5 @@
 import { getBatteryLevelAsync } from 'expo-battery';
+import { noteBatteryLevel, resetLowBattery } from '../../alerts/lowBattery';
 import { apiBaseUrl, apiRequest } from '../../api';
 import { useSession } from '../../state/session';
 
@@ -14,6 +15,7 @@ let reported: { participantId: string; missionId: string; level: number; at: num
 /** Forgets what was reported (a new mission or participant is told apart by its ids). */
 export function resetBatteryReport(): void {
   reported = null;
+  resetLowBattery();
 }
 
 /**
@@ -27,6 +29,8 @@ export async function reportBattery(readLevel: () => Promise<number> = getBatter
     const fraction = await readLevel();
     if (!(fraction >= 0)) return;
     const level = Math.round(fraction * 100);
+    // Judged on the phone, before any request, so the searcher is warned without a connection (UC-S04).
+    noteBatteryLevel(level);
     const now = Date.now();
     if (
       reported?.participantId === participation.id &&

@@ -10,6 +10,8 @@ import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { applySharedEvent, updateOpened, type MissionCacheShape } from '@trace/mission-cache';
 import { useEffect } from 'react';
 import { io, type Socket } from 'socket.io-client';
+import { alertFromEvent } from '../alerts/fromEvent';
+import { useAlerts } from '../alerts';
 import { apiBaseUrl } from '../api';
 import { fetchOwnParticipation, missionKeys } from '../mission/queries';
 import { upsertMessage } from '../messages/messageList';
@@ -50,6 +52,10 @@ const ownMission: MissionCacheShape = {
 /** Applies a mission event to the cached data, so the screens and the map change at once. */
 export function applyEvent(queryClient: QueryClient, event: MissionEvent): void {
   applySharedEvent(queryClient, ownMission, event);
+  // The alerts inside the app: an SOS sent to this searcher, a significant change of the details (UC-C14, UC-C03).
+  const alert = alertFromEvent(event, useSession.getState().participation?.id);
+  if (alert && 'raise' in alert) useAlerts.getState().raise(alert.raise);
+  else if (alert) useAlerts.getState().dismiss(alert.dismiss);
   switch (event.type) {
     case 'participant.updated': {
       // Only the searcher's own participation reaches Field (decision 32).
@@ -165,6 +171,8 @@ export function useMissionLive(): void {
     });
     return () => {
       closed = true;
+      // What was announced about this mission is not shown over another.
+      useAlerts.getState().clear();
       controller.abort();
       clearTimeout(retry);
       socket.disconnect();

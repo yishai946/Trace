@@ -98,7 +98,12 @@ export async function updateMissionDetails(
     return { event, fields };
   });
   const mission = await getMission(db, missionId);
-  realtime.publish({ type: 'mission.updated', missionId, mission });
+  realtime.publish({
+    type: 'mission.updated',
+    missionId,
+    mission,
+    ...(significant ? { changedFields: significant.fields } : {}),
+  });
   if (significant) {
     realtime.publish({ type: 'timeline.recorded', missionId, event: significant.event });
     void push.notifySearchers({ missionId, message: detailsPushMessage(missionId, significant.fields) });

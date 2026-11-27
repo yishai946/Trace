@@ -1,4 +1,4 @@
-import { ApiError, Mission, TimelineEventList, type TimelineEvent } from '@trace/schemas';
+import { ApiError, Mission, TimelineEventList, type MissionEvent, type TimelineEvent } from '@trace/schemas';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { missions, participations } from '../../db/schema';
@@ -221,6 +221,25 @@ describe('mission details (UC-C03)', () => {
       expect(ctx.pushSender.sent[0]).toEqual(
         pushOf('עודכנו: שם / מזהה מסע, גיל, זמן היעלמות, תיאור / לבוש, מידע רלוונטי'),
       );
+    });
+
+    it('names the changed fields on mission.updated only when the commander asked to notify', async () => {
+      const published: MissionEvent[] = [];
+      const publish = ctx.realtime.publish.bind(ctx.realtime);
+      ctx.realtime.publish = ((event: MissionEvent) => {
+        published.push(event);
+        publish(event);
+      }) as typeof ctx.realtime.publish;
+      try {
+        expect((await edit(flagged)).statusCode).toBe(200);
+        expect((await edit({ ...details, name: 'שם חדש' })).statusCode).toBe(200);
+      } finally {
+        ctx.realtime.publish = publish;
+      }
+      const updates = published.filter((event) => event.type === 'mission.updated');
+      expect(updates).toHaveLength(2);
+      expect(updates[0]).toMatchObject({ changedFields: allFields });
+      expect(updates[1]).not.toHaveProperty('changedFields');
     });
 
     it.each([undefined, false])('records and sends nothing when notifySearchers is %s', async (notifySearchers) => {
