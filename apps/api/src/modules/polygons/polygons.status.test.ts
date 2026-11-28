@@ -144,6 +144,58 @@ describe('polygon status (UC-C07)', () => {
     expect(MissionPolygon.parse(res.json())).toMatchObject({ status: 'active', coverage: 62 });
   });
 
+  it('on request restarts the finished tasks of the assigned searchers and messages them', async () => {
+    const a = await create();
+    const first = await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });
+    const second = await addParticipant(ctx.db, { missionId, callsign: 5, polygonId: a.id, taskStatus: 'paused' });
+    const other = await create();
+    const elsewhere = await addParticipant(ctx.db, {
+      missionId,
+      callsign: 7,
+      polygonId: other.id,
+      taskStatus: 'finished',
+    });
+    await setStatus(a.id, { status: 'completed', confirmActiveSearchers: true });
+    const before = (await messages()).length;
+
+    const res = await setStatus(a.id, { status: 'active', restartSearchers: true });
+    expect(res.statusCode).toBe(200);
+    for (const id of [first, second]) {
+      expect(await taskOf(id)).toMatchObject({ taskStatus: 'ready', status: 'assigned', polygonId: a.id });
+    }
+    expect((await taskOf(elsewhere))?.taskStatus).toBe('finished');
+    const sent = await messages();
+    expect(sent).toHaveLength(before + 1);
+    const restart = sent.find((m) => m.body.includes('חודשה'));
+    expect(restart?.urgency).toBe('important');
+    expect(restart?.recipients.map((r) => r.participantId).sort()).toEqual([first, second].sort());
+  });
+
+  it('leaves the finished tasks finished when no restart is requested', async () => {
+    const a = await create();
+    const searcher = await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });
+    await setStatus(a.id, { status: 'completed', confirmActiveSearchers: true });
+    await setStatus(a.id, { status: 'active' });
+    expect((await taskOf(searcher))?.taskStatus).toBe('finished');
+    expect(await messages()).toHaveLength(1);
+  });
+
+  it('restarts nothing and sends nothing when no searcher is assigned', async () => {
+    const a = await create();
+    await setStatus(a.id, { status: 'completed' });
+    const res = await setStatus(a.id, { status: 'active', restartSearchers: true });
+    expect(res.statusCode).toBe(200);
+    expect(await messages()).toHaveLength(0);
+  });
+
+  it('ignores restartSearchers on an unchanged status', async () => {
+    const a = await create();
+    const searcher = await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id, taskStatus: 'finished' });
+    await setStatus(a.id, { status: 'completed' });
+    await setStatus(a.id, { status: 'completed', restartSearchers: true });
+    expect((await taskOf(searcher))?.taskStatus).toBe('finished');
+  });
+
   it('is idempotent and announces nothing the second time', async () => {
     const a = await create();
     const searcher = await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });

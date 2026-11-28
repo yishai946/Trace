@@ -55,6 +55,8 @@ export const SetPolygonStatusBody = z.object({
   status: z.enum(['active', 'completed']),
   /** Completes a polygon that has active searchers, after the commander saw the warning (decision 56). */
   confirmActiveSearchers: z.boolean().default(false),
+  /** With `active`: sets the finished tasks of the polygon's assigned searchers back to ready and messages them. */
+  restartSearchers: z.boolean().default(false),
 });
 
 export const PolygonParams = z.object({ missionId: z.uuid(), polygonId: z.uuid() });
