@@ -1,0 +1,2 @@
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'polygon.completed' BEFORE 'search.started';--> statement-breakpoint
+ALTER TYPE "public"."timeline_event_type" ADD VALUE 'polygon.reactivated' BEFORE 'search.started';

@@ -56,6 +56,18 @@ const samples: Record<TimelineEventType, unknown> = {
     details: { searchersOutside: 2 },
   },
   'polygon.deleted': { type: 'polygon.deleted', actor: commander, subject: subject('polygon', 'ואדי'), details: {} },
+  'polygon.completed': {
+    type: 'polygon.completed',
+    actor: commander,
+    subject: subject('polygon', 'ואדי'),
+    details: { endedTasks: 2 },
+  },
+  'polygon.reactivated': {
+    type: 'polygon.reactivated',
+    actor: commander,
+    subject: subject('polygon', 'ואדי'),
+    details: {},
+  },
   'search.started': { type: 'search.started', actor: searcher, subject: subject('polygon', 'ואדי'), details: {} },
   'report.submitted': { type: 'report.submitted', actor: searcher, subject: subject('report', 'מפגע'), details: {} },
   'coverage.threshold_reached': {

@@ -81,6 +81,17 @@ export const TimelineEvent = z
     }),
     /** Subject: the polygon (label = its name at deletion). Actor: the commander. */
     z.object({ ...base, type: z.literal('polygon.deleted'), details: empty }),
+    /**
+     * Subject: the polygon. Actor: the commander (UC-C07). Marked Completed at any Coverage; `endedTasks`: the open
+     * searcher tasks that ended with it (0 when none).
+     */
+    z.object({
+      ...base,
+      type: z.literal('polygon.completed'),
+      details: z.object({ endedTasks: z.number().int().min(0) }),
+    }),
+    /** Subject: the polygon. Actor: the commander (UC-C07). A Completed polygon is Active again, by status or by assigning a searcher. */
+    z.object({ ...base, type: z.literal('polygon.reactivated'), details: empty }),
     /** Subject: the polygon. Actor: a searcher. */
     z.object({ ...base, type: z.literal('search.started'), details: empty }),
     /** Subject: the report (label = its summary). Actor: a searcher or the commander. */

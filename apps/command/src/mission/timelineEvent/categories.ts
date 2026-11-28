@@ -36,6 +36,8 @@ export const CATEGORY_OF: Record<TimelineEventType, TimelineCategory> = {
   'polygon.created': 'mission',
   'polygon.boundary_changed': 'mission',
   'polygon.deleted': 'mission',
+  'polygon.completed': 'search',
+  'polygon.reactivated': 'search',
   'mission.paused': 'pause',
   'mission.resumed': 'pause',
 };

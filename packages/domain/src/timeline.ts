@@ -12,6 +12,8 @@ export const TIMELINE_EVENT_TYPES = [
   'polygon.created',
   'polygon.boundary_changed',
   'polygon.deleted',
+  'polygon.completed',
+  'polygon.reactivated',
   'search.started',
   'report.submitted',
   'coverage.threshold_reached',

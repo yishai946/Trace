@@ -140,8 +140,18 @@ const segmented = (badge: string, segments: Segment[], danger = false): EventVie
   destination: null,
 });
 
+function completedText(label: string, ended: number): string {
+  if (ended === 0) return `${label} סומן כהושלם`;
+  return `${label} סומן כהושלם, ${ended === 1 ? 'משימת חיפוש אחת הסתיימה' : `${ended} משימות חיפוש הסתיימו`}`;
+}
+
 function describePolygon(
-  event: EventOf<'polygon.created'> | EventOf<'polygon.boundary_changed'> | EventOf<'polygon.deleted'>,
+  event:
+    | EventOf<'polygon.created'>
+    | EventOf<'polygon.boundary_changed'>
+    | EventOf<'polygon.deleted'>
+    | EventOf<'polygon.completed'>
+    | EventOf<'polygon.reactivated'>,
   label: string,
 ): EventView {
   switch (event.type) {
@@ -151,6 +161,10 @@ function describePolygon(
       return plain('פוליגון', boundaryText(label, event.details.searchersOutside), 'map');
     case 'polygon.deleted':
       return plain('פוליגון', `${label} נמחק מהמפה`);
+    case 'polygon.completed':
+      return plain('פוליגון', completedText(label, event.details.endedTasks));
+    case 'polygon.reactivated':
+      return plain('פוליגון', `${label} הוחזר לפעיל`);
   }
 }
 
@@ -180,6 +194,8 @@ const describeRest = (
     | EventOf<'polygon.created'>
     | EventOf<'polygon.boundary_changed'>
     | EventOf<'polygon.deleted'>
+    | EventOf<'polygon.completed'>
+    | EventOf<'polygon.reactivated'>
     | EventOf<'gps.lost_escalated'>
     | EventOf<'contact.no_updates'>,
   label: string,
