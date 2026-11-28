@@ -1,5 +1,4 @@
 import type { ThemeId } from '@trace/design';
-import { canChangeLkp, canChangePolygons } from '@trace/domain';
 import type { MapProvider } from '@trace/map';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
 import type { ReactNode } from 'react';
@@ -14,6 +13,7 @@ import { useMapClick } from './useMapClick';
 import { useRallyPointEdit } from './useRallyPointEdit';
 import { useSearcherPanel } from './useSearcherPanel';
 import { useSightingPanel } from './useSightingPanel';
+import { useWorkspaceAccess } from './useWorkspaceAccess';
 import { useWorkspaceMapData } from './useWorkspaceMapData';
 import { WorkspacePanels } from './WorkspacePanels';
 
@@ -38,6 +38,8 @@ interface MissionWorkspaceProps {
   onSelectSearcher: (id: string | null) => void;
   /** The alerts floating over the map; the phone shows its own under the top bar. */
   alerts: ReactNode;
+  /** The summary of an ended mission (Cd15); it shows while no other panel is open. */
+  summary?: ReactNode;
   sightingsLoading: boolean;
   sightingsFailed: boolean;
   onRetrySightings: () => void;
@@ -69,6 +71,7 @@ export function MissionWorkspace({
   selectedSearcherId,
   onSelectSearcher,
   alerts,
+  summary,
   sightingsLoading,
   sightingsFailed,
   onRetrySightings,
@@ -84,8 +87,6 @@ export function MissionWorkspace({
   const sighting = useSightingPanel(mission.id);
   const rally = useRallyPointEdit(mission, online);
   const control = useEndLocated(mission, online);
-  const canEditPolygons = canChangePolygons(mission.status) && online;
-  const canChangeSightings = canChangeLkp(mission.status) && online;
   const searcherPanel = useSearcherPanel({
     missionId: mission.id,
     searcherId: selectedSearcherId,
@@ -103,9 +104,7 @@ export function MissionWorkspace({
     selectedPolygonId: polygon.selectedId,
     editingPolygonId: polygon.editing?.polygonId ?? null,
     draftPosition: sighting.draftPosition ?? (controlOpen ? control.point : null),
-    route: searcherPanel.searcher
-      ? { participantId: searcherPanel.searcher.id, positions: searcherPanel.positions }
-      : null,
+    route: searcherPanel.route,
   });
 
   const { selectPolygon, toggleAddSighting, selectPoint } = useSlotSelection({
@@ -115,7 +114,7 @@ export function MissionWorkspace({
     onSelectSearcher,
   });
   const onMapClick = useMapClick({ rally, control, sighting, rallyOpen, controlOpen });
-  const canToggleSighting = (canChangeSightings || !!sighting.adding) && !polygon.editing;
+  const access = useWorkspaceAccess(mission.status, online, polygon, sighting);
 
   return (
     <>
@@ -126,10 +125,10 @@ export function MissionWorkspace({
         initialView={map.initialView}
         focus={focus}
         onMapClick={onMapClick}
-        onPolygonDrawn={canEditPolygons ? polygon.create : undefined}
+        onPolygonDrawn={access.canEditPolygons ? polygon.create : undefined}
         onPolygonSelect={selectPolygon}
         onPointSelect={selectPoint}
-        onSighting={canToggleSighting ? toggleAddSighting : undefined}
+        onSighting={access.canToggleSighting ? toggleAddSighting : undefined}
         sightingActive={!!sighting.adding}
         editing={polygon.editing}
         onEditChange={polygon.changeBoundary}
@@ -164,6 +163,8 @@ export function MissionWorkspace({
       />
 
       <WorkspacePanels
+        summary={summary}
+        searcherOpen={!!searcherPanel.searcher}
         mission={mission}
         participants={participants}
         polygon={polygon}
@@ -173,8 +174,8 @@ export function MissionWorkspace({
         sightingsLoading={sightingsLoading}
         sightingsFailed={sightingsFailed}
         onRetrySightings={onRetrySightings}
-        canEditPolygons={canEditPolygons}
-        canChangeSightings={canChangeSightings}
+        canEditPolygons={access.canEditPolygons}
+        canChangeSightings={access.canChangeSightings}
         offline={!online}
         onClosePolygon={() => selectPolygon(null)}
         onToggleAddSighting={toggleAddSighting}

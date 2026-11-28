@@ -22,6 +22,8 @@ export function useSearcherPanel({ missionId, searcherId, participants, polygons
     searcher,
     polygonName: polygons.find((p) => p.id === searcher?.polygonId)?.name ?? null,
     positions,
+    /** The route the map draws: the open searcher's, or none. */
+    route: searcher ? { participantId: searcher.id, positions } : null,
     routeMeters: track.data ? routeLengthMeters(positions) : null,
     routeFailed: track.isError,
     retryRoute: () => void track.refetch(),

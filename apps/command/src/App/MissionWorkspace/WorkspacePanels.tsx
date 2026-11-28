@@ -1,5 +1,6 @@
 import { isActiveInPolygon } from '@trace/domain';
 import { isValidPolygon } from '@trace/geo';
+import type { ReactNode } from 'react';
 import type { LkpPoint, Mission, Participant, Sighting } from '@trace/schemas';
 import styles from '../App.module.css';
 import { BoundaryEditBar } from '../../mission/BoundaryEditBar';
@@ -23,6 +24,10 @@ interface WorkspacePanelsProps {
   canEditPolygons: boolean;
   canChangeSightings: boolean;
   offline: boolean;
+  /** The summary of an ended mission: it shows while nothing else holds the slot. */
+  summary?: ReactNode;
+  /** A searcher's panel is open and holds the slot. */
+  searcherOpen: boolean;
   onClosePolygon: () => void;
   onToggleAddSighting: () => void;
 }
@@ -44,6 +49,8 @@ export function WorkspacePanels({
   canEditPolygons,
   canChangeSightings,
   offline,
+  summary,
+  searcherOpen,
   onClosePolygon,
   onToggleAddSighting,
 }: WorkspacePanelsProps) {
@@ -111,6 +118,7 @@ export function WorkspacePanels({
           />
         </div>
       )}
+      {!sighting.open && !searcherOpen && summary}
       {polygon.error && (
         <p className={styles.notice} role="alert">
           {polygon.error}

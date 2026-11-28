@@ -7,6 +7,7 @@ import type { MapFocus } from '../../map/MissionMap';
 import { FloatingAlerts } from '../../mission/FloatingAlerts';
 import { safetyWarnings } from '../../mission/safetyWarnings';
 import { MissionWorkspace } from '../MissionWorkspace';
+import { MissionSummary } from './MissionSummary';
 import type { ConsoleNav } from './useConsoleNav';
 import type { MissionData } from './useMissionData';
 
@@ -73,6 +74,7 @@ export function MapSlot({
           />
         )
       }
+      summary={<MissionSummary mission={mission} data={data} nav={nav} />}
       sightingsLoading={sightings.isPending || lkps.isPending}
       sightingsFailed={sightings.isError || lkps.isError}
       onRetrySightings={() => {
