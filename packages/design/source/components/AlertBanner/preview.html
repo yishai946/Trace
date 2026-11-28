@@ -1,9 +1,21 @@
-<!-- @dsCard group="Alerts" height=90 -->
-<div class="tc" style="padding:16px;background:var(--map-ground)">
+<!-- @dsCard group="Alerts" height=220 -->
+<div class="tc" style="padding:16px;background:var(--map-ground);display:flex;flex-direction:column;gap:8px">
 <div class="tc-alert" role="alert">
 <span class="tc-alert__tag">SOS</span>
-<div class="tc-alert__text"><b>07 אלון שגיא</b> <span class="tc-alert__detail"><span>חורשת אורנים</span><span>"נפלתי, כאב ברגל"</span><time>16:58</time></span></div>
-<button class="tc-btn tc-btn--danger tc-btn--sm">התקשר</button>
-<button class="tc-btn tc-btn--danger-ghost tc-btn--sm">פתח</button>
+<div class="tc-alert__text"><span class="tc-callsign tc-callsign--sos">07</span> <b>אלון שגיא</b>, חורשת אורנים, <time>16:58</time> <span class="tc-alert__detail"><span dir="ltr">31.7431, 35.0127</span><span>עודכן 16:58</span></span></div>
+<button class="tc-btn tc-btn--danger tc-btn--sm">פתח</button>
+</div>
+<div class="tc-alert tc-alert--report" role="alert">
+<span class="tc-alert__tag">דיווח</span>
+<div class="tc-alert__text"><b>דיווח "הנעדר אותר"</b> מ-<span class="tc-callsign">04</span> דנה כהן, <time>17:12</time> <span class="tc-alert__detail">הדיווח אינו סוגר את המסע. רק המנהל מסיים אחרי אימות.</span></div>
+<button class="tc-btn tc-btn--sm">פתח</button>
+<button class="tc-btn tc-btn--primary tc-btn--sm">אמת וסיים מסע…</button>
+</div>
+<div class="tc-alert tc-alert--warn" role="alert">
+<span class="tc-alert__tag">אזהרה · 2</span>
+<div class="tc-alert__text"><span class="tc-callsign">03</span> <b>מיכל רז</b> מחוץ לוואדי צפוני <span class="tc-alert__detail"><time>16:40</time></span></div>
+<button class="tc-btn tc-btn--sm">הבא</button>
+<button class="tc-btn tc-btn--sm">פתח</button>
+<button class="tc-btn tc-btn--sm">סגור</button>
 </div>
 </div>

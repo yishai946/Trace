@@ -1,0 +1,22 @@
+<!-- @dsCard group="Map" height=360 -->
+<div class="tc" style="padding:16px;background:var(--map-ground);display:flex;gap:16px;align-items:flex-end">
+<div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+<div class="tc-mapnav" role="group" aria-label="ניווט במפה">
+<button class="tc-btn tc-btn--icon" aria-label="המיקום שלי"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+<button class="tc-btn tc-btn--icon" aria-label="נקודת LKP אחרונה"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+<button class="tc-btn tc-btn--icon" aria-label="נקודת כינוס"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4h11l-2 4 2 4H5"/></svg></button>
+<span class="tc-mapnav__sep"></span>
+<button class="tc-btn tc-btn--icon" aria-label="התקרב"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+<button class="tc-btn tc-btn--icon" aria-label="התרחק"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+</div>
+<button class="tc-layers" aria-label="שכבות: עבור ללוויין"><span class="tc-layers__caption"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5zM2 13l10 5 10-5"/></svg>שכבות</span></button>
+</div>
+<div class="tc-panel" style="padding:var(--space-5)">
+<div class="tc-panel__label" style="padding:0 0 var(--space-3)">סגנון מפה</div>
+<div class="tc-layers__tiles" role="radiogroup" aria-label="סגנון מפה">
+<span class="tc-layers__tile" role="radio" aria-checked="true"><span class="tc-layers__thumb" style="background:var(--basemap-land)"></span>צבעונית</span>
+<span class="tc-layers__tile" role="radio" aria-checked="false"><span class="tc-layers__thumb"></span>שחור־לבן</span>
+<span class="tc-layers__tile" role="radio" aria-checked="false" aria-disabled="true"><span class="tc-layers__thumb" style="background:var(--basemap-wood)"></span>לוויין</span>
+</div>
+</div>
+</div>

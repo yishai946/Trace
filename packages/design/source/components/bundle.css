@@ -207,3 +207,108 @@
 .tc *::-webkit-scrollbar-thumb{background:var(--ink-faint);border-radius:var(--radius-sm)}
 .tc *::-webkit-scrollbar-thumb:hover{background:var(--ink-muted)}
 @media (pointer:coarse){.tc *{scrollbar-width:none}.tc *::-webkit-scrollbar{display:none}}
+
+/* Sizes added after the sprint: large controls and the large meter on the phone */
+.tc-btn--lg{height:var(--control-h-lg);padding:0 var(--space-7);font-size:14px;font-weight:600}
+.tc-btn--lg svg{width:var(--icon-lg);height:var(--icon-lg)}
+.tc-input--lg{height:var(--control-h-lg);font-size:14px}
+.tc-meter--lg{height:var(--meter-h-lg);border-radius:var(--radius-sm)}
+
+/* Mission nav: the views of one mission, floating at the start side over the map */
+.tc-nav{display:flex;flex-direction:column;gap:var(--space-1);inline-size:max-content;padding:var(--space-3);border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--surface);box-shadow:var(--shadow-panel)}
+.tc-nav__label{padding:var(--space-5) var(--space-5) var(--space-2);color:var(--ink-muted);font-size:12px}
+.tc-nav__item{display:flex;align-items:center;gap:var(--space-5);height:var(--control-h);padding:0 var(--space-5);border-radius:var(--radius-md);color:var(--ink-secondary);text-decoration:none}
+.tc a.tc-nav__item{color:var(--ink-secondary)}
+.tc-nav__item:hover{background:var(--surface-hover)}
+.tc-nav__item[aria-current="page"],.tc a.tc-nav__item[aria-current="page"]{background:var(--surface-raised);color:var(--ink);font-weight:600}
+.tc-nav__item svg{width:var(--icon-sm);height:var(--icon-sm);flex:0 0 auto}
+.tc-nav__count{margin-inline-start:auto;color:var(--ink-muted);font-size:11.5px;font-weight:400;font-variant-numeric:tabular-nums}
+.tc-nav__count--danger{color:var(--danger-ink);font-weight:700}
+
+/* Tab bar: the bottom navigation on the phone */
+.tc-tabbar{display:flex;height:var(--tabbar-h);flex:0 0 auto;border-top:1px solid var(--border);background:var(--surface)}
+.tc-tabbar__item{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--space-1);color:var(--ink-secondary);font-size:11.5px;text-decoration:none}
+.tc a.tc-tabbar__item{color:var(--ink-secondary)}
+.tc-tabbar__item[aria-current="page"],.tc a.tc-tabbar__item[aria-current="page"]{color:var(--accent);font-weight:600}
+.tc-tabbar__item svg{width:var(--icon-lg);height:var(--icon-lg)}
+.tc-tabbar__n{position:absolute;top:var(--space-3);inset-inline-start:calc(50% + var(--space-3));min-width:var(--count-badge);height:var(--count-badge);padding:0 var(--space-2);border-radius:calc(var(--count-badge) / 2);background:var(--accent);color:var(--surface);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.tc-tabbar__n--danger{background:var(--danger);color:var(--on-danger)}
+
+/* Bottom sheet: the phone panel over the map */
+.tc-sheet{display:flex;flex-direction:column;border:1px solid var(--border);border-bottom:0;border-radius:var(--radius-xl) var(--radius-xl) 0 0;background:var(--surface);box-shadow:var(--shadow-panel);overflow:hidden}
+.tc-sheet--open{height:var(--sheet-h)}
+.tc-sheet__grab{display:flex;align-items:center;justify-content:center;width:100%;height:var(--touch-target);padding:0;border:0;background:transparent}
+.tc-sheet__grab::after{content:"";width:var(--grab-w);height:var(--grab-h);border-radius:var(--radius-sm);background:var(--ink-faint)}
+.tc-sheet .tc-seg{margin:0 var(--space-6) var(--space-3)}
+.tc-sheet .tc-seg__tab{height:var(--touch-target)}
+
+/* Badge: a short state word on a row or card */
+.tc-badge{display:inline-flex;align-items:center;gap:var(--space-2);height:var(--badge-h);padding:0 var(--space-3);border-radius:var(--radius-sm);background:var(--chip);color:var(--ink-secondary);font-size:11.5px;font-weight:600;white-space:nowrap}
+.tc-badge .tc-dot{width:var(--dot);height:var(--dot)}
+.tc-badge--ok{color:var(--success)}
+.tc-badge--warn{color:var(--warning)}
+.tc-badge--accent{color:var(--accent)}
+.tc-badge--danger{background:var(--danger-tint);color:var(--danger-ink)}
+.tc-badge--solid{background:var(--primary);color:var(--on-primary)}
+.tc-badge--solid-danger{background:var(--danger);color:var(--on-danger)}
+.tc-badge--outline-warn{background:transparent;border:var(--stroke-hairline) solid var(--warning);color:var(--ink)}
+
+/* Checkbox, radio and switch */
+.tc-check{display:flex;align-items:center;gap:var(--space-4);min-height:var(--control-h-sm);padding:0 var(--space-2);border-radius:var(--radius-md)}
+.tc-check:hover{background:var(--surface-hover)}
+.tc-check__box{width:var(--checkbox);height:var(--checkbox);flex:0 0 auto;display:flex;align-items:center;justify-content:center;border:var(--stroke-field) solid var(--ink-muted);border-radius:var(--radius-sm)}
+.tc-check__box svg{width:var(--check-icon);height:var(--check-icon);visibility:hidden}
+.tc-check__box--on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.tc-check__box--on svg{visibility:visible}
+.tc-radio{position:relative;width:var(--checkbox);height:var(--checkbox);flex:0 0 auto;border:var(--stroke-field) solid var(--ink-muted);border-radius:50%}
+.tc-radio--on{border-color:var(--accent)}
+.tc-radio--on::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--accent)}
+.tc-switch{position:relative;width:34px;height:20px;flex:0 0 auto;border:var(--stroke-hairline) solid var(--border-strong);border-radius:10px;background:var(--surface-raised)}
+.tc-switch::after{content:"";position:absolute;top:2px;inset-inline-start:2px;width:14px;height:14px;border-radius:50%;background:var(--ink-muted)}
+.tc-switch--on{background:var(--accent);border-color:transparent}
+.tc-switch--on::after{inset-inline-start:16px;background:var(--surface)}
+.tc-check[aria-disabled="true"]{opacity:var(--opacity-disabled)}
+
+/* Banner: an inline notice inside a panel or screen (not the floating AlertBanner) */
+.tc-banner{display:flex;align-items:flex-start;gap:var(--space-5);padding:var(--space-5) var(--space-6);border:var(--stroke-hairline) solid var(--border);border-radius:var(--radius-md);background:var(--surface-raised);color:var(--ink-secondary);font-size:12px}
+.tc-banner svg{width:var(--icon-sm);height:var(--icon-sm);flex:0 0 auto;margin-top:1px}
+.tc-banner--warn{border-color:var(--warning)}
+.tc-banner--warn svg{color:var(--warning)}
+.tc-banner--danger{background:var(--danger-surface);border-color:var(--danger-border);color:var(--danger-ink-soft)}
+.tc-banner--danger svg{color:var(--danger)}
+
+/* Card: a sunken block inside a screen; --strong for the state card, --danger for the active SOS */
+.tc-card{padding:var(--space-6);border:var(--stroke-hairline) solid var(--border);border-radius:var(--radius-lg);background:var(--surface-sunken)}
+.tc-card--strong{border-width:var(--stroke-strong);border-color:var(--accent)}
+.tc-card--danger{border-width:var(--stroke-strong);border-color:var(--danger-border);background:var(--danger-surface);color:var(--danger-ink-soft)}
+
+/* Steps: where the user is in a short flow (sign in, join) */
+.tc-steps{display:flex;align-items:center;gap:var(--space-4)}
+.tc-step{display:flex;align-items:center;gap:var(--space-3);color:var(--ink-muted);font-size:12px}
+.tc-step__n{width:var(--step-marker);height:var(--step-marker);display:flex;align-items:center;justify-content:center;border:var(--stroke-field) solid var(--ink-muted);border-radius:50%;font-size:11px;font-weight:700}
+.tc-step__n svg{width:var(--check-icon);height:var(--check-icon)}
+.tc-step--on{color:var(--ink);font-weight:600}
+.tc-step--on .tc-step__n{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.tc-step--done .tc-step__n{border-color:var(--ink-secondary);color:var(--ink-secondary)}
+.tc-step__sep{width:16px;height:1px;flex:0 0 auto;background:var(--border-field)}
+
+/* Map controls: the navigation column and the layers tile on the map */
+.tc-mapnav{display:flex;flex-direction:column;gap:var(--space-1);padding:var(--space-2);border:1px solid var(--border);border-radius:var(--radius-xl);background:var(--surface);box-shadow:var(--shadow-panel)}
+.tc-mapnav__sep{height:1px;margin:var(--space-2) 0;background:var(--border-strong)}
+.tc-layers{position:relative;display:block;width:var(--map-thumb);height:var(--map-thumb);padding:0;overflow:hidden;border:var(--stroke-strong) solid var(--surface);border-radius:var(--radius-lg);background:var(--surface-sunken);box-shadow:var(--shadow-panel)}
+.tc-layers__caption{position:absolute;inset-inline:0;bottom:0;display:flex;align-items:center;justify-content:center;gap:var(--space-2);padding:var(--space-2) 0;background:var(--surface);color:var(--ink);font-size:12px;font-weight:600}
+.tc-layers__tiles{display:flex;gap:var(--space-4)}
+.tc-layers__tile{display:flex;flex-direction:column;align-items:center;gap:var(--space-2);color:var(--ink-secondary);font-size:12px}
+.tc-layers__thumb{width:var(--map-thumb);height:var(--map-thumb);border:var(--stroke-strong) solid var(--border);border-radius:var(--radius-lg);background:var(--surface-sunken)}
+.tc-layers__tile[aria-checked="true"]{color:var(--ink);font-weight:600}
+.tc-layers__tile[aria-checked="true"] .tc-layers__thumb{border-color:var(--focus)}
+.tc-layers__tile[aria-disabled="true"]{opacity:var(--opacity-disabled)}
+
+/* Alert variants: the critical report and the safety warning float under the SOS alert */
+.tc-alert--report,.tc-alert--warn{background:var(--surface);color:var(--ink)}
+.tc-alert--report{border-color:var(--border)}
+.tc-alert--warn{border-color:var(--warning)}
+.tc-alert--report .tc-alert__tag{background:var(--primary);color:var(--on-primary)}
+.tc-alert--warn .tc-alert__tag{background:transparent;border:var(--stroke-hairline) solid var(--warning);color:var(--ink)}
+.tc-alert--report .tc-alert__text,.tc-alert--warn .tc-alert__text{color:var(--ink)}
+.tc-alert--report .tc-alert__detail,.tc-alert--warn .tc-alert__detail{color:var(--ink-muted)}
