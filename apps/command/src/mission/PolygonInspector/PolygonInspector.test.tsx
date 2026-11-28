@@ -100,6 +100,19 @@ describe('PolygonInspector', () => {
       expect(h.onSetStatus).toHaveBeenCalledWith('completed', true);
     });
 
+    it('moves focus into the confirmation and cancels it with Escape, returning focus to the trigger', () => {
+      const searcher = { ...participants[0]!, taskStatus: 'searching' as const };
+      render(
+        <PolygonInspector polygon={polygonA} assigned={[searcher]} canEdit busy={false} error={null} {...handlers()} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'סמן כהושלם' }));
+      const group = screen.getByRole('group', { name: 'אישור סימון כהושלם' });
+      expect(group.contains(document.activeElement)).toBe(true);
+      fireEvent.keyDown(group, { key: 'Escape' });
+      expect(screen.queryByRole('group', { name: 'אישור סימון כהושלם' })).toBeNull();
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'סמן כהושלם' }));
+    });
+
     it('does not warn for a searcher whose task already finished', () => {
       const h = handlers();
       const done = { ...participants[0]!, taskStatus: 'finished' as const };

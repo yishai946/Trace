@@ -7,6 +7,7 @@ import { polygons } from '../../db/schema';
 // Raw SQL with explicit aliases: inside a subquery, Drizzle's unqualified column names would bind to the inner table.
 const activeSearchers = sql<number>`(
   select count(*)::int from participations p where p.polygon_id = polygons.id and p.status = 'assigned'
+    and p.task_status in ('ready', 'searching', 'paused')
 )`;
 
 const polygonColumns = {
