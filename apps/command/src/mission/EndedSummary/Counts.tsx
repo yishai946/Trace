@@ -1,4 +1,4 @@
-import type { Report, Sos } from '@trace/schemas';
+import type { Sos } from '@trace/schemas';
 import styles from './EndedSummary.module.css';
 
 const sosText = (sos: Sos[]) => {
@@ -8,11 +8,14 @@ const sosText = (sos: Sos[]) => {
 };
 
 interface CountsProps {
-  searchers: number;
-  polygons: number;
-  reports: Report[];
-  sos: Sos[];
+  /** Each count is undefined while its list is unavailable; it then shows a dash, not zero. */
+  searchers: number | undefined;
+  polygons: number | undefined;
+  reports: number | undefined;
+  sos: Sos[] | undefined;
 }
+
+const count = (n: number | undefined) => n ?? '—';
 
 /** The final numbers of the mission. */
 export function Counts({ searchers, polygons, reports, sos }: CountsProps) {
@@ -20,13 +23,13 @@ export function Counts({ searchers, polygons, reports, sos }: CountsProps) {
     <section className={styles.section} aria-label="מספרים סופיים">
       <dl className={styles.facts}>
         <dt>מחפשים</dt>
-        <dd>{searchers}</dd>
+        <dd>{count(searchers)}</dd>
         <dt>פוליגונים</dt>
-        <dd>{polygons}</dd>
+        <dd>{count(polygons)}</dd>
         <dt>דיווחים</dt>
-        <dd>{reports.length}</dd>
+        <dd>{count(reports)}</dd>
         <dt>SOS</dt>
-        <dd>{sosText(sos)}</dd>
+        <dd>{sos ? sosText(sos) : '—'}</dd>
       </dl>
     </section>
   );

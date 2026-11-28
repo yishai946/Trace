@@ -94,8 +94,17 @@ describe('EndedSummary', () => {
     expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['ציר זמן מלא']);
   });
 
-  it('shows no key events while the Timeline is not loaded', () => {
+  it('shows dashes and a notice, not zeros, while the data is unavailable', () => {
+    renderSummary({ polygons: undefined, participants: undefined, reports: undefined, sos: undefined });
+    const counts = within(screen.getByRole('region', { name: 'מספרים סופיים' }));
+    expect(counts.getAllByText('—')).toHaveLength(4);
+    expect(
+      within(screen.getByRole('region', { name: 'כיסוי סופי' })).getByText('הנתונים אינם זמינים כרגע.'),
+    ).toBeInTheDocument();
+  });
+
+  it('says the events are unavailable while the Timeline is not loaded', () => {
     renderSummary({ events: undefined });
-    expect(screen.getByText('אין אירועים להצגה.')).toBeInTheDocument();
+    expect(screen.getByText('הנתונים אינם זמינים כרגע.')).toBeInTheDocument();
   });
 });

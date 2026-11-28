@@ -9,10 +9,11 @@ import styles from './EndedSummary.module.css';
 
 interface EndedSummaryProps {
   mission: Mission;
-  polygons: MissionPolygon[];
-  participants: Participant[];
-  reports: Report[];
-  sos: Sos[];
+  /** Undefined while a list loads or when it failed: the panel then says so instead of showing zero. */
+  polygons: MissionPolygon[] | undefined;
+  participants: Participant[] | undefined;
+  reports: Report[] | undefined;
+  sos: Sos[] | undefined;
   /** The Timeline, oldest first. Undefined while it loads or when it failed. */
   events: TimelineEvent[] | undefined;
   onOpenTimeline: () => void;
@@ -21,6 +22,7 @@ interface EndedSummaryProps {
 /** Events that say what happened; the periodic warnings are left to the full Timeline. */
 const NOISE = new Set(['contact.lost', 'contact.restored', 'battery.low', 'search.started']);
 const KEY_EVENTS = 4;
+const UNAVAILABLE = 'הנתונים אינם זמינים כרגע.';
 
 /** The Cd15 panel: the read-only summary of an ended mission: result, final numbers, final coverage, key events. */
 export function EndedSummary({
@@ -32,14 +34,14 @@ export function EndedSummary({
   events,
   onOpenTimeline,
 }: EndedSummaryProps) {
-  const rows = coverageRows(polygons);
-  const senderOf = (sosId: string) => sos.find((s) => s.id === sosId)?.sender;
+  const rows = polygons && coverageRows(polygons);
+  const senderOf = (sosId: string) => sos?.find((s) => s.id === sosId)?.sender;
   const key = [...(events ?? [])]
     .filter((e) => !NOISE.has(e.type))
     .reverse()
     .slice(0, KEY_EVENTS);
   const withDate = events ? spansDays(events) : false;
-  const inField = stillInField(participants);
+  const inField = participants ? stillInField(participants) : 0;
 
   return (
     <aside className={styles.panel} aria-label="סיכום מסע">
@@ -49,10 +51,12 @@ export function EndedSummary({
       </div>
       <div className={styles.body}>
         <Outcome mission={mission} />
-        <Counts searchers={participants.length} polygons={polygons.length} reports={reports} sos={sos} />
+        <Counts searchers={participants?.length} polygons={polygons?.length} reports={reports?.length} sos={sos} />
         <section className={styles.section} aria-label="כיסוי סופי">
           <p className={styles.label}>כיסוי סופי</p>
-          {rows.length === 0 ? (
+          {!rows ? (
+            <p className={styles.note}>{UNAVAILABLE}</p>
+          ) : rows.length === 0 ? (
             <p className={styles.note}>לא הוגדרו פוליגונים במסע.</p>
           ) : (
             <ul className={styles.list}>
@@ -79,7 +83,9 @@ export function EndedSummary({
         </section>
         <section className={styles.section} aria-label="אירועי מפתח">
           <p className={styles.label}>אירועי מפתח</p>
-          {key.length === 0 ? (
+          {!events ? (
+            <p className={styles.note}>{UNAVAILABLE}</p>
+          ) : key.length === 0 ? (
             <p className={styles.note}>אין אירועים להצגה.</p>
           ) : (
             <ul className={styles.list}>

@@ -18,10 +18,10 @@ export function MissionSummary({ mission, data, nav }: MissionSummaryProps) {
     <div className={`${styles.inspector} ${styles.scrolling}`}>
       <EndedSummary
         mission={mission}
-        polygons={data.polygons.data ?? []}
-        participants={data.participants.data ?? []}
-        reports={data.reports.data ?? []}
-        sos={data.sos.data ?? []}
+        polygons={data.polygons.data}
+        participants={data.participants.data}
+        reports={data.reports.data}
+        sos={data.sos.data}
         events={data.timeline.data}
         onOpenTimeline={() => nav.setView('timeline')}
       />
