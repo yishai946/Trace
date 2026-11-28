@@ -33,8 +33,8 @@
 }
 
 .grab[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: -2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: calc(var(--stroke-strong) * -1);
 }
 
 .handle {
@@ -86,8 +86,8 @@
 }
 
 .tab[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .count {
@@ -104,8 +104,8 @@
 }
 
 .body[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: -2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: calc(var(--stroke-strong) * -1);
 }
 
 .list {

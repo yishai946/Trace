@@ -42,7 +42,7 @@
 }
 
 .select[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
   outline-offset: 1px;
 }
 

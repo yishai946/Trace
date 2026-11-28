@@ -1,6 +1,6 @@
 /**
  * Mobile values the Trace Console design system does not define yet, taken from the Field wireframes (`Fm*`). Each
- * one is a one-off of a single screen; do not add values here without listing them as a gap in the Pull Request.
+ * one is still a gap (the token generator does not emit `letterSpacing`, for example); do not add values here without listing them as a gap in the Pull Request.
  */
 export const pendingTokens = {
   /** Fm01 stepper, `.tcx-step__sep`: the 16px separator between steps. */

@@ -25,8 +25,8 @@
 }
 
 .title:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .badge {
@@ -153,7 +153,7 @@
 }
 
 .segOption[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .reasons {
@@ -182,7 +182,7 @@
 }
 
 .reason[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .pause {

@@ -28,7 +28,7 @@
 
 .input[data-focus-visible],
 .input[data-focused] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
   outline-offset: 1px;
 }
 

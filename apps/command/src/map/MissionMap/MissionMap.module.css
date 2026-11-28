@@ -48,7 +48,7 @@
 .me {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--surface);
+  border: var(--stroke-strong) solid var(--surface);
   border-radius: var(--radius-xl);
   background-color: var(--accent);
   box-shadow: var(--shadow-panel);
@@ -117,7 +117,7 @@
 
 .needle[data-focus-visible],
 .turn[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .coords {

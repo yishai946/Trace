@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, spacing, stroke, typography } from '@trace/design';
 import { StyleSheet, Text, View } from 'react-native';
 import { ltr } from '../../i18n/rtl';
 import { EMERGENCY_NUMBER } from '../../phone';
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   card: {
     gap: spacing.space4,
     padding: spacing.space6,
-    borderWidth: 2,
+    borderWidth: stroke.strokeStrong,
     borderRadius: radius.radiusLg,
   },
 });
