@@ -1,11 +1,10 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { apiBaseUrl } from '../api';
 import { useSavedMission, useSavedPhotoUri } from '../offline/savedPackage';
 import { useSession } from '../state/session';
 import { useTheme } from '../theme';
-import { pendingTokens } from '../theme/pending';
 
 /** The saved photo, when it is the one the mission points to: a photo saved for an older version must not show. */
 function useSavedPhoto(url: string | null): string | null {
@@ -58,8 +57,8 @@ export function MissingPersonPhoto({
 }
 
 const styles = StyleSheet.create({
-  small: { width: pendingTokens.photoW, height: pendingTokens.photoH },
-  large: { alignSelf: 'stretch', aspectRatio: pendingTokens.photoW / pendingTokens.photoH },
+  small: { width: size.photoW, height: size.photoH },
+  large: { alignSelf: 'stretch', aspectRatio: size.photoW / size.photoH },
   image: { borderRadius: radius.radiusMd },
   placeholder: {
     borderRadius: radius.radiusMd,

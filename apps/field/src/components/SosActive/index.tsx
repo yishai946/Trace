@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, spacing, stroke, typography } from '@trace/design';
 import { formatCallsign } from '@trace/domain';
 import { formatLatLng } from '@trace/geo';
 import type { Sos } from '@trace/schemas';
@@ -84,7 +84,12 @@ export function SosActive({ sos, closing, closeFailure, onClose }: SosActiveProp
 
 const styles = StyleSheet.create({
   stack: { gap: spacing.space6 },
-  card: { gap: spacing.space5, padding: spacing.space6, borderWidth: 2, borderRadius: radius.radiusLg },
+  card: {
+    gap: spacing.space5,
+    padding: spacing.space6,
+    borderWidth: stroke.strokeStrong,
+    borderRadius: radius.radiusLg,
+  },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.space4 },
   tag: { paddingHorizontal: spacing.space4, paddingVertical: spacing.space2, borderRadius: radius.radiusSm },
   tagText: { fontWeight: typography.bodyStrong.fontWeight },

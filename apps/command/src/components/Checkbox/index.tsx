@@ -16,7 +16,7 @@ const checkIcon = (
   </svg>
 );
 
-/** A checkbox with its label (Trace Console has none yet: the box uses the pending checkbox tokens of Cd11). */
+/** A checkbox with its label (Trace Console Checkbox: `checkbox` and `check-icon` sizes). */
 export function Checkbox({ children, className, ...props }: Omit<CheckboxProps, 'children'> & { children: ReactNode }) {
   return (
     <AriaCheckbox {...props} className={[styles.check, className].filter(Boolean).join(' ')}>

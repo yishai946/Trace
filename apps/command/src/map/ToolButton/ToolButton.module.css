@@ -27,12 +27,12 @@
 }
 
 .tool[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .tool[data-disabled] {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -43,8 +43,8 @@
 
 /* The larger map controls, such as the navigation column. */
 .large {
-  width: var(--pending-touch-target);
-  height: var(--pending-touch-target);
+  width: var(--touch-target);
+  height: var(--touch-target);
 }
 
 .large svg {
@@ -59,7 +59,7 @@
 .spinner {
   width: 18px;
   height: 18px;
-  border: 2px solid var(--border-strong);
+  border: var(--stroke-strong) solid var(--border-strong);
   border-block-start-color: var(--ink);
   border-radius: var(--radius-xl);
   animation: spin 0.8s linear infinite;
@@ -83,10 +83,10 @@
   white-space: nowrap;
 }
 
-/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px. */
 @media (width <= 768px) {
   .tool {
-    width: var(--pending-touch-target);
-    height: var(--pending-touch-target);
+    width: var(--touch-target);
+    height: var(--touch-target);
   }
 }

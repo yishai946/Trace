@@ -79,8 +79,8 @@
 }
 
 .meta[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 /* Narrow windows: the join code gives way to the missing person's name and the search. */
@@ -136,7 +136,7 @@
   position: absolute;
   inset: 0;
   background-color: var(--map-ground);
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   pointer-events: none;
 }
 

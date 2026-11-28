@@ -78,7 +78,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  max-width: var(--pending-sos-card-w);
+  max-width: var(--sos-card-w);
   padding: var(--space-6);
   border: 1px solid var(--danger-border);
   border-radius: var(--radius-xl);
@@ -98,7 +98,7 @@
 .tag {
   display: inline-flex;
   align-items: center;
-  height: var(--pending-badge-h);
+  height: var(--badge-h);
   padding-inline: var(--space-3);
   border-radius: var(--radius-sm);
   background-color: var(--danger);
@@ -144,7 +144,7 @@
 }
 
 .facts dt {
-  flex: 0 0 var(--pending-fact-label-w);
+  flex: 0 0 var(--fact-label-w);
   color: var(--ink-muted);
 }
 
@@ -198,7 +198,7 @@
 }
 
 .message {
-  flex: 1 1 var(--pending-fact-label-w);
+  flex: 1 1 var(--fact-label-w);
   min-width: 0;
   color: var(--ink-secondary);
 }
@@ -228,7 +228,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: var(--pending-alert-w);
+  max-width: var(--alert-w);
   padding: var(--space-6);
   outline: none;
 }

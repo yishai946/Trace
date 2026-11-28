@@ -1,92 +1,14 @@
 /**
- * Mobile values the Trace Console design system does not define yet, taken from the Field wireframes (`Fm*`).
- * Each one is a design-system gap: do not update the Trace Console artifact; list it in the Pull Request under
- * Design deviations. Do not add values here without listing them as a gap in the Pull Request.
+ * Mobile values the Trace Console design system does not define yet, taken from the Field wireframes (`Fm*`). Each
+ * one is still a gap (the token generator does not emit `letterSpacing`, for example); do not add values here without listing them as a gap in the Pull Request.
  */
 export const pendingTokens = {
-  /** Brand book: every touch target on mobile is at least 44px. Wireframe `.tcx-touch`. */
-  touchTarget: 44,
-  /** Large mobile button, wireframe `.tc-btn--lg`. */
-  controlHLg: 48,
-  /** CallsignChip, Trace Console `.tc-callsign` (`min-width`, `height`): sizes without a `size` token. */
-  callsignMinW: 26,
-  callsignH: 20,
-  /** Bottom tab bar, wireframe `.tcx-tabbar`. */
-  tabBarH: 64,
-  /** Fm11 `.tcx-tabbar__n`: the count on a tab, 16px high and 6px from the top, pill shaped (radius 8). */
-  tabBadge: 16,
-  tabBadgeTop: 6,
-  /** Line icon, brand book "16px". */
-  icon: 16,
-  /** Large line icon in the tab bar and large buttons, wireframe `.tcx-i--lg`. */
-  iconLg: 20,
-  /** Brand book: icon stroke width 1.8px. */
-  iconStroke: 1.8,
-  /** Brand book: disabled controls are 45% opaque. */
-  disabledOpacity: 0.45,
-  /** Brand book: pressed primary and danger buttons, `.tc-btn--primary:active`. */
-  pressedOpacity: 0.8,
-  /** Fm01 brand mark: ring and dot, 22px with a 2px stroke. */
-  brandMark: 22,
-  brandMarkStroke: 2,
-  /** Fm01 stepper, `.tcx-step__n`: the 20px numbered circle, the 12px check inside a done step, the 16px separator. */
-  stepMarker: 20,
-  stepIcon: 12,
+  /** Fm01 stepper, `.tcx-step__sep`: the 16px separator between steps. */
   stepSeparatorW: 16,
-  /** Fm03 permission row, inline `min-height:68px`: a title with a badge, a caption and a 44px button fit in it. */
-  permissionRowH: 68,
-  /** Fm01 `.tcx-otp` and `.tcx-step__n`: 1.5px border. */
-  strongBorder: 1.5,
-  /** Fm01 `.tcx-otp`: code cell height and digit size. */
-  otpCellH: 60,
-  otpDigitSize: 24,
-  /** Brand book: focus ring, 2px solid with a 2px offset. */
-  focusRing: 2,
-  /** Fm02 `.tcx-scan`: the QR frame's height and its corner marks (30px, 3px stroke, 18px from the edge). */
-  scanH: 230,
-  scanCorner: 30,
-  scanCornerStroke: 3,
+  /** Fm02 `.tcx-scan`: the corner marks sit 18px from the edge of the QR frame. */
   scanCornerInset: 18,
-  /** Fm02 join code input: 20px bold, letter-spaced. */
-  joinCodeSize: 20,
+  /** Fm02 join code input: letter spacing of the code (Trace Console `code` type style, 2.4px). */
   joinCodeSpacing: 2.4,
-  /** Fm02 and Fm04 `.tcx-ph`: the missing person's photo, 64x76 on the join card and 60x72 on the waiting screen. */
-  photoW: 64,
-  photoH: 76,
-  /** Fm04: height of the general map between the status card and the missing-person card. */
-  waitingMapH: 320,
-  /** Fm04 `.tcx-card` of the status and the join confirmation: 2px border. */
-  cardStrongBorder: 2,
-  /** Wireframe `.tcx-badge`: 20px high. */
-  badgeH: 20,
-  /** Trace Console `.tc-dot`: the 6px state dot inside a badge. */
-  dot: 6,
-  /** Fm08 `.tcx-opt`: a report category option, 56px high with a 2px border and 14px text; its icon is 18px (`svg`). */
-  reportOptionH: 56,
-  reportOptionBorder: 2,
-  reportOptionText: 14,
-  iconMd: 18,
-  /** Fm08: the report text area, 124px high at least. */
-  reportTextMinH: 124,
-  /** Fm10 `.tcx-ph`: the report photo's thumbnail, 84x84. */
-  reportThumb: 84,
-  /** Fm10 `.tcx-report`: a report card is 68px high at least; its open text has a 1.4 line height. */
-  reportCardMinH: 68,
+  /** Fm10 `.tcx-report`: the open text of a report card has a 1.4 line height. */
   reportTextLeading: 1.4,
-  /** Fm10 `.tc-seg` view switch (list or map): 136px wide, two icon-only segments. */
-  viewToggleW: 136,
-  /** Fm10: the report symbol's selection ring on the map, 2px. */
-  selectionRing: 2,
-  /** Fm09: height of the minimap under "מיקום התצפית". */
-  sightingMapH: 236,
-  /** Fm09: minimum height of the "תיאור קצר" text area (two lines). */
-  textAreaMinH: 66,
-  /** Fm12 `.tcx-sosbtn`: the SOS button is a 208px circle with 48px text, inside a 248px `.tcx-sosring` of 3px stroke. */
-  sosButton: 208,
-  sosRing: 248,
-  sosRingStroke: 3,
-  sosLabelSize: 48,
-  sosLabelLeading: 52,
-  /** Fm03 `.tc-meter` of the download card: 8px high (the Trace Console default is 3px). */
-  meterH: 8,
 } as const;

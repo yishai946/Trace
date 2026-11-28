@@ -29,8 +29,8 @@
 }
 
 .field:focus-within {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .icon {
@@ -76,7 +76,7 @@
 }
 
 .clear[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .clear svg {
@@ -127,18 +127,18 @@
   color: var(--ink-muted);
 }
 
-/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px. */
 @media (width <= 768px) {
   .field {
-    height: var(--pending-touch-target);
+    height: var(--touch-target);
   }
 
   .item {
-    min-height: var(--pending-touch-target);
+    min-height: var(--touch-target);
   }
 
   .clear {
-    width: var(--pending-touch-target);
-    height: calc(var(--pending-touch-target) - 2px);
+    width: var(--touch-target);
+    height: calc(var(--touch-target) - 2px);
   }
 }

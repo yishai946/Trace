@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import {
   Platform,
   Pressable,
@@ -9,7 +9,6 @@ import {
   type PressableProps,
 } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Icon, type IconName } from '../Icon';
 
 export interface TabButtonProps {
@@ -96,15 +95,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.space1,
-    minHeight: pendingTokens.touchTarget,
+    minHeight: size.touchTarget,
   },
   count: {
     position: 'absolute',
-    top: pendingTokens.tabBadgeTop,
+    top: spacing.space3,
     start: '50%',
     marginStart: spacing.space3,
-    minWidth: pendingTokens.tabBadge,
-    height: pendingTokens.tabBadge,
+    minWidth: size.countBadge,
+    height: size.countBadge,
     borderRadius: radius.radiusLg,
     paddingHorizontal: spacing.space2,
     alignItems: 'center',

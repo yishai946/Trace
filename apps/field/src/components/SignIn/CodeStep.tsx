@@ -1,11 +1,10 @@
-import { typography, radius, spacing } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { OTP_LENGTH } from '@trace/schemas';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatCountdown } from '../../auth';
 import { formatPhone } from '@trace/domain';
 import { ltr } from '../../i18n/rtl';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { AuthLayout } from '../AuthLayout';
 import { Button } from '../Button';
 import { CodeInput } from '../CodeInput';
@@ -118,7 +117,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.radiusLg,
   },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.space5, minHeight: pendingTokens.controlHLg },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.space5, minHeight: size.controlHLg },
   phone: { flex: 1 },
-  change: { minHeight: pendingTokens.touchTarget, justifyContent: 'center', paddingHorizontal: spacing.space2 },
+  change: { minHeight: size.touchTarget, justifyContent: 'center', paddingHorizontal: spacing.space2 },
 });

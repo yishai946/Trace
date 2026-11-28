@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
 import { Icon, type IconName } from '../Icon';
-import { pendingTokens } from '../../theme/pending';
 
 export type BadgeTone = 'neutral' | 'ok' | 'warn' | 'accent';
 
@@ -24,7 +23,7 @@ export function Badge({
   return (
     <View style={[styles.badge, { backgroundColor: color.chip }]}>
       {dot ? <View style={[styles.dot, { backgroundColor: ink }]} /> : null}
-      {icon ? <Icon name={icon} color={ink} size={pendingTokens.dot * 2} /> : null}
+      {icon ? <Icon name={icon} color={ink} size={size.dot * 2} /> : null}
       <Text style={[typography.caption, styles.label, { color: ink }]}>{label}</Text>
     </View>
   );
@@ -36,10 +35,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
     gap: spacing.space2,
-    height: pendingTokens.badgeH,
+    height: size.badgeH,
     paddingHorizontal: spacing.space3,
     borderRadius: radius.radiusSm,
   },
-  dot: { width: pendingTokens.dot, height: pendingTokens.dot, borderRadius: radius.radiusSm },
+  dot: { width: size.dot, height: size.dot, borderRadius: radius.radiusSm },
   label: { fontWeight: typography.bodyStrong.fontWeight },
 });

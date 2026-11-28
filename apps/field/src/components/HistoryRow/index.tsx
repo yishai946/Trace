@@ -1,9 +1,8 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import type { Mission } from '@trace/schemas';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { endedOutcome, formatDay, missionTitle } from '../../history/summary';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { HistoryDetails } from '../HistoryDetails';
 
@@ -39,7 +38,7 @@ export function HistoryRow({ mission, open, onPress }: { mission: Mission; open:
 const styles = StyleSheet.create({
   item: { gap: spacing.space4 },
   row: {
-    minHeight: pendingTokens.touchTarget,
+    minHeight: size.touchTarget,
     gap: spacing.space2,
     paddingVertical: spacing.space4,
     paddingHorizontal: spacing.space6,

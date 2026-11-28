@@ -1,10 +1,9 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { apiBaseUrl } from '../../api';
 import { useSession } from '../../state/session';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 /**
  * A report's photo thumbnail, fetched with the searcher's token (a report's photo is for those who may see the report,
@@ -35,7 +34,7 @@ export function ReportImage({ url }: { url: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  thumb: { width: pendingTokens.reportThumb, height: pendingTokens.reportThumb },
+  thumb: { width: size.reportThumbH, height: size.reportThumbH },
   image: { borderRadius: radius.radiusMd },
   placeholder: {
     borderRadius: radius.radiusMd,

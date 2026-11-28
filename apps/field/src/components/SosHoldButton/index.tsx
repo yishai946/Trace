@@ -1,10 +1,9 @@
-import { spacing, typography } from '@trace/design';
+import { opacity, size, spacing, stroke, typography } from '@trace/design';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { ltr } from '../../i18n/rtl';
 import { SOS_HOLD_MS, useHoldToActivate } from '../../sos/useHoldToActivate';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 const HOLD_SECONDS = SOS_HOLD_MS / 1_000;
 const ACTIVATE = 'activate';
@@ -17,14 +16,14 @@ const ACTIVATE = 'activate';
 export function SosHoldButton({ sending, onActivate }: { sending: boolean; onActivate: () => void }) {
   const { color } = useTheme().theme;
   const { secondsLeft, progress, start, cancel } = useHoldToActivate({ onComplete: onActivate, disabled: sending });
-  const ring = pendingTokens.sosRing;
+  const ring = size.sosRing;
   const hint = sending
     ? 'שולח…'
     : secondsLeft === null
       ? `החזק ${ltr(HOLD_SECONDS)} שניות`
       : `המשך להחזיק, ${ltr(secondsLeft)}`;
   const center = ring / 2;
-  const radius = (ring - pendingTokens.sosRingStroke) / 2;
+  const radius = (ring - stroke.strokeRing) / 2;
   const length = 2 * Math.PI * radius;
   return (
     <View style={styles.ring}>
@@ -35,8 +34,8 @@ export function SosHoldButton({ sending, onActivate }: { sending: boolean; onAct
           r={radius}
           fill="none"
           stroke={color.danger}
-          strokeOpacity={pendingTokens.disabledOpacity}
-          strokeWidth={pendingTokens.sosRingStroke}
+          strokeOpacity={opacity.opacityDisabled}
+          strokeWidth={stroke.strokeRing}
         />
         <Circle
           testID="sos-progress"
@@ -45,7 +44,7 @@ export function SosHoldButton({ sending, onActivate }: { sending: boolean; onAct
           r={radius}
           fill="none"
           stroke={color.danger}
-          strokeWidth={pendingTokens.sosRingStroke}
+          strokeWidth={stroke.strokeRing}
           strokeDasharray={length}
           strokeDashoffset={length * (1 - progress)}
           rotation={-90}
@@ -71,7 +70,7 @@ export function SosHoldButton({ sending, onActivate }: { sending: boolean; onAct
           styles.button,
           {
             backgroundColor: color.danger,
-            opacity: sending ? pendingTokens.disabledOpacity : pressed ? pendingTokens.pressedOpacity : 1,
+            opacity: sending ? opacity.opacityDisabled : pressed ? opacity.opacityPressed : 1,
           },
         ]}
       >
@@ -92,8 +91,8 @@ export function SosHoldButton({ sending, onActivate }: { sending: boolean; onAct
 
 const styles = StyleSheet.create({
   ring: {
-    width: pendingTokens.sosRing,
-    height: pendingTokens.sosRing,
+    width: size.sosRing,
+    height: size.sosRing,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
@@ -101,16 +100,16 @@ const styles = StyleSheet.create({
   svg: { position: 'absolute' },
   announce: { position: 'absolute', opacity: 0, pointerEvents: 'none' },
   button: {
-    width: pendingTokens.sosButton,
-    height: pendingTokens.sosButton,
-    borderRadius: pendingTokens.sosButton / 2,
+    width: size.sosButton,
+    height: size.sosButton,
+    borderRadius: size.sosButton / 2,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.space1,
   },
   label: {
-    fontSize: pendingTokens.sosLabelSize,
-    lineHeight: pendingTokens.sosLabelLeading,
+    fontSize: typography.sos.fontSize,
+    lineHeight: typography.sos.lineHeight,
     fontWeight: typography.callsign.fontWeight,
   },
 });

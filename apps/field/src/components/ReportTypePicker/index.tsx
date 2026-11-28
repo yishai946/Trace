@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, stroke, typography } from '@trace/design';
 import { REPORT_TYPE_LABELS, REPORT_TYPES, type ReportType } from '@trace/domain';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { FieldError } from '../FieldError';
 import { Icon, type IconName } from '../Icon';
 
@@ -49,12 +48,12 @@ export function ReportTypePicker({
           },
         ]}
       >
-        <Icon name={ICONS[type]} size={pendingTokens.iconMd} color={selected ? color.accent : color.inkSecondary} />
+        <Icon name={ICONS[type]} size={size.iconMd} color={selected ? color.accent : color.inkSecondary} />
         <View style={styles.text}>
           <Text
             style={[
               typography.body,
-              { fontSize: pendingTokens.reportOptionText, color: color.ink },
+              { fontSize: typography.bodyLg.fontSize, color: color.ink },
               selected && { fontWeight: typography.title.fontWeight },
             ]}
           >
@@ -95,12 +94,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: spacing.space4 },
   option: {
     flex: 1,
-    minHeight: pendingTokens.reportOptionH,
+    minHeight: size.listItemH,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.space4,
     paddingHorizontal: spacing.space5,
-    borderWidth: pendingTokens.reportOptionBorder,
+    borderWidth: stroke.strokeStrong,
     borderRadius: radius.radiusLg,
   },
   text: { flexShrink: 1 },

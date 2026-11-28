@@ -17,7 +17,7 @@
   background-color: var(--border-strong);
 }
 
-/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px. */
 @media (width <= 768px) {
   .toolbar {
     flex-direction: column;

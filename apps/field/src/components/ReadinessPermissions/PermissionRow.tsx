@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { StyleSheet, Text, View } from 'react-native';
 import type { PermissionState } from '../../permissions/devicePermissions';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
@@ -32,7 +31,7 @@ export function PermissionRow({ label, caption, required, state, askLater, onGra
           },
         ]}
       >
-        {granted ? <Icon name="check" color={color.success} size={pendingTokens.stepIcon} /> : null}
+        {granted ? <Icon name="check" color={color.success} size={size.checkIcon} /> : null}
       </View>
       <View style={styles.text}>
         <View style={styles.title}>
@@ -62,12 +61,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.space6,
-    minHeight: pendingTokens.permissionRowH,
+    minHeight: size.cardRowH,
     borderTopWidth: 1,
   },
   box: {
-    width: pendingTokens.stepMarker,
-    height: pendingTokens.stepMarker,
+    width: size.stepMarker,
+    height: size.stepMarker,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,

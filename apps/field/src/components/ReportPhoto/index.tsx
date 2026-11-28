@@ -1,10 +1,9 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { useCameraPermissions } from 'expo-image-picker';
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { takeReportPhoto } from '../../reports/photo';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Button } from '../Button';
 
 export interface ReportPhotoValue {
@@ -89,8 +88,8 @@ const styles = StyleSheet.create({
   field: { gap: spacing.space3 },
   attached: { flexDirection: 'row', alignItems: 'center', gap: spacing.space5 },
   thumb: {
-    width: pendingTokens.reportThumb,
-    height: pendingTokens.reportThumb,
+    width: size.reportThumbH,
+    height: size.reportThumbH,
     borderWidth: 1,
     borderRadius: radius.radiusMd,
   },

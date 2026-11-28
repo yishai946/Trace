@@ -36,7 +36,7 @@
 .compose {
   flex: 0 0 auto;
   align-self: flex-start;
-  width: var(--pending-message-panel-w);
+  width: var(--message-panel-w);
 }
 
 .label {
@@ -113,7 +113,7 @@
 }
 
 .segOption[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .check {
@@ -132,7 +132,7 @@
 }
 
 .check[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .box {
@@ -140,8 +140,8 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: var(--pending-checkbox);
-  height: var(--pending-checkbox);
+  width: var(--checkbox);
+  height: var(--checkbox);
   border: 1px solid var(--ink-muted);
   border-radius: var(--radius-sm);
 }
@@ -151,8 +151,8 @@
 }
 
 .box svg {
-  width: var(--pending-check-icon);
-  height: var(--pending-check-icon);
+  width: var(--check-icon);
+  height: var(--check-icon);
   visibility: hidden;
 }
 
@@ -171,8 +171,8 @@
 }
 
 .block svg {
-  width: var(--pending-icon-sm);
-  height: var(--pending-icon-sm);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 /* Phone (Cm11): no panel frame, the page pads it; touch targets 44px or more. */
@@ -187,12 +187,12 @@
 }
 
 .phone .segOption {
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
 }
 
 .phone .check,
 .phone .polygonCheck {
-  min-height: var(--pending-control-lg-h);
+  min-height: var(--control-h-lg);
 }
 
 /* The template chips (wireframe Cd11 tcx-chipbtn, 26px). */
@@ -205,10 +205,10 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  height: var(--pending-chip-h);
+  height: var(--chip-h);
   padding-inline: var(--space-5);
   border: 1px solid var(--border);
-  border-radius: calc(var(--pending-chip-h) / 2);
+  border-radius: calc(var(--chip-h) / 2);
   background-color: transparent;
   color: var(--ink-secondary);
   font: var(--text-meta);
@@ -229,7 +229,7 @@
 }
 
 .chip[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 /* On the phone (wireframe Cm11 tcx-chipbtn--lg) the chips are 44px and scroll sideways. */
@@ -240,7 +240,7 @@
 
 .phone .chip {
   flex: 0 0 auto;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   padding-inline: var(--space-7);
-  border-radius: calc(var(--pending-touch-target) / 2);
+  border-radius: calc(var(--touch-target) / 2);
 }

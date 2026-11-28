@@ -1,3 +1,4 @@
+import { size } from '@trace/design';
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,7 +12,6 @@ import { useMissionLive } from '../../realtime';
 import { useLocationTracking } from '../../tracking';
 import { useGpsStatus } from '../../tracking/gpsStatus';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 /** The mission screens share the bottom tab bar of the wireframes (`.tcx-tabbar`) and the live connection. */
 export default function MissionLayout() {
@@ -36,7 +36,7 @@ export default function MissionLayout() {
           {
             backgroundColor: color.surface,
             borderTopColor: color.border,
-            height: pendingTokens.tabBarH + bottom,
+            height: size.tabbarH + bottom,
             paddingBottom: bottom,
           },
         ]}

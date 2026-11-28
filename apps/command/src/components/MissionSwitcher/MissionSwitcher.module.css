@@ -21,8 +21,8 @@
 }
 
 .trigger[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .name {
@@ -106,8 +106,8 @@
 }
 
 .item[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: -2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: calc(var(--stroke-strong) * -1);
 }
 
 .sub {
@@ -116,11 +116,11 @@
   font: var(--text-meta);
 }
 
-/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px. */
 @media (width <= 768px) {
   .trigger {
     width: 100%;
-    height: var(--pending-touch-target);
+    height: var(--touch-target);
   }
 
   .trigger .name {
@@ -129,7 +129,7 @@
   }
 
   .item {
-    min-height: var(--pending-touch-target);
+    min-height: var(--touch-target);
   }
 
   .popover {

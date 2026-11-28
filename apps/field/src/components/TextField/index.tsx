@@ -1,7 +1,6 @@
-import { radius, spacing, typography } from '@trace/design';
+import { opacity, radius, size, spacing, typography } from '@trace/design';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { FieldError } from '../FieldError';
 
 export interface TextFieldProps extends Omit<TextInputProps, 'style' | 'accessibilityLabel'> {
@@ -54,16 +53,16 @@ export function TextField({ label, error, ltr = false, tall = false, editable, m
 const styles = StyleSheet.create({
   field: { gap: spacing.space2 },
   input: {
-    minHeight: pendingTokens.controlHLg,
+    minHeight: size.controlHLg,
     paddingHorizontal: spacing.space5,
     borderWidth: 1,
     borderRadius: radius.radiusMd,
   },
   // A text area (Fm09): taller than a single line, text from the top.
-  multiline: { minHeight: pendingTokens.textAreaMinH, paddingVertical: spacing.space4, textAlignVertical: 'top' },
+  multiline: { minHeight: size.textareaMinH, paddingVertical: spacing.space4, textAlignVertical: 'top' },
   // The report's text area (Fm08) is taller than the sighting's (Fm09).
-  tall: { minHeight: pendingTokens.reportTextMinH },
+  tall: { minHeight: size.textareaLgMinH },
   // The page is right to left, so the end of the field is its right edge (`.tc-input--ltr`). RN has no `end` alignment.
   ltr: { writingDirection: 'ltr', textAlign: 'right' },
-  disabled: { opacity: pendingTokens.disabledOpacity },
+  disabled: { opacity: opacity.opacityDisabled },
 });

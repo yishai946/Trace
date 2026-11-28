@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReportItem } from '../../reports/reportItems';
 import { useTheme } from '../../theme';
@@ -79,7 +79,7 @@ export function ReportCard({ item, selected, onPress, onEdit }: ReportCardProps)
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: pendingTokens.reportCardMinH,
+    minHeight: size.cardRowH,
     justifyContent: 'center',
     gap: spacing.space3,
     paddingVertical: spacing.space5,

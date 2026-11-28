@@ -1,7 +1,6 @@
-import { radius, spacing, typography } from '@trace/design';
+import { opacity, radius, size, spacing, typography } from '@trace/design';
 import { Pressable, StyleSheet, Text, type PressableProps } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Icon, type IconName } from '../Icon';
 
@@ -60,7 +59,7 @@ export function Button({
         {
           backgroundColor: pressed && quiet ? color.surfaceRaised : fill,
           borderColor: variant === 'secondary' ? color.borderStrong : 'transparent',
-          opacity: disabled ? pendingTokens.disabledOpacity : pressed && !quiet ? pendingTokens.pressedOpacity : 1,
+          opacity: disabled ? opacity.opacityDisabled : pressed && !quiet ? opacity.opacityPressed : 1,
         },
       ]}
       {...props}
@@ -75,7 +74,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: pendingTokens.touchTarget,
+    minHeight: size.touchTarget,
     paddingHorizontal: spacing.space6,
     borderWidth: 1,
     borderRadius: radius.radiusMd,
@@ -84,7 +83,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.space3,
   },
-  lg: { minHeight: pendingTokens.controlHLg, paddingHorizontal: spacing.space7 },
+  lg: { minHeight: size.controlHLg, paddingHorizontal: spacing.space7 },
   block: { alignSelf: 'stretch' },
   // Pushes the word to the end of the button, away from the label.
   trailing: { marginStart: 'auto' },

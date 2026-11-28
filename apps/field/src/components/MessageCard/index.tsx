@@ -1,11 +1,10 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, spacing, stroke, typography } from '@trace/design';
 import type { OwnMessage } from '@trace/schemas';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useMessageReceipt } from '../../messages/useMessageReceipt';
 import { targetLabel } from '../../messages/messageTarget';
 import { formatTime } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { Notice } from '../Notice';
@@ -29,8 +28,8 @@ export function MessageCard({ message }: { message: OwnMessage }) {
   const awaitingAck = message.requiresAcknowledgement && message.status !== 'acknowledged';
   const border = {
     normal: { borderColor: color.borderStrong, borderWidth: 1 },
-    important: { borderColor: color.inkMuted, borderWidth: pendingTokens.cardStrongBorder },
-    critical: { borderColor: color.ink, borderWidth: pendingTokens.cardStrongBorder },
+    important: { borderColor: color.inkMuted, borderWidth: stroke.strokeStrong },
+    critical: { borderColor: color.ink, borderWidth: stroke.strokeStrong },
   }[message.urgency];
   // An unread message shows a short preview until it is opened; critical ones are open, they ask for an answer.
   const preview = unread && !message.requiresAcknowledgement;

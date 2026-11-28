@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { formatCallsign } from '@trace/domain';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
-import { pendingTokens } from '../theme/pending';
 
 interface CallsignChipProps {
   callsign: number;
@@ -32,8 +31,8 @@ export function CallsignChip({ callsign, sos = false, waiting = false }: Callsig
 
 const styles = StyleSheet.create({
   chip: {
-    minWidth: pendingTokens.callsignMinW,
-    height: pendingTokens.callsignH,
+    minWidth: size.callsignW,
+    height: size.callsignH,
     paddingHorizontal: spacing.space2,
     borderRadius: radius.radiusSm,
     alignItems: 'center',

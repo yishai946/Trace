@@ -2,11 +2,11 @@
 .trigger {
   position: relative;
   display: block;
-  width: 72px;
-  height: 72px;
+  width: var(--map-thumb);
+  height: var(--map-thumb);
   padding: 0;
   overflow: hidden;
-  border: 2px solid var(--surface);
+  border: var(--stroke-strong) solid var(--surface);
   border-radius: var(--radius-lg);
   background-color: var(--surface);
   box-shadow: var(--shadow-panel);
@@ -26,8 +26,8 @@
 }
 
 .trigger[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .caption {
@@ -90,9 +90,9 @@
 
 .thumb {
   display: block;
-  width: 72px;
-  height: 72px;
-  border: 2px solid var(--border);
+  width: var(--map-thumb);
+  height: var(--map-thumb);
+  border: var(--stroke-strong) solid var(--border);
   border-radius: var(--radius-lg);
   object-fit: cover;
 }
@@ -111,12 +111,12 @@
 }
 
 .tile[data-focus-visible] .thumb {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .tile[data-disabled] {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 

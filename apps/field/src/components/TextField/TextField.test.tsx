@@ -1,8 +1,8 @@
+import { size } from '@trace/design';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TextField } from '.';
 import { ThemeProvider } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 describe('TextField', () => {
   it('labels the input and reports typing', () => {
@@ -39,6 +39,6 @@ describe('TextField', () => {
   });
   it('is a taller report text area when tall', () => {
     render(<TextField label="פירוט" multiline tall value="" onChangeText={() => {}} />, { wrapper: ThemeProvider });
-    expect(screen.getByLabelText('פירוט')).toHaveStyle({ minHeight: `${pendingTokens.reportTextMinH}px` });
+    expect(screen.getByLabelText('פירוט')).toHaveStyle({ minHeight: `${size.textareaLgMinH}px` });
   });
 });

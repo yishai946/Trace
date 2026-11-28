@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { usePreferences, type ThemePreference } from '../../state/preferences';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 const options: { value: ThemePreference; label: string }[] = [
   { value: 'day', label: 'יום' },
@@ -58,7 +57,7 @@ const styles = StyleSheet.create({
   rail: { flexDirection: 'row', padding: spacing.space1, borderRadius: radius.radiusLg, gap: spacing.space1 },
   option: {
     flex: 1,
-    minHeight: pendingTokens.touchTarget,
+    minHeight: size.touchTarget,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.radiusMd,

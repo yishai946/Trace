@@ -63,7 +63,7 @@
 }
 
 .tab[data-focus-visible] {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 .search {
@@ -102,7 +102,7 @@
 }
 
 .search:focus-within {
-  outline: 2px solid var(--focus);
+  outline: var(--stroke-strong) solid var(--focus);
 }
 
 /* `position: relative` keeps the visually hidden header label inside the scroller, not widening the page. */
@@ -252,7 +252,7 @@
 .search.phoneSearch {
   flex: none;
   width: 100%;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   margin-inline-start: 0;
 }
 
@@ -263,7 +263,7 @@
 .phoneTab {
   flex: 1;
   justify-content: center;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
 }
 
 .phoneBody {
@@ -311,8 +311,8 @@
 }
 
 .card[data-focus-visible] {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline: var(--stroke-strong) solid var(--focus);
+  outline-offset: var(--stroke-strong);
 }
 
 .cardHead {
