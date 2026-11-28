@@ -1,6 +1,7 @@
 import type { ThemeId } from '@trace/design';
 import type { MapProvider } from '@trace/map';
 import type { LkpPoint, Mission, MissionPolygon, Participant, Report, Sighting, Sos } from '@trace/schemas';
+import { isMissionEnded } from '@trace/domain';
 import type { ReactNode } from 'react';
 import { MissionMap, type MapFocus } from '../../map/MissionMap';
 import { usePolygonEdit } from './usePolygonEdit';
@@ -92,6 +93,7 @@ export function MissionWorkspace({
     searcherId: selectedSearcherId,
     participants,
     polygons,
+    missionEnded: isMissionEnded(mission.status),
   });
   const map = useWorkspaceMapData({
     mission,

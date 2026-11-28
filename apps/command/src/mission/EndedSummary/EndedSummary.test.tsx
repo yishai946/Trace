@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { EndedSummary } from '.';
+import type { AssignmentRecord } from '@trace/schemas';
 import { eventSamples, mission, participants, polygonA, polygonB, reports, sosClosed } from '../fixtures';
 
 const located = {
@@ -106,5 +107,48 @@ describe('EndedSummary', () => {
   it('says the events are unavailable while the Timeline is not loaded', () => {
     renderSummary({ events: undefined });
     expect(screen.getByText('הנתונים אינם זמינים כרגע.')).toBeInTheDocument();
+  });
+
+  describe('assignment history', () => {
+    const assignment = (id: string, endedAt: string | null): AssignmentRecord => ({
+      id,
+      participantId: participants[0]?.id ?? '',
+      callsign: 7,
+      name: 'אלון שגיא',
+      polygonId: polygonA.id,
+      polygonName: polygonA.name,
+      assignedAt: '2026-11-08T06:10:00Z',
+      endedAt,
+    });
+    const list = [assignment('a1', '2026-11-08T08:00:00Z'), assignment('a2', null)];
+
+    it('counts the assignments and lists each with its times', () => {
+      renderSummary({ assignments: list, onOpenSearcher: vi.fn() });
+      const counts = within(screen.getByRole('region', { name: 'מספרים סופיים' }));
+      expect(counts.getByText('שיבוצים').nextElementSibling?.textContent).toBe('2');
+      const history = within(screen.getByRole('region', { name: 'היסטוריית שיבוץ' }));
+      expect(history.getAllByRole('listitem')).toHaveLength(2);
+      expect(history.getByText(/עד סוף המסע/)).toBeInTheDocument();
+    });
+
+    it("opens a searcher's route from their assignment", () => {
+      const onOpenSearcher = vi.fn();
+      renderSummary({ assignments: list, onOpenSearcher });
+      fireEvent.click(screen.getAllByRole('button', { name: /^מסלול אלון שגיא/ })[0] as HTMLElement);
+      expect(onOpenSearcher).toHaveBeenCalledWith(participants[0]?.id);
+    });
+
+    it('says so when there were no assignments', () => {
+      renderSummary({ assignments: [], onOpenSearcher: vi.fn() });
+      expect(screen.getByText('לא בוצעו שיבוצים במסע.')).toBeInTheDocument();
+    });
+
+    it('says the history is unavailable while it is not loaded, with no count', () => {
+      renderSummary({ assignments: undefined, onOpenSearcher: vi.fn() });
+      expect(
+        within(screen.getByRole('region', { name: 'היסטוריית שיבוץ' })).getByText('הנתונים אינם זמינים כרגע.'),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('שיבוצים')).not.toBeInTheDocument();
+    });
   });
 });

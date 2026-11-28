@@ -34,7 +34,7 @@ export const historyRoutes: FastifyPluginAsyncZod<{ db: Db }> = async (app, { db
         tags: ['history'],
         summary: "The mission's assignment history, oldest first (UC-C20)",
         description:
-          'The mission\'s commander only. Every assignment of every searcher with when it started and ended; ' +
+          "The mission's commander only. Every assignment of every searcher with when it started and ended; " +
           'readable after the mission ended (decision 53).',
         params: MissionParams,
         response: { 200: AssignmentRecordList, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError },

@@ -10,6 +10,7 @@ export const missionKeys = {
     ['missions', missionId, 'participants', participantId, 'track'] as const,
   sightings: (missionId: string) => ['missions', missionId, 'sightings'] as const,
   lkps: (missionId: string) => ['missions', missionId, 'lkps'] as const,
+  assignments: (missionId: string) => ['missions', missionId, 'assignments'] as const,
   timeline: (missionId: string) => ['missions', missionId, 'timeline'] as const,
 };
 

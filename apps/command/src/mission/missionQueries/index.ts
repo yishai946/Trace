@@ -1,4 +1,5 @@
 /** The queries and mutations of the Command console, one file per resource. Screens reach the server only through here. */
+export * from './assignments';
 export * from './health';
 export * from './keys';
 export * from './messages';

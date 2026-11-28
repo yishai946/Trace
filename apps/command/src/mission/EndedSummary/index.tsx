@@ -1,8 +1,17 @@
-import type { Mission, MissionPolygon, Participant, Report, Sos, TimelineEvent } from '@trace/schemas';
+import type {
+  AssignmentRecord,
+  Mission,
+  MissionPolygon,
+  Participant,
+  Report,
+  Sos,
+  TimelineEvent,
+} from '@trace/schemas';
 import { Button } from '../../components/Button';
 import { EventText } from '../EventText';
 import { coverageRows, stillInField } from '../endedSummary';
 import { describeEvent, formatEventTime, spansDays } from '../timelineEvent';
+import { AssignmentHistory } from './AssignmentHistory';
 import { Counts } from './Counts';
 import { Outcome } from './Facts';
 import styles from './EndedSummary.module.css';
@@ -16,6 +25,9 @@ interface EndedSummaryProps {
   sos: Sos[] | undefined;
   /** The Timeline, oldest first. Undefined while it loads or when it failed. */
   events: TimelineEvent[] | undefined;
+  /** The assignment history, oldest first. Undefined while it loads or when it failed. */
+  assignments?: AssignmentRecord[];
+  onOpenSearcher?: (participantId: string) => void;
   onOpenTimeline: () => void;
 }
 
@@ -32,6 +44,8 @@ export function EndedSummary({
   reports,
   sos,
   events,
+  assignments,
+  onOpenSearcher,
   onOpenTimeline,
 }: EndedSummaryProps) {
   const rows = polygons && coverageRows(polygons);
@@ -51,7 +65,13 @@ export function EndedSummary({
       </div>
       <div className={styles.body}>
         <Outcome mission={mission} />
-        <Counts searchers={participants?.length} polygons={polygons?.length} reports={reports?.length} sos={sos} />
+        <Counts
+          searchers={participants?.length}
+          polygons={polygons?.length}
+          reports={reports?.length}
+          sos={sos}
+          assignments={assignments?.length}
+        />
         <section className={styles.section} aria-label="כיסוי סופי">
           <p className={styles.label}>כיסוי סופי</p>
           {!rows ? (
@@ -81,6 +101,7 @@ export function EndedSummary({
             </ul>
           )}
         </section>
+        {onOpenSearcher && <AssignmentHistory assignments={assignments} onOpenSearcher={onOpenSearcher} />}
         <section className={styles.section} aria-label="אירועי מפתח">
           <p className={styles.label}>אירועי מפתח</p>
           {!events ? (

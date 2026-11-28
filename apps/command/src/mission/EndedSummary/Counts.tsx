@@ -13,12 +13,14 @@ interface CountsProps {
   polygons: number | undefined;
   reports: number | undefined;
   sos: Sos[] | undefined;
+  /** The number of assignments (decision 53); omitted where the history is not shown. */
+  assignments?: number;
 }
 
 const count = (n: number | undefined) => n ?? '—';
 
 /** The final numbers of the mission. */
-export function Counts({ searchers, polygons, reports, sos }: CountsProps) {
+export function Counts({ searchers, polygons, reports, sos, assignments }: CountsProps) {
   return (
     <section className={styles.section} aria-label="מספרים סופיים">
       <dl className={styles.facts}>
@@ -28,6 +30,12 @@ export function Counts({ searchers, polygons, reports, sos }: CountsProps) {
         <dd>{count(polygons)}</dd>
         <dt>דיווחים</dt>
         <dd>{count(reports)}</dd>
+        {assignments !== undefined && (
+          <>
+            <dt>שיבוצים</dt>
+            <dd>{assignments}</dd>
+          </>
+        )}
         <dt>SOS</dt>
         <dd>{sos ? sosText(sos) : '—'}</dd>
       </dl>
