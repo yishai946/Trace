@@ -9,7 +9,7 @@ import type {
 } from '@trace/schemas';
 import { Button } from '../../components/Button';
 import { EventText } from '../EventText';
-import { coverageRows, stillInField } from '../endedSummary';
+import { coverageRows, stillInField } from '../endedSummaryData';
 import { describeEvent, formatEventTime, spansDays } from '../timelineEvent';
 import { AssignmentHistory } from './AssignmentHistory';
 import { Counts } from './Counts';
