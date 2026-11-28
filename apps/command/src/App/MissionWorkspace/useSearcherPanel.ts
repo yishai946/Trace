@@ -8,18 +8,22 @@ interface SearcherPanelInput {
   searcherId: string | null;
   participants: Participant[];
   polygons: MissionPolygon[];
+  /** An ended mission keeps every searcher's route readable (UC-C20). */
+  missionEnded?: boolean;
 }
 
 /**
  * The searcher panel's data (UC-C10): the searcher from the live pool, their polygon, and their route, fetched when
- * the panel opens and extended by `participant.tracked`. A searcher who ended is no longer shown.
+ * the panel opens and extended by `participant.tracked`. A searcher who ended is no longer shown, unless the mission ended too.
  */
-export function useSearcherPanel({ missionId, searcherId, participants, polygons }: SearcherPanelInput) {
-  const searcher = participants.find((p) => p.id === searcherId && p.status !== 'ended') ?? null;
+export function useSearcherPanel({ missionId, searcherId, participants, polygons, missionEnded }: SearcherPanelInput) {
+  const searcher = participants.find((p) => p.id === searcherId && (missionEnded || p.status !== 'ended')) ?? null;
   const track = useParticipantTrack(missionId, searcher?.id ?? null);
   const positions = useMemo<LngLat[]>(() => track.data?.points.map((p) => p.position) ?? [], [track.data]);
   return {
     searcher,
+    /** The mission ended: the position and battery are the last known, not current. */
+    historical: !!missionEnded,
     polygonName: polygons.find((p) => p.id === searcher?.polygonId)?.name ?? null,
     positions,
     /** The route the map draws: the open searcher's, or none. */

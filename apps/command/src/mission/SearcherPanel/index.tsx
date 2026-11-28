@@ -14,9 +14,17 @@ interface SearcherPanelProps {
   /** The route's length in meters; null while the route loads. */
   routeMeters: number | null;
   routeFailed: boolean;
+  /** The mission ended: the position and battery are the last known. */
+  historical?: boolean;
   onRetryRoute: () => void;
   onClose: () => void;
 }
+
+/** In an ended mission the position and battery are the last known, not current. */
+const panelLabels = (historical?: boolean) =>
+  historical
+    ? { position: 'מיקום אחרון ידוע', battery: 'סוללה (אחרונה)' }
+    : { position: 'מיקום נוכחי', battery: 'סוללה' };
 
 const NONE = 'אין עדיין';
 
@@ -33,9 +41,11 @@ export function SearcherPanel({
   polygonName,
   routeMeters,
   routeFailed,
+  historical,
   onRetryRoute,
   onClose,
 }: SearcherPanelProps) {
+  const labels = panelLabels(historical);
   const [lng, lat] = searcher.position ?? [];
   const updatedAt = searcher.lastUpdateAt ?? searcher.positionAt;
 
@@ -60,7 +70,7 @@ export function SearcherPanel({
       )}
       <dl className={styles.facts}>
         <div className={styles.wide}>
-          <dt>מיקום נוכחי</dt>
+          <dt>{labels.position}</dt>
           <dd dir="ltr" className={styles.start}>
             {lat === undefined || lng === undefined ? NONE : `${formatCoordinate(lat)}, ${formatCoordinate(lng)}`}
           </dd>
@@ -101,7 +111,7 @@ export function SearcherPanel({
           <dd className={searcher.offline ? styles.warn : styles.ok}>{searcher.offline ? 'לא מקוון' : 'מקוון'}</dd>
         </div>
         <div>
-          <dt>סוללה</dt>
+          <dt>{labels.battery}</dt>
           <dd>{searcher.battery ? `${searcher.battery.level}%` : 'לא דווחה'}</dd>
         </div>
       </dl>

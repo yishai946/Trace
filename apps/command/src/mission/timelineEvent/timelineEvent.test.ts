@@ -2,7 +2,15 @@ import { TIMELINE_EVENT_TYPES } from '@trace/domain';
 import type { TimelineEvent } from '@trace/schemas';
 import { describe, expect, it } from 'vitest';
 import { eventSamples, lkpMovedEvent } from '../fixtures';
-import { CATEGORY_OF, TIMELINE_CATEGORIES, describeEvent, formatEventTime, recentChanges, spansDays } from '.';
+import {
+  CATEGORY_OF,
+  TIMELINE_CATEGORIES,
+  describeEvent,
+  formatEventTime,
+  recentChanges,
+  spansDays,
+  spansDaysOf,
+} from '.';
 
 const text = (event: TimelineEvent) =>
   describeEvent(event)
@@ -159,5 +167,12 @@ describe('recentChanges', () => {
 
   it('leaves out the LKP set when the mission was created', () => {
     expect(recentChanges([eventSamples['mission.created'], eventSamples['lkp.changed']])).toEqual([]);
+  });
+});
+
+describe('spansDaysOf', () => {
+  it('compares Israel days, not UTC days', () => {
+    expect(spansDaysOf(['2026-11-08T21:50:00Z', '2026-11-08T22:15:00Z'])).toBe(true);
+    expect(spansDaysOf(['2026-11-08T10:00:00Z', '2026-11-08T11:00:00Z'])).toBe(false);
   });
 });

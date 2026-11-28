@@ -17,6 +17,7 @@ export function SearcherSlot({ panel, taken, onClose }: SearcherSlotProps) {
       <SearcherPanel
         searcher={panel.searcher}
         polygonName={panel.polygonName}
+        historical={panel.historical}
         routeMeters={panel.routeMeters}
         routeFailed={panel.routeFailed}
         onRetryRoute={panel.retryRoute}

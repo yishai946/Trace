@@ -2,6 +2,7 @@ import { isMissionEnded } from '@trace/domain';
 import type { Mission } from '@trace/schemas';
 import styles from '../App.module.css';
 import { EndedSummary } from '../../mission/EndedSummary';
+import { useAssignments } from '../../mission/missionQueries';
 import type { ConsoleNav } from './useConsoleNav';
 import type { MissionData } from './useMissionData';
 
@@ -13,7 +14,9 @@ interface MissionSummaryProps {
 
 /** The ended mission's summary (Cd15) in the map's end-side slot, from the data the console already loaded. */
 export function MissionSummary({ mission, data, nav }: MissionSummaryProps) {
-  if (!isMissionEnded(mission.status)) return null;
+  const ended = isMissionEnded(mission.status);
+  const assignments = useAssignments(mission.id, ended);
+  if (!ended) return null;
   return (
     <div className={`${styles.inspector} ${styles.scrolling}`}>
       <EndedSummary
@@ -23,6 +26,8 @@ export function MissionSummary({ mission, data, nav }: MissionSummaryProps) {
         reports={data.reports.data}
         sos={data.sos.data}
         events={data.timeline.data}
+        assignments={assignments.data}
+        onOpenSearcher={nav.setSelectedSearcherId}
         onOpenTimeline={() => nav.setView('timeline')}
       />
     </div>
