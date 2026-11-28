@@ -42,7 +42,7 @@ export async function setPolygonStatus(
     if (change === 'refused') {
       throw new AppError(409, 'INVALID_STATUS_CHANGE', 'Only a Completed polygon can return to Active');
     }
-    if (change === 'unchanged') return { polygon: toPolygon(existing), finishedIds: [], stored: null, event: null };
+    if (change === 'unchanged') return { polygon: toPolygon(existing), changedIds: [], stored: null, event: null };
 
     const open =
       input.status === 'completed'
@@ -115,11 +115,11 @@ export async function setPolygonStatus(
         ? ({ type: 'polygon.completed', details: { endedTasks: finishedIds.length } } as const)
         : ({ type: 'polygon.reactivated', details: {} } as const)),
     });
-    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), finishedIds: changedIds, stored, event };
+    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), changedIds, stored, event };
   });
 
   realtime.publish({ type: 'polygon.saved', missionId, polygon: result.polygon });
-  for (const id of result.finishedIds) {
+  for (const id of result.changedIds) {
     const participant = await findParticipant(deps, missionId, id);
     if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
   }
