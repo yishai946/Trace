@@ -5,6 +5,7 @@ import {
   MissionPolygon,
   MissionPolygonList,
   PolygonParams,
+  SetPolygonStatusBody,
   UpdatePolygonBody,
 } from '@trace/schemas';
 import type { FastifyPluginAsyncZod } from 'fastify-type-provider-zod';
@@ -12,6 +13,7 @@ import { z } from 'zod';
 import { missionAccess } from '../../auth/auth.access';
 import { actorOf } from '../../auth/auth.plugin';
 import type { ServiceDeps } from '../serviceDeps';
+import { setPolygonStatus } from './polygons.status';
 import { createPolygon, deletePolygon, listPolygons, updatePolygon } from './polygons.service';
 
 export const polygonRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, deps) => {
@@ -84,6 +86,28 @@ export const polygonRoutes: FastifyPluginAsyncZod<ServiceDeps> = async (app, dep
       const { missionId, polygonId } = request.params;
       await deletePolygon(deps, missionId, polygonId, actorOf(request));
       return reply.status(204).send(null);
+    },
+  );
+
+  app.put(
+    '/missions/:missionId/polygons/:polygonId/status',
+    {
+      schema: {
+        tags: ['polygons'],
+        summary: 'Mark a polygon Completed, or return it to Active (UC-C07)',
+        description:
+          'Completed works at any Coverage. Returns 409 POLYGON_SEARCHERS_ACTIVE with the searchers whose tasks ' +
+          'would end; send again with confirmActiveSearchers: true after the commander confirms. Active is only a ' +
+          'way back from Completed (409 INVALID_STATUS_CHANGE otherwise). Coverage cannot be set.',
+        params: PolygonParams,
+        body: SetPolygonStatusBody,
+        response: { 200: MissionPolygon, 400: ApiError, 401: ApiError, 403: ApiError, 404: ApiError, 409: ApiError },
+      },
+      preHandler: missionAccess(db, 'commander'),
+    },
+    async (request) => {
+      const { missionId, polygonId } = request.params;
+      return setPolygonStatus(deps, { missionId, polygonId, input: request.body, actor: actorOf(request) });
     },
   );
 };

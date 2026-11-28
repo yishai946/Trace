@@ -24,13 +24,13 @@ export type CreatePolygonInput = z.output<typeof CreatePolygonBody>;
 export type UpdatePolygonInput = z.output<typeof UpdatePolygonBody>;
 
 /** Locks the mission row so concurrent polygon changes in one mission run one after another. */
-const lockActiveMission = (tx: Tx, missionId: string) =>
+export const lockActiveMission = (tx: Tx, missionId: string) =>
   lockMission(tx, missionId, {
     allowed: canChangePolygons,
     refusal: () => new AppError(409, 'MISSION_NOT_ACTIVE', 'Polygons can be changed only while the mission is active'),
   });
 
-async function findPolygon(tx: Tx, missionId: string, polygonId: string): Promise<PolygonRow> {
+export async function findPolygon(tx: Tx, missionId: string, polygonId: string): Promise<PolygonRow> {
   const [row] = await selectPolygons(tx).where(
     and(isNull(polygons.deletedAt), eq(polygons.missionId, missionId), eq(polygons.id, polygonId)),
   );

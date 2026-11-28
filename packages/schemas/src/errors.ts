@@ -22,6 +22,8 @@ export const ERROR_CODES = [
   'TASK_NOT_ACTIVE',
   'INVALID_GEOMETRY',
   'POLYGON_HAS_ACTIVE_SEARCHERS',
+  'POLYGON_SEARCHERS_ACTIVE',
+  'INVALID_STATUS_CHANGE',
   'SEARCHERS_OUTSIDE_POLYGON',
   /** A boundary change that leaves an Offline searcher outside is blocked until they are back (decision 86). */
   'SEARCHER_OFFLINE',

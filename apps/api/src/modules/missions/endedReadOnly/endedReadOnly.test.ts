@@ -43,6 +43,7 @@ const REFUSED_ELSEWHERE = [
   'PUT /api/missions/:missionId/photo (missions.details.test)',
   'PATCH /api/missions/:missionId/polygons/:polygonId (polygons.test)',
   'DELETE /api/missions/:missionId/polygons/:polygonId (polygons.test)',
+  'PUT /api/missions/:missionId/polygons/:polygonId/status (polygons.status.test)',
 ].map((entry) => entry.replace(/ \(.*\)$/, ''));
 
 const ring = [

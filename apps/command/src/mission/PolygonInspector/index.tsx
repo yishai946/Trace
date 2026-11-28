@@ -4,6 +4,10 @@ import { Input, Label, TextField } from 'react-aria-components';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
 import styles from './PolygonInspector.module.css';
+import { PolygonMark } from './PolygonMark';
+import { StatusActions } from './StatusActions';
+
+const hasOpenTask = (p: Participant) => p.taskStatus !== null && p.taskStatus !== 'finished';
 
 export const POLYGON_STATUS_LABEL: Record<PolygonStatus, string> = {
   unassigned: 'לא משובץ',
@@ -23,6 +27,8 @@ interface PolygonInspectorProps {
   onRename: (name: string) => void;
   onEditBoundary: () => void;
   onDelete: () => void;
+  /** Completed or back to Active; `confirmed` once the commander accepted the active-searchers warning. */
+  onSetStatus: (status: 'active' | 'completed', confirmed: boolean) => void;
 }
 
 /** Trace Console Inspector for a selected polygon (Cd07): name, coverage, assigned searchers and actions. */
@@ -36,6 +42,7 @@ export function PolygonInspector({
   onRename,
   onEditBoundary,
   onDelete,
+  onSetStatus,
 }: PolygonInspectorProps) {
   const [name, setName] = useState(polygon.name);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -51,11 +58,7 @@ export function PolygonInspector({
   return (
     <section className={styles.panel} aria-label={polygon.name}>
       <div className={`${styles.section} ${styles.head}`}>
-        <span className={styles.mark} data-status={polygon.status} aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
-            <path d="M5 6l7-3 8 5-2 10-11 2-3-8z" />
-          </svg>
-        </span>
+        <PolygonMark status={polygon.status} />
         <div className={styles.titles}>
           <div className={styles.name}>{polygon.name}</div>
           <div className={styles.sub}>
@@ -106,6 +109,13 @@ export function PolygonInspector({
 
       {canEdit && (
         <div className={`${styles.section} ${styles.actions}`}>
+          <StatusActions
+            status={polygon.status}
+            polygonName={polygon.name}
+            activeSearchers={assigned.filter(hasOpenTask).length}
+            busy={busy}
+            onSetStatus={onSetStatus}
+          />
           {confirmingDelete ? (
             <div role="group" aria-label="אישור מחיקה" className={styles.confirm}>
               <p className={styles.hint}>למחוק את "{polygon.name}"? היסטוריית Routes ודיווחים נשמרת.</p>

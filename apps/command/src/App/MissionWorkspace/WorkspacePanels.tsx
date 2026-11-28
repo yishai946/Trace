@@ -80,6 +80,7 @@ export function WorkspacePanels({
           onRename={polygon.rename}
           onEditBoundary={polygon.startBoundaryEdit}
           onDelete={polygon.remove}
+          onSetStatus={polygon.setStatus}
         />
       </div>
     );

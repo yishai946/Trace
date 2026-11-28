@@ -7,6 +7,8 @@ const MESSAGES: Partial<Record<ApiRequestError['code'], string>> = {
   MISSION_NOT_ACTIVE: 'אפשר לשנות פוליגונים רק כשהמסע פעיל.',
   INVALID_GEOMETRY: 'גבול הפוליגון אינו תקין.',
   POLYGON_HAS_ACTIVE_SEARCHERS: 'אי אפשר למחוק פוליגון שיש בו מחפש פעיל.',
+  POLYGON_SEARCHERS_ACTIVE: 'מחפשים התחילו לחפש בפוליגון בינתיים. בדקו את הרשימה ונסו שוב.',
+  INVALID_STATUS_CHANGE: 'אפשר להחזיר לפעיל רק פוליגון שהושלם.',
 };
 
 /** Names the Offline searchers a blocked boundary change would leave outside (decision 86). */

@@ -81,7 +81,11 @@ export function usePolygonEdit({ missionId, polygons, participants }: PolygonEdi
     editing: edit ? { polygonId: edit.polygonId, geometry: edit.original } : null,
     error,
     outside,
-    busy: mutations.create.isPending || mutations.update.isPending || mutations.remove.isPending,
+    busy:
+      mutations.create.isPending ||
+      mutations.update.isPending ||
+      mutations.remove.isPending ||
+      mutations.setStatus.isPending,
     select,
     create: (drawn: Polygon) => {
       const geometry = PolygonGeometry.safeParse(drawn);
@@ -98,6 +102,13 @@ export function usePolygonEdit({ missionId, polygons, participants }: PolygonEdi
     rename: (name: string) => {
       if (!selected) return;
       mutations.update.mutate({ polygonId: selected.id, name }, { onSuccess: () => setError(null), onError: fail });
+    },
+    setStatus: (status: 'active' | 'completed', confirmActiveSearchers: boolean) => {
+      if (!selected) return;
+      mutations.setStatus.mutate(
+        { polygonId: selected.id, status, confirmActiveSearchers },
+        { onSuccess: () => setError(null), onError: fail },
+      );
     },
     remove: () => {
       if (!selected) return;

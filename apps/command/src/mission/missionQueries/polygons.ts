@@ -1,4 +1,10 @@
-import { MissionPolygon, MissionPolygonList, type CreatePolygonBody, type UpdatePolygonBody } from '@trace/schemas';
+import {
+  MissionPolygon,
+  MissionPolygonList,
+  type CreatePolygonBody,
+  type SetPolygonStatusBody,
+  type UpdatePolygonBody,
+} from '@trace/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '../../api';
 import { missionKeys } from './keys';
@@ -26,6 +32,15 @@ export function usePolygonMutations(missionId: string) {
       mutationFn: ({ polygonId, ...body }: UpdatePolygonBody & { polygonId: string }) =>
         apiRequest(`${base}/${polygonId}`, { method: 'PATCH', body, schema: MissionPolygon }),
       onSuccess,
+    }),
+    setStatus: useMutation({
+      mutationFn: ({ polygonId, ...body }: SetPolygonStatusBody & { polygonId: string }) =>
+        apiRequest(`${base}/${polygonId}/status`, { method: 'PUT', body, schema: MissionPolygon }),
+      // Completing ends searchers' tasks, so their list refreshes too.
+      onSuccess: () => {
+        onSuccess();
+        return queryClient.invalidateQueries({ queryKey: missionKeys.participants(missionId) });
+      },
     }),
     remove: useMutation({
       mutationFn: (polygonId: string) => apiRequest(`${base}/${polygonId}`, { method: 'DELETE' }),
