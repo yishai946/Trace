@@ -178,7 +178,7 @@ export async function updatePolygon(
   return polygon;
 }
 
-/** Removes a polygon from the active map (UC-C06). Blocked while a searcher is assigned; history stays. */
+/** Removes a polygon from the active map (UC-C06). Blocked while a searcher has an open task; history stays. */
 export async function deletePolygon(
   { db, realtime }: ServiceDeps,
   missionId: string,

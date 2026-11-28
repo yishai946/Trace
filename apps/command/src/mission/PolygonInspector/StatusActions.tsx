@@ -50,7 +50,7 @@ export function StatusActions({ status, polygonName, activeSearchers, busy, onSe
         role="group"
         aria-label="אישור סימון כהושלם"
         className={styles.confirm}
-        onKeyDown={(e) => e.key === 'Escape' && cancel()}
+        onKeyDown={(e) => e.key === 'Escape' && !busy && cancel()}
       >
         <p className={styles.hint}>
           ב"{polygonName}" {activeSearchers === 1 ? 'יש מחפש פעיל אחד' : `יש ${activeSearchers} מחפשים פעילים`}. סימון
