@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, stroke as strokes, typography } from '@trace/design';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../theme';
@@ -56,11 +56,11 @@ export function QrScanner({ onScan }: { onScan: (text: string) => void }) {
 }
 
 const inset = pendingTokens.scanCornerInset;
-const stroke = pendingTokens.scanCornerStroke;
+const stroke = strokes.strokeRing;
 
 const styles = StyleSheet.create({
   frame: {
-    height: pendingTokens.scanH,
+    height: size.scanH,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.space4,
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   text: { textAlign: 'center' },
-  corner: { position: 'absolute', width: pendingTokens.scanCorner, height: pendingTokens.scanCorner },
+  corner: { position: 'absolute', width: size.scanCorner, height: size.scanCorner },
   top: { top: inset, borderTopWidth: stroke },
   bottom: { bottom: inset, borderBottomWidth: stroke },
   start: { start: inset, borderStartWidth: stroke },

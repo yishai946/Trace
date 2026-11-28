@@ -12,10 +12,10 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  height: var(--pending-chip-h);
+  height: var(--chip-h);
   padding-inline: var(--space-5);
   border: 1px solid var(--border);
-  border-radius: calc(var(--pending-chip-h) / 2);
+  border-radius: calc(var(--chip-h) / 2);
   background-color: transparent;
   color: var(--ink-secondary);
   font: var(--text-meta);
@@ -59,9 +59,9 @@
 
 @media (width <= 768px) {
   .chip {
-    height: var(--pending-touch-target);
+    height: var(--touch-target);
     padding-inline: var(--space-7);
-    border-radius: calc(var(--pending-touch-target) / 2);
+    border-radius: calc(var(--touch-target) / 2);
     font: var(--text-body);
   }
 }

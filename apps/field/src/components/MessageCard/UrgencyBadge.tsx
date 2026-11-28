@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import type { MessageUrgency } from '@trace/schemas';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Icon, type IconName } from '../Icon';
 
 const labels: Record<MessageUrgency, string> = { normal: 'רגילה', important: 'חשובה', critical: 'קריטית' };
@@ -24,7 +23,7 @@ export function UrgencyBadge({ urgency }: { urgency: MessageUrgency }) {
         },
       ]}
     >
-      {icon ? <Icon name={icon} color={ink} size={pendingTokens.iconMd} /> : null}
+      {icon ? <Icon name={icon} color={ink} size={size.iconMd} /> : null}
       <Text style={[typography.caption, styles.label, { color: ink }]}>{labels[urgency]}</Text>
     </View>
   );
@@ -37,7 +36,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.space2,
-    height: pendingTokens.badgeH,
+    height: size.badgeH,
     paddingHorizontal: spacing.space3,
     borderRadius: radius.radiusSm,
     borderWidth: 1,

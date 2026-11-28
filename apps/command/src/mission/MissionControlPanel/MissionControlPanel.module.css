@@ -106,7 +106,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  max-width: var(--pending-alert-w);
+  max-width: var(--alert-w);
   padding: var(--space-6);
   outline: none;
 }
@@ -207,7 +207,7 @@
 
   .segOption,
   .reason {
-    min-height: var(--pending-touch-target);
+    min-height: var(--touch-target);
   }
 
   .confirm {

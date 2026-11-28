@@ -14,7 +14,7 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  height: var(--pending-badge-h);
+  height: var(--badge-h);
   padding-inline: var(--space-3);
   border: 1px solid var(--warning);
   border-radius: var(--radius-sm);

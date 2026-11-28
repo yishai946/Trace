@@ -1,8 +1,8 @@
-/* The phone tab bar (wireframe tcx-tabbar). Its height is a design-system gap (pending.css). */
+/* The phone tab bar (wireframe tcx-tabbar). */
 .bar {
   display: flex;
   flex: 0 0 auto;
-  height: var(--pending-tabbar-h);
+  height: var(--tabbar-h);
   border-top: 1px solid var(--border);
   background-color: var(--surface);
 }
@@ -41,7 +41,7 @@
   height: 20px;
 }
 
-/* The New count on an item (wireframe tcx-tabbar__n). Its size is a design-system gap (pending.css). */
+/* The New count on an item (wireframe tcx-tabbar__n). */
 .count {
   position: absolute;
   top: var(--space-3);
@@ -49,10 +49,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--pending-tabbar-badge);
-  height: var(--pending-tabbar-badge);
+  min-width: var(--count-badge);
+  height: var(--count-badge);
   padding-inline: var(--space-2);
-  border-radius: calc(var(--pending-tabbar-badge) / 2);
+  border-radius: calc(var(--count-badge) / 2);
   background-color: var(--accent);
   color: var(--surface);
   font: var(--text-callsign);

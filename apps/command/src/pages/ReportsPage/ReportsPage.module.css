@@ -28,7 +28,7 @@
 
 .list {
   flex: 0 0 auto;
-  width: var(--pending-report-list-w);
+  width: var(--report-list-w);
 }
 
 .mapPanel {
@@ -165,10 +165,10 @@
 .chip {
   display: inline-flex;
   align-items: center;
-  height: var(--pending-chip-h);
+  height: var(--chip-h);
   padding-inline: var(--space-5);
   border: 1px solid var(--border);
-  border-radius: calc(var(--pending-chip-h) / 2);
+  border-radius: calc(var(--chip-h) / 2);
   background-color: transparent;
   color: var(--ink-secondary);
   font: var(--text-meta);
@@ -215,8 +215,8 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: var(--pending-glyph);
-  height: var(--pending-glyph);
+  width: var(--glyph);
+  height: var(--glyph);
   border-radius: var(--radius-md);
   background-color: var(--chip);
   color: var(--ink-secondary);
@@ -232,8 +232,8 @@
 }
 
 .glyph svg {
-  width: var(--pending-icon-size);
-  height: var(--pending-icon-size);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 /* The map legend. */
@@ -255,8 +255,8 @@
 }
 
 .legend svg {
-  width: var(--pending-icon-size);
-  height: var(--pending-icon-size);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 /* The Inspector. */
@@ -276,7 +276,7 @@
 .photo {
   display: block;
   width: 100%;
-  height: var(--pending-report-photo-h);
+  height: var(--report-photo-h);
   border-radius: var(--radius-md);
   background-color: var(--surface-raised);
   object-fit: cover;
@@ -340,8 +340,8 @@
 
 .banner svg {
   flex: 0 0 auto;
-  width: var(--pending-icon-size);
-  height: var(--pending-icon-size);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .bannerText {

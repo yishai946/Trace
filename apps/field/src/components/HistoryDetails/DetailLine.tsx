@@ -1,7 +1,6 @@
-import { spacing, typography } from '@trace/design';
+import { size, spacing, typography } from '@trace/design';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 /** One key and value of a read-only list (wireframe `.tcx-ln`), at least 44px high. */
 export function DetailLine({ label, value, first = false }: { label: string; value: string; first?: boolean }) {
@@ -15,6 +14,6 @@ export function DetailLine({ label, value, first = false }: { label: string; val
 }
 
 const styles = StyleSheet.create({
-  line: { flexDirection: 'row', alignItems: 'center', gap: spacing.space4, minHeight: pendingTokens.touchTarget },
+  line: { flexDirection: 'row', alignItems: 'center', gap: spacing.space4, minHeight: size.touchTarget },
   key: { flex: 1 },
 });

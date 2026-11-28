@@ -37,7 +37,7 @@
 }
 
 .input[data-disabled] {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -63,15 +63,15 @@
   font: var(--text-meta);
 }
 
-/* Phone: every touch target is at least 44px; the large input is 48px (pending tokens). */
+/* Phone: every touch target is at least 44px; the large input is 48px. */
 @media (width <= 768px) {
   .input {
-    min-height: var(--pending-touch-target);
+    min-height: var(--touch-target);
   }
 }
 
 .input[data-size='lg'] {
-  height: var(--pending-control-lg-h);
+  height: var(--control-h-lg);
 }
 
 .input[data-multiline] {

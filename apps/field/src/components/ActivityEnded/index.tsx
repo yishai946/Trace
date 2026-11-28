@@ -1,8 +1,7 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, spacing, stroke, typography } from '@trace/design';
 import type { Mission } from '@trace/schemas';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { Screen } from '../Screen';
@@ -65,7 +64,7 @@ export function ActivityEnded({ mission, removed, onJoinAgain, onOpenMyMissions 
 
 const styles = StyleSheet.create({
   card: { gap: spacing.space4, padding: spacing.space6, borderWidth: 1, borderRadius: radius.radiusLg },
-  strong: { borderWidth: pendingTokens.cardStrongBorder },
+  strong: { borderWidth: stroke.strokeStrong },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.space4 },
   divided: { paddingTop: spacing.space4, borderTopWidth: 1 },
   grow: { flex: 1 },

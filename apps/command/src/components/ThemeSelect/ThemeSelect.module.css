@@ -38,7 +38,7 @@
 }
 
 .theme[data-layout='row'] .select {
-  min-width: var(--pending-select-min-w);
+  min-width: var(--select-min-w);
 }
 
 .select[data-focus-visible] {
@@ -56,8 +56,8 @@
 .option svg,
 .item svg {
   flex: 0 0 auto;
-  width: var(--pending-icon-sm);
-  height: var(--pending-icon-sm);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .chevron {
@@ -102,6 +102,6 @@
 @media (width <= 768px) {
   .select,
   .item {
-    height: var(--pending-touch-target);
+    height: var(--touch-target);
   }
 }

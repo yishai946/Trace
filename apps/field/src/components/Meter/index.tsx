@@ -1,7 +1,6 @@
-import { radius } from '@trace/design';
+import { radius, size } from '@trace/design';
 import { StyleSheet, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 /** Trace Console `.tc-meter`: a track with an accent fill. `percent` is 0 to 100; `label` names what it measures. */
 export function Meter({ percent, label }: { percent: number; label: string }) {
@@ -22,6 +21,6 @@ export function Meter({ percent, label }: { percent: number; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  track: { height: pendingTokens.meterH, borderRadius: radius.radiusSm, overflow: 'hidden' },
+  track: { height: size.meterHLg, borderRadius: radius.radiusSm, overflow: 'hidden' },
   fill: { height: '100%' },
 });

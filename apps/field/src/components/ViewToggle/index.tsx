@@ -1,7 +1,6 @@
-import { radius, spacing } from '@trace/design';
+import { radius, size, spacing } from '@trace/design';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Icon } from '../Icon';
 
 export type ReportsView = 'list' | 'map';
@@ -46,13 +45,13 @@ export function ViewToggle({ value, onChange }: { value: ReportsView; onChange: 
 const styles = StyleSheet.create({
   rail: {
     flexDirection: 'row',
-    width: pendingTokens.viewToggleW,
+    width: size.viewToggleW,
     padding: spacing.space2,
     borderRadius: radius.radiusLg,
   },
   option: {
     flex: 1,
-    minHeight: pendingTokens.touchTarget,
+    minHeight: size.touchTarget,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.radiusMd,

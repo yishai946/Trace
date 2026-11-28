@@ -1,4 +1,4 @@
-/* The phone bottom sheet (wireframe tcx-sheet). Its height and the touch target are design-system gaps (pending.css). */
+/* The phone bottom sheet (wireframe tcx-sheet). */
 .sheet {
   position: absolute;
   inset-inline: 0;
@@ -15,7 +15,7 @@
 }
 
 .sheet[data-expanded] {
-  height: var(--pending-sheet-h);
+  height: var(--sheet-h);
 }
 
 .grab {
@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   padding: 0;
   border: 0;
   background-color: transparent;
@@ -67,7 +67,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   border-radius: var(--radius-md);
   color: var(--ink-secondary);
   font: var(--text-body);
@@ -118,7 +118,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-5);
-  min-height: var(--pending-touch-target);
+  min-height: var(--touch-target);
   padding-block: var(--space-3);
   border-bottom: 1px solid var(--border-subtle);
 }

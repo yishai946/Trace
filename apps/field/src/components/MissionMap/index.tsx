@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, stroke, typography } from '@trace/design';
 import type { LngLat } from '@trace/geo';
 import { buildMapStyle, iconId, ISRAEL_BOUNDS, mapIcons, type MapIconName, type MapReport } from '@trace/map';
 import { useMemo } from 'react';
@@ -7,7 +7,6 @@ import { SvgXml } from 'react-native-svg';
 import type { MissionArea } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
 import { loadMapLibre, mapProvider, mapTerrain as terrain } from '../../map/provider';
-import { pendingTokens } from '../../theme/pending';
 import { reportLabel } from './reportLabel';
 
 const mapLibre = loadMapLibre();
@@ -89,13 +88,13 @@ export function MissionMap({
           accessibilityRole="button"
           accessibilityLabel={label}
           accessibilityState={{ selected: report.id === selectedReportId }}
-          hitSlop={pendingTokens.touchTarget / 2}
+          hitSlop={size.touchTarget / 2}
           onPress={() => onPressReport?.(report.id)}
           style={[
             styles.report,
             report.id === selectedReportId && {
               borderColor: theme.color.accent,
-              borderWidth: pendingTokens.selectionRing,
+              borderWidth: stroke.strokeStrong,
             },
           ]}
         >

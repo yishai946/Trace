@@ -1,16 +1,16 @@
+import { size, stroke } from '@trace/design';
 import Svg, { Circle } from 'react-native-svg';
-import { pendingTokens } from '../theme/pending';
 
 /** The TRACE mark of Fm01: a ring around a dot. Decorative; the name next to it says what it is. */
 export function TraceMark({ color }: { color: string }) {
   return (
     <Svg
-      width={pendingTokens.brandMark}
-      height={pendingTokens.brandMark}
+      width={size.brandMark}
+      height={size.brandMark}
       viewBox="0 0 24 24"
       fill="none"
       stroke={color}
-      strokeWidth={pendingTokens.brandMarkStroke}
+      strokeWidth={stroke.strokeStrong}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       aria-hidden

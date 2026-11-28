@@ -204,8 +204,8 @@
 }
 
 .state svg {
-  width: var(--pending-icon-sm);
-  height: var(--pending-icon-sm);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .callButton {
@@ -228,8 +228,8 @@
 }
 
 .callButton svg {
-  width: var(--pending-icon-sm);
-  height: var(--pending-icon-sm);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .empty {

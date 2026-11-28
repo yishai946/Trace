@@ -257,7 +257,7 @@
 .changeBadge {
   display: inline-flex;
   align-items: center;
-  height: var(--pending-badge-h);
+  height: var(--badge-h);
   padding-inline: var(--space-3);
   border-radius: var(--radius-sm);
   background-color: var(--chip);

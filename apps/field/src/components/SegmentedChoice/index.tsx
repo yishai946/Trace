@@ -1,7 +1,6 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 export interface SegmentedChoiceProps<T extends string> {
   /** The group's name for screen readers; the form shows its own visible label above. */
@@ -57,7 +56,7 @@ const styles = StyleSheet.create({
   rail: { flexDirection: 'row', padding: spacing.space2, borderRadius: radius.radiusLg },
   option: {
     flex: 1,
-    minHeight: pendingTokens.touchTarget,
+    minHeight: size.touchTarget,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: radius.radiusMd,

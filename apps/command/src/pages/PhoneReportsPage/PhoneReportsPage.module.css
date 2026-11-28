@@ -35,7 +35,7 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   border-radius: var(--radius-md);
   color: var(--ink-secondary);
   font: var(--text-body);
@@ -70,10 +70,10 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   padding-inline: var(--space-7);
   border: 1px solid var(--border);
-  border-radius: calc(var(--pending-touch-target) / 2);
+  border-radius: calc(var(--touch-target) / 2);
   background-color: transparent;
   color: var(--ink-secondary);
   font: var(--text-body);
@@ -179,7 +179,7 @@
   flex: 0 0 auto;
   align-items: center;
   gap: var(--space-2);
-  height: var(--pending-badge-h);
+  height: var(--badge-h);
   padding-inline: var(--space-3);
   border-radius: var(--radius-sm);
   background-color: var(--chip);
@@ -194,8 +194,8 @@
 }
 
 .badge svg {
-  width: var(--pending-check-icon);
-  height: var(--pending-check-icon);
+  width: var(--check-icon);
+  height: var(--check-icon);
 }
 
 .strong {
@@ -223,8 +223,8 @@
 
 .thumb {
   display: block;
-  width: var(--pending-report-thumb-w);
-  height: var(--pending-report-thumb-h);
+  width: var(--report-thumb-w);
+  height: var(--report-thumb-h);
   border-radius: var(--radius-md);
   background-color: var(--surface-raised);
   object-fit: cover;

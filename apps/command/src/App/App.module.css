@@ -136,7 +136,7 @@
   position: absolute;
   inset: 0;
   background-color: var(--map-ground);
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   pointer-events: none;
 }
 

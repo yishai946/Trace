@@ -1,4 +1,4 @@
-import { spacing, typography } from '@trace/design';
+import { size, spacing, stroke, typography } from '@trace/design';
 import { Fragment } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../../theme';
@@ -37,7 +37,7 @@ export function Steps({ steps, current }: StepsProps) {
                 ]}
               >
                 {done ? (
-                  <Icon name="check" size={pendingTokens.stepIcon} color={color.inkSecondary} />
+                  <Icon name="check" size={size.checkIcon} color={color.inkSecondary} />
                 ) : (
                   <Text style={[typography.callsign, { color: on ? color.surface : color.inkMuted }]}>{i + 1}</Text>
                 )}
@@ -63,10 +63,10 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.space4 },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.space3 },
   marker: {
-    width: pendingTokens.stepMarker,
-    height: pendingTokens.stepMarker,
-    borderRadius: pendingTokens.stepMarker / 2,
-    borderWidth: pendingTokens.strongBorder,
+    width: size.stepMarker,
+    height: size.stepMarker,
+    borderRadius: size.stepMarker / 2,
+    borderWidth: stroke.strokeField,
     alignItems: 'center',
     justifyContent: 'center',
   },

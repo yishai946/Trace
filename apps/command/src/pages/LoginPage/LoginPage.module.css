@@ -88,8 +88,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--pending-login-mark);
-  height: var(--pending-login-mark);
+  width: var(--login-mark);
+  height: var(--login-mark);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background-color: var(--surface);
@@ -136,8 +136,8 @@
 
 .errorIcon {
   flex: 0 0 auto;
-  width: var(--pending-icon-size);
-  height: var(--pending-icon-size);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   margin-block-start: var(--space-1);
   color: var(--warning);
 }

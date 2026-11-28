@@ -37,7 +37,7 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   border-radius: var(--radius-md);
   color: var(--ink-secondary);
   font: var(--text-body);
@@ -129,7 +129,7 @@
 .detailLink {
   display: inline-flex;
   align-items: center;
-  min-height: var(--pending-touch-target);
+  min-height: var(--touch-target);
   color: var(--accent);
   cursor: pointer;
   outline: none;
@@ -163,7 +163,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  min-height: var(--pending-list-item-h);
+  min-height: var(--list-item-h);
   border-top: 1px solid var(--border-subtle);
 }
 
@@ -199,8 +199,8 @@
 }
 
 .state svg {
-  width: var(--pending-icon-sm);
-  height: var(--pending-icon-sm);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .empty {

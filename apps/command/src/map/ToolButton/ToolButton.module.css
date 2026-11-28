@@ -32,7 +32,7 @@
 }
 
 .tool[data-disabled] {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
 
@@ -43,8 +43,8 @@
 
 /* The larger map controls, such as the navigation column. */
 .large {
-  width: var(--pending-touch-target);
-  height: var(--pending-touch-target);
+  width: var(--touch-target);
+  height: var(--touch-target);
 }
 
 .large svg {
@@ -83,10 +83,10 @@
   white-space: nowrap;
 }
 
-/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px. */
 @media (width <= 768px) {
   .tool {
-    width: var(--pending-touch-target);
-    height: var(--pending-touch-target);
+    width: var(--touch-target);
+    height: var(--touch-target);
   }
 }

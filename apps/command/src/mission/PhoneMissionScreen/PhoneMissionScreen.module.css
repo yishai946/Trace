@@ -14,12 +14,12 @@
 /* MapLibre's attribution sits above the sheet, not under it. */
 .stage[data-sheet='expanded'] :global(.maplibregl-ctrl-bottom-left),
 .stage[data-sheet='expanded'] :global(.maplibregl-ctrl-bottom-right) {
-  bottom: min(var(--pending-sheet-h), 45%);
+  bottom: min(var(--sheet-h), 45%);
 }
 
 .stage[data-sheet='collapsed'] :global(.maplibregl-ctrl-bottom-left),
 .stage[data-sheet='collapsed'] :global(.maplibregl-ctrl-bottom-right) {
-  bottom: var(--pending-touch-target);
+  bottom: var(--touch-target);
 }
 
 /* The compact top bar: brand mark, mission selector, connection, then the icon actions. */
@@ -90,22 +90,22 @@
 
 /* A compact alert: a 44px button, padding space-4 on both sides and its border, then the column gap. */
 .stage[data-alerts='1'] {
-  --map-overlay-top: calc(var(--pending-touch-target) + var(--space-4) * 3 + 2px);
+  --map-overlay-top: calc(var(--touch-target) + var(--space-4) * 3 + 2px);
 }
 
 /* Two alerts stacked: the SOS alert, the critical report alert or the safety warning. */
 .stage[data-alerts='2'] {
-  --map-overlay-top: calc((var(--pending-touch-target) + var(--space-4) * 3 + 2px) * 2);
+  --map-overlay-top: calc((var(--touch-target) + var(--space-4) * 3 + 2px) * 2);
 }
 
 /* Three stacked. */
 .stage[data-alerts='3'] {
-  --map-overlay-top: calc((var(--pending-touch-target) + var(--space-4) * 3 + 2px) * 3);
+  --map-overlay-top: calc((var(--touch-target) + var(--space-4) * 3 + 2px) * 3);
 }
 
 /* All four: an active SOS, SOS that failed to reload, the critical report and the safety warning. */
 .stage[data-alerts='4'] {
-  --map-overlay-top: calc((var(--pending-touch-target) + var(--space-4) * 3 + 2px) * 4);
+  --map-overlay-top: calc((var(--touch-target) + var(--space-4) * 3 + 2px) * 4);
 }
 
 /* The SOS alert above the Reports and Messages screens: in the flow, so the screen takes the rest. */

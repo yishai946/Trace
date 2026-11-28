@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, stroke, typography } from '@trace/design';
 import type { Mission, OwnParticipation } from '@trace/schemas';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -7,7 +7,6 @@ import { ltr } from '../../i18n/rtl';
 import { NOT_UP_TO_DATE } from '../../mission/mapWarning';
 import { formatTime, toMissionArea } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { Badge } from '../Badge';
 import { Button } from '../Button';
 import { CallCommanderButton } from '../CallCommanderButton';
@@ -100,8 +99,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.radiusLg,
   },
-  status: { alignItems: 'center', borderWidth: pendingTokens.cardStrongBorder },
+  status: { alignItems: 'center', borderWidth: stroke.strokeStrong },
   person: { alignItems: 'flex-start' },
   grow: { flex: 1, gap: spacing.space1 },
-  map: { height: pendingTokens.waitingMapH, borderWidth: 1, borderRadius: radius.radiusXl, overflow: 'hidden' },
+  map: { height: size.mapPreviewH, borderWidth: 1, borderRadius: radius.radiusXl, overflow: 'hidden' },
 });

@@ -1,5 +1,4 @@
 import '@trace/design/tokens.css';
-import './theme/pending.css';
 import './global.css';
 import { reactErrorHandler } from '@sentry/react';
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';

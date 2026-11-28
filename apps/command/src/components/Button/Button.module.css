@@ -32,7 +32,7 @@
 }
 
 .button[data-disabled] {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: not-allowed;
   transform: none;
 }
@@ -66,7 +66,7 @@
 
 .primary[data-pressed],
 .danger[data-pressed] {
-  opacity: 0.8;
+  opacity: var(--opacity-pressed);
 }
 
 .primary[data-pressed] {
@@ -114,21 +114,21 @@
   height: 16px;
 }
 
-/* Phone (usePhoneLayout, 768px): every touch target is at least 44px (pending token). */
+/* Phone (usePhoneLayout, 768px): every touch target is at least 44px. */
 @media (width <= 768px) {
   .button,
   .sm {
-    height: var(--pending-touch-target);
+    height: var(--touch-target);
   }
 
   .icon {
-    width: var(--pending-touch-target);
+    width: var(--touch-target);
   }
 }
 
 /* Large: phone login inputs and primary actions (wireframe .tc-btn--lg). */
 .lg {
-  height: var(--pending-control-lg-h);
+  height: var(--control-h-lg);
   padding-inline: var(--space-7);
   font: var(--text-title);
 }

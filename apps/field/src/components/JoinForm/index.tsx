@@ -1,4 +1,4 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, stroke, typography } from '@trace/design';
 import { isJoinCode, isMissionEnded, joinCodeFromLink } from '@trace/domain';
 import type { JoinPreview } from '@trace/schemas';
 import { useState } from 'react';
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   rule: { flex: 1, height: StyleSheet.hairlineWidth },
   field: { gap: spacing.space2 },
   input: {
-    minHeight: pendingTokens.controlHLg,
+    minHeight: size.controlHLg,
     paddingHorizontal: spacing.space5,
     borderWidth: 1,
     borderRadius: radius.radiusMd,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   code: {
     fontFamily: typography.bodyStrong.fontFamily,
     fontWeight: typography.callsign.fontWeight,
-    fontSize: pendingTokens.joinCodeSize,
+    fontSize: typography.code.fontSize,
     letterSpacing: pendingTokens.joinCodeSpacing,
     textAlign: 'center',
     writingDirection: 'ltr',
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   card: {
     gap: spacing.space2,
     padding: spacing.space6,
-    borderWidth: pendingTokens.cardStrongBorder,
+    borderWidth: stroke.strokeStrong,
     borderRadius: radius.radiusLg,
   },
 });

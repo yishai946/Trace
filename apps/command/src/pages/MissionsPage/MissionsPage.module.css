@@ -252,7 +252,7 @@
 .search.phoneSearch {
   flex: none;
   width: 100%;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
   margin-inline-start: 0;
 }
 
@@ -263,7 +263,7 @@
 .phoneTab {
   flex: 1;
   justify-content: center;
-  height: var(--pending-touch-target);
+  height: var(--touch-target);
 }
 
 .phoneBody {

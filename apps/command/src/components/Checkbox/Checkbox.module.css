@@ -19,7 +19,7 @@
 }
 
 .check[data-disabled] {
-  opacity: 0.45;
+  opacity: var(--opacity-disabled);
   cursor: default;
 }
 
@@ -28,15 +28,15 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: var(--pending-checkbox);
-  height: var(--pending-checkbox);
+  width: var(--checkbox);
+  height: var(--checkbox);
   border: 1px solid var(--ink-muted);
   border-radius: var(--radius-sm);
 }
 
 .box svg {
-  width: var(--pending-check-icon);
-  height: var(--pending-check-icon);
+  width: var(--check-icon);
+  height: var(--check-icon);
   visibility: hidden;
 }
 

@@ -1,5 +1,5 @@
+import { size as sizes, stroke } from '@trace/design';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { pendingTokens } from '../theme/pending';
 
 /** Line icons drawn in the Trace Wireframes; the design system has no icon library yet. */
 const icons = {
@@ -84,7 +84,7 @@ export function Icon({
   /** Overrides the 16px and 20px sizes, e.g. the 12px check of a done step. */
   size?: number;
 }) {
-  const size = sizeOverride ?? (large ? pendingTokens.iconLg : pendingTokens.icon);
+  const size = sizeOverride ?? (large ? sizes.iconLg : sizes.iconSm);
   return (
     <Svg
       width={size}
@@ -92,7 +92,7 @@ export function Icon({
       viewBox="0 0 24 24"
       fill={name === 'more' ? color : 'none'}
       stroke={color}
-      strokeWidth={pendingTokens.iconStroke}
+      strokeWidth={stroke.strokeIcon}
       strokeLinecap="round"
       strokeLinejoin="round"
       accessibilityElementsHidden

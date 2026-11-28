@@ -1,10 +1,9 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, typography } from '@trace/design';
 import type { LngLat } from '@trace/geo';
 import { StyleSheet, Text, View } from 'react-native';
 import type { MissionArea } from '../../mission/missionArea';
 import type { LocationMode } from '../../sightings/draft';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { FieldError } from '../FieldError';
 import { MissionMap } from '../MissionMap';
 import { SegmentedChoice } from '../SegmentedChoice';
@@ -52,7 +51,7 @@ export function SightingLocation({ mode, onModeChange, position, meta, area, onP
 const styles = StyleSheet.create({
   group: { gap: spacing.space2 },
   map: {
-    height: pendingTokens.sightingMapH,
+    height: size.minimapH,
     marginTop: spacing.space4,
     borderRadius: radius.radiusLg,
     borderWidth: 1,

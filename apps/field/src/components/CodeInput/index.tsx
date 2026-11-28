@@ -1,9 +1,8 @@
-import { radius, spacing, typography } from '@trace/design';
+import { radius, size, spacing, stroke, typography } from '@trace/design';
 import { OTP_LENGTH } from '@trace/schemas';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 
 export interface CodeInputProps {
   /** The digits typed so far. */
@@ -59,8 +58,8 @@ export function CodeInput({
                   },
                   next && {
                     outlineStyle: 'solid',
-                    outlineWidth: pendingTokens.focusRing,
-                    outlineOffset: pendingTokens.focusRing,
+                    outlineWidth: stroke.strokeStrong,
+                    outlineOffset: stroke.strokeStrong,
                     outlineColor: color.focus,
                   },
                 ]}
@@ -96,16 +95,16 @@ const styles = StyleSheet.create({
   cells: { direction: 'ltr', flexDirection: 'row', gap: spacing.space4 },
   cell: {
     flex: 1,
-    height: pendingTokens.otpCellH,
+    height: size.otpCellH,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: pendingTokens.strongBorder,
+    borderWidth: stroke.strokeField,
     borderRadius: radius.radiusLg,
   },
   digit: {
     fontFamily: typography.title.fontFamily,
     fontWeight: typography.callsign.fontWeight,
-    fontSize: pendingTokens.otpDigitSize,
+    fontSize: typography.otp.fontSize,
   },
   input: { ...StyleSheet.absoluteFill, opacity: 0 },
 });

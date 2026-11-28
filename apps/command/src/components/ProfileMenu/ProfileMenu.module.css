@@ -126,8 +126,8 @@
 }
 
 .grab {
-  width: var(--pending-grab-w);
-  height: var(--pending-grab-h);
+  width: var(--grab-w);
+  height: var(--grab-h);
   margin-block: var(--space-4);
   margin-inline: auto;
   border-radius: var(--radius-xl);
@@ -136,12 +136,12 @@
 
 @media (width <= 768px) {
   .avatar:not([data-static]) {
-    width: var(--pending-touch-target);
-    height: var(--pending-touch-target);
+    width: var(--touch-target);
+    height: var(--touch-target);
   }
 
   .signOut.signOut {
     justify-content: center;
-    height: var(--pending-control-lg-h);
+    height: var(--control-h-lg);
   }
 }

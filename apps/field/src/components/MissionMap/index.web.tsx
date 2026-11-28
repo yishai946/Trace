@@ -1,9 +1,8 @@
-import { spacing, typography } from '@trace/design';
+import { size, spacing, typography } from '@trace/design';
 import type { LngLat } from '@trace/geo';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { MissionArea } from '../../mission/missionArea';
 import { useTheme } from '../../theme';
-import { pendingTokens } from '../../theme/pending';
 import { reportLabel } from './reportLabel';
 
 export interface MissionMapProps {
@@ -64,6 +63,6 @@ export function MissionMap({
 }
 
 const styles = StyleSheet.create({
-  report: { minHeight: pendingTokens.touchTarget, justifyContent: 'center' },
+  report: { minHeight: size.touchTarget, justifyContent: 'center' },
   fill: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.space2, padding: spacing.space7 },
 });
