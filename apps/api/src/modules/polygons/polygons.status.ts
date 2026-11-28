@@ -20,11 +20,15 @@ const OPEN_TASKS = ['ready', 'searching', 'paused'] as const;
 const completedMessage = (polygonName: string) =>
   `הפוליגון "${polygonName}" סומן כהושלם. משימת החיפוש שלך הסתיימה. המתן להנחיות המפקד.`;
 
+const restartedMessage = (polygonName: string) =>
+  `הפוליגון "${polygonName}" חזר לפעיל. משימת החיפוש שלך חודשה. המתן להנחיות המפקד.`;
+
 /**
  * Marks a polygon Completed at any Coverage, or returns a Completed one to Active (UC-C07, decisions 56, 57, 90).
  * Completed with active searchers is refused with their list until the commander confirms; on confirmation their tasks
  * finish, they stay assigned (decision 100) and get an important message. Back to Active changes only the status:
- * routes and Coverage stay and go on accumulating. Asking for the status the polygon already has changes nothing.
+ * routes and Coverage stay and go on accumulating; with `restartSearchers` the assigned searchers' finished tasks go back
+ * to ready and they get an important message (issue #346). Asking for the status the polygon already has changes nothing.
  */
 export async function setPolygonStatus(
   deps: ServiceDeps,
@@ -38,7 +42,7 @@ export async function setPolygonStatus(
     if (change === 'refused') {
       throw new AppError(409, 'INVALID_STATUS_CHANGE', 'Only a Completed polygon can return to Active');
     }
-    if (change === 'unchanged') return { polygon: toPolygon(existing), finishedIds: [], stored: null, event: null };
+    if (change === 'unchanged') return { polygon: toPolygon(existing), changedIds: [], stored: null, event: null };
 
     const open =
       input.status === 'completed'
@@ -67,21 +71,41 @@ export async function setPolygonStatus(
       throw new AppError(409, 'POLYGON_SEARCHERS_ACTIVE', 'The polygon has active searchers', details);
     }
 
+    const restartIds =
+      input.status === 'active' && input.restartSearchers
+        ? (
+            await tx
+              .select({ id: participations.id })
+              .from(participations)
+              .where(
+                and(
+                  eq(participations.polygonId, polygonId),
+                  eq(participations.status, 'assigned'),
+                  eq(participations.taskStatus, 'finished'),
+                ),
+              )
+              .for('update')
+          ).map((participation) => participation.id)
+        : [];
     await tx.update(polygons).set({ status: input.status }).where(eq(polygons.id, polygonId));
     const finishedIds = open.map((participation) => participation.id);
+    const changedIds = [...finishedIds, ...restartIds];
     if (finishedIds.length > 0) {
       await tx.update(participations).set({ taskStatus: 'finished' }).where(inArray(participations.id, finishedIds));
     }
+    if (restartIds.length > 0) {
+      await tx.update(participations).set({ taskStatus: 'ready' }).where(inArray(participations.id, restartIds));
+    }
     const stored =
-      finishedIds.length === 0
+      changedIds.length === 0
         ? null
         : await storeMessage(tx, {
             missionId,
             sentBy: actor.userId,
             urgency: 'important',
-            body: completedMessage(existing.name),
+            body: input.status === 'completed' ? completedMessage(existing.name) : restartedMessage(existing.name),
             target: { kind: 'polygons', polygonIds: [polygonId] },
-            recipientIds: finishedIds,
+            recipientIds: changedIds,
           });
     const event = await recordEvent(tx, {
       missionId,
@@ -91,11 +115,11 @@ export async function setPolygonStatus(
         ? ({ type: 'polygon.completed', details: { endedTasks: finishedIds.length } } as const)
         : ({ type: 'polygon.reactivated', details: {} } as const)),
     });
-    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), finishedIds, stored, event };
+    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), changedIds, stored, event };
   });
 
   realtime.publish({ type: 'polygon.saved', missionId, polygon: result.polygon });
-  for (const id of result.finishedIds) {
+  for (const id of result.changedIds) {
     const participant = await findParticipant(deps, missionId, id);
     if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
   }

@@ -28,7 +28,7 @@ interface PolygonInspectorProps {
   onEditBoundary: () => void;
   onDelete: () => void;
   /** Completed or back to Active; `confirmed` once the commander accepted the active-searchers warning. */
-  onSetStatus: (status: 'active' | 'completed', confirmed: boolean) => void;
+  onSetStatus: (status: 'active' | 'completed', confirmed: boolean, restartSearchers?: boolean) => void;
 }
 
 /** Trace Console Inspector for a selected polygon (Cd07): name, coverage, assigned searchers and actions. */
@@ -113,6 +113,7 @@ export function PolygonInspector({
             status={polygon.status}
             polygonName={polygon.name}
             activeSearchers={assigned.filter(hasOpenTask).length}
+            finishedSearchers={assigned.filter((p) => p.taskStatus === 'finished').length}
             busy={busy}
             onSetStatus={onSetStatus}
           />

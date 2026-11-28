@@ -130,6 +130,21 @@ describe('PolygonInspector', () => {
       expect(h.onSetStatus).toHaveBeenCalledWith('active', false);
     });
 
+    it('offers to restart the finished searchers when returning to Active', () => {
+      const h = handlers();
+      const completed = { ...polygonB, status: 'completed' as const };
+      const done = { ...participants[0]!, taskStatus: 'finished' as const };
+      render(<PolygonInspector polygon={completed} assigned={[done]} canEdit busy={false} error={null} {...h} />);
+      fireEvent.click(screen.getByRole('button', { name: 'החזר לפעיל והפעל מחדש משימה של מחפש אחד' }));
+      expect(h.onSetStatus).toHaveBeenCalledWith('active', false, true);
+    });
+
+    it('offers no restart when no searcher has a finished task', () => {
+      const completed = { ...polygonB, status: 'completed' as const };
+      render(<PolygonInspector polygon={completed} assigned={[]} canEdit busy={false} error={null} {...handlers()} />);
+      expect(screen.queryByRole('button', { name: /הפעל מחדש/ })).toBeNull();
+    });
+
     it('offers no status change when the mission is not active', () => {
       render(
         <PolygonInspector polygon={polygonB} assigned={[]} canEdit={false} busy={false} error={null} {...handlers()} />,

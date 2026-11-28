@@ -8,12 +8,21 @@ interface StatusActionsProps {
   polygonName: string;
   /** Assigned searchers whose search task is still open: Completed ends their tasks. */
   activeSearchers: number;
+  /** Assigned searchers whose task is finished: returning to Active can restart them. */
+  finishedSearchers: number;
   busy: boolean;
-  onSetStatus: (status: 'active' | 'completed', confirmed: boolean) => void;
+  onSetStatus: (status: 'active' | 'completed', confirmed: boolean, restartSearchers?: boolean) => void;
 }
 
 /** Marks a polygon Completed at any Coverage, with a warning when searchers are active, or returns it to Active. */
-export function StatusActions({ status, polygonName, activeSearchers, busy, onSetStatus }: StatusActionsProps) {
+export function StatusActions({
+  status,
+  polygonName,
+  activeSearchers,
+  finishedSearchers,
+  busy,
+  onSetStatus,
+}: StatusActionsProps) {
   const [confirming, setConfirming] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -39,6 +48,13 @@ export function StatusActions({ status, polygonName, activeSearchers, busy, onSe
         <Button onPress={() => onSetStatus('active', false)} isDisabled={busy}>
           החזר לפעיל
         </Button>
+        {finishedSearchers > 0 && (
+          <Button onPress={() => onSetStatus('active', false, true)} isDisabled={busy}>
+            {finishedSearchers === 1
+              ? 'החזר לפעיל והפעל מחדש משימה של מחפש אחד'
+              : `החזר לפעיל והפעל מחדש משימות של ${finishedSearchers} מחפשים`}
+          </Button>
+        )}
         <p className={styles.hint}>הפוליגון הושלם. המסלולים והכיסוי נשמרים וממשיכים להצטבר.</p>
       </>
     );

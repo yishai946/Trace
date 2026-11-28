@@ -103,10 +103,10 @@ export function usePolygonEdit({ missionId, polygons, participants }: PolygonEdi
       if (!selected) return;
       mutations.update.mutate({ polygonId: selected.id, name }, { onSuccess: () => setError(null), onError: fail });
     },
-    setStatus: (status: 'active' | 'completed', confirmActiveSearchers: boolean) => {
+    setStatus: (status: 'active' | 'completed', confirmActiveSearchers: boolean, restartSearchers = false) => {
       if (!selected) return;
       mutations.setStatus.mutate(
-        { polygonId: selected.id, status, confirmActiveSearchers },
+        { polygonId: selected.id, status, confirmActiveSearchers, restartSearchers },
         { onSuccess: () => setError(null), onError: fail },
       );
     },
