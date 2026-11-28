@@ -257,6 +257,21 @@ describe('polygon status (UC-C07)', () => {
     expect((await timeline()).map((e) => e.type)).toEqual(['polygon.completed', 'polygon.reactivated']);
   });
 
+  it('records one Back to Active when two searchers are assigned to a Completed polygon at once', async () => {
+    const a = await create();
+    await setStatus(a.id, { status: 'completed' });
+    const first = await addParticipant(ctx.db, { missionId, callsign: 4 });
+    const second = await addParticipant(ctx.db, { missionId, callsign: 5 });
+    const assign = (id: string) =>
+      inject({
+        method: 'PUT',
+        url: `/api/missions/${missionId}/participants/${id}/assignment`,
+        payload: { polygonId: a.id },
+      });
+    await Promise.all([assign(first), assign(second)]);
+    expect((await timeline()).map((e) => e.type)).toEqual(['polygon.completed', 'polygon.reactivated']);
+  });
+
   it('records nothing for a refused or repeated change', async () => {
     const a = await create();
     await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });

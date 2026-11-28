@@ -141,8 +141,16 @@ export async function assignParticipant(
       .where(eq(participations.id, participation.id));
     // Assigning to a Completed polygon brings it back to Active (decision 57); an Active one stays as it is.
     if (polygon.status === 'active') return null;
-    await tx.update(polygons).set({ status: 'active' }).where(eq(polygons.id, polygon.id));
-    if (polygon.status !== 'completed') return { polygonId: polygon.id, event: null };
+    // Concurrent assignments both read Completed: only the update that changes it records the return.
+    const [reactivated] = await tx
+      .update(polygons)
+      .set({ status: 'active' })
+      .where(and(eq(polygons.id, polygon.id), eq(polygons.status, 'completed')))
+      .returning({ id: polygons.id });
+    if (!reactivated) {
+      await tx.update(polygons).set({ status: 'active' }).where(eq(polygons.id, polygon.id));
+      return { polygonId: polygon.id, event: null };
+    }
     const event = await recordEvent(tx, {
       missionId: input.missionId,
       actor: { role: 'commander', userId: input.commanderId },
