@@ -197,4 +197,21 @@ describe('polygon status (UC-C07)', () => {
     const [row] = await ctx.db.select({ status: polygons.status }).from(polygons).where(eq(polygons.id, a.id));
     expect(row?.status).toBe('active');
   });
+
+  it('stops counting a finished searcher as active, so a Completed polygon can be deleted', async () => {
+    const a = await create();
+    await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });
+    await addParticipant(ctx.db, { missionId, callsign: 5, polygonId: a.id, taskStatus: 'finished' });
+    const count = async () => {
+      const list = MissionPolygonList.parse(
+        (await inject({ method: 'GET', url: `/api/missions/${missionId}/polygons` })).json(),
+      );
+      return list[0]?.activeSearchers;
+    };
+    expect(await count()).toBe(1);
+    await setStatus(a.id, { status: 'completed', confirmActiveSearchers: true });
+    expect(await count()).toBe(0);
+    const del = await inject({ method: 'DELETE', url: `/api/missions/${missionId}/polygons/${a.id}` });
+    expect(del.statusCode).toBe(204);
+  });
 });

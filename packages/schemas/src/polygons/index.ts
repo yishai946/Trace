@@ -17,7 +17,7 @@ export const MissionPolygon = z
     status: PolygonStatus,
     /** Coverage estimate in percent, computed from search routes; null before any searching. Never set by hand. */
     coverage: z.number().min(0).max(100).nullable(),
-    /** Searchers assigned to the polygon. While above zero the polygon cannot be deleted. */
+    /** Assigned searchers whose search task is still open (not finished). While above zero the polygon cannot be deleted. */
     activeSearchers: z.number().int().min(0),
     geometry: PolygonGeometry,
     createdAt: IsoDateTime,

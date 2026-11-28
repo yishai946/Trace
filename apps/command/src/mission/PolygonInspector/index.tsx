@@ -92,7 +92,7 @@ export function PolygonInspector({
             <dd>{polygon.coverage === null ? 'טרם חושב' : `${Math.round(polygon.coverage)}%`}</dd>
           </div>
           <div>
-            <dt>מחפשים משובצים</dt>
+            <dt>מחפשים פעילים</dt>
             <dd>{polygon.activeSearchers}</dd>
           </div>
         </dl>
