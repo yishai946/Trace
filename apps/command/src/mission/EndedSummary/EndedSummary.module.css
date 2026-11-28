@@ -146,3 +146,11 @@
   gap: var(--space-4);
   font: var(--text-body);
 }
+
+.range {
+  display: block;
+  color: var(--ink-muted);
+  font: var(--text-meta);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

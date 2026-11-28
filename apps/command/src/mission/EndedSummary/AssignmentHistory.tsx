@@ -30,7 +30,7 @@ export function AssignmentHistory({ assignments, onOpenSearcher }: AssignmentHis
               <CallsignChip callsign={a.callsign} state="normal" />
               <span>
                 {a.name}, {a.polygonName}
-                <span className={styles.time}> {range(a)}</span>
+                <bdi className={styles.range}>{range(a)}</bdi>
               </span>
               <Button
                 variant="secondary"
