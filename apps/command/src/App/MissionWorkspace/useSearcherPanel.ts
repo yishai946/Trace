@@ -22,6 +22,8 @@ export function useSearcherPanel({ missionId, searcherId, participants, polygons
   const positions = useMemo<LngLat[]>(() => track.data?.points.map((p) => p.position) ?? [], [track.data]);
   return {
     searcher,
+    /** The mission ended: the position and battery are the last known, not current. */
+    historical: !!missionEnded,
     polygonName: polygons.find((p) => p.id === searcher?.polygonId)?.name ?? null,
     positions,
     /** The route the map draws: the open searcher's, or none. */

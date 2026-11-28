@@ -1,7 +1,7 @@
 import type { AssignmentRecord } from '@trace/schemas';
 import { Button } from '../../components/Button';
 import { CallsignChip } from '../../components/CallsignChip';
-import { formatEventTime } from '../timelineEvent';
+import { formatEventTime, spansDaysOf } from '../timelineEvent';
 import styles from './EndedSummary.module.css';
 
 interface AssignmentHistoryProps {
@@ -13,9 +13,11 @@ interface AssignmentHistoryProps {
 
 /** Who searched where and when (decision 53), with a way to see each searcher's GPS route. */
 export function AssignmentHistory({ assignments, onOpenSearcher }: AssignmentHistoryProps) {
-  const withDate = assignments?.some((a) => a.assignedAt.slice(0, 10) !== assignments[0]?.assignedAt.slice(0, 10));
+  const withDate = spansDaysOf(
+    (assignments ?? []).flatMap((a) => (a.endedAt ? [a.assignedAt, a.endedAt] : [a.assignedAt])),
+  );
   const range = (a: AssignmentRecord) =>
-    `${formatEventTime(a.assignedAt, withDate ?? false)} – ${a.endedAt ? formatEventTime(a.endedAt, withDate ?? false) : 'עד סוף המסע'}`;
+    `${formatEventTime(a.assignedAt, withDate)} – ${a.endedAt ? formatEventTime(a.endedAt, withDate) : 'עד סוף המסע'}`;
   return (
     <section className={styles.section} aria-label="היסטוריית שיבוץ">
       <p className={styles.label}>היסטוריית שיבוץ ומסלולים</p>

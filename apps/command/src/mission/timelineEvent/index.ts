@@ -35,6 +35,11 @@ export function formatEventTime(iso: string, withDate: boolean): string {
   return withDate ? `${dayMonth.format(date)}, ${time.format(date)}` : time.format(date);
 }
 
+/** Whether the given moments fall on more than one day in Israel. */
+export function spansDaysOf(isoTimes: string[]): boolean {
+  return new Set(isoTimes.map((iso) => dayKey.format(new Date(iso)))).size > 1;
+}
+
 /** Whether the first and last events fall on different days in Israel. Events are in either order. */
 export function spansDays(events: TimelineEvent[]): boolean {
   const first = events[0];
