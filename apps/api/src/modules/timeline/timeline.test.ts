@@ -269,6 +269,20 @@ describe('timeline', () => {
           subject: subject('polygon'),
           details: {},
         },
+        'polygon.completed': {
+          missionId,
+          actor: byCommander,
+          type: 'polygon.completed',
+          subject: subject('polygon'),
+          details: { endedTasks: 1 },
+        },
+        'polygon.reactivated': {
+          missionId,
+          actor: byCommander,
+          type: 'polygon.reactivated',
+          subject: subject('polygon'),
+          details: {},
+        },
         'search.started': {
           missionId,
           actor: bySearcher,

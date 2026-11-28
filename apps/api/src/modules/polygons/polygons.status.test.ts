@@ -5,6 +5,7 @@ import {
   MessageList,
   MissionPolygon,
   MissionPolygonList,
+  TimelineEventList,
 } from '@trace/schemas';
 import type { Polygon } from 'geojson';
 import { eq } from 'drizzle-orm';
@@ -64,6 +65,12 @@ describe('polygon status (UC-C07)', () => {
   const messages = async () => {
     const res = await inject({ method: 'GET', url: `/api/missions/${missionId}/messages` });
     return MessageList.parse(res.json());
+  };
+  const timeline = async () => {
+    const res = await inject({ method: 'GET', url: `/api/missions/${missionId}/timeline` });
+    return TimelineEventList.parse(res.json()).filter(
+      (e) => e.type.startsWith('polygon.') && e.type !== 'polygon.created',
+    );
   };
   const taskOf = async (participationId: string) => {
     const [row] = await ctx.db
@@ -213,5 +220,66 @@ describe('polygon status (UC-C07)', () => {
     expect(await count()).toBe(0);
     const del = await inject({ method: 'DELETE', url: `/api/missions/${missionId}/polygons/${a.id}` });
     expect(del.statusCode).toBe(204);
+  });
+
+  it('records Completed on the Timeline with the commander, the polygon and how many tasks ended', async () => {
+    const a = await create();
+    await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });
+    await addParticipant(ctx.db, { missionId, callsign: 5, polygonId: a.id, taskStatus: 'paused' });
+    await addParticipant(ctx.db, { missionId, callsign: 6, polygonId: a.id, taskStatus: 'finished' });
+    await setStatus(a.id, { status: 'completed', confirmActiveSearchers: true });
+    expect(await timeline()).toMatchObject([
+      {
+        type: 'polygon.completed',
+        actor: { kind: 'commander' },
+        subject: { kind: 'polygon', id: a.id, label: 'ואדי' },
+        details: { endedTasks: 2 },
+      },
+    ]);
+  });
+
+  it('records Back to Active on the Timeline', async () => {
+    const a = await create();
+    await setStatus(a.id, { status: 'completed' });
+    await setStatus(a.id, { status: 'active' });
+    expect((await timeline()).map((e) => e.type)).toEqual(['polygon.completed', 'polygon.reactivated']);
+  });
+
+  it('records Back to Active when an assignment brings a Completed polygon back', async () => {
+    const a = await create();
+    await setStatus(a.id, { status: 'completed' });
+    const searcher = await addParticipant(ctx.db, { missionId, callsign: 4 });
+    await inject({
+      method: 'PUT',
+      url: `/api/missions/${missionId}/participants/${searcher}/assignment`,
+      payload: { polygonId: a.id },
+    });
+    expect((await timeline()).map((e) => e.type)).toEqual(['polygon.completed', 'polygon.reactivated']);
+  });
+
+  it('records one Back to Active when two searchers are assigned to a Completed polygon at once', async () => {
+    const a = await create();
+    await setStatus(a.id, { status: 'completed' });
+    const first = await addParticipant(ctx.db, { missionId, callsign: 4 });
+    const second = await addParticipant(ctx.db, { missionId, callsign: 5 });
+    const assign = (id: string) =>
+      inject({
+        method: 'PUT',
+        url: `/api/missions/${missionId}/participants/${id}/assignment`,
+        payload: { polygonId: a.id },
+      });
+    await Promise.all([assign(first), assign(second)]);
+    expect((await timeline()).map((e) => e.type)).toEqual(['polygon.completed', 'polygon.reactivated']);
+  });
+
+  it('records nothing for a refused or repeated change', async () => {
+    const a = await create();
+    await addParticipant(ctx.db, { missionId, callsign: 4, polygonId: a.id });
+    await setStatus(a.id, { status: 'completed' });
+    await setStatus(a.id, { status: 'active' });
+    expect(await timeline()).toHaveLength(0);
+    await setStatus(a.id, { status: 'completed', confirmActiveSearchers: true });
+    await setStatus(a.id, { status: 'completed' });
+    expect(await timeline()).toHaveLength(1);
   });
 });

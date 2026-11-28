@@ -92,8 +92,9 @@ export async function assignParticipant(
   { db, realtime }: ServiceDeps,
   input: { missionId: string; participantId: string; polygonId: string; commanderId: string },
 ): Promise<Participant> {
-  // The polygon that became active with its first searcher, to send to the mission.
-  const activatedPolygonId = await db.transaction(async (tx) => {
+  // The polygon that became active with its first searcher, to send to the mission, and the Timeline event of a
+  // Completed one coming back.
+  const activated = await db.transaction(async (tx) => {
     // Shared lock: polygon deletes and boundary changes lock the mission for update, so they wait for this assignment
     // (and it for them); assignments in parallel do not block one another.
     const [mission] = await tx
@@ -115,7 +116,7 @@ export async function assignParticipant(
     }
 
     const [polygon] = await tx
-      .select({ id: polygons.id, status: polygons.status })
+      .select({ id: polygons.id, name: polygons.name, status: polygons.status })
       .from(polygons)
       .where(
         and(eq(polygons.id, input.polygonId), eq(polygons.missionId, input.missionId), isNull(polygons.deletedAt)),
@@ -140,16 +141,33 @@ export async function assignParticipant(
       .where(eq(participations.id, participation.id));
     // Assigning to a Completed polygon brings it back to Active (decision 57); an Active one stays as it is.
     if (polygon.status === 'active') return null;
-    await tx.update(polygons).set({ status: 'active' }).where(eq(polygons.id, polygon.id));
-    return polygon.id;
+    // Concurrent assignments both read Completed: only the update that changes it records the return.
+    const [reactivated] = await tx
+      .update(polygons)
+      .set({ status: 'active' })
+      .where(and(eq(polygons.id, polygon.id), eq(polygons.status, 'completed')))
+      .returning({ id: polygons.id });
+    if (!reactivated) {
+      await tx.update(polygons).set({ status: 'active' }).where(eq(polygons.id, polygon.id));
+      return { polygonId: polygon.id, event: null };
+    }
+    const event = await recordEvent(tx, {
+      missionId: input.missionId,
+      actor: { role: 'commander', userId: input.commanderId },
+      type: 'polygon.reactivated',
+      subject: { kind: 'polygon', id: polygon.id, label: polygon.name },
+      details: {},
+    });
+    return { polygonId: polygon.id, event };
   });
 
   const participant = await findParticipant({ db, realtime }, input.missionId, input.participantId);
   if (!participant) throw notFound('Searcher');
   realtime.publish({ type: 'participant.updated', missionId: input.missionId, participant });
-  const polygon =
-    activatedPolygonId && (await listPolygons(db, input.missionId)).find((p) => p.id === activatedPolygonId);
+  const polygon = activated && (await listPolygons(db, input.missionId)).find((p) => p.id === activated.polygonId);
   if (polygon) realtime.publish({ type: 'polygon.saved', missionId: input.missionId, polygon });
+  if (activated?.event)
+    realtime.publish({ type: 'timeline.recorded', missionId: input.missionId, event: activated.event });
   return participant;
 }
 

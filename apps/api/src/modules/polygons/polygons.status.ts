@@ -5,6 +5,7 @@ import type { z } from 'zod';
 import type { Actor } from '../../auth/auth.plugin';
 import { participations, polygons, searchers } from '../../db/schema';
 import { AppError } from '../../errors';
+import { recordEvent } from '../timeline/timeline.service';
 import { publishMessage, storeMessage } from '../messages/messages.service';
 import { findParticipant } from '../participants/participants.read';
 import type { ServiceDeps } from '../serviceDeps';
@@ -37,7 +38,7 @@ export async function setPolygonStatus(
     if (change === 'refused') {
       throw new AppError(409, 'INVALID_STATUS_CHANGE', 'Only a Completed polygon can return to Active');
     }
-    if (change === 'unchanged') return { polygon: toPolygon(existing), finishedIds: [], stored: null };
+    if (change === 'unchanged') return { polygon: toPolygon(existing), finishedIds: [], stored: null, event: null };
 
     const open =
       input.status === 'completed'
@@ -82,7 +83,15 @@ export async function setPolygonStatus(
             target: { kind: 'polygons', polygonIds: [polygonId] },
             recipientIds: finishedIds,
           });
-    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), finishedIds, stored };
+    const event = await recordEvent(tx, {
+      missionId,
+      actor,
+      subject: { kind: 'polygon', id: polygonId, label: existing.name },
+      ...(input.status === 'completed'
+        ? ({ type: 'polygon.completed', details: { endedTasks: finishedIds.length } } as const)
+        : ({ type: 'polygon.reactivated', details: {} } as const)),
+    });
+    return { polygon: toPolygon(await findPolygon(tx, missionId, polygonId)), finishedIds, stored, event };
   });
 
   realtime.publish({ type: 'polygon.saved', missionId, polygon: result.polygon });
@@ -91,5 +100,6 @@ export async function setPolygonStatus(
     if (participant) realtime.publish({ type: 'participant.updated', missionId, participant });
   }
   if (result.stored) publishMessage(deps, missionId, result.stored);
+  if (result.event) realtime.publish({ type: 'timeline.recorded', missionId, event: result.event });
   return result.polygon;
 }

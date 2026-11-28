@@ -27,6 +27,21 @@ describe('describeEvent', () => {
     expect(text(eventSamples['polygon.deleted'])).toBe('פוליגון 2 נמחק מהמפה');
   });
 
+  it('words a polygon marked Completed, with the tasks that ended, and its return to Active', () => {
+    expect(text(eventSamples['polygon.completed'])).toBe('ואדי צפוני סומן כהושלם, 2 משימות חיפוש הסתיימו');
+    const withTasks = (endedTasks: number): TimelineEvent => ({
+      ...eventSamples['polygon.completed'],
+      type: 'polygon.completed',
+      details: { endedTasks },
+    });
+    expect(text(withTasks(1))).toBe('ואדי צפוני סומן כהושלם, משימת חיפוש אחת הסתיימה');
+    expect(text(withTasks(0))).toBe('ואדי צפוני סומן כהושלם');
+    expect(text(eventSamples['polygon.reactivated'])).toBe('ואדי צפוני הוחזר לפעיל');
+    expect(describeEvent(eventSamples['polygon.completed'])).toMatchObject({ badge: 'פוליגון', destination: null });
+    expect(CATEGORY_OF['polygon.completed']).toBe('search');
+    expect(CATEGORY_OF['polygon.reactivated']).toBe('search');
+  });
+
   it('words a change of the mission details by what changed, with no destination', () => {
     const view = describeEvent(eventSamples['mission.details_changed']);
     expect(view).toMatchObject({ badge: 'פרטי מסע', danger: false, destination: null });
