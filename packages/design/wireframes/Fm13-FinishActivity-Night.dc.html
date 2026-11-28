@@ -24,7 +24,7 @@ html,body{margin:0;overflow-x:clip}
 .tcx-msg__foot svg{width:14px;height:14px}
 .tcx-badge--ink{background:var(--primary);color:var(--on-primary)}
 .tcx-badge--outline{background:transparent;color:var(--ink);border:1px solid var(--ink-muted)}
-.tcx-badge svg{width:14px;height:14px}
+.tc-badge svg{width:14px;height:14px}
 .tcx-foot{flex:0 0 auto;display:flex;flex-direction:column;gap:var(--space-4);padding:var(--space-6) 16px;background:var(--surface);border-top:1px solid var(--border)}
 .tcx-sosring{position:relative;width:248px;height:248px;margin:0 auto;display:flex;align-items:center;justify-content:center}
 .tcx-sosring svg{position:absolute;inset:0;width:100%;height:100%}
@@ -32,8 +32,8 @@ html,body{margin:0;overflow-x:clip}
 .tc .tcx-sosbtn:hover{background:var(--danger);opacity:.94}
 .tc .tcx-sosbtn small{font-size:13px;font-weight:600;letter-spacing:0}
 .tcx-mini{width:100%;position:relative;overflow:hidden;border-radius:var(--radius-md);border:1px solid var(--border)}
-.tcx-banner .tcx-mini .tcx-mapsvg{width:100%;height:100%;margin:0}
-.tcx-banner .tc-btn svg,.tcx-banner .tcx-ln svg{color:inherit;margin:0}
+.tc-banner .tcx-mini .tcx-mapsvg{width:100%;height:100%;margin:0}
+.tc-banner .tc-btn svg,.tc-banner .tcx-ln svg{color:inherit;margin:0}
 .tcx-ln{display:flex;align-items:center;gap:var(--space-4);min-height:44px;padding:0 var(--space-2);border-top:1px solid var(--border-subtle)}
 .tcx-ln:first-child{border-top:0}
 .tcx-ln__k{flex:1;color:var(--ink-muted)}
@@ -47,7 +47,7 @@ html,body{margin:0;overflow-x:clip}
 <div class="tc tcx-root" dir="rtl" data-theme="{{theme}}" style="width: 390px; height: 844px">
 <div style="position:absolute;inset:0;display:flex;flex-direction:column;background:var(--map-ground)"><div class="tcx-mbar"><a class="tcx-lk tc-btn tc-btn--icon" aria-label="חזרה" style="margin-inline-start:-6px;width:44px;height:44px" href="Fm06-Searching-Night.dc.html"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a><div class="tcx-mbar__title">סיום פעילות</div></div><div class="tcx-grow" style="display:flex;flex-direction:column;min-height:0;position:relative"><div class="tcx-scroll tcx-grow" style="padding:16px;display:flex;flex-direction:column;gap:12px">
 <div class="tcx-meta" style="font-size:13px;line-height:1.5;color:var(--ink-secondary)">סיום ההשתתפות במסע 0412. מעקב הבטיחות ייפסק והמסע יישמר בהיסטוריה שלך.</div>
-<section class="tcx-banner tcx-banner--warn" style="flex-direction:column;gap:8px;padding:12px;font-size:13px;color:var(--ink)" aria-label="אזהרה">
+<section class="tc-banner tc-banner--warn" style="flex-direction:column;gap:8px;padding:12px;font-size:13px;color:var(--ink)" aria-label="אזהרה">
 <div style="display:flex;gap:8px;align-items:center;width:100%"><svg class="tcx-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5M12 18h.01"></path></svg><b>אתה עדיין בשטח</b></div>
 <div style="color:var(--ink-secondary)">מומלץ להגיע לנקודת הכינוס לפני הסיום. אפשר גם לסיים עכשיו.</div>
 <div class="tcx-mini" style="height:150px"><img class="tcx-mapimg" src="{{map}}" alt=""><svg class="tcx-mapsvg" viewBox="240 130 320 200" preserveAspectRatio="xMidYMid slice" role="img" aria-label="מפה"><path class="tc-poly--done" d="M120 330L300 290 340 440 180 480 100 420Z"></path><path class="tc-poly--open" d="M360 330L500 320 540 460 380 490Z"></path><path class="tc-poly--active" d="M330 90L520 70 560 230 420 280 320 220Z"></path><path class="tc-poly--active-b" d="M560 230L720 210 760 380 600 410 520 320Z"></path><path class="tc-route" style="stroke-dasharray:5 4;stroke-opacity:1;stroke-width:2" d="M450 205L405 232 360 252 335 270"></path><g transform="translate(335 272)"><circle class="tc-sym-rally" r="10"></circle><path class="tc-sym-rally-flag" d="M-2 4V-5H4L2.5 -2.5 4 0H-2"></path><text class="tc-sym-label" x="14" y="4" text-anchor="end">כינוס</text></g><g transform="translate(450 200)"><circle class="tc-sym-unit" r="7"></circle><text class="tc-sym-label" x="-11" y="4" text-anchor="start">04</text></g></svg></div>
