@@ -1,7 +1,7 @@
 import { STOP_REASON_LABELS } from '@trace/domain';
 import type { Mission } from '@trace/schemas';
 import { coordinates } from '../LkpPanel/lkpText';
-import { missionDuration } from '../endedSummary';
+import { missionDuration } from '../endedSummaryData';
 import { timeLabel } from '../timeLabel';
 import styles from './EndedSummary.module.css';
 
